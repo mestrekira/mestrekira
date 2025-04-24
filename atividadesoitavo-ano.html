@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividades - 6º Ano</title>
+    <link rel="stylesheet" href="pagina.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+</head>
+<body>
+    <header>
+        
+         <div class="logo-container">
+            <img src="logo1.png" alt="Logo Mestre Kira" class="logo">
+            <h1 class="titulo">Mestre Kira</h1>
+        </div>
+        <nav class="menu-fixo">
+            <ul>
+                <li><a href="index.html">Início</a></li>
+                <li class="submenu">
+                    <a href="#fundamental">Fundamental</a>
+                    <ul>
+                        <li><a href="#sexto-ano">6º Ano</a></li>
+                        <li><a href="#setimo-ano">7º Ano</a></li>
+                        <li><a href="#oitavo-ano">8º Ano</a></li>
+                        <li><a href="#nono-ano">9º Ano</a></li>
+                    </ul>
+                </li>
+                <li class="submenu">
+                    <a href="#medio">Ensino Médio</a>
+                    <ul>
+                        <li><a href="#primeiro-ano">1º Ano</a></li>
+                        <li><a href="#segundo-ano">2º Ano</a></li>
+                        <li><a href="#terceiro-ano">3º Ano</a></li>
+                    </ul>
+                </li>
+                <li><a href="#academico">Conteúdo Acadêmico</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+	 <aside class="barra-lateral">
+            <h2>Navegação</h2>
+            <ul>
+                <li><a href="#sexto-ano">6º Ano</a></li>
+                <li><a href="#setimo-ano">7º Ano</a></li>
+                <li><a href="#oitavo-ano">8º Ano</a></li>
+                <li><a href="#nono-ano">9º Ano</a></li>
+                <li><a href="#primeiro-ano">1º Ano</a></li>
+                <li><a href="#segundo-ano">2º Ano</a></li>
+                <li><a href="#terceiro-ano">3º Ano</a></li>
+                <li><a href="#academico">Conteúdo Acadêmico</a></li>
+            </ul>
+            <div class="redes-sociais">
+                <h3>Siga-nos</h3>
+                <ul>
+                    <li><a href="https://br.pinterest.com/mestrekira/">Pinterest</a></li>
+                    <li><a href="https://www.instagram.com/mestrekiraoficial?igsh=YmlqZHZlaDZpOXpx">Instagram</a></li>
+                    <li><a href="https://t.me/mestrekira">Telegram</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <section>
+            <h2>Atividades: Ensino Fundamental - 8º Ano</h2>
+               
+			   <div class="publicacoes">
+                   
+					Conteúdo em construção. Aguarde.
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Mestre Kira. Todos os direitos reservados.</p>
+    </footer>
+	<script>
+        // Redirecionamento futuro
+        document.querySelectorAll('a[href^="#"]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                const destino = this.getAttribute('href').replace("#", "");
+                const destinosValidos = [
+                    "sexto-ano", "setimo-ano", "oitavo-ano", "nono-ano",
+                    "primeiro-ano", "segundo-ano", "terceiro-ano", "academico"
+                ];
+                if (destinosValidos.includes(destino)) {
+                    e.preventDefault();
+                    window.location.href = `atividades${destino}.html`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
