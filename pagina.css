@@ -21,16 +21,6 @@ header .logo h1 {
     font-size: 24px;
 }
 
-.menu-toggle {
-    display: none;
-    background-color: #6C7492;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
 .menu-fixo ul {
     list-style: none;
     margin: 0;
@@ -119,24 +109,21 @@ main {
     padding: 15px;
     background-color: white;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
+	
 }
-
 .conteudo-principal p {
-    text-indent: 30px;
-    text-align: justify;
+	text-indent: 30px;
+	text-align: justify;
 }
 
 .publicacoes {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    margin-top: 20px;
 }
-
 .publicacoes p {
-    text-indent: 0;
+	text-indent: 0;
 }
-
 .post {
     background-color: #f1f1f1;
     padding: 10px;
@@ -158,28 +145,56 @@ footer {
     margin-top: 20px;
 }
 
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+
+    .barra-lateral {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .publicacoes {
+        flex-direction: column;
+    }
+
+    .post {
+        width: 100%;
+    }
+}
 .logo-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
+  display: flex;
+  align-items: center; /* Alinha verticalmente */
+  gap: 10px; /* Espaço entre logo e texto */
+  padding: 10px;
 }
 
 .logo {
-    height: 85px;
-    width: auto;
+  height: 85px;
+  width: auto;
 }
 
 .titulo {
-    font-size: 24px;
-    margin: 0;
-    color: white;
-    font-family: Verdana, Arial, sans-serif;
+  font-size: 24px;
+  margin: 0;
+  color: white;
+  font-family: Verdana, Arial, sans-serif;
 }
 
 .curriculo {
-    color: #8113EB;
-    font-weight: bold;
+	color: #8113EB;
+	font-weight: bold;
+	
+}
+
+
+
+.publicacoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
 }
 
 .publicacoes .post {
@@ -207,7 +222,6 @@ footer {
     font-size: 14px;
     text-align: justify;
 }
-
 .link-post {
     text-decoration: none;
     color: inherit;
@@ -225,48 +239,13 @@ footer {
 .link-post:hover img {
     transform: scale(1.02);
 }
-
 h3 p {
-    font-family: Verdana, Arial, Times, sans-serif;
+	font-family: Verdana, Arial, Times, sans-serif;
     font-size: 14px;
     color: black;
-    text-indent: 30px;
-    text-align: justify;
+	text-indent: 30px;
+	text-align: justify;
 }
-
 h3 {
-    color: #6C7492;
-}
-
-@media (max-width: 768px) {
-    .menu-toggle {
-        display: block;
-    }
-
-    main {
-        flex-direction: column;
-    }
-
-    .barra-lateral {
-        display: none;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        width: 100%;
-        margin: 0;
-        background-color: #e0e0e0;
-        z-index: 999;
-    }
-
-    .barra-lateral.ativa {
-        display: block;
-    }
-
-    .publicacoes {
-        flex-direction: column;
-    }
-
-    .post {
-        width: 100%;
-    }
-}
+	color: #6C7492;
+}	
