@@ -135,38 +135,6 @@ article {
 article h2, h3, h4, h5 {
     color: #6C7492;
 }
-
-.lista1 {
-    list-style-type: '★ '; /* estrela */
-    padding-left: 1.5em;
-}
-
-.lista1 li::marker {
-    color: #C49B0B;
-    font-size: 1.2em;
-}
-
-.lista2 {
-    list-style-type: '✔ '; /* check */
-    padding-left: 1.5em;
-}
-
-.lista2 li::marker {
-    color: #4CAF50;
-    font-size: 1.2em;
-}
-
-.lista3 {
-    list-style-type: '➤ '; /* seta */
-    padding-left: 1.5em;
-}
-
-.lista3 li::marker {
-    color: #6C7492;
-    font-size: 1.2em;
-}
-
-
 .destaque {
     font-weight: bold;
     color: #333;
