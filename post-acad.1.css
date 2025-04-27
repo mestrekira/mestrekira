@@ -191,30 +191,27 @@ footer {
     }
 }
 .rede {
-    width: 100%;
-    max-width: 300px;
+    width: 80%;
+    max-width: 500px;
     height: auto;
     display: block;
     margin: 20px auto;
     border-radius: 8px;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
-.rede {
-    width: 80%;
-    max-width: 500px;
-    height: auto;
-}
+
 .lista li {
     margin-bottom: 10px;
 }
 
 .lista {
-    list-style-type: '. ';
+    list-style-type: 'circle';
     padding-left: 1.2em;
 }
 .recuo {
     list-style-type: '⭢';
     padding-left: 1.2em;
+    margin-left: 40px;
 }
 .lista li::marker {
     color: #6C7492;
