@@ -205,7 +205,7 @@ footer {
 }
 
 .lista {
-    list-style-type: 'circle';
+    list-style-type: circle;
     padding-left: 1.2em;
 }
 .recuo {
