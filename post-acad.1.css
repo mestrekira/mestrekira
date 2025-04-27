@@ -209,20 +209,16 @@ footer {
 }
 
 .lista {
-    list-style-type: '→ ';
+    list-style-type: '. ';
     padding-left: 1.2em;
 }
-
+.recuo {
+    list-style-type: '⭢';
+    padding-left: 1.2em;
+}
 .lista li::marker {
     color: #6C7492;
     font-size: 1.1em;
-}
-.baixar {
-    color: #8B2E83;
-    font-weight: bold;
-}
-.baixar:hover {
-    text-decoration: underline;
 }
 
 p {
