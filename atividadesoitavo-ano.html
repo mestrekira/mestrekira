@@ -9,57 +9,12 @@
 </head>
 <body>
     <header>
-        
-         <div class="logo-container">
-            <img src="logo1.png" alt="Logo Mestre Kira" class="logo">
-            <h1 class="titulo">Mestre Kira</h1>
-        </div>
-        <nav class="menu-fixo">
-            <ul>
-                <li><a href="index.html">Início</a></li>
-                <li class="submenu">
-                    <a href="#fundamental">Fundamental</a>
-                    <ul>
-                        <li><a href="#sexto-ano">6º Ano</a></li>
-                        <li><a href="#setimo-ano">7º Ano</a></li>
-                        <li><a href="#oitavo-ano">8º Ano</a></li>
-                        <li><a href="#nono-ano">9º Ano</a></li>
-                    </ul>
-                </li>
-                <li class="submenu">
-                    <a href="#medio">Ensino Médio</a>
-                    <ul>
-                        <li><a href="#primeiro-ano">1º Ano</a></li>
-                        <li><a href="#segundo-ano">2º Ano</a></li>
-                        <li><a href="#terceiro-ano">3º Ano</a></li>
-                    </ul>
-                </li>
-                <li><a href="#academico">Conteúdo Acadêmico</a></li>
-            </ul>
-        </nav>
+      <div id="header"></div>
     </header>
 
     <main>
-	 <aside class="barra-lateral">
-            <h2>Navegação</h2>
-            <ul>
-                <li><a href="#sexto-ano">6º Ano</a></li>
-                <li><a href="#setimo-ano">7º Ano</a></li>
-                <li><a href="#oitavo-ano">8º Ano</a></li>
-                <li><a href="#nono-ano">9º Ano</a></li>
-                <li><a href="#primeiro-ano">1º Ano</a></li>
-                <li><a href="#segundo-ano">2º Ano</a></li>
-                <li><a href="#terceiro-ano">3º Ano</a></li>
-                <li><a href="#academico">Conteúdo Acadêmico</a></li>
-            </ul>
-            <div class="redes-sociais">
-                <h3>Siga-nos</h3>
-                <ul>
-                    <li><a href="https://br.pinterest.com/mestrekira/">Pinterest</a></li>
-                    <li><a href="https://www.instagram.com/mestrekiraoficial?igsh=YmlqZHZlaDZpOXpx">Instagram</a></li>
-                    <li><a href="https://t.me/mestrekira">Telegram</a></li>
-                </ul>
-            </div>
+	 <aside>
+          <div id="aside"></div>
         </aside>
 
         <section>
@@ -72,10 +27,10 @@
     </main>
 
     <footer>
-        <p>&copy; 2025 Mestre Kira. Todos os direitos reservados.</p>
+        <div id="footer"></div>
     </footer>
 	<script>
-        // Redirecionamento futuro
+       
         document.querySelectorAll('a[href^="#"]').forEach(link => {
             link.addEventListener('click', function (e) {
                 const destino = this.getAttribute('href').replace("#", "");
@@ -90,5 +45,19 @@
             });
         });
     </script>
+	<script>
+    function incluirHTML(id, url) {
+        fetch(url)
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById(id).innerHTML = data;
+            })
+            .catch(erro => console.error('Erro ao carregar ' + url, erro));
+    }
+
+    incluirHTML('header', 'header.html');
+    incluirHTML('aside', 'aside.html');
+    incluirHTML('footer', 'footer.html');
+</script>
 </body>
 </html>
