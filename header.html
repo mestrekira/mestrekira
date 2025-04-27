@@ -26,20 +26,5 @@
             </ul>
         </nav>
     </header>
-        <script>
-        
-        document.querySelectorAll('a[href^="#"]').forEach(link => {
-            link.addEventListener('click', function (e) {
-                const destino = this.getAttribute('href').replace("#", "");
-                const destinosValidos = [
-                    "sexto-ano", "setimo-ano", "oitavo-ano", "nono-ano",
-                    "primeiro-ano", "segundo-ano", "terceiro-ano", "academico"
-                ];
-                if (destinosValidos.includes(destino)) {
-                    e.preventDefault();
-                    window.location.href = `atividades${destino}.html`;
-                }
-            });
-        });
-    </script>
+
   
