@@ -1,0 +1,169 @@
+:root {
+    --cor-primaria: #6C7492;
+    --cor-secundaria: #928A6C;
+    --cor-destaque: #8113EB;
+    --cor-fundo: #f7f7f7;
+    --cor-texto: #000000;
+    --fonte-padrao: Verdana, Arial, Times, sans-serif;
+}
+
+body {
+    font-family: var(--fonte-padrao);
+    font-size: 14px;
+    color: var(--cor-texto);
+    margin: 0;
+    padding: 0;
+    background-color: var(--cor-fundo);
+}
+
+header {
+    background-color: var(--cor-primaria);
+    color: white;
+    padding: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+header .logo h1,
+.titulo {
+    margin: 0;
+    font-size: 24px;
+    color: white;
+    font-family: var(--fonte-padrao);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+}
+
+.logo {
+    height: 85px;
+    width: auto;
+}
+
+.menu-fixo ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    background-color: var(--cor-secundaria);
+}
+
+.menu-fixo ul li {
+    position: relative;
+}
+
+.menu-fixo ul li a {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: white;
+}
+
+.menu-fixo ul li:hover > a {
+    background-color: var(--cor-primaria);
+}
+
+.menu-fixo ul li ul {
+    display: none;
+    position: absolute;
+    background-color: var(--cor-secundaria);
+    top: 100%;
+    left: 0;
+    min-width: 150px;
+    z-index: 1000;
+}
+
+.menu-fixo ul li:hover ul {
+    display: block;
+}
+
+main {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 20px;
+}
+
+.barra-lateral {
+    width: 250px;
+    padding: 15px;
+    background-color: #e0e0e0;
+    margin-right: 20px;
+}
+
+.barra-lateral h2,
+.barra-lateral h3,
+h3 {
+    color: var(--cor-primaria);
+}
+
+.barra-lateral ul {
+    list-style: none;
+    padding: 0;
+}
+
+.barra-lateral ul li a {
+    text-decoration: none;
+    color: black;
+    display: block;
+    padding: 5px 0;
+    transition: background 0.2s;
+}
+
+.barra-lateral ul li a:hover {
+    background-color: #dcdcdc;
+}
+
+.redes-sociais ul {
+    list-style: none;
+    padding: 0;
+}
+
+.redes-sociais ul li a {
+    text-decoration: none;
+    color: var(--cor-primaria);
+}
+
+.conteudo-principal {
+    flex: 1;
+    padding: 15px;
+    background-color: white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+footer {
+    background-color: var(--cor-primaria);
+    color: white;
+    text-align: center;
+    padding: 10px;
+    margin-top: 20px;
+}
+
+.curriculo {
+    color: var(--cor-destaque);
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+
+    .barra-lateral {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .publicacoes {
+        flex-direction: column;
+    }
+
+    .post {
+        width: 100%;
+    }
+}
