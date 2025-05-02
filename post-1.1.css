@@ -72,3 +72,10 @@ p {
 section[id]:empty {
     display: none;
 }
+.destaque {
+    font-weight: bold;
+    color: #333;
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-left: 4px solid #6C7492;
+}
