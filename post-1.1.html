@@ -131,34 +131,35 @@
   </footer>
 
 <script>
-        
-        document.querySelectorAll('a[href^="#"]').forEach(link => {
-            link.addEventListener('click', function (e) {
-                const destino = this.getAttribute('href').replace("#", "");
-                const destinosValidos = [
-                    "sexto-ano", "setimo-ano", "oitavo-ano", "nono-ano",
-                    "primeiro-ano", "segundo-ano", "terceiro-ano", "academico"
-                ];
-                if (destinosValidos.includes(destino)) {
-                    e.preventDefault();
-                    window.location.href = `atividades${destino}.html`;
-                }
-            });
-        });
-    </script>
-	    <script>
-    function incluirHTML(id, url) {
-        fetch(url)
-            .then(res => res.text())
-            .then(data => {
-                document.getElementById(id).innerHTML = data;
-            })
-            .catch(erro => console.error('Erro ao carregar ' + url, erro));
-    }
+  function ativarRedirecionamento() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', function (e) {
+        const destino = this.getAttribute('href').replace("#", "");
+        const destinosValidos = [
+          "sexto-ano", "setimo-ano", "oitavo-ano", "nono-ano",
+          "primeiro-ano", "segundo-ano", "terceiro-ano", "academico"
+        ];
+        if (destinosValidos.includes(destino)) {
+          e.preventDefault();
+          window.location.href = `atividades${destino}.html`;
+        }
+      });
+    });
+  }
 
-    incluirHTML('header', 'header.html');
-    incluirHTML('aside', 'aside.html');
-    incluirHTML('footer', 'footer.html');
+  function incluirHTML(id, url) {
+    fetch(url)
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById(id).innerHTML = data;
+        ativarRedirecionamento(); // Chama aqui após cada inclusão
+      })
+      .catch(erro => console.error('Erro ao carregar ' + url, erro));
+  }
+
+  incluirHTML('header', 'header.html');
+  incluirHTML('aside', 'aside.html');
+  incluirHTML('footer', 'footer.html');
 </script>
 </body>
 </html>
