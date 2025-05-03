@@ -152,7 +152,7 @@
       .then(res => res.text())
       .then(data => {
         document.getElementById(id).innerHTML = data;
-        ativarRedirecionamento(); // Chama aqui após cada inclusão
+        ativarRedirecionamento();
       })
       .catch(erro => console.error('Erro ao carregar ' + url, erro));
   }
