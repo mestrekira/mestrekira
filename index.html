@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mestre Kira</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="pagina.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
   <script>
@@ -41,36 +40,7 @@
 <div class="publicacoes">
 
     <div class="post">
-        <a href="post-6.1.html" class="link-post">
-            <img src="lebre.png" alt="Imagem da atividade de interpretação e produção textual - 6º ano">
-            <p>
-                <strong>Atividade de interpretação e produção textual - 6º ano</strong><br>
-                A presente sequência didática propõe o trabalho com contos populares, fábulas e lendas por meio da leitura, reescrita criativa e oralidade.
-            </p>
-        </a>
-    </div>
-
-    <div class="post">
-        <a href="post-7.1.html" class="link-post">
-            <img src="entrevista.png" alt="Imagem da atividade de entrevista e produção do perfil biográfico - 7º ano">
-            <p>
-                <strong>Atividade de entrevista e produção do perfil biográfico - 7º ano</strong><br>
-                A sequência didática “Influenciadores de verdade: quem nos influencia e por quê?” foi elaborada para dialogar com o universo sociocultural dos estudantes, partindo de um tema atual e envolvente: o impacto dos influenciadores em nossas vidas.
-            </p>
-        </a>
-    </div>
-
-    <div class="post">
-        <a href="post-9.1.html" class="link-post">
-            <img src="sofia.png" alt="Imagem da atividade de leitura/interpretação e produção: O mundo de Sofia - 9º ano">
-            <p>
-                <strong>Atividade de leitura/interpretação e produção: O mundo de Sofia - 9º ano</strong><br>
-                A sequência didática "A descoberta da leitura como viagem" foi elaborada para turmas do 9º ano do Ensino Fundamental, com foco no eixo da leitura e com o objetivo de desenvolver a capacidade interpretativa, reflexiva e criativa dos alunos.
-            </p>
-        </a>
-    </div>
-
-</div>
+       
 				<h3>Sobre o criador</h3>
 				<p>
 				Sou Leildo Gonçalves, criador do site Mestre Kira. Formado em Licenciatura em Letras Língua Portuguesa e Literaturas de Língua Portuguesa pela Universidade Estadual do Maranhão - UEMA, trabalho da educação básica de Lago do Junco - MA.<br>
@@ -112,12 +82,13 @@ function configurarLinks() {
         link.addEventListener('click', function (e) {
             const destino = this.getAttribute('href').replace("#", "");
             const destinosValidos = [
-                "sexto-ano", "setimo-ano", "oitavo-ano", "nono-ano",
-                "primeiro-ano", "segundo-ano", "terceiro-ano", "academico"
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+		"literatura-africana", "critico", "midiatico",
             ];
             if (destinosValidos.includes(destino)) {
                 e.preventDefault();
-                window.location.href = `atividades${destino}.html`;
+                window.location.href = `conteudos{destino}.html`;
             }
         });
     });
