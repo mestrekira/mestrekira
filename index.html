@@ -69,31 +69,32 @@ function incluirHTML(id, url, callback) {
         .then(res => res.text())
         .then(data => {
             document.getElementById(id).innerHTML = data;
-            if (callback) callback(); 
+            if (callback) callback();
         })
         .catch(erro => console.error('Erro ao carregar ' + url, erro));
 }
 
 incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
 incluirHTML('footer', 'footer.html');
 
 function configurarLinks() {
     document.querySelectorAll('a[href^="#"]').forEach(link => {
         link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "");
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
             const destinosValidos = [
                 "fonetica", "fonologia", "morfologia", "sintaxe",
                 "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
-		"literatura-africana-portuguesa", "critico", "midiatico",
+                "literatura-africana-portuguesa", "critica", "midiatico"
             ];
             if (destinosValidos.includes(destino)) {
                 e.preventDefault();
-                window.location.href = `conteudos{destino}.html`;
+                window.location.href = `conteudos/${destino}.html`;
             }
         });
     });
 }
 </script>
+
 </body>
 </html>
