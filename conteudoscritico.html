@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Critica do Discurso</title>
+     	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="pagina.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-B4M6CZF5HB');
+  </script>
+</head>
+	
+<body>
+     <header>
+       <div id="header"></div>
+		</header>
+     <main>
+	 <aside>
+         <div id="aside"></div>
+        </aside>
+
+        <section>
+            <h2>Atividades: Ensino Fundamental - 7º Ano</h2>
+               
+			   <div class="publicacoes">
+                   
+					<div class="post"> <img src="entrevista.png"> <a href="post-7.1.html" class="link-post"> <p><strong>Atividade de entrevista e produção do perfil biográfico - 7º ano</strong><br>A sequência didática “Influenciadores de verdade: quem nos influencia e por quê?” foi elaborada para dialogar com o universo sociocultural dos estudantes, partindo de um tema atual e envolvente: o impacto dos influenciadores em nossas vidas.</p></div>
+				<a href="post-7.1.html" class="link-post">
+        </section>
+    </main>
+
+
+    <footer>
+       <div id="footer"></div>
+    </footer>
+	<script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html', configurarLinks);
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "");
+            const destinosValidos = [
+                "sexto-ano", "setimo-ano", "oitavo-ano", "nono-ano",
+                "primeiro-ano", "segundo-ano", "terceiro-ano", "academico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+                window.location.href = `atividades${destino}.html`;
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
