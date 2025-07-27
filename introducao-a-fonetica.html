@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividade 1 ano</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="introducao-a-fonetica.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+</head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+		<h2> Introdução à Fonética: o que é, para que serve e como se relaciona com a fonologia</h2>
+		<p>
+		A linguagem humana é uma das capacidades mais complexas e fascinantes da nossa espécie. Dentro dos estudos da linguagem, a fonética se destaca como a área responsável por investigar os sons da fala — não apenas enquanto abstrações, mas como fenômenos físicos, fisiológicos e perceptíveis. Ao compreender como os sons são produzidos, transmitidos e percebidos, abrimos espaço para uma reflexão mais profunda sobre a estrutura e o funcionamento das línguas naturais.
+		</p>
+		<h3>O que é Fonética?</h3>
+		<p>
+		A fonética é a área da linguística que estuda os sons da fala humana sob uma perspectiva empírica e científica. Diferente da fonologia, que se dedica à organização abstrata dos sons nas línguas, a fonética está interessada nas propriedades físicas e articulatórias desses sons.
+		</p>
+		<p>
+		De acordo com Câmara Jr. (1970), "a fonética estuda os sons da fala em sua realidade física, enquanto a fonologia se preocupa com o sistema de sons que distinguem significados numa dada língua". Essa distinção é fundamental para entendermos que, embora os sons e os fonemas se relacionem, tratam-se de níveis diferentes de análise linguística.
+		<img src="introducao.png" title="Diferença entre fonética e fonologia" alt="Fonética e Fonologia" class="introducao"><br>
+		</p>
+		<h3>Para que serve a Fonética?</h3>
+		<p>
+		A fonética tem aplicações práticas e teóricas em diversas áreas:
+		</p>
+		<ul class="lista">
+		<li>Ensino de línguas: auxilia no desenvolvimento da pronúncia e na identificação de dificuldades específicas dos aprendizes.</li><br>
+		<li>Fonoaudiologia: oferece base para o diagnóstico e tratamento de distúrbios da fala.</li><br>
+		<li>Tecnologia da fala: é fundamental para o desenvolvimento de sistemas de reconhecimento de voz e síntese de fala.</li><br>
+		<li>Análise forense: permite identificar vozes com base em características fonéticas.</li><br>
+		<li>Estudos linguísticos: contribui para a descrição de línguas indígenas, em perigo ou pouco documentadas.</li><br>
+		</ul>
+		<img src="fonetica.png" title="Para que serve a fonética" alt="Fonética, para que serve" class="fonetica"><br>
+		<p>
+		Além disso, a fonética é essencial para os professores de língua portuguesa que desejam ampliar seu domínio sobre a norma culta, as variações fonéticas regionais e os aspectos da ortografia relacionados à pronúncia.
+		</p>
+		<h3>Subáreas da Fonética</h3>
+		<p>
+		A fonética pode ser dividida em três subáreas principais:
+		</p>
+		<ol class="lista1">
+		<li>Fonética articulatória: estuda como os sons são produzidos pelos órgãos da fala.</li><br>
+		<li>Fonética acústica: analisa as propriedades físicas dos sons (frequência, intensidade, duração).</li><br>
+		<li>Fonética auditiva: investiga como os sons são percebidos pelo ouvido humano e processados pelo cérebro.</li>
+		</ol>
+		<p>
+		Essas dimensões se complementam e fornecem um panorama completo do fenômeno sonoro linguístico.
+		</p>
+		<h3>Relação com a Fonologia</h3>
+		<p>
+		Embora fonética e fonologia se entrelacem, seus focos são distintos. A fonologia lida com os fonemas, unidades sonoras abstratas que têm valor distintivo numa língua. Já a fonética estuda os fones, os sons concretos que são efetivamente produzidos e percebidos.
+		</p>
+		<p>
+		Por exemplo, no português, os sons [s] e [z] são variantes fonéticas (alofones) do mesmo fonema /s/, dependendo do contexto fonológico. Compreender essa distinção é essencial para o estudo da língua tanto em sua forma falada quanto escrita.
+		</p>
+		<p>
+		Como destaca Cristófaro-Silva (2003), "o estudo fonético fornece subsídios para a fonologia ao descrever e classificar os sons, possibilitando que se estabeleçam padrões e regularidades em seu uso".
+		</p><br>
+		<h2>Referências</h2>
+		
+<p>
+CÂMARA JR., Joaquim Mattoso. Estrutura da língua portuguesa. 20. ed. Petrópolis: Vozes, 2008.
+</p>
+<p>
+CRISTÓFARO-SILVA, Thaïs. Fonética e fonologia do português: roteiro de estudos e guia de exercícios. 7. ed. São Paulo: Contexto, 2003.
+</p>
+<p>
+ROACH, Peter. English Phonetics and Phonology: A practical course. 4th ed. Cambridge: Cambridge University Press, 2009.
+</p>
+<p>
+O’CONNOR, J. D. Phonetics. London: Penguin Books, 1973.
+</p>
+          
+      </article>       
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
