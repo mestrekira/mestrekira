@@ -19,7 +19,7 @@ article h5 {
 }
 
 .lista {
-    list-style-type: 'circle';
+    list-style-type: 'none';
     padding-left: 1.2em;
 }
 
@@ -32,7 +32,7 @@ article h5 {
     font-size: 1.1em;
 }
 .lista1 {
-    list-style-type: 'decimal';
+    list-style-type: 'none';
     padding-left: 1.2em;
 }
 
