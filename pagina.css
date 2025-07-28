@@ -50,3 +50,26 @@
 .link-post:hover img {
     transform: scale(1.02);
 }
+
+.ul.topicos {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 1.5rem;
+}
+
+.ul.topicos li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+  color: #222;
+}
+
+.ul.topicos li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #6c63ff;
+  font-weight: bold;
+}
