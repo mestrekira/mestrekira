@@ -25,6 +25,7 @@ article h5 {
 
 .lista li {
     margin-bottom: 10px;
+    padding-left: 20px;
 }
 
 .lista li::marker {
@@ -38,6 +39,7 @@ article h5 {
 
 .lista1 li {
     margin-bottom: 10px;
+    padding-left: 20px;
 }
 
 .lista1 li::marker {
