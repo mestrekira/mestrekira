@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Critica do Discurso</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="introducao-a-fonetica.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+</head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+		<h2> Discurso e Poder: Como a linguagem legitima desigualdades sociais</h2>
+		<p>
+		A linguagem não é apenas um meio de comunicação, mas uma ferramenta poderosa na construção da realidade social. Na perspectiva da Análise Crítica do Discurso (ACD), a linguagem é vista como prática social, ou seja, como algo que participa ativamente da produção e reprodução das relações de poder. Autores como Norman Fairclough e Teun A. van Dijk destacam que o discurso é um espaço onde ideologias são transmitidas, naturalizadas e, muitas vezes, responsáveis por legitimar desigualdades sociais.
+		</p>
+		<p>
+		A linguagem opera de modo sutil. Ela seleciona palavras, define quem pode falar, quem é ouvido e como determinados grupos são representados. Um exemplo claro disso é o discurso jornalístico, especialmente em situações de violência urbana. Manchetes como “Polícia reage e mata suspeito na comunidade” podem ser interpretadas de duas formas distintas, a depender da posição ideológica do veículo e do leitor.
+		</p>
+		<p>
+		De um lado, há leituras que apontam como certos discursos midiáticos naturalizam ações violentas do Estado, ao descontextualizar fatores sociais como pobreza, exclusão ou racismo estrutural. De outro, há discursos que denunciam uma criminalização injusta das forças policiais, muitas vezes retratadas como opressoras sem considerar o risco real que enfrentam e o seu papel na garantia da segurança pública.
+		<img src="discurso-e-poder.png" title="Discurso e Poder: Como a linguagem legitima desigualdades sociais" alt="Discurso e Poder: Como a linguagem legitima desigualdades sociais" class="discurso-e-poder"><br>
+		</p>
+		<p>
+		Ambas as abordagens refletem usos estratégicos da linguagem, que moldam a percepção do público e influenciam o debate social. Nesse contexto, o discurso não apenas informa: ele orienta a interpretação dos fatos conforme valores e interesses específicos.
+		<p>
+		Na política, expressões como “reformas necessárias” ou “ajuste fiscal” suavizam medidas que afetam principalmente as classes mais pobres. Já na educação, quando se impõe a norma-padrão como única forma legítima de linguagem, há uma desvalorização das variedades linguísticas populares, muitas vezes associadas a grupos marginalizados. Esses são exemplos de poder simbólico exercido por meio da linguagem.
+		</p>
+		<p class="destaque">
+		Fairclough (2001) argumenta que o discurso participa da “ordem do discurso”, ou seja, de um sistema que define o que é possível dizer e como. Já van Dijk (2008) chama atenção para os mecanismos de controle mental exercidos pelos discursos midiáticos e institucionais, que afetam diretamente a forma como percebemos o mundo e as pessoas.
+		</p>
+		<p>
+		Ao compreender a relação entre discurso e poder, ganhamos ferramentas para desnaturalizar ideias que parecem “comuns” ou “neutras”, mas que, na verdade, sustentam diferentes visões de mundo. A análise crítica do discurso nos convida a olhar além da superfície da linguagem, reconhecendo seus efeitos sociais e ideológicos. Ao fazer isso, contribuímos para uma educação mais crítica e para uma sociedade mais consciente, onde a pluralidade de vozes e interpretações possa ser respeitada e debatida de forma responsável.
+		</p><br>
+
+		<h2>Referências</h2>
+		
+<p class="referencias">
+FAIRCLOUGH, Norman. Discurso e mudança social. Brasília: UnB, 2001.
+</p>
+<p class="referencias">
+VAN DIJK, Teun A. Discurso e poder. São Paulo: Contexto, 2008.
+</p>
+<p class="referencias">
+WODAK, Ruth; MEYER, Michael. Métodos de análise crítica do discurso. São Paulo: Edições Loyola, 2009.
+</p>
+          
+      </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
