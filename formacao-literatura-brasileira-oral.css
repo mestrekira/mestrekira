@@ -17,35 +17,6 @@ article h4,
 article h5 {
     color: #6C7492;
 }
-
-.lista {
-    list-style-type: circle;
-    padding-left: 1.2em;
-}
-
-.lista li {
-    margin-bottom: 10px;
-    padding-left: 20px;
-}
-
-.lista li::marker {
-    color: #6C7492;
-    font-size: 1.1em;
-}
-.lista1 {
-    list-style-type: decimal;
-    padding-left: 1.2em;
-}
-
-.lista1 li {
-    margin-bottom: 10px;
-    padding-left: 20px;
-}
-
-.lista1 li::marker {
-    color: #6C7492;
-    font-size: 1.1em;
-}
 .destaque {
     font-weight: bold;
     color: #333;
@@ -54,7 +25,7 @@ article h5 {
     border-left: 4px solid #6C7492;
 }
 
-.introducao {
+.indigena {
     width: 80%;
     max-width: 500px;
     height: auto;
@@ -63,7 +34,7 @@ article h5 {
     border-radius: 8px;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
-.fonetica {
+.africa {
     width: 80%;
     max-width: 500px;
     height: auto;
