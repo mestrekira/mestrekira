@@ -25,7 +25,8 @@ article h5 {
 
 .lista li {
     margin-bottom: 10px;
-    padding-left: 20px;
+    padding-left: 40px;
+	list-style-position: inside;
 }
 
 .lista li::marker {
@@ -39,8 +40,8 @@ article h5 {
 
 .lista1 li {
     margin-bottom: 10px;
-    padding-left: 20px;
-	text-indent: 60px;
+    padding-left: 40px;
+list-style-position: inside;
 }
 
 .lista1 li::marker {
