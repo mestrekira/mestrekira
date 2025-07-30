@@ -26,8 +26,8 @@ article h5 {
 }
 
 .indigena {
-    width: 40%;
-    max-width: 300px;
+    width: 80%;
+    max-width: 500px;
     height: auto;
     display: block;
     margin: 20px auto;
@@ -35,8 +35,8 @@ article h5 {
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 .africa {
-    width: 40%;
-    max-width: 300px;
+    width: 80%;
+    max-width: 500px;
     height: auto;
     display: block;
     margin: 20px auto;
