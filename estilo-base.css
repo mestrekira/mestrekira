@@ -169,3 +169,24 @@ footer {
         width: 100%;
     }
 }
+.social-icons {
+  display: flex;
+  flex-direction: column; /* ou row, se quiser lado a lado */
+  gap: 10px;
+  margin-top: 20px;
+  font-family: sans-serif;
+}
+
+.social-icons a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #444;
+  font-size: 18px;
+  transition: color 0.3s ease;
+}
+
+.social-icons a:hover {
+  color: #0077cc;
+}
