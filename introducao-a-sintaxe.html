@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introdução a Fonética</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="introducao-a-fonetica.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+		<h2>Introdução à Sintaxe — Função e Estrutura da Frase</h2>
+		<p>
+		A sintaxe é o ramo da gramática que estuda as relações entre as palavras em uma oração e entre as orações em um período. Sua função é analisar como os elementos se organizam para formar sentido dentro de enunciados.
+		</p>
+		<p>
+		Segundo Rocha Lima (2011), "a sintaxe é a parte da gramática que estuda a disposição das palavras na oração e das orações no período, conforme as leis que regem essa disposição." Essa organização permite que a linguagem escrita ou falada seja compreensível e coerente para o interlocutor.
+		</p>
+		<h3>Frase, Oração e Período: Entendendo as Bases</h3>
+		<p>
+		Antes de prosseguir nos estudos sintáticos, é fundamental distinguir três conceitos-chave:
+		</p>
+		<ul class="lista">
+		<li>Frase: Todo enunciado com sentido completo, podendo ou não conter verbo. Exemplo: Silêncio! (não há verbo, mas há sentido).</li><br>
+		<li>Oração: Enunciado com verbo ou locução verbal, com ou sem sentido completo. Exemplo: Os alunos estudam bastante.</li><br>
+		<li>Período: Enunciado que pode conter uma ou mais orações. Classifica-se em:</li><br>
+	     <ol class="lista1">
+		 <li>Período simples: contém apenas uma oração. Ex: A aula começou cedo.</li><br>
+		 <li>Período composto: contém duas ou mais orações. Ex: A aula começou cedo, mas terminou tarde.</li><br>
+		 </ol>
+		 </ul>
+		 <p>
+		 De acordo com Bechara (2009), "a oração é a unidade sintática organizada em torno de um verbo, enquanto o período é a sequência lógica de orações articuladas entre si."
+		 </p>
+		 <h3>A Importância da Sintaxe</h3>
+		 <p>
+		 A sintaxe tem papel crucial na clareza, na correção e na expressividade do discurso. Uma estrutura mal organizada pode gerar ambiguidade ou dificultar a comunicação.
+		 </p>
+		 <p>
+		 A título de exemplo:
+		 </p>
+		 <ul class="lista">
+		 Vi o homem com binóculos.
+		 </ul>
+		 <p>
+		 Quem está com o binóculo? A construção permite múltiplas interpretações. Como aponta Cegalla (2008), "a sintaxe não apenas organiza a estrutura do enunciado, mas também interfere diretamente no sentido que se quer comunicar."
+		 </p>
+		 <p>
+		 Estudar sintaxe é compreender como as palavras se articulam para expressar ideias de maneira lógica, funcional e estilisticamente eficaz. Este conhecimento é essencial para a produção textual, a análise linguística e a leitura crítica de diferentes gêneros discursivos.
+		 </p>
+		 <h2>Referências</h2>
+		
+<p class="referencias">
+BECHARA, Evanildo. Moderna Gramática Portuguesa. 37. ed. Rio de Janeiro: Nova Fronteira, 2009.
+</p>
+<p class="referencias">
+CEGALLA, Domingos Paschoal. Novíssima Gramática da Língua Portuguesa. São Paulo: Nacional, 2008.
+</p>
+<p class="referencias">
+LIMA, Rocha. Gramática Normativa da Língua Portuguesa. 49. ed. São Paulo: José Olympio, 2011.
+</p>
+          
+      </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
