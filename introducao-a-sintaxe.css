@@ -20,28 +20,33 @@ article h5 {
 
 .lista {
     list-style-type: circle;
-    padding-left: 1.2em;
+    list-style-position: outside; 
+    padding-left: 30px;           
+    margin-left: 20px;           
 }
 
 .lista li {
     margin-bottom: 10px;
-    padding-left: 40px;
-	list-style-position: inside;
 }
 
 .lista li::marker {
     color: #6C7492;
     font-size: 1.1em;
 }
+
+
 .lista1 {
     list-style-type: decimal;
-    padding-left: 1.2em;
+    list-style-position: inside;
+    padding-left: 0;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 90%;               
 }
 
 .lista1 li {
     margin-bottom: 10px;
-    padding-left: 40px;
-list-style-position: inside;
+    padding-left: 20px;
 }
 
 .lista1 li::marker {
