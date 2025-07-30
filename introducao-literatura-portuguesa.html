@@ -21,50 +21,6 @@
     <header>
        <div id="header"></div>
     </header>
-	 </article>   
-		</section>		
-    </main>
-
-    <footer>
-        <div  id="footer"></div>
-    </footer>
-
-   <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-            const destinosValidos = [
-                "fonetica", "fonologia", "morfologia", "sintaxe",
-                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
-                "literatura-africana-portuguesa", "critica", "midiatico"
-            ];
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-               window.location.href = `conteudos${destino}.html`;
-
-            }
-        });
-    });
-}
-</script>
-
-</body>
-</html>
 	 <main>
         <aside>
            <div id="aside"></div>
@@ -139,3 +95,47 @@ A literatura medieval portuguesa, portanto, nasce poética, cortês e cantada, m
 <p>
 O início da literatura portuguesa é marcado por uma forte influência oral, musical e cortês. As cantigas, com sua beleza rítmica e diversidade temática, revelam uma sociedade complexa — dividida entre o ideal cavalheiresco e o gosto pela sátira popular. A transição da poesia para a prosa amplia o horizonte literário, plantando as bases para a tradição escrita que culminaria em nomes como Gil Vicente, Camões e tantos outros.
 </p>
+ </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
