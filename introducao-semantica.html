@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introdução a semântica</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="introducao-semantica.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+		<h2>Noções Iniciais de Semântica: o Significado nas Palavras</h2>
+		<p>
+		A semântica é o ramo da linguística que estuda o significado das palavras, das frases e dos enunciados na linguagem. Sua etimologia remonta ao grego semainô, que significa "significar" ou "indicar". Desde a Antiguidade, filósofos e gramáticos já refletiam sobre o papel do significado na comunicação, mas foi com o desenvolvimento da linguística moderna que a semântica ganhou um corpo teórico sistematizado.
+		</p>
+		<p>
+		Segundo Ullmann (1970), “a semântica é a ciência do significado”, e como tal, investiga como os signos linguísticos representam ideias, objetos e relações no mundo. Essa definição, embora ampla, destaca o caráter central do significado na linguagem, especialmente quando se entende a língua como um sistema de signos (SAUSSURE, 1916).
+		</p>
+		<img src="introducao-semantica.png" title="Noções Iniciais de Semântica: o Significado nas Palavras" alt="Noções Iniciais de Semântica: o Significado nas Palavras" class="semantica"><br>
+		<h3>Significado vs. Sentido</h3>
+		<p>
+		É importante diferenciar significado e sentido, dois conceitos que, embora relacionados, não são sinônimos na linguística.
+		<p/>
+		<ul class="lista">
+		<li>O significado é comumente associado a um valor fixo ou mais estável de uma palavra no sistema da língua (valor lexical).</li><br>
+		<li>O sentido, por outro lado, é variável e depende do uso concreto da palavra em um determinado contexto.</li><br>
+		<p>
+		Como afirma Fiorin (2001, p. 14), “o significado é a parte convencional e compartilhada de um signo linguístico; o sentido é aquilo que o signo adquire no uso, dependendo da situação, da intenção comunicativa e dos interlocutores”.
+		</p>
+		<p>
+		Por exemplo, a palavra “estrela” pode ter significados diversos:
+		</p>
+		<ul class="lista">
+		<li>No campo da astronomia: corpo celeste luminoso.</li><br>
+		<li>Na linguagem figurada: uma pessoa famosa.</li><br>
+		<li>No simbolismo: algo relacionado a sorte ou destino.</li><br>
+		</ul><p>
+		O sentido real dependerá do contexto em que for empregada:
+		</p>
+		<p class="destaque">
+		“Ela é a estrela do espetáculo.” — aqui, estrela adquire o sentido de “protagonista”, embora o significado básico permaneça no campo do brilho, destaque, luz.<
+		</p>
+		<h3>O Signo Linguístico</h3>
+		<p>
+		Para compreender o funcionamento do significado, é fundamental conhecer o conceito de signo linguístico, elaborado por Ferdinand de Saussure, pai da linguística estrutural. Para ele, o signo é composto por:
+		</p>
+		<ol class="lista1">
+		<li>Significante: a forma sonora ou gráfica (por exemplo, a sequência de sons /kɐ.sɐ/ em “casa”).</li><br>
+		<li>Significado: o conceito mental associado àquela forma (a ideia de um espaço habitável).</li><br>
+		</ol>
+		<p>
+		Saussure (1916) destaca que “o signo linguístico é arbitrário”, ou seja, não há uma relação natural entre a palavra e o objeto que ela representa. Essa arbitrariedade torna o estudo da semântica ainda mais interessante, pois mostra como os significados são construções sociais e culturais, e não dados naturais.
+		</p>
+		<h3>Perspectivas de Estudo</h3>
+		<p>
+		A semântica pode ser abordada sob diferentes enfoques:
+		</p>
+		<ul class="lista">
+		<li>Semântica lexical: estuda o significado das palavras isoladamente.</li><br>
+		<li>Semântica frasal ou composicional: analisa como os significados das palavras se combinam para formar significados de frases.</li><br>
+		<li>Semântica formal: utiliza a lógica matemática para explicar relações semânticas.</li><br>
+		<li>Semântica cognitiva: considera aspectos mentais e culturais na construção do significado.</li><br>
+		</ul>
+		<p>
+		Cada uma dessas abordagens busca compreender como o significado se organiza, se modifica e se interpreta na linguagem cotidiana e nos diversos gêneros discursivos.
+		</p>
+		<h2>Referências</h2>
+		
+<p class="referencias">
+FIORIN, José Luiz. Elementos de Análise do Discurso. São Paulo: Contexto, 2001.
+</p>
+<p class="referencias">
+SAUSSURE, Ferdinand de. Curso de Linguística Geral. Tradução de Antônio Chelini & Izidoro Blikstein. São Paulo: Cultrix, 1916 [edição brasileira, 2006].
+</p>
+<p class="referencias">
+ULLMANN, Stephen. The Study of Meaning. Londres: Longman, 1970.
+</p>
+ </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
