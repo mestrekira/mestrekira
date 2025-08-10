@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise do Discurso midiático no ensino</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="introducao-a-sintaxe.css">
+	<link rel="stylesheet" href="a-importancia-da-analise-do-discurso-no-ensino.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -63,3 +63,48 @@ A análise do discurso midiático no ensino de Língua Portuguesa é ferramenta 
 <p class="referencias">Sader; Santos. “Ensino de Língua Portuguesa: reflexões sobre a necessidade de análise crítica de textos.” SciELO. (artigo sobre letramento crítico e análise de discurso).</p>
 <p class="referencias">Maingueneau, Dominique. Estudos sobre interdiscurso e multimodalidade (diversas eds., 2000–2015).</p>
 <p class="referencias">Letramento crítico. Wikipédia (entrada consultada para definição e implicações pedagógicas).</p>
+				   </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
+
