@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Introdução a sintaxe</title>
+    <title>Relações semânticas no léxico</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="introducao-a-sintaxe.css">
+	<link rel="stylesheet" href="relacoes-semanticas-no-lexico.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -95,4 +95,49 @@
     <li><strong>O chefe pediu um relatório sucinto.</strong> (sinônimo de “resumido”) / <strong>O estagiário entregou um relatório extenso.</strong> (antônimo de “sucinto”)</li>
   </ul>
   <p>Compreender as relações semânticas no léxico é essencial para dominar a língua e interpretar mensagens com precisão. Ao perceber como palavras se conectam — por similaridade, oposição, abrangência ou múltiplos sentidos —, ampliamos nossa capacidade de comunicação e organizamos melhor nosso pensamento. No léxico mental, essas conexões funcionam como caminhos que facilitam a escolha das palavras certas e a compreensão do que ouvimos ou lemos. Assim, conhecer e explorar essas relações não apenas enriquece o vocabulário, mas também fortalece a expressão oral e escrita.</p>
-</section>
+  </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
+
+
