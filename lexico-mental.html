@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Léxico Mental</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="lexico-mental.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+  <h2>Léxico Mental</h2>
+
+<p>O <strong>léxico mental</strong> é o conjunto de palavras e expressões que uma pessoa conhece e armazena na memória. Funciona como um “dicionário interno” que não apenas guarda o significado, mas também informações sobre a forma, a pronúncia, as relações e o uso dessas palavras. É um dos pilares fundamentais da competência linguística.</p>
+<img src="lexico-mental.png" title="O que é o Léxico Mental?" alt="O que é o Léxico Mental?" class="lexico-mental"><br>
+<h3>Como o Léxico Mental é Organizado</h3>
+<p>O léxico mental não é uma lista estática, mas um sistema dinâmico. As palavras se conectam entre si por <strong><a href="https://www.mestrekira.com.br/introducao-semantica.html" target="_blank"><b>relações semânticas</b></strong> (significado), <strong><a href="https://www.mestrekira.com.br/introducao-a-morfologia.html" target="_blank"><b>relações morfológicas</b></strong> (formação e estrutura) e <strong><a href="https://www.mestrekira.com.br/fonemas-letras.html" target="_blank"><b>relações fonológicas</b></strong> (som e pronúncia). Por exemplo, a palavra <strong>casa</strong> pode estar ligada a <strong>lar</strong>, <strong>moradia</strong>, <strong>habitar</strong>, ou a diminutivos como <strong>casinha</strong>.</p>
+
+<h3>Acesso e Recuperação das Palavras</h3>
+<p>Quando falamos ou escrevemos, não percorremos mentalmente todo o dicionário interno. Em vez disso, ativamos redes de associação que facilitam a recuperação da palavra desejada. Isso explica por que, às vezes, conseguimos lembrar o sentido, mas não a forma exata — o famoso “na ponta da língua”.</p>
+
+<h3>Fatores que Influenciam o Léxico Mental</h3>
+<ul>
+    <li><strong>Experiência linguística:</strong> quanto mais contato com a língua, mais amplo e rico é o léxico mental.</li>
+    <li><strong>Contexto sociocultural:</strong> vivências, cultura e profissão influenciam o tipo de vocabulário mais presente.</li>
+    <li><strong>Idade e escolaridade:</strong> a aprendizagem formal e a leitura ampliam significativamente o repertório lexical.</li>
+</ul>
+
+<h3>Diferença entre Léxico Mental e Vocabulário</h3>
+<p>O <strong>vocabulário</strong> refere-se às palavras que conseguimos usar de forma ativa, enquanto o <strong>léxico mental</strong> inclui também palavras que conhecemos, mas nem sempre utilizamos no dia a dia.</p>
+
+<h3>Importância do Léxico Mental</h3>
+<p>Ter um léxico mental amplo e bem organizado melhora a <strong>compreensão de textos</strong>, a <strong>expressão oral</strong> e <strong>escrita</strong>, e favorece o aprendizado de novas línguas. Ele é essencial para a comunicação eficiente e criativa.</p>
+
+<h3>Conclusão</h3>
+<p>O léxico mental é muito mais do que um simples “banco de palavras”: é um sistema vivo, interconectado e influenciado pela experiência, cultura e conhecimento de cada indivíduo. Ampliá-lo é investir na capacidade de compreender, interpretar e interagir de forma mais plena com o mundo.</p>
+
+ 
+
+  </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
