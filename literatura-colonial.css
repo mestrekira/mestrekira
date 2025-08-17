@@ -33,14 +33,6 @@ article h5 {
     color: #6C7492;
     font-size: 1.1em;
 }
-.destaque {
-    font-weight: bold;
-    color: #333;
-    background-color: #f0f0f0;
-    padding: 10px;
-    border-left: 4px solid #6C7492;
-}
-
 .literatura-colonial {
     width: 80%;
     max-width: 500px;
@@ -61,3 +53,11 @@ section[id]:empty {
 .referencias {
 	text-indent: 0;
 }	
+.destaque {
+    font-weight: bold;
+    color: #333;
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-left: 4px solid #6C7492;
+	text-indent: 0;
+}
