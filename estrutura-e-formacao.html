@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introdução a sintaxe</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="estrutura-e-formacao.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            
+<article>
+    <h2>Estrutura e Formação das Palavras: morfemas, radical, afixos e desinências</h2>
+    <p>
+    A língua portuguesa é formada por palavras que, por sua vez, possuem uma <a href="https://www.mestrekira.com.br/introducao-a-morfologia.html"><strong>morfemas</strong></a>, que desempenham papéis importantes na construção de sentido. Conhecer esses elementos ajuda a compreender melhor o funcionamento da língua e facilita tanto a leitura quanto a produção de textos.
+    </p>
+    <img src="estrutura-e-formacao.png" title="Estrutura e Formação das Palavras" alt="Estrutura e Formação das Palavras" class="estrutura-e-formacao"><br>
+    <h3>🔹 Morfema</h3>
+    <p>
+    É a menor unidade significativa da palavra. Pode indicar ideia de <strong>radical</strong> (sentido básico), <strong>pluralidade</strong>, <strong>tempo verbal</strong>, entre outros.<br>
+    Exemplo: em <em>menininhas</em>, temos os seguintes morfemas: <em>menin-</em> (radical) + <em>-inh-</em> (sufixo) + <em>-a</em> (vogal temática) + <em>-s</em> (desinência de plural).
+    </p>
+    <h3>🔹 Radical</h3>
+    <p>
+    É o núcleo da palavra, responsável por trazer seu <strong>sentido principal</strong>.<br>
+    Exemplo:<br>
+    – <em>pedr-</em> em <em>pedra, pedreiro, pedregulho</em>;<br>
+    – <em>cant-</em> em <em>cantar, cantoria, cantante</em>.
+    </p>
+    <h3>🔹 Afixos (prefixo e sufixo)</h3>
+    <p>
+    São morfemas que se juntam ao radical para formar novas palavras.
+    </p>
+    <ul class="lista">
+        <li><strong>Prefixo</strong>: aparece <u>antes</u> do radical.<br>Exemplo: <em>infeliz</em> (prefixo <em>in-</em> + radical <em>feliz</em>).</li><br>
+        <li><strong>Sufixo</strong>: aparece <u>depois</u> do radical.<br>Exemplo: <em>felicidade</em> (radical <em>feliz</em> + sufixo <em>-dade</em>).</li>
+    </ul>
+    <h3>🔹 Vogal Temática</h3>
+    <p>
+    É a vogal que vem depois do radical, unindo-o às desinências. É comum nos verbos, indicando sua conjugação.<br>
+    Exemplo: <em>cant-a-r</em> → a vogal temática <em>a</em> mostra que o verbo pertence à 1ª conjugação.
+    </p>
+    <h3>🔹 Desinências</h3>
+    <p>
+    São morfemas que aparecem no final da palavra e indicam <strong>flexões</strong>.
+    </p>
+    <ul class="lista">
+        <li><strong>Nominais</strong>: indicam gênero e número.<br>Exemplo: <em>menino / menina / meninos / meninas</em>.</li><br>
+        <li><strong>Verbais</strong>: indicam tempo, modo, pessoa e número.<br>Exemplo: <em>cantávamos</em> → desinência verbal <em>-mos</em> (1ª pessoa do plural).</li>
+    </ul>
+    <h3>🔹 Vogal ou Consoante de Ligação</h3>
+    <p>
+    Em alguns casos, é necessário acrescentar um som para facilitar a <strong>pronúncia</strong> da palavra.<br>
+    Exemplo:<br>
+    – Vogal de ligação: <em>cafezal</em> (radical <em>café</em> + vogal de ligação <em>a</em> + sufixo <em>-zal</em>).<br>
+    – Consoante de ligação: <em>gasômetro</em> (radical <em>gás</em> + consoante <em>ô</em> adaptada + sufixo <em>-metro</em>).
+    </p>
+    <h3>✅ Conclusão</h3>
+    <p>
+    A análise da <strong>estrutura das palavras</strong> permite perceber como elas são formadas e de que modo os <strong>morfemas</strong> se combinam para expressar significados variados. Esse estudo, chamado de <strong>morfologia</strong>, é essencial para compreender a riqueza da língua portuguesa.
+    </p>
+</article>
+   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
+
+
