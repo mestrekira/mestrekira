@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ideologia e Representação</title>
+    <link rel="stylesheet" href="estilo-base.css">
+    <link rel="stylesheet" href="ideologia-e-representacao.css">
+    <link rel="icon" href="logo1.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+     <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+        <section class="conteudo-principal">
+            
+<article>
+    <h2>Ideologia e Representação: Quem fala? Quem é silenciado?</h2>
+    <p>
+        A linguagem não é apenas um meio de comunicação: ela também é um instrumento de poder. 
+        Em diferentes contextos sociais, políticos e culturais, certos grupos têm mais espaço para se expressar, 
+        enquanto outros permanecem silenciados ou representados de forma distorcida. 
+        Esse processo revela como a <strong>ideologia</strong> atua na construção dos discursos, 
+        determinando quem pode falar, quem é ouvido e quem é invisibilizado.
+    </p>
+
+    <img src="ideologia-e-representacao.png" alt="Ilustração sobre ideologia e representação" class="ideologia-e-representacao"><br>
+
+    <h3>Representação e exclusão nos discursos públicos</h3>
+    <p>
+        Os discursos públicos – veiculados pela mídia, pela política, pela escola ou pelas redes sociais – 
+        não são neutros. Eles refletem relações de poder que privilegiam determinados grupos sociais em detrimento de outros:
+    </p>
+    <ul class="lista">
+        <li><strong>Mulheres</strong>: retratadas em papéis secundários, ligados ao espaço doméstico e ao cuidado. Ainda hoje sofrem com estereótipos de fragilidade ou inferioridade.</li><br>
+        <li><strong>Povos indígenas</strong>: muitas vezes reduzidos a imagens folclóricas ou romantizadas, apagando sua diversidade cultural e suas lutas sociais contemporâneas.</li><br>
+        <li><strong>Minorias raciais</strong>: frequentemente associadas a estigmas de marginalidade ou exotismo, silenciando a riqueza de suas culturas e experiências.</li><br>
+        <li><strong>Grupos periféricos</strong>: aparecem quase sempre em contextos de violência ou carência, invisibilizando sua produção cultural, política e artística.</li>
+    </ul>
+
+    <h3>Mecanismos linguísticos que constroem estereótipos</h3>
+    <p>
+        A linguagem é uma ferramenta sutil, mas poderosa, para reforçar desigualdades. Alguns mecanismos comuns incluem:
+    </p>
+    <ul class="lista">
+        <li><strong>Generalizações</strong>: transformar características individuais em estigmas coletivos, como em “os jovens da periferia são violentos”.</li><br>
+        <li><strong>Eufemismos e apagamento</strong>: suavizar problemas graves, como dizer “conflito cultural” em vez de “genocídio indígena”.</li><br>
+        <li><strong>Voz passiva</strong>: “erros foram cometidos” apaga os responsáveis, diluindo a responsabilidade histórica.</li><br>
+        <li><strong>Nomeações desiguais</strong>: usar termos depreciativos (“índio”, “favelado”) enquanto outros recebem títulos de prestígio (“doutor”, “autoridade”).</li><br>
+        <li><strong>Silenciamento por omissão</strong>: ausência de determinados grupos em livros, notícias e debates, tornando-os invisíveis.</li>
+    </ul>
+
+    <h3>A importância da escuta e da ressignificação</h3>
+    <p>
+        Para superar os silenciamentos e estereótipos, é fundamental abrir espaço para que esses grupos possam 
+        <strong>falar por si mesmos</strong>, construindo suas próprias narrativas. 
+        A escuta ativa, a valorização das diferenças e o questionamento crítico das ideologias naturalizadas na linguagem 
+        são passos essenciais para uma sociedade mais justa e plural.
+    </p>
+</article>
+   
+        </section>        
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
