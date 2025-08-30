@@ -45,3 +45,18 @@ section[id]:empty {
 .referencias {
 	text-indent: 0;
 }
+.lista {
+    list-style-type: circle;
+    list-style-position: outside; 
+    padding-left: 30px;           
+    margin-left: 20px;           
+}
+
+.lista li {
+    margin-bottom: 10px;
+}
+
+.lista li::marker {
+    color: #6C7492;
+    font-size: 1.1em;
+}
