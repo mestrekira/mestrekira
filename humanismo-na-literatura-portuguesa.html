@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Humanismo na Literatura Portuguesa</title>
+  <link rel="stylesheet" href="estilo-base.css">
+  <link rel="stylesheet" href="humanismo-na-literatura-portuguesa.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+  <h2>Humanismo na Literatura Portuguesa</h2>
+    <h3>Introdução</h3>
+            <p>
+                O <strong>Humanismo</strong> foi um movimento cultural e intelectual que floresceu na Europa durante os séculos XV e XVI,
+                tendo como base o ideal de valorização do ser humano, da razão e do conhecimento. Em Portugal, esse período corresponde
+                à transição entre a Idade Média e o Renascimento, refletindo-se não apenas na literatura, mas também na ciência,
+                na política e nas artes.
+            </p>
+
+            <img src="humanismo-literatura.png" alt="Ilustração sobre o Humanismo na Literatura Portuguesa" class="humanismo-literatura">
+
+            <h3>Contexto histórico</h3>
+            <p>
+                O Humanismo português está diretamente ligado à expansão marítima e às grandes navegações, que ampliaram o contato com
+                novos povos, culturas e territórios. Lisboa transformou-se em um centro de circulação de ideias, livros e riquezas,
+                favorecendo a chegada de novos valores intelectuais vindos da Itália e de outras partes da Europa.
+            </p>
+
+            <h3>Características do Humanismo em Portugal</h3>
+            <ul class="lista">
+                <li>Valorização do ser humano como centro das reflexões.</li>
+                <li>Interesse pelo estudo dos clássicos greco-latinos.</li>
+                <li>Uso da sátira e da crítica social.</li>
+                <li>Aperfeiçoamento da prosa e do teatro em língua portuguesa.</li>
+                <li>Busca de clareza e objetividade no uso da linguagem.</li>
+            </ul>
+
+            <h3>Principais autores e obras</h3>
+            <p>
+                Entre os nomes mais marcantes do Humanismo português, podemos destacar:
+            </p>
+            <ul class="lista">
+                <li><strong>Fernão Lopes</strong>: considerado o primeiro grande cronista português, destacou-se pelo realismo e pela análise crítica dos acontecimentos históricos em obras como a <em>Crónica de D. João I</em>.</li>
+                <li><strong>Gil Vicente</strong>: o maior representante do teatro português nesse período, com obras como <em>Auto da Barca do Inferno</em>, que unia humor, crítica social e reflexão moral.</li>
+                <li><strong>Garcia de Resende</strong>: responsável pelo <em>Cancioneiro Geral</em>, uma coletânea que reúne a produção poética do final da Idade Média e início do Humanismo.</li>
+            </ul>
+
+            <h3>Importância do Humanismo</h3>
+            <p>
+                O Humanismo representou um momento de transição fundamental na literatura portuguesa, preparando o terreno para o pleno
+                desenvolvimento do <strong>Renascimento</strong>. Além de marcar uma virada no modo de compreender o ser humano e a sociedade,
+                deu origem a uma produção literária mais crítica, consciente e voltada para os valores universais.
+            </p>
+  </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
