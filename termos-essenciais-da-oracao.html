@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Termos Essenciais da Oração</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="termos-essenciais-da-oracao.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            
+<article>
+    <h2>Termos Essenciais da Oração: Sujeito e Predicado</h2>
+    <p>
+        Na gramática da Língua Portuguesa, os termos essenciais da oração são aqueles sem os quais a oração não pode existir: 
+        <strong>sujeito</strong> e <strong>predicado</strong>. A compreensão desses elementos é fundamental para a análise sintática 
+        e para o uso adequado da concordância verbal.
+    </p>
+<img src="termos-essenciais-da-oracao.png" alt="Termos Essenciais da Oração: Sujeito e Predicado" title="Termos Essenciais da Oração" class="termos-essenciais-da-oracao"><br>
+
+    <h3>Identificação do Sujeito</h3>
+    <p>
+        O <strong>sujeito</strong> é o termo da oração que indica sobre quem ou sobre o que se declara algo. 
+        Pode se apresentar de diferentes formas:
+    </p>
+    <ul class="lista">
+        <li><strong>Sujeito simples:</strong> possui apenas um núcleo. Ex.: <em>O aluno</em> estudou bastante.</li>
+        <li><strong>Sujeito composto:</strong> possui dois ou mais núcleos. Ex.: <em>Maria e João</em> viajaram ontem.</li>
+        <li><strong>Sujeito oculto (ou elíptico):</strong> não está explícito na oração, mas pode ser identificado pelo contexto verbal. Ex.: Estudamos para a prova. (<em>nós</em> está implícito).</li>
+        <li><strong>Sujeito indeterminado:</strong> quando não se pode ou não se quer identificar o sujeito. Ex.: Vive-se bem aqui.</li>
+    </ul>
+
+    <h3>Tipos de Predicado</h3>
+    <p>
+        O <strong>predicado</strong> é o termo da oração que contém o verbo e fornece uma informação a respeito do sujeito. 
+        Ele pode ser classificado em três tipos:
+    </p>
+    <ul class="lista">
+        <li><strong>Predicado verbal:</strong> possui como núcleo um verbo que indica ação. Ex.: O atleta <em>correu</em> rápido.</li>
+        <li><strong>Predicado nominal:</strong> possui como núcleo um nome (substantivo ou adjetivo) e utiliza um verbo de ligação. Ex.: O dia <em>está lindo</em>.</li>
+        <li><strong>Predicado verbo-nominal:</strong> combina ação e estado ao mesmo tempo. Ex.: O aluno <em>chegou cansado</em>.</li>
+    </ul>
+
+    <h3>Concordância entre Sujeito e Verbo</h3>
+    <p>
+        A <strong>concordância verbal</strong> é a relação de harmonia que se estabelece entre o sujeito e o verbo, 
+        de modo que o verbo se flexione em número (singular/plural) e pessoa (1ª, 2ª ou 3ª pessoa) de acordo com o sujeito.
+    </p>
+    <p>
+        Exemplos:
+    </p>
+    <ul class="lista">
+        <li><em>O professor explica</em> a matéria. (sujeito simples – 3ª pessoa do singular)</li>
+        <li><em>Os professores explicam</em> a matéria. (sujeito simples – 3ª pessoa do plural)</li>
+        <li><em>Maria e João estudam</em> juntos. (sujeito composto – 3ª pessoa do plural)</li>
+    </ul>
+
+    <p>
+        Assim, compreender o funcionamento do sujeito e do predicado, bem como a concordância entre eles, é essencial para 
+        a construção de orações corretas e claras em Língua Portuguesa.
+    </p>
+</article>
+   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
