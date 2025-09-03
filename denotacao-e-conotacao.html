@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denotação e Conotação: Sentidos Literal e Figurado</title>
+    <link rel="stylesheet" href="estilo-base.css">
+  <link rel="stylesheet" href="denotacao-e-conotacao.css">
+    <link rel="icon" href="logo1.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+     <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+        <section class="conteudo-principal">
+            
+<article>
+   <h2>Denotação e Conotação: Sentidos Literal e Figurado</h2>
+    <p>
+        A língua portuguesa oferece diferentes formas de expressão, que podem variar entre o sentido literal e o figurado. 
+        Para compreender melhor como as palavras constroem significados, é importante diferenciar os conceitos de 
+        <strong>denotação</strong> e <strong>conotação</strong>.
+    </p>
+    <img src="denotacao-e-conotacao.png" title="Denotação e Conotação: Sentidos Literal e Figurado" alt="Denotação e Conotação: Sentidos Literal e Figurado" class="sintaxe"><br>
+    
+    <h3>Diferença entre linguagem denotativa e conotativa</h3>
+    <p>
+        A <strong>linguagem denotativa</strong> corresponde ao uso literal das palavras, isto é, ao sentido objetivo, 
+        tal como se encontra nos dicionários. É a forma mais comum em textos que buscam clareza e precisão.  
+    </p>
+    <p>
+        Já a <strong>linguagem conotativa</strong> envolve sentidos figurados, subjetivos e simbólicos. Nesse caso, 
+        as palavras ganham novas interpretações, muitas vezes criadas pelo contexto em que são empregadas.
+    </p>
+
+    <h3>O papel do contexto na construção do sentido</h3>
+    <p>
+        O <strong>contexto</strong> é fundamental para determinar se uma palavra está sendo usada em sentido denotativo ou conotativo.  
+        Expressões como <em>"pé da mesa"</em> (denotativo) e <em>"está com o pé na cova"</em> (conotativo) mostram que a compreensão 
+        depende da situação comunicativa e da intenção do falante ou escritor.
+    </p>
+
+    <h3>Aplicações em textos jornalísticos, literários e publicitários</h3>
+    <ul class="lista">
+        <li><strong>Textos jornalísticos:</strong> utilizam predominantemente a linguagem denotativa, já que priorizam clareza e objetividade ao informar.</li><br>
+        <li><strong>Textos literários:</strong> exploram a linguagem conotativa para criar metáforas, imagens poéticas e múltiplos sentidos.</li><br>
+        <li><strong>Textos publicitários:</strong> mesclam os dois usos, unindo clareza na mensagem com recursos figurativos que despertam emoção e atraem a atenção do público.</li><br>
+    </ul>
+
+    <p>
+        Assim, compreender a diferença entre <strong>denotação</strong> e <strong>conotação</strong> é essencial para a interpretação de diferentes gêneros textuais e para 
+        o uso consciente da língua em situações de comunicação.
+    </p>
+</article>
+   
+        </section>        
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
