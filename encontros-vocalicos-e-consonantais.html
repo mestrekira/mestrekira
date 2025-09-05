@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encontros Voválicos e Cosonantais</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="encontros-vocalicos-e-consonantais.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+		 <h2>Encontros Vocálicos e Consonantais: Quando os sons se encontram</h2>
+
+        <p>Na Língua Portuguesa, as letras se unem e produzem combinações sonoras que enriquecem a fala e a escrita. Esses encontros podem ocorrer entre <strong>vogais</strong> ou <strong>consoantes</strong>, formando estruturas que merecem atenção especial para evitar erros de leitura, escrita e pronúncia.</p>
+
+        <img src="encontros-vocalicos-e-consonantais.png" alt="Infográfico sobre encontros vocálicos e consonantais" class="encontros-vocalicos">
+
+        <h3>Encontros Vocálicos</h3>
+        <p>Os encontros vocálicos acontecem quando duas ou mais vogais aparecem juntas em uma mesma palavra. Eles podem se organizar de três formas:</p>
+        <ul class="lista">
+            <li><strong>Ditongo</strong>: encontro de uma vogal + semivogal (ou vice-versa) na mesma sílaba.  
+                <em>Ex.: pai, noite, água</em>.</li>
+            <li><strong>Tritongo</strong>: encontro de uma semivogal + vogal + semivogal, na mesma sílaba.  
+                <em>Ex.: Uruguai, iguais</em>.</li>
+            <li><strong>Hiato</strong>: quando duas vogais ficam juntas, mas pertencem a sílabas diferentes.  
+                <em>Ex.: saúde, país, baú</em>.</li>
+        </ul>
+
+        <h3>Encontros Consonantais</h3>
+        <p>Acontecem quando duas ou mais consoantes aparecem lado a lado. Eles podem ser:</p>
+        <ul class="lista">
+            <li><strong>Perfeitos</strong>: as consoantes ficam na mesma sílaba.  
+                <em>Ex.: prato, claro</em>.</li>
+            <li><strong>Imperfeitos</strong>: as consoantes ficam em sílabas diferentes.  
+                <em>Ex.: apto, ritmo</em>.</li>
+        </ul>
+
+        <h3>Dígrafos</h3>
+        <p>Chamamos de dígrafos quando duas letras representam um único som. É diferente de encontro consonantal, porque nesse caso, apesar de duas letras, há apenas um fonema.  
+        <em>Ex.: chuva (ch), guerra (rr), caminho (nh)</em>.</p>
+
+        <h3>Sugestão de Aprendizagem</h3>
+        <ul class="lista">
+            <li><strong>Infográficos interativos</strong>: resumos visuais que mostram a diferença entre ditongos, hiatos e encontros consonantais.</li>
+            <li><strong>Exemplos do cotidiano</strong>: palavras comuns em músicas, placas e propagandas.</li>
+            <li><strong>Exercícios autocorretivos</strong>: quiz online para fixar o conteúdo.</li>
+        </ul>
+
+        <p>Compreender os encontros vocálicos e consonantais é essencial para dominar a ortografia e a pronúncia do português. Que tal testar seus conhecimentos agora mesmo?</p>
+          
+      </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
