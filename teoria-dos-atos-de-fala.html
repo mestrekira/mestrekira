@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teoria dos Atos de Fala</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="teoria-dos-atos-de-fala.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            
+<article>
+     <h2>Teoria dos Atos de Fala</h2>
+    <p>
+    A teoria dos atos de fala, desenvolvida por John L. Austin e posteriormente ampliada por John R. Searle, parte da premissa de que <strong>"falar é sempre agir"</strong>. Ou seja, ao proferirmos enunciados, realizamos ações no mundo. Como afirma Searle (1969, p. 16): <em>“Ao proferir enunciados, os falantes realizam ações no mundo.”</em>
+    </p>
+    <img src="teoria-dos-atos-da-fala.png" title="Teoria dos Atos de Fala" alt="Teoria dos Atos de Fala" class="teoria-dos-atos-da-fala"><br>
+
+    <h3>Austin e a origem da teoria</h3>
+    <p>
+    John L. Austin, em sua obra <em>How to Do Things with Words</em> (1962), destacou que nem todo enunciado tem como finalidade apenas descrever a realidade. Ele demonstrou que, muitas vezes, nossas palavras têm uma função performativa, isto é, produzem efeitos concretos no mundo. Para Austin, dizer é também fazer.
+    </p>
+
+    <h3>Searle e a classificação dos atos de fala</h3>
+    <p>
+    John R. Searle sistematizou a teoria de Austin, propondo uma classificação que se tornou fundamental para os estudos da linguagem. Segundo ele, os atos de fala podem ser divididos em cinco grandes categorias (Searle, 1979):
+    </p>
+    <ul class="lista">
+        <li><strong>Assertivos</strong>: comprometem o falante com a verdade da proposição (ex.: “A Terra gira em torno do Sol.”).</li><br>
+        <li><strong>Diretivos</strong>: tentam fazer com que o ouvinte realize uma ação (ex.: “Feche a janela, por favor.”).</li><br>
+        <li><strong>Compromissivos</strong>: obrigam o falante a uma ação futura (ex.: “Prometo entregar o trabalho amanhã.”).</li><br>
+        <li><strong>Expressivos</strong>: manifestam estados psicológicos ou emocionais (ex.: “Estou muito feliz com a notícia!”).</li><br>
+        <li><strong>Declarativos</strong>: produzem uma mudança no estado de coisas, apenas pelo ato de enunciar (ex.: “Declaro aberta a sessão.”).</li>
+    </ul>
+
+    <h3>Implicações no ensino, na análise textual e nas relações sociais</h3>
+    <p>
+    A teoria dos atos de fala tem implicações profundas no ensino de língua, pois possibilita compreender que a comunicação não se limita à gramática e ao léxico, mas envolve ações e intenções. Na análise textual, esse entendimento permite identificar os efeitos de sentido e as estratégias argumentativas presentes nos discursos. 
+    </p>
+    <p>
+    Além disso, nas relações sociais, os atos de fala revelam-se essenciais para compreender como a linguagem estrutura interações, negociações e até mesmo relações de poder. Afinal, como destaca Austin (1962, p. 94): <em>“Dizer algo é realizar um ato.”</em>
+    </p>
+
+    <h3>Conclusão</h3>
+    <p>
+    A teoria dos atos de fala mostra que a linguagem é uma forma de ação. Por meio dela, podemos afirmar, ordenar, prometer, agradecer, declarar e muito mais. Portanto, compreender os diferentes tipos de atos de fala é essencial para aprofundar a análise da linguagem e suas implicações práticas.
+    </p>
+
+    <h2>Referências</h2>
+    <p class="referencias">
+        AUSTIN, John Langshaw. <em>How to Do Things with Words</em>. Oxford: Oxford University Press, 1962.
+    </p>
+    <p class="referencias">
+        SEARLE, John R. <em>Speech Acts: An Essay in the Philosophy of Language</em>. Cambridge: Cambridge University Press, 1969.
+    </p>
+    <p class="referencias">
+        SEARLE, John R. <em>Expression and Meaning: Studies in the Theory of Speech Acts</em>. Cambridge: Cambridge University Press, 1979.
+    </p>
+</article>
+   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
