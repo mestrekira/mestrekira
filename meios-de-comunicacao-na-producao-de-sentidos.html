@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O papel dos meios de comunicação na produção e circulação de sentidos</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="meios-de-comunicacao-na-producao-de-sentidos.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+		 <h2>O papel dos meios de comunicação na produção e circulação de sentidos</h2>
+  <p>
+    Os meios de comunicação exercem uma função central na sociedade contemporânea, pois não apenas informam, 
+    mas também constroem e legitimam sentidos que influenciam a forma como a realidade é percebida. 
+    A mídia atua como mediadora entre os fatos e o público, selecionando, organizando e enquadrando discursos 
+    que moldam a opinião pública e reforçam determinadas visões de mundo.
+  </p>
+
+  <img src="meios-de-comunicacao-na-producao-de-sentidos.png" alt="Ilustração sobre o papel dos meios de comunicação" class="papel-dos-meios-de-comunicacao" />
+
+  <h3>Noções de hegemonia, ideologia e poder no discurso midiático</h3>
+  <p>
+    A mídia é um espaço privilegiado para a manutenção da hegemonia cultural e política, pois contribui para 
+    consolidar uma visão de mundo dominante. Conforme a teoria gramsciana, hegemonia significa a capacidade 
+    de um grupo impor seus valores e interesses como se fossem universais. Nesse sentido, os meios de comunicação 
+    operam como veículos que reproduzem ideologias e fortalecem relações de poder.
+  </p>
+
+  <h3>Veiculação de discursos dominantes versus alternativos</h3>
+  <p>
+    A mídia tradicional tende a favorecer discursos que refletem interesses de grupos políticos e econômicos dominantes. 
+    Contudo, com a popularização das mídias digitais, cresce também a circulação de discursos alternativos, 
+    que buscam questionar narrativas hegemônicas e propor novas perspectivas. Esse embate revela a disputa simbólica 
+    pelo controle da significação social.
+  </p>
+
+  <h3>Processos de naturalização e silenciamento</h3>
+  <p>
+    Ao repetir determinadas narrativas, a mídia pode transformar construções históricas e culturais em algo que parece 
+    natural e inquestionável. Esse processo de naturalização torna invisíveis as relações de poder que sustentam tais discursos. 
+    Além disso, certos temas ou vozes podem ser silenciados, o que reforça exclusões e desigualdades sociais.
+  </p>
+
+  <h3>A noção de "contrato de comunicação" (Charaudeau)</h3>
+  <p>
+    Patrick Charaudeau propõe o conceito de <em>contrato de comunicação</em>, que descreve as regras implícitas 
+    que regulam a interação entre emissor e receptor no processo comunicativo. No caso da mídia, esse contrato 
+    define o papel do jornalista, o tipo de linguagem adotada e a expectativa do público, moldando assim a forma 
+    como os sentidos são produzidos e interpretados.
+  </p>
+
+  <p class="destaque">
+    "A mídia não apenas transmite informações: ela constrói realidades sociais ao selecionar e enquadrar os discursos 
+    que circulam no espaço público."
+  </p><br>
+
+  <h2>Referências</h2>
+  <p class="referencias">
+    CHARAUDEAU, P. <em>Discurso das mídias</em>. São Paulo: Contexto, 2006.
+  </p>
+  <p class="referencias">
+    FAIRCLUGH, N. <em>Discurso e mudança social</em>. Brasília: Editora UnB, 2001.
+  </p>
+  <p class="referencias">
+    HALL, S. <em>A identidade cultural na pós-modernidade</em>. Rio de Janeiro: DP&A, 2006.
+  </p>
+  <p class="referencias">
+    GRAMSCI, A. <em>Cadernos do cárcere</em>. Rio de Janeiro: Civilização Brasileira, 2000.
+  </p>
+          
+      </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
