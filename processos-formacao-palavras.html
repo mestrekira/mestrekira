@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processos de Formação das palavras</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="processos-formacao-palavras.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            
+<article>
+    <h2>Processos de Formação de Palavras: derivação, composição e outros</h2>
+<p>
+A língua portuguesa dispõe de diversos mecanismos para a criação de novas palavras, que permitem ampliar o vocabulário e adaptar-se às necessidades comunicativas de cada época. Esses processos são fundamentais para compreender como o léxico da língua se transforma e se enriquece ao longo do tempo.
+</p>
+<img src="formacao-palavras.png" alt="Esquema de formação de palavras em português" title="Esquema de formação de palavras em português" class="formacao-palavras">
+
+<h3>Derivação</h3>
+<p>
+A derivação ocorre quando uma palavra é formada a partir de outra, mediante a adição de afixos (prefixos ou sufixos). Existem diferentes tipos:
+</p>
+<ul class="lista">
+  <li><strong>Prefixal:</strong> adição de um prefixo antes do radical. Ex.: <em>infeliz</em>.</li<br>
+  <li><strong>Sufixal:</strong> adição de um sufixo após o radical. Ex.: <em>felicidade</em>.</li><br>
+  <li><strong>Parassintética:</strong> uso simultâneo de prefixo e sufixo. Ex.: <em>envelhecer</em>.</li><br>
+</ul>
+
+<h3>Composição</h3>
+<p>
+Na composição, duas ou mais palavras se unem para formar um novo vocábulo. Esse processo pode ocorrer de duas formas:
+</p>
+<ul class="lista">
+  <li><strong>Justaposição:</strong> as palavras se unem sem alterações sonoras. Ex.: <em>passatempo</em>.</li><br>
+  <li><strong>Aglutinação:</strong> há fusão sonora, com perda de fonemas. Ex.: <em>planalto</em> (plano + alto).</li><br>
+</ul>
+
+<h3>Abreviação</h3>
+<p>
+Consiste na redução de palavras, geralmente para facilitar a comunicação. Ex.: <em>foto</em> (de fotografia).
+</p>
+
+<h3>Sigla</h3>
+<p>
+É a formação de palavras a partir das iniciais de um grupo de termos. Ex.: <em>ONU</em> (Organização das Nações Unidas).
+</p>
+
+<h3>Hibridismo</h3>
+<p>
+Surge da junção de elementos de línguas diferentes. Ex.: <em>automóvel</em> (grego + latim).
+</p>
+
+<h3>Onomatopeia</h3>
+<p>
+Palavras criadas para reproduzir sons naturais ou artificiais. Ex.: <em>tic-tac</em>.
+</p>
+
+<h3>Neologismos</h3>
+<p>
+São criações recentes, geralmente motivadas por avanços tecnológicos, culturais ou sociais. Ex.: <em>selfie</em>.
+</p><br>
+
+<h2>Referências</h2>
+<p class="referencias">BECHARA, Evanildo. Moderna Gramática Portuguesa. Rio de Janeiro: Nova Fronteira.</p>
+<p class="referencias">CUNHA, Celso; CINTRA, Lindley. Nova Gramática do Português Contemporâneo. Rio de Janeiro: Lexikon.</p>
+<p class="referencias">ROCHA LIMA, Carlos Henrique. Gramática Normativa da Língua Portuguesa. Rio de Janeiro: José Olympio.</p>
+</article>
+   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
