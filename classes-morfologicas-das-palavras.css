@@ -1,0 +1,5 @@
+.exemplos{background:#fafafa; border:1px solid #eee; padding:12px 14px; border-radius:8px; margin:12px 0}
+.nota{font-size:0.95em; color:#555; margin-top:8px; display:block}
+table{width:100%; border-collapse:collapse; margin:16px 0; font-size:0.95em}
+table th, table td{border:1px solid #ccc; padding:8px 10px; text-align:left}
+table th{background:#f0f0f0; font-weight:bold}
