@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barroco Português</title>
+  <link rel="stylesheet" href="estilo-base.css">
+  <link rel="stylesheet" href="barroco-portugues.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+ <h2>Barroco Português</h2>
+
+<p>O <strong>Barroco Português</strong> foi um dos mais expressivos movimentos artísticos e culturais de Portugal, desenvolvendo-se entre o final do século XVI e o século XVIII. Em um contexto marcado pela <em>Contrarreforma</em>, pela crise política e pelo declínio econômico após o auge das Grandes Navegações, o Barroco buscou traduzir, nas artes e na literatura, as tensões entre fé e razão, espiritualidade e materialidade, vida e morte.</p>
+
+<img src="barroco-portugues.png" alt="Representação artística do Barroco Português" title="Barroco Português" class="barroco-portugues">
+
+<h3>Contexto Histórico</h3>
+<p>O movimento nasceu da necessidade de reafirmação da fé católica frente ao avanço do protestantismo. A Igreja utilizou a arte como instrumento de devoção, valorizando o impacto visual e emocional. Ao mesmo tempo, a monarquia portuguesa explorava o estilo como símbolo de poder, imponência e tradição.</p>
+
+<h3>Características do Barroco Português</h3>
+<ul class="lista">
+  <li><strong>Dramaticidade:</strong> contraste entre luz e sombra, céu e inferno, razão e emoção.</li>
+  <li><strong>Estética ornamentada:</strong> uso de formas rebuscadas, talha dourada e riqueza decorativa.</li>
+  <li><strong>Religiosidade:</strong> forte ligação com temas sagrados, exaltando a fé católica.</li>
+  <li><strong>Dualidade:</strong> presença de conflitos existenciais, como o desejo terreno em oposição à salvação espiritual.</li>
+  <li><strong>Linguagem elaborada:</strong> na literatura, predomínio de metáforas, antíteses e hipérboles.</li>
+</ul>
+
+<h3>Principais Autores</h3>
+<p>No campo literário, destacam-se dois grandes nomes:</p>
+<ul class="lista">
+  <li><strong>Padre António Vieira:</strong> célebre orador sacro, autor de sermões que uniam fé, política e crítica social.</li>
+  <li><strong>Gregório de Matos:</strong> embora brasileiro, é parte do universo barroco lusófono, conhecido por sua poesia satírica e religiosa.</li>
+</ul>
+
+<h3>Arquitetura e Artes</h3>
+<p>O Barroco Português deixou marcas profundas na arquitetura, escultura e pintura. As igrejas desse período, ricamente ornamentadas, utilizavam a <strong>talha dourada</strong> como símbolo de luxo e devoção. Exemplos notáveis podem ser vistos na Igreja de São Roque, em Lisboa, e nos mosteiros barrocos espalhados pelo território português.</p>
+
+<h3>Legado</h3>
+<p>O Barroco Português não apenas consolidou um estilo artístico próprio em Portugal, mas também influenciou diretamente a produção cultural no Brasil colonial, onde alcançou expressão singular nas obras de Aleijadinho e Mestre Ataíde. Assim, o movimento continua sendo um marco da identidade cultural luso-brasileira.</p>
+
+  </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
