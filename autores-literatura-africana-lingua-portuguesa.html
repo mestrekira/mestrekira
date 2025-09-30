@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autores da Literatura Africana em Língua Portuguesa</title>
+    	<link rel="stylesheet" href="estilo-base.css">
+	<link rel="stylesheet" href="autores-literatura-africana-lingua-portuguesa.css">
+	<link rel="icon" href="logo1.png" type="image/png">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B4M6CZF5HB');
+</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3681176654667511"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+       <div id="header"></div>
+    </header>
+	 <main>
+        <aside>
+           <div id="aside"></div>
+        </aside>
+		<section class="conteudo-principal">
+            <article>
+		<article>
+  
+    <h2>Autores Clássicos da Literatura Africana em Língua Portuguesa</h2>
+    <p>Quatro vozes fundamentais — Pepetela, Mia Couto, Germano Almeida e Luís Bernardo Honwana — que ajudaram a moldar a literatura escrita em português no continente africano. Trechos selecionados destacam o estilo e os temas centrais de cada autor.</p>
+
+    <img src="/autores-africanos.png" alt="Colagem ilustrativa: livros e mapas de Angola, Moçambique, Cabo Verde e São Tomé" title="Autores Clássicos da Literatura Africana em Língua Portuguesa" class="autores-africanos">
+    
+  <h3>Pepetela (Angola)</h3>
+  <p><strong>Pepetela</strong>, pseudônimo de Artur Carlos Maurício Pestana dos Santos, é um dos maiores romancistas angolanos. Suas obras transitam entre a luta de libertação, a construção da nação e as contradições sociais do país.</p>
+  <blockquote class="destaque">“A luta armada não era só contra o inimigo. Era também contra o medo que cada um trazia dentro de si.”</blockquote>
+  <p><em>Mayombe</em> (1980) retrata a guerrilha contra o colonialismo português e mostra o embate interno entre coragem e medo.</p>
+
+  <h3>Mia Couto (Moçambique)</h3>
+  <p><strong>Mia Couto</strong> é conhecido por sua linguagem poética e inovadora, que mistura o português a ritmos e imagens da oralidade africana. Sua escrita recria o realismo mágico com forte identidade moçambicana.</p>
+  <blockquote class="destaque">“Afinal, o mundo é isso: um lugar onde as coisas que ainda não aconteceram podem influenciar o passado.”</blockquote>
+  <p>Em <em>Terra Sonâmbula</em> (1992), considerado um dos melhores romances africanos do século XX, o autor reflete sobre a guerra civil moçambicana e celebra a imaginação como resistência.</p>
+
+  <h3>Germano Almeida (Cabo Verde)</h3>
+  <p><strong>Germano Almeida</strong> é o autor que melhor retrata a identidade cabo-verdiana, com humor, ironia e crítica social. Sua obra mais famosa é <em>O Testamento do Sr. Napumoceno da Silva Araújo</em> (1989).</p>
+  <blockquote class="destaque">“Nunca ninguém desconfiaria que aquele pacato e respeitável senhor tinha tantas histórias escondidas em sua vida.”</blockquote>
+  <p>Com tom satírico, Almeida evidencia as contradições sociais e morais da sociedade cabo-verdiana.</p>
+
+  <h3>Luís Bernardo Honwana (Moçambique)</h3>
+  <p><strong>Luís Bernardo Honwana</strong> destacou-se ainda jovem com o livro de contos <em>Nós Matamos o Cão-Tinhoso</em> (1964), obra fundamental da literatura africana em língua portuguesa.</p>
+  <blockquote class="destaque">“Nós matamos o cão-tinhoso à pedrada. Ele já não podia andar, só gemia, e o senhor professor disse que era melhor acabar com aquilo.”</blockquote>
+  <p>No conto-título, a violência contra o animal funciona como metáfora da brutalidade colonial.</p>
+
+  <h3>Conclusão</h3>
+  <p>Os autores clássicos da literatura africana em língua portuguesa revelam universos distintos, mas unidos pela busca por identidade, liberdade e memória. Pepetela, Mia Couto, Germano Almeida e Luís Bernardo Honwana abriram caminhos para que o continente africano fosse narrado por suas próprias vozes, e não apenas pelo olhar externo. Suas obras permanecem atemporais e universais.</p>
+</article>
+
+
+      </article>   
+		</section>		
+    </main>
+
+    <footer>
+        <div  id="footer"></div>
+    </footer>
+
+   <script>
+function incluirHTML(id, url, callback) {
+    fetch(url)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById(id).innerHTML = data;
+            if (callback) callback();
+        })
+        .catch(erro => console.error('Erro ao carregar ' + url, erro));
+}
+
+incluirHTML('header', 'header.html', configurarLinks);
+incluirHTML('aside', 'aside.html');
+incluirHTML('footer', 'footer.html');
+
+function configurarLinks() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+            const destinosValidos = [
+                "fonetica", "fonologia", "morfologia", "sintaxe",
+                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
+                "literatura-africana-portuguesa", "critica", "midiatico"
+            ];
+            if (destinosValidos.includes(destino)) {
+                e.preventDefault();
+               window.location.href = `conteudos${destino}.html`;
+
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
