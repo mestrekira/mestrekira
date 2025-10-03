@@ -1,4 +1,4 @@
-onteudo-principal {
+conteudo-principal {
     flex: 1;
     padding: 15px;
     background-color: white;
@@ -61,4 +61,5 @@ section[id]:empty {
 }
 .referencias {
 	text-indent: 0;
+
 }	
