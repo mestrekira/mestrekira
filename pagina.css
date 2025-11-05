@@ -126,7 +126,7 @@
 }
 
 .paginacao a:hover {
-  background-color: #4CAF50; /* verde suave */
+  background-color: #4CAF50; 
   color: white;
   border-color: #4CAF50;
 }
@@ -142,6 +142,40 @@
   border-color: #4CAF50;
   font-weight: bold;
 }
+
+
+header, footer {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#header, #footer {
+  width: 100%;
+  max-width: 1200px; 
+  padding: 10px 20px;
+  box-sizing: border-box;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  header, footer {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  #header, #footer {
+    padding: 15px;
+  }
+}
+
 
 
 
