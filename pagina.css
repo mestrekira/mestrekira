@@ -62,7 +62,15 @@
     text-indent: 0;
     margin: 0;
 }
-
+.imagem-conceitual {
+    width: 80%;
+    max-width: 500px;
+    height: auto;
+    display: block;
+    margin: 20px auto;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
 .link-post {
     text-decoration: none;
     color: inherit;
@@ -175,6 +183,7 @@ body {
     padding: 15px;
   }
 }
+
 
 
 
