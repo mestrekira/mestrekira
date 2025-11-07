@@ -25,10 +25,7 @@
 	    
         <div id="header"></div>
     </header>
-		<div class="barra-pesquisa">
-  <input type="text" id="pesquisa" placeholder="Pesquise um conteúdo...">
-  <button id="botao-pesquisa"><i class="fa fa-search"></i></button>
-</div>
+		
     <main>
         <aside>
             <div id="aside"></div>
@@ -188,38 +185,9 @@ function configurarLinks() {
 }
 </script>
 
-<script>
-  const paginas = [
-    { titulo: "Fonética e Fonologia", url: "conteudosfonetica.html" },
-    { titulo: "Morfologia", url: "conteudosmorfologia.html" },
-    { titulo: "Sintaxe", url: "conteudossintaxe.html" },
-    { titulo: "Semântica", url: "conteudossemantica.html" },
-    { titulo: "Produção Textual", url: "conteudosproducao.html" },
-    { titulo: "Interpretação Textual", url: "conteudosinterpretacao.html" },
-    { titulo: "Gramática", url: "conteudosgramatica.html" },
-    { titulo: "Literatura Brasileira", url: "conteudosliteraturabrasileira.html" },
-    { titulo: "Análise do Discurso", url: "conteudosmidiatico.html" },
-  ];
-
-  document.getElementById("botao-pesquisa").addEventListener("click", () => {
-    const termo = document.getElementById("pesquisa").value.toLowerCase().trim();
-    if (!termo) return;
-
-    const resultado = paginas.find(p => p.titulo.toLowerCase().includes(termo));
-    if (resultado) {
-      window.location.href = resultado.url;
-    } else {
-      alert("Nenhum conteúdo encontrado para: " + termo);
-    }
-  });
-
-  document.getElementById("pesquisa").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") document.getElementById("botao-pesquisa").click();
-  });
-</script>
-
 </body>
 </html>
+
 
 
 
