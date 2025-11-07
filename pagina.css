@@ -123,9 +123,6 @@
   color: #6c63ff;
   font-weight: bold;
 }
-.conteudo-principal p. {
-   text-indent: 30em;
-} 
 .paginacao {
   display: flex;
   justify-content: center;
@@ -195,6 +192,7 @@ body {
     padding: 15px;
   }
 }
+
 
 
 
