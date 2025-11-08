@@ -363,3 +363,12 @@ section[id]:empty {
   color: #007bff;
   font-weight: bold;
 }
+header, #header {
+  position: relative;
+  z-index: 9999 !important; 
+}
+
+
+body {
+  margin-top: 60px; 
+}
