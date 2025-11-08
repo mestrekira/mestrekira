@@ -379,13 +379,55 @@ body {
 
 header, #header {
   position: relative;
-  z-index: 9999 !important; /* mantém o menu no topo */
+  z-index: 9999 !important; 
 }
 
 
 body {
   margin-top: 60px; 
 }
+
+.layout-conteudo {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 20px;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+
+.layout-conteudo aside {
+  flex: 0 0 260px; 
+  max-width: 260px;
+}
+
+
+.layout-conteudo section {
+  flex: 1;
+  min-width: 0;
+}
+
+
+@media (max-width: 900px) {
+  .layout-conteudo {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .layout-conteudo aside {
+    max-width: 100%;
+    order: 2; 
+  }
+
+  .layout-conteudo section {
+    order: 1;
+  }
+}
+
 
 
 
