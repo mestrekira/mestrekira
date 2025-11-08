@@ -116,7 +116,7 @@ O Realismo representou um marco na evolução da literatura brasileira, não ape
         <div  id="footer"></div>
     </footer>
 
-   <script>
+  <script>
 function incluirHTML(id, url, callback) {
     fetch(url)
         .then(res => res.text())
@@ -135,15 +135,18 @@ function configurarLinks() {
     document.querySelectorAll('a[href^="#"]').forEach(link => {
         link.addEventListener('click', function (e) {
             const destino = this.getAttribute('href').replace("#", "").toLowerCase();
+
             const destinosValidos = [
-                "fonetica", "fonologia", "morfologia", "sintaxe",
-                "semantica", "pragmatica", "literatura-brasileira", "literatura-portuguesa",
-                "literatura-africana-portuguesa", "critica", "midiatico"
+               
+                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
+                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
+                "critica", "midiatico",
+                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
             ];
+
             if (destinosValidos.includes(destino)) {
                 e.preventDefault();
-               window.location.href = `conteudos${destino}.html`;
-
+                window.location.href = `conteudos${destino}.html`;
             }
         });
     });
