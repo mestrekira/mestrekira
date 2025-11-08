@@ -1,4 +1,4 @@
-<script>
+
 function incluirHTML(id, url, callback) {
     fetch(url)
         .then(res => res.text())
@@ -34,8 +34,8 @@ function configurarLinks() {
         });
     });
 }
-</script>
-	<script>
+
+	
 document.addEventListener("DOMContentLoaded", function() {
     const posts = document.querySelectorAll(".publicacoes .post");
     const porPagina = 20; 
@@ -94,4 +94,4 @@ document.addEventListener("DOMContentLoaded", function() {
   
     mostrarPagina(paginaAtual);
 });
-</script>
+
