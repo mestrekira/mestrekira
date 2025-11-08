@@ -377,6 +377,17 @@ body {
 }
 
 
+header, #header {
+  position: relative;
+  z-index: 9999 !important; /* mantém o menu no topo */
+}
+
+
+body {
+  margin-top: 60px; 
+}
+
+
 
 
 
