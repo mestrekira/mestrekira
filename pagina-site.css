@@ -400,7 +400,7 @@ section[id]:empty {
   color: #004080;
 }
 
-/* ================= PUBLICAÇÕES E POSTS ================= */
+
 .publicacoes {
   display: flex;
   flex-wrap: wrap;
@@ -439,7 +439,7 @@ section[id]:empty {
   margin: 0;
 }
 
-/* ================= LINKS DOS POSTS ================= */
+
 .link-post {
   text-decoration: none;
   color: inherit;
@@ -509,6 +509,35 @@ section[id]:empty {
 
   .publicacoes .post {
     max-width: 100%;
+  }
+}
+/* ======== AJUSTE RESPONSIVO DO ASIDE ======== */
+@media (max-width: 900px) {
+  main {
+    flex-direction: column;
+  }
+
+
+  aside {
+    position: relative;
+    top: 0;
+    width: 100%;
+    order: 1;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    z-index: 10;
+  }
+
+  
+  section.conteudo-principal {
+    order: 2;
+  }
+
+  
+  body {
+    overflow-x: hidden;
   }
 }
 
