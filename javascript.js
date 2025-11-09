@@ -24,7 +24,7 @@ function configurarLinks() {
                 "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
                 "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
                 "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
+                "gramatica", "producaotextual", "interpretacaotextual"
             ];
 
             if (destinosValidos.includes(destino)) {
