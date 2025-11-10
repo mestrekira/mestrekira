@@ -541,3 +541,19 @@ section[id]:empty {
   }
 }
 
+@media (min-width: 901px) {
+  main {
+    align-items: flex-start;
+  }
+
+  aside {
+    position: sticky;
+    top: 80px; 
+    height: fit-content;
+    align-self: flex-start;
+  }
+
+  section.conteudo-principal {
+    flex: 1;
+  }
+}
