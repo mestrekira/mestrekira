@@ -541,19 +541,29 @@ section[id]:empty {
   }
 }
 
+
 @media (min-width: 901px) {
   main {
+    display: flex;
+    justify-content: center;
     align-items: flex-start;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
   }
 
   aside {
+    flex: 0 0 260px;
+    max-width: 260px;
     position: sticky;
-    top: 80px; 
-    height: fit-content;
+    top: 100px; 
     align-self: flex-start;
+    height: fit-content;
   }
 
   section.conteudo-principal {
     flex: 1;
   }
 }
+
