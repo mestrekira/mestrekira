@@ -550,7 +550,7 @@ main {
 @media (min-width: 901px) {
   main {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: flex-start;
     max-width: 1200px;
     margin: 0 auto;
@@ -560,10 +560,11 @@ main {
     position: relative;
   }
 
+  
   aside {
     position: fixed;
-    top: 100px; 
-    left: calc(50% - 600px); 
+    top: 100px;
+    left: calc((100vw - 1200px) / 2); 
     width: 240px;
     background-color: #fff;
     border-radius: 8px;
@@ -572,6 +573,7 @@ main {
     z-index: 100;
   }
 
+ 
   section.conteudo-principal {
     margin-left: 280px; 
     flex: 1;
