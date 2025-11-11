@@ -266,20 +266,27 @@ section[id]:empty {
 
 
 @media (min-width: 901px) {
+  main {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 40px;
+    padding: 10px 20px;
+    box-sizing: border-box;
+  }
+
   aside {
-    position: sticky;
-    top: 100px;
-    align-self: flex-start;
-    width: 240px;
+    position: static; /* comportamento normal, sem flutuar */
+    flex: 0 0 260px;
+    max-width: 260px;
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    height: fit-content;
-    z-index: 10;
   }
 
   section.conteudo-principal {
-    margin-left: 280px;
     flex: 1;
     min-width: 0;
   }
