@@ -547,36 +547,4 @@ main {
   }
 }
 
-@media (min-width: 901px) {
-  main {
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 10px 20px;
-    gap: 40px;
-    box-sizing: border-box;
-    position: relative;
-  }
 
-  
-  aside {
-    position: fixed;
-    top: 100px;
-    left: calc((100vw - 1200px) / 2); 
-    width: 240px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    height: fit-content;
-    z-index: 100;
-  }
-
- 
-  section.conteudo-principal {
-    margin-left: 280px; 
-    flex: 1;
-    min-width: 0;
-  }
-}
