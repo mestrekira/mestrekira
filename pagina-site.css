@@ -547,26 +547,33 @@ main {
   }
 }
 
-@media (max-width: 900px) {
+@media (min-width: 901px) {
   main {
-    flex-direction: column;
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
   }
 
   aside {
-    position: relative;
-    top: 0;
-    width: 100%;
-    order: 1;
+    position: sticky;
+    top: 100px; 
+    align-self: flex-start;
+    width: 240px;
     background-color: #fff;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    margin-bottom: 15px;
-    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    height: fit-content;
+    z-index: 100;
   }
 
   section.conteudo-principal {
-    order: 2;
-    margin-left: 0;
+    flex: 1;
+    min-width: 0;
   }
 }
+
 
