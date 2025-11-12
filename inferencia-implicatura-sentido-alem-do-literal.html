@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inferência e Implicatura: sentido além do literal</title>
   <link rel="stylesheet" href="estilo-base.css">
-  <link rel="stylesheet" href="inferencia-implicatura-sentido-alem-do-literal.css">
+  <link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,9 +24,7 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+        
 		<section class="conteudo-principal">
             <article>
   <h2>Inferência e Implicatura: O Sentido Além do Literal</h2>
@@ -35,7 +33,7 @@
     A comunicação humana é muito mais complexa do que o simples encadeamento de palavras. O que dizemos raramente se resume ao que está literalmente expresso — e compreender o que é dito envolve processos cognitivos e contextuais que ultrapassam o significado linguístico. Nesse contexto, conceitos como <strong>inferência</strong> e <strong>implicatura</strong> tornam-se essenciais para entender como construímos e interpretamos sentidos na interação cotidiana.
   </p>
 
-  <img src="inferencia-implicatura.png" alt="Ilustração sobre inferência e implicatura" title="Inferência e Implicatura: O Sentido Além do Literal" class="inferencia-implicatura">
+  <img src="inferencia-implicatura.png" alt="Ilustração sobre inferência e implicatura" title="Inferência e Implicatura: O Sentido Além do Literal" class="imagem-conceitual">
 
   <p class="destaque">“A inferência é a habilidade de captar sentidos a partir do não dito, essencial à comunicação humana.” (KERBRAT-ORECCHIONI, 1986)</p>
 
@@ -142,42 +140,7 @@
         <div  id="footer"></div>
     </footer>
 
-   <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+ <script src="javascript.js" defer></script>
 
 </body>
 </html>
