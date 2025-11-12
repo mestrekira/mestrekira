@@ -528,10 +528,10 @@ main {
 
 @media (min-width: 901px) {
   aside {
-    position: fixed;
-    top: 100px; 
-    left: calc((100% - 1200px) / 2); 
-    width: 240px;
+    position: sticky;     
+    top: 100px;            
+    align-self: flex-start;
+    width: 260px;
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -539,13 +539,27 @@ main {
     z-index: 100;
   }
 
-  
+  main {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px 20px;
+    gap: 40px;
+    box-sizing: border-box;
+  }
+
   section.conteudo-principal {
-    margin-left: 280px; 
     flex: 1;
     min-width: 0;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    padding: 20px;
   }
 }
+
 
 
 @media (max-width: 900px) {
