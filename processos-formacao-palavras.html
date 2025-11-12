@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Processos de Formação das palavras</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="processos-formacao-palavras.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,9 +24,7 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+        
 		<section class="conteudo-principal">
             
 <article>
@@ -34,7 +32,7 @@
 <p>
 A língua portuguesa dispõe de diversos mecanismos para a criação de novas palavras, que permitem ampliar o vocabulário e adaptar-se às necessidades comunicativas de cada época. Esses processos são fundamentais para compreender como o léxico da língua se transforma e se enriquece ao longo do tempo.
 </p>
-<img src="formacao-palavras.png" alt="Esquema de formação de palavras em português" title="Esquema de formação de palavras em português" class="formacao-palavras">
+<img src="formacao-palavras.png" alt="Esquema de formação de palavras em português" title="Esquema de formação de palavras em português" class="imagem-conceitual">
 
 <h3>Derivação</h3>
 <p>
@@ -93,42 +91,7 @@ São criações recentes, geralmente motivadas por avanços tecnológicos, cultu
         <div  id="footer"></div>
     </footer>
 
-   <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+   <script src="javascript.js" defer></script>
 
 </body>
 </html>
