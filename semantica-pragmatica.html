@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Semântica e Pragmática</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="semantica-pragmatica.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,9 +24,7 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+        
 		<section class="conteudo-principal">
             <article>
 		<h2>Semântica e Pragmática: Significado e Uso da Linguagem</h2>
@@ -38,7 +36,7 @@
         <strong>semântica</strong> e <strong><a href="https://www.mestrekira.com.br/introducao-a-pragmatica.html">pragmática</a></strong>, áreas que estudam o significado, mas sob perspectivas diferentes.
     </p>
 
-    <img src="semantica-pragmatica.png" alt="Semântica e Pragmática" title="Semântica e Pragmática: Significado e Uso da Linguagem" class="semantica-pragmatica">
+    <img src="semantica-pragmatica.png" alt="Semântica e Pragmática" title="Semântica e Pragmática: Significado e Uso da Linguagem" class="imagem-conceitual">
 
     <h3>Diferença entre Semântica e Pragmática</h3>
     <p>
@@ -125,42 +123,7 @@
         <div  id="footer"></div>
     </footer>
 
-   <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+  <script src="javascript.js" defer></script>
 
 </body>
 </html>
