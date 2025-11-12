@@ -24,9 +24,7 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+        
 		<section class="conteudo-principal">
             <article>
 		<h2>Ambiguidade e Inferência Semântica</h2>
@@ -120,41 +118,6 @@
         <div  id="footer"></div>
     </footer>
 
-   <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+    <script src="javascript.js" defer></script>
 </body>
 </html>
