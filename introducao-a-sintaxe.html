@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Introdução a sintaxe</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="introducao-a-sintaxe.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,9 +24,7 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+       
 		<section class="conteudo-principal">
             <article>
 		<h2>Introdução à Sintaxe — Função e Estrutura da Frase</h2>
@@ -49,7 +47,7 @@
 		 <li>Período composto: contém duas ou mais orações. Ex: A aula começou cedo, mas terminou tarde.</li><br>
 		 </ol>
 		 </ul>
-		    <img src="introducao-a-sintaxe.png" title="Introdução à Sintaxe — Função e Estrutura da Frase" alt="Introdução à Sintaxe — Função e Estrutura da Frase" class="sintaxe"><br>
+		    <img src="introducao-a-sintaxe.png" title="Introdução à Sintaxe — Função e Estrutura da Frase" alt="Introdução à Sintaxe — Função e Estrutura da Frase" class="imagem-conceitual"><br>
 		 <p>
 		 De acordo com Bechara (2009), "a oração é a unidade sintática organizada em torno de um verbo, enquanto o período é a sequência lógica de orações articuladas entre si."
 		 </p>
@@ -89,45 +87,11 @@ LIMA, Rocha. Gramática Normativa da Língua Portuguesa. 49. ed. São Paulo: Jos
         <div  id="footer"></div>
     </footer>
 
-  <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+ <script src="javascript.js" defer></script>
 
 </body>
 </html>
+
 
 
 
