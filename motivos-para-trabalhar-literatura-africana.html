@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motivos para trabalhar Literatura Africana de Língua Portuguesa</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="motivos-para-trabalhar-literatura-africana.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,16 +24,14 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+       
 		<section class="conteudo-principal">
             <article>
 	<h2>Motivos para Trabalhar e Conhecer a Literatura Africana de Língua Portuguesa no Ensino Médio</h2>
 
 <p>A literatura africana de Língua Portuguesa é um campo vasto, rico em diversidade cultural, histórica e estética. Apesar de muitas vezes ocupar pouco espaço no currículo escolar, sua presença é essencial para ampliar a formação crítica e cultural dos estudantes do Ensino Médio. Conhecer e estudar essa literatura permite compreender diferentes visões de mundo, fortalecer identidades plurais e refletir sobre questões sociais e históricas que dialogam diretamente com a realidade brasileira.</p>
 
-<img src="imagem-literatura-africana.png" alt="Motivos para Trabalhar e Conhecer a Literatura Africana de Língua Portuguesa no Ensino Médio" title="Motivos para Trabalhar e Conhecer a Literatura Africana de Língua Portuguesa no Ensino Médio" class="motivos-literatura-africana">
+<img src="imagem-literatura-africana.png" alt="Motivos para Trabalhar e Conhecer a Literatura Africana de Língua Portuguesa no Ensino Médio" title="Motivos para Trabalhar e Conhecer a Literatura Africana de Língua Portuguesa no Ensino Médio" class="imagem-conceitual">
 
 <h3>1. Reconhecimento da diversidade cultural e linguística</h3>
 <p>As obras africanas em língua portuguesa revelam a pluralidade cultural de países como Angola, Moçambique, Cabo Verde, Guiné-Bissau e São Tomé e Príncipe. Cada um desses espaços traz narrativas próprias, que mesclam tradições orais, memórias coletivas e experiências coloniais. Ao inseri-las no Ensino Médio, os alunos ampliam sua compreensão sobre como a língua portuguesa se manifesta em diferentes contextos socioculturais.</p>
@@ -86,42 +84,7 @@
         <div  id="footer"></div>
     </footer>
 
-<script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+ <script src="javascript.js" defer></script>
 
 </body>
 </html>
