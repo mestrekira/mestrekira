@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Léxico Mental</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="lexico-mental.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,15 +24,13 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+        
 		<section class="conteudo-principal">
             <article>
   <h2>Léxico Mental</h2>
 
 <p>O <strong>léxico mental</strong> é o conjunto de palavras e expressões que uma pessoa conhece e armazena na memória. Funciona como um “dicionário interno” que não apenas guarda o significado, mas também informações sobre a forma, a pronúncia, as relações e o uso dessas palavras. É um dos pilares fundamentais da competência linguística.</p>
-<img src="lexico-mental.png" title="O que é o Léxico Mental?" alt="O que é o Léxico Mental?" class="lexico-mental"><br>
+<img src="lexico-mental.png" title="O que é o Léxico Mental?" alt="O que é o Léxico Mental?" class="imagem-conceitual"><br>
 <h3>Como o Léxico Mental é Organizado</h3>
 <p>O léxico mental não é uma lista estática, mas um sistema dinâmico. As palavras se conectam entre si por <strong><a href="https://www.mestrekira.com.br/introducao-semantica.html" target="_blank">relações semânticas</a></strong> (significado), <strong><a href="https://www.mestrekira.com.br/introducao-a-morfologia.html" target="_blank">relações morfológicas</a></strong> (formação e estrutura) e <strong><a href="https://www.mestrekira.com.br/fonemas-letras.html" target="_blank">relações fonológicas</a></strong> (som e pronúncia). Por exemplo, a palavra <strong>casa</strong> pode estar ligada a <strong>lar</strong>, <strong>moradia</strong>, <strong>habitar</strong>, ou a diminutivos como <strong>casinha</strong>.</p>
 
@@ -65,44 +63,10 @@
         <div  id="footer"></div>
     </footer>
 
-<script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+ <script src="javascript.js" defer></script>
 </body>
 
 </html>
+
 
 
