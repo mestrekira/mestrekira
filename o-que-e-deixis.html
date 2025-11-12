@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>O que é o deixis?</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="o-que-e-deixis.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,9 +24,7 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+       
 		<section class="conteudo-principal">
             <article>
 		<article>
@@ -37,7 +35,7 @@
     É nesse ponto que entra o fenômeno da <strong>deixis</strong>, um recurso essencial para entendermos como os elementos linguísticos se conectam ao contexto em que são usados.
   </p>
 
-<img src="o-que-e-deixis.png" title="Deixis: A Linguagem que Aponta para o Contexto" alt="Deixis: A Linguagem que Aponta para o Contexto" class="deixis"><br>
+<img src="o-que-e-deixis.png" title="Deixis: A Linguagem que Aponta para o Contexto" alt="Deixis: A Linguagem que Aponta para o Contexto" class="imaem-conceitual"><br>
   <p>
     Segundo Costa Val (2002), <em>“os deícticos são formas linguísticas cujo significado depende da situação de enunciação”</em>. 
     Isso significa que certas palavras e expressões não possuem um sentido fixo, mas variam de acordo com 
@@ -134,41 +132,6 @@
         <div  id="footer"></div>
     </footer>
 
- <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+  <script src="javascript.js" defer></script>
 </body>
 </html>
