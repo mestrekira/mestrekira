@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Introduçã a Morfologia</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="introducao-a-morfologia.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,16 +24,14 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+       
 		<section class="conteudo-principal">
             <article>
 		<h2>Introdução à Morfologia: o Estudo da Forma das Palavras</h2>
 		<p>
 		A Morfologia é a área da Linguística que estuda a estrutura, a formação e a classificação das palavras. Seu nome vem do grego morphé (forma) e lógos (estudo, discurso), o que indica seu foco no modo como as palavras são formadas e modificadas. Essa disciplina observa as palavras enquanto unidades linguísticas compostas por elementos menores, os morfemas (radical, afixos, desinências, etc.).
 		</p>
-		 <img src="introducao-a-morfologia.png" title="Introdução à Morfologia: o Estudo da Forma das Palavras" alt="Introdução à Morfologia: o Estudo da Forma das Palavras" class="morfologia"><br>
+		 <img src="introducao-a-morfologia.png" title="Introdução à Morfologia: o Estudo da Forma das Palavras" alt="Introdução à Morfologia: o Estudo da Forma das Palavras" class="imagem-conceitual"><br>
 		<p class="destaque">
 		“A morfologia estuda a estrutura interna das palavras, descrevendo e classificando os seus elementos constituintes, e também os processos pelos quais novas palavras são formadas”
 — (CUNHA; CINTRA, 2008, p. 45).
@@ -109,44 +107,10 @@ ROCHA LIMA, Carlos Henrique da. Gramática Normativa da Língua Portuguesa. 46. 
         <div  id="footer"></div>
     </footer>
 
- <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+ <script src="javascript.js" defer></script>
 
 </body>
 </html>
+
 
 
