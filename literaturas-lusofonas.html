@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Literaturas Lusófonas</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="literaturas-lusofonas.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,16 +24,14 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+       
 		<section class="conteudo-principal">
             <article>
 		 <h2>Diálogos entre Literaturas Lusófonas</h2>
   <p>
     A literatura produzida em língua portuguesa, tanto no Brasil quanto nos países africanos que compartilham esse idioma (Angola, Moçambique, Cabo Verde, Guiné-Bissau e São Tomé e Príncipe), constitui um campo fértil de diálogos e trocas culturais. Apesar das especificidades históricas e sociais de cada nação, é possível identificar <strong>pontos em comum</strong> que aproximam essas produções literárias, especialmente no que diz respeito à <em>oralidade, memória coletiva, resistência e identidade</em>.
   </p>
-		<img src="literaturas-lusofonas.png" title="Diálogos entre Literaturas Lusófonas" alt="Diálogos entre Literaturas Lusófonas" class="literaturas-lusofonas"><br>
+		<img src="literaturas-lusofonas.png" title="Diálogos entre Literaturas Lusófonas" alt="Diálogos entre Literaturas Lusófonas" class="imagem-conceitual"><br>
 		<h3>Oralidade como matriz cultural</h3>
   <p>
     A oralidade é uma marca fundamental das literaturas de língua portuguesa fora da Europa.
@@ -102,42 +100,7 @@
         <div  id="footer"></div>
     </footer>
 
- <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+  <script src="javascript.js" defer></script>
 
 </body>
 </html>
