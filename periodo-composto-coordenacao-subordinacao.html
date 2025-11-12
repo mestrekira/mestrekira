@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perído Composto: Corordenação e Subordinação</title>
   <link rel="stylesheet" href="estilo-base.css">
-  <link rel="stylesheet" href="periodo-composto.css">
+  <link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,9 +24,7 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+      
 		<section class="conteudo-principal">
             <article>
  <h2>Período Composto: Coordenação e Subordinação</h2>
@@ -35,7 +33,7 @@
   O estudo do <strong>período composto</strong> é essencial para compreender como as ideias se articulam dentro de um texto. Enquanto o período simples contém apenas uma oração, o período composto apresenta duas ou mais, conectadas de maneira a expressar relações de sentido, dependência ou independência sintática. Esse conhecimento é fundamental para o domínio da escrita e da interpretação textual.
 </p>
 
-<img src="periodo-composto.png" alt="Ilustração sobre período composto: coordenação e subordinação" title="Ilustração sobre período composto: coordenação e subordinação" class="periodo-composto">
+<img src="periodo-composto.png" alt="Ilustração sobre período composto: coordenação e subordinação" title="Ilustração sobre período composto: coordenação e subordinação" class="imagem-conceitual">
 
 <h3>Diferença entre Período Simples e Período Composto</h3>
 <p>
@@ -133,42 +131,7 @@
         <div  id="footer"></div>
     </footer>
 
-  <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+  <script src="javascript.js" defer></script>
 
 </body>
 </html>
