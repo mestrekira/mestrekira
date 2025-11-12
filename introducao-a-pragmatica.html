@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Introdução à Pragmática</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="introducao-a-pragmatica.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -25,16 +25,14 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+       
 		<section class="conteudo-principal">
             <article>
 		<h2>Introdução à Pragmática: O Estudo do Uso da Linguagem em Contexto</h2>
 		<p>
 		A pragmática é um dos ramos da linguística que mais se aproxima da vida real e cotidiana. Ela estuda como os falantes usam a linguagem em situações concretas de comunicação, considerando elementos como o contexto, as intenções dos interlocutores, as implicações não ditas e os efeitos do discurso sobre o ouvinte. Ao contrário de outras áreas que se concentram na estrutura ou no significado literal da língua, a pragmática volta-se para o uso da linguagem e seus múltiplos sentidos possíveis, que variam conforme a situação e o meio social em que os interlocutores estão inseridos.
 		</p>
-		<img src="introducao-a-pragmatica.png" title="Introdução à Pragmática: O Estudo do Uso da Linguagem em Contexto" alt="Introdução à Pragmática: O Estudo do Uso da Linguagem em Contexto" class="pragmatica"><br>
+		<img src="introducao-a-pragmatica.png" title="Introdução à Pragmática: O Estudo do Uso da Linguagem em Contexto" alt="Introdução à Pragmática: O Estudo do Uso da Linguagem em Contexto" class="imagem-conceitual"><br>
 		<p>
 		Enquanto a semântica se dedica aos significados convencionais das palavras e frases, a pragmática se interessa pelos significados construídos na interação entre falantes. Por isso, dois enunciados idênticos podem ter sentidos diferentes dependendo de quem fala, para quem, com que intenção e em que contexto. Como afirma Kanavillil Rajagopalan (2003, p. 98), “a semântica lida com significados convencionais, enquanto a pragmática lida com os significados que emergem do uso”.
 		</p>
@@ -71,45 +69,11 @@ RAJAGOPALAN, Kanavillil. Por uma linguística crítica. São Paulo: Parábola, 2
         <div  id="footer"></div>
     </footer>
 
-<script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+ <script src="javascript.js" defer></script>
 
 </body>
 </html>
+
 
 
 
