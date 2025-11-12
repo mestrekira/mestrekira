@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ideologia e Representação</title>
     <link rel="stylesheet" href="estilo-base.css">
-    <link rel="stylesheet" href="ideologia-e-representacao.css">
+    <link rel="stylesheet" href="pagina-site.css">
     <link rel="icon" href="logo1.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,9 +24,7 @@
        <div id="header"></div>
     </header>
      <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+       
         <section class="conteudo-principal">
             
 <article>
@@ -39,7 +37,7 @@
         determinando quem pode falar, quem é ouvido e quem é invisibilizado.
     </p>
 
-    <img src="ideologia-e-representacao.png" alt="Ilustração sobre ideologia e representação" class="ideologia-e-representacao"><br>
+    <img src="ideologia-e-representacao.png" alt="Ilustração sobre ideologia e representação" class="imagem-conceitual"><br>
 
     <h3>Representação e exclusão nos discursos públicos</h3>
     <p>
@@ -81,42 +79,6 @@
         <div  id="footer"></div>
     </footer>
 
-  <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
-
+ <script src="javascript.js" defer></script>
 </body>
 </html>
