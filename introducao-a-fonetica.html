@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Introdução a Fonética</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="introducao-a-fonetica.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -39,7 +39,7 @@
 		</p>
 		<p>
 		De acordo com Câmara Jr. (1970), "a fonética estuda os sons da fala em sua realidade física, enquanto a fonologia se preocupa com o sistema de sons que distinguem significados numa dada língua". Essa distinção é fundamental para entendermos que, embora os sons e os fonemas se relacionem, tratam-se de níveis diferentes de análise linguística.
-		<img src="introducao.png" title="Diferença entre fonética e fonologia" alt="Fonética e Fonologia" class="introducao"><br>
+		<img src="introducao.png" title="Diferença entre fonética e fonologia" alt="Fonética e Fonologia" class="imagem-conceitual"><br>
 		</p>
 		<h3>Para que serve a Fonética?</h3>
 		<p>
@@ -101,44 +101,10 @@ O’CONNOR, J. D. Phonetics. London: Penguin Books, 1973.
         <div  id="footer"></div>
     </footer>
 
-  <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+  <script src="javascript.js" defer></script>
 
 </body>
 </html>
+
 
 
