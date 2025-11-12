@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatividade da verdade: discurso, poder e bolhas midiáticas</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="relatividade-da-verdade-e-discurso-midiatico.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -31,7 +31,7 @@
             <article>
    <h2>A relatividade da verdade: discurso, poder e bolhas midiáticas</h2>
     <p>Vivemos em uma sociedade marcada pela circulação incessante de informações. Nesse contexto, a noção de verdade deixa de ser entendida como algo absoluto e imutável para se revelar como uma construção social, moldada pela linguagem, pelos discursos dominantes e pelas relações de poder que se estabelecem em cada grupo. Como a replicação de discursos absolutos em grupos e plataformas digitais pode induzir a percepção de verdade e desconsiderar fatos.</p>
-  <img src="relatividade-da-verdade.png" title="relatividade da verdade" alt="Ilustração conceitual sobre a relatividade da verdade e bolhas midiáticas" class="relatividade-verdade">
+  <img src="relatividade-da-verdade.png" title="relatividade da verdade" alt="Ilustração conceitual sobre a relatividade da verdade e bolhas midiáticas" class="imagem-conceitual">
     <h3>Por que “verdade” não é (sempre) absoluta</h3>
     <p>
       Em sociedades mediadas por linguagem e tecnologia, o que chamamos de “verdade” é, em grande medida, resultado de processos discursivos e relações de poder.
@@ -110,43 +110,7 @@
         <div  id="footer"></div>
     </footer>
 
- <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
-
+ <script src="javascript.js" defer></script>
 </body>
 
 </html>
