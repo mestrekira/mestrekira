@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Introdução a Literatura Africana</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="literatura-africana-em-portugues.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,16 +24,14 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+       
 		<section class="conteudo-principal">
             <article>
 		<h2>Introdução à Literatura Africana em Língua Portuguesa: Vozes de um Continente Plurilíngue</h2>
 		<p>
 		A literatura africana em língua portuguesa emerge como um campo de produção simbólica profundamente marcado pela experiência histórica da colonização, da resistência e da construção identitária. Seus autores compartilham não apenas o uso do português como idioma literário, mas também uma herança comum de opressão colonial, lutas por independência e desejo de afirmação cultural.
 		</p>
-		 <img src="literatura-africana-em-portugues.png" title="Introdução à Literatura Africana em Língua Portuguesa: Vozes de um Continente Plurilíngue" alt="Introdução à Literatura Africana em Língua Portuguesa: Vozes de um Continente Plurilíngue" class="literatura-africana"><br>
+		 <img src="literatura-africana-em-portugues.png" title="Introdução à Literatura Africana em Língua Portuguesa: Vozes de um Continente Plurilíngue" alt="Introdução à Literatura Africana em Língua Portuguesa: Vozes de um Continente Plurilíngue" class="imagem-conceitual"><br>
 		<h3>Pluralidade e Unidade: um mosaico de nações e vozes</h3>
 		<p>
 		Embora compartilhem o idioma imposto pela colonização portuguesa, os países africanos de língua oficial portuguesa (Angola, Moçambique, Cabo Verde, Guiné-Bissau e São Tomé e Príncipe) apresentam expressivas diversidades étnicas, culturais e linguísticas. A literatura desses países reflete essa pluralidade: as vozes literárias africanas em português dialogam com tradições locais, oralidades ancestrais e realidades políticas distintas.
@@ -85,46 +83,12 @@ CASTRO, Ruy do Carmo Póvoas de. Literaturas africanas de língua portuguesa. In
         <div  id="footer"></div>
     </footer>
 
-  <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+  <script src="javascript.js" defer></script>
 
 </body>
 </html>
 		
 		
+
 
 
