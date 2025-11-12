@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Som das Palavras</title>
     	<link rel="stylesheet" href="estilo-base.css">
-	<link rel="stylesheet" href="som-palavras-silaba-tonicidade-prosodia.css">
+	<link rel="stylesheet" href="pagina-site.css">
 	<link rel="icon" href="logo1.png" type="image/png">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-B4M6CZF5HB"></script>
@@ -24,15 +24,13 @@
        <div id="header"></div>
     </header>
 	 <main>
-        <aside>
-           <div id="aside"></div>
-        </aside>
+        
 		<section class="conteudo-principal">
             <article>
 		<h2>O Som das Palavras: Sílaba, Tonicidade e Prosódia</h2>
 
 <p>O estudo da sonoridade das palavras é fundamental para compreender não apenas a ortografia, mas também a correta pronúncia, a acentuação e a musicalidade da língua portuguesa. Nesse contexto, conceitos como <strong>divisão silábica</strong>, <strong>tonicidade</strong> e <strong>prosódia</strong> ganham destaque no ensino da língua, auxiliando tanto na produção oral quanto na interpretação escrita.</p>
-<img src="som-palavras.png" alt="Ilustração sobre sílaba, tonicidade e prosódia no estudo da língua portuguesa" title="O Som das Palavras: Sílaba, Tonicidade e Prosódia" class="som-palavras">
+<img src="som-palavras.png" alt="Ilustração sobre sílaba, tonicidade e prosódia no estudo da língua portuguesa" title="O Som das Palavras: Sílaba, Tonicidade e Prosódia" class="imagem-conceitual">
 
 <h3>Sílaba: Unidade rítmica da fala</h3>
 
@@ -111,42 +109,7 @@
         <div  id="footer"></div>
     </footer>
 
-  <script>
-function incluirHTML(id, url, callback) {
-    fetch(url)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById(id).innerHTML = data;
-            if (callback) callback();
-        })
-        .catch(erro => console.error('Erro ao carregar ' + url, erro));
-}
-
-incluirHTML('header', 'header.html', configurarLinks);
-incluirHTML('aside', 'aside.html');
-incluirHTML('footer', 'footer.html');
-
-function configurarLinks() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function (e) {
-            const destino = this.getAttribute('href').replace("#", "").toLowerCase();
-
-            const destinosValidos = [
-               
-                "fonetica", "fonologia", "morfologia", "sintaxe", "semantica", "pragmatica",
-                "literatura-portuguesa", "literatura-brasileira", "literatura-africana-portuguesa",
-                "critica", "midiatico",
-                "linguaportuguesa", "gramatica", "producaotextual", "interpretacaotextual"
-            ];
-
-            if (destinosValidos.includes(destino)) {
-                e.preventDefault();
-                window.location.href = `conteudos${destino}.html`;
-            }
-        });
-    });
-}
-</script>
+   <script src="javascript.js" defer></script>
 
 </body>
 </html>
