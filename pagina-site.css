@@ -438,3 +438,61 @@ header, footer {
     font-size: 14px;
   }
 }
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2em 0;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1rem;
+  text-align: center;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tabela thead {
+  background: linear-gradient(135deg, #005fa3, #0083c7);
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tabela thead th {
+  padding: 1em;
+  font-weight: 600;
+  border-bottom: 3px solid #0075b8;
+}
+
+.tabela td, 
+.tabela th {
+  padding: 0.9em 1em;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.tabela tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.tabela tbody tr:hover {
+  background-color: #e8f3fb;
+  transition: background-color 0.3s ease;
+}
+
+.tabela tbody td:first-child {
+  font-weight: 600;
+  color: #004d7a;
+  background-color: #f0f7fc;
+}
+
+@media (max-width: 768px) {
+  .tabela {
+    font-size: 0.9rem;
+  }
+
+  .tabela th, 
+  .tabela td {
+    padding: 0.6em;
+  }
+}
