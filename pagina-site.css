@@ -505,6 +505,34 @@ header, footer {
   color: #6C7492;
   font-size: 1.1em;
 }
+  .botao-download {
+  display: inline-block;
+  padding: 12px 22px;
+  background-color: #4a148c; 
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background-color 0.25s ease, transform 0.2s ease;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+}
+
+.botao-download:hover {
+  background-color: #6a1b9a; 
+  transform: translateY(-3px);
+}
+
+.botao-download:active {
+  transform: translateY(0);
+  background-color: #380c5e;
+}
+
+.botao-download:focus {
+  outline: 3px solid #d1a8ff;
+  outline-offset: 4px;
+}
+
   .tabela th, 
   .tabela td {
     padding: 0.6em;
