@@ -94,4 +94,62 @@ document.addEventListener("DOMContentLoaded", function() {
   
     mostrarPagina(paginaAtual);
 });
+(function () {
+  const audio = document.getElementById('playerAudio');
+  const speedSelect = document.getElementById('speedSelect');
+  const currentSpeedLabel = document.getElementById('currentSpeedLabel');
+  const increaseBtn = document.getElementById('increaseSpeed');
+  const decreaseBtn = document.getElementById('decreaseSpeed');
+  const audioDuration = document.getElementById('audioDuration');
+  const downloadLink = document.getElementById('downloadLink');
+
+  audio.addEventListener('loadedmetadata', () => {
+    if (!isNaN(audio.duration)) {
+      const sec = Math.round(audio.duration);
+      const mm = Math.floor(sec / 60).toString().padStart(2, '0');
+      const ss = (sec % 60).toString().padStart(2, '0');
+      audioDuration.textContent = `Duração: ${mm}:${ss}`;
+    }
+  });
+
+  function setPlaybackRate(rate) {
+    audio.playbackRate = rate;
+    currentSpeedLabel.textContent = rate + '×';
+    speedSelect.value = String(rate);
+  }
+
+  setPlaybackRate(1);
+
+  speedSelect.addEventListener('change', (e) => {
+    const val = parseFloat(e.target.value) || 1;
+    setPlaybackRate(val);
+  });
+
+  const speedOptions = Array.from(speedSelect.options).map(o => parseFloat(o.value));
+
+  function stepSpeed(direction) {
+    const current = parseFloat(speedSelect.value) || 1;
+    let idx = speedOptions.indexOf(current);
+
+    if (idx === -1) {
+      idx = speedOptions.reduce((acc, v, i) =>
+        Math.abs(v - current) < Math.abs(speedOptions[acc] - current) ? i : acc,
+      0);
+    }
+
+    const nextIdx = Math.min(Math.max(idx + direction, 0), speedOptions.length - 1);
+    setPlaybackRate(speedOptions[nextIdx]);
+  }
+
+  increaseBtn.addEventListener('click', () => stepSpeed(+1));
+  decreaseBtn.addEventListener('click', () => stepSpeed(-1));
+
+  downloadLink.href = audio.src;
+
+  document.addEventListener('keydown', (ev) => {
+    if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA') return;
+    if (ev.key === '[') { stepSpeed(-1); ev.preventDefault(); }
+    if (ev.key === ']') { stepSpeed(+1); ev.preventDefault(); }
+  });
+})();
 
