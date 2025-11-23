@@ -153,3 +153,9 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 })();
 
+document.querySelectorAll('.faq-pergunta').forEach(pergunta => {
+  pergunta.addEventListener('click', () => {
+    const resposta = pergunta.nextElementSibling;
+    resposta.classList.toggle('ativo');
+  });
+});
