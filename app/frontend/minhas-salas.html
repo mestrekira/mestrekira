@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Minhas Salas</title>
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+
+  <h1>Minhas salas</h1>
+
+  <label>
+    Informe seu ID:
+    <input type="text" id="userId" />
+    <button id="loadBtn">Carregar</button>
+  </label>
+
+  <ul id="myRooms"></ul>
+
+<button onclick="
+location.href='sala.html?roomId=ID_DA_SALA&userId=ID_DO_USUARIO'
+">
+Entrar
+</button>
+
+  <script type="module" src="js/minhas-salas.js"></script>
+</body>
+</html>

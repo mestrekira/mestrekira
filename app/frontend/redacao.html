@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redação</title>
+  <script defer src="js/api.js"></script>
+  <script defer src="js/redacao.js"></script>
+</head>
+<body>
+
+<h2>Escreva sua redação</h2>
+
+<p><strong>Tema:</strong> A importância da educação digital</p>
+
+<textarea
+  id="editor"
+  rows="20"
+  cols="80"
+  placeholder="Digite sua redação aqui..."
+></textarea>
+
+<br /><br />
+
+<button onclick="salvar()">Salvar</button>
+<button onclick="enviar()">Enviar para correção</button>
+
+<p id="status"></p>
+
+</body>
+</html>
