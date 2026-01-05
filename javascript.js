@@ -12,7 +12,7 @@ function incluirHTML(id, url, callback) {
 incluirHTML('header', 'header.html', configurarLinks);
 incluirHTML('aside', 'aside.html');
 incluirHTML('footer', 'footer.html');
-incluirHTML('javascript', 'javascript.js');
+
     
 function configurarLinks() {
     document.querySelectorAll('a[href^="#"]').forEach(link => {
@@ -160,10 +160,9 @@ document.querySelectorAll('.faq-pergunta').forEach(pergunta => {
   });
 });
 
-<script>
   document
     .getElementById('btnPlataformaRedacao')
     .addEventListener('click', () => {
       window.location.href = '/app/';
     });
-</script>
+
