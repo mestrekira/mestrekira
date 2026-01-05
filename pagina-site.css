@@ -1,4 +1,4 @@
-/* ---------- Estrutura básica ---------- */
+
 header, #header {
   position: relative;
   z-index: 9999 !important;
@@ -12,7 +12,7 @@ body {
   color: #222;
 }
 
-/* ---------- Layout principal ---------- */
+
 main {
   display: flex;
   justify-content: center;
@@ -42,7 +42,7 @@ section {
   padding: 20px;
 }
 
-/* ---------- Publicações (cards) ---------- */
+
 .publicacoes {
   display: flex;
   flex-wrap: wrap;
@@ -92,7 +92,7 @@ section {
   transition: transform 0.3s ease;
 }
 
-/* ---------- Paginação ---------- */
+
 .paginacao {
   display: flex;
   justify-content: center;
@@ -125,7 +125,7 @@ section {
   color: #333;
 }
 
-/* ---------- Conteúdo interno ---------- */
+
 article {
   margin-bottom: 30px;
 }
@@ -180,7 +180,7 @@ p {
   text-indent: 0;
 }
 
-/* ---------- Header e Footer ---------- */
+
 header, footer {
   width: 100%;
   max-width: 100%;
@@ -198,7 +198,7 @@ header, footer {
   box-sizing: border-box;
 }
 
-/* ---------- Responsividade ---------- */
+
 @media (max-width: 900px) {
   main {
     flex-direction: column;
@@ -219,9 +219,7 @@ header, footer {
     max-width: 100%;
   }
 }
-/* ================================
-   ÁREA PRINCIPAL: INTERPRETAÇÃO TEXTUAL
-================================ */
+
 .interpretacao-textual {
   max-width: 1000px;
   margin: 0 auto;
@@ -249,9 +247,7 @@ header, footer {
   margin-top: 1rem;
 }
 
-/* ================================
-   INTRODUÇÃO
-================================ */
+
 .introducao {
   padding: 10px 15px;
   margin-bottom: 2rem;
@@ -275,9 +271,6 @@ header, footer {
   margin: 0.6rem 0;
 }
 
-/* ================================
-   QUIZ — ÁREA PRINCIPAL
-================================ */
 .interpretacao-quiz h3 {
   margin-top: 3rem;
   text-align: center;
@@ -320,7 +313,7 @@ header, footer {
   border-radius: 6px;
 }
 
-/* Botão verificar */
+
 .quiz-verificar {
   display: inline-block;
   background-color: #007bff;
@@ -337,7 +330,7 @@ header, footer {
   background-color: #0056b3;
 }
 
-/* Resultado */
+
 .quiz-resultado {
   margin-top: 20px;
   padding: 1rem;
@@ -346,9 +339,7 @@ header, footer {
   border-radius: 8px;
 }
 
-/* ================================
-   GABARITO COMENTADO
-================================ */
+
 .gabarito-comentado {
   margin-top: 2rem;
   background-color: #f9f9f9;
@@ -425,9 +416,7 @@ header, footer {
   color: #004080;
 }
 
-/* ================================
-   MOBILE (para quiz e gabarito)
-================================ */
+
 @media (max-width: 768px) {
 
   .interpretacao-textual {
@@ -673,3 +662,55 @@ header, footer {
 .faq-resposta.ativo {
   display: block;
 }
+
+.cta-redacao {
+  display: flex;
+  justify-content: center;
+  margin: 40px 0;
+}
+
+#btnPlataformaRedacao {
+  background: linear-gradient(135deg, #0e4a6f, #1e88b8);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 22px 32px;
+  cursor: pointer;
+  text-align: left;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 12px 30px rgba(14, 74, 111, 0.35);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+#btnPlataformaRedacao:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(14, 74, 111, 0.45);
+}
+
+#btnPlataformaRedacao:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 20px rgba(14, 74, 111, 0.3);
+}
+
+#btnPlataformaRedacao .cta-titulo {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+#btnPlataformaRedacao .cta-subtitulo {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+
+@media (max-width: 480px) {
+  #btnPlataformaRedacao {
+    text-align: center;
+  }
+}
+
