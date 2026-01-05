@@ -159,3 +159,11 @@ document.querySelectorAll('.faq-pergunta').forEach(pergunta => {
     resposta.classList.toggle('ativo');
   });
 });
+
+<script>
+  document
+    .getElementById('btnPlataformaRedacao')
+    .addEventListener('click', () => {
+      window.location.href = '/app/';
+    });
+</script>
