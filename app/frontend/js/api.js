@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://mestrekira-api.onrender.com';
 
 async function apiRequest(endpoint, method = 'GET', data = null) {
   const options = {
@@ -15,3 +15,4 @@ async function apiRequest(endpoint, method = 'GET', data = null) {
   const response = await fetch(`${API_URL}${endpoint}`, options);
   return response.json();
 }
+
