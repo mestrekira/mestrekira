@@ -1,6 +1,6 @@
-const API_URL = 'https://mestrekira-api.onrender.com';
+export const API_URL = 'https://mestrekira-api.onrender.com';
 
-async function apiRequest(endpoint, method = 'GET', data = null) {
+export async function apiRequest(endpoint, method = 'GET', data = null) {
   const options = {
     method,
     headers: {
@@ -15,4 +15,3 @@ async function apiRequest(endpoint, method = 'GET', data = null) {
   const response = await fetch(`${API_URL}${endpoint}`, options);
   return response.json();
 }
-
