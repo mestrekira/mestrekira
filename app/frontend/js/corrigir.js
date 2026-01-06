@@ -1,43 +1,60 @@
 import { API_URL } from './config.js';
 
-const criteria = [
-  'Competência 1 – Norma padrão',
-  'Competência 2 – Compreensão do tema',
-  'Competência 3 – Argumentação',
-  'Competência 4 – Coesão',
-  'Competência 5 – Proposta de intervenção'
-];
+const params = new URLSearchParams(window.location.search);
+const essayId = params.get('essayId');
 
-const container = document.getElementById('criteria');
+const essayText = document.getElementById('essayText');
+const feedbackInput = document.getElementById('feedback');
+const scoreInput = document.getElementById('score');
+const status = document.getElementById('status');
 
-criteria.forEach((c, i) => {
-  const div = document.createElement('div');
-  div.innerHTML = `
-    <label>${c}</label>
-    <input type="number" min="0" max="200" step="40" id="c${i}">
-  `;
-  container.appendChild(div);
+
+if (!essayId) {
+  alert('Redação inválida.');
+  window.history.back();
+}
+
+
+async function carregarRedacao() {
+  try {
+    const response = await fetch(`${API_URL}/essays/${essayId}`);
+    if (!response.ok) throw new Error();
+
+    const essay = await response.json();
+
+    essayText.textContent = essay.content;
+    feedbackInput.value = essay.feedback || '';
+    scoreInput.value = essay.score ?? '';
+
+  } catch {
+    status.textContent = 'Erro ao carregar a redação.';
+  }
+}
+
+/
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const feedback = feedbackInput.value.trim();
+  const score = Number(scoreInput.value);
+
+  if (score < 0 || score > 1000) {
+    alert('A nota deve estar entre 0 e 1000.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/essays/${essayId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feedback, score })
+    });
+
+    if (!response.ok) throw new Error();
+
+    status.textContent = 'Correção salva com sucesso.';
+
+  } catch {
+    status.textContent = 'Erro ao salvar a correção.';
+  }
 });
 
-document.getElementById('saveCorrection').addEventListener('click', async () => {
-  const params = new URLSearchParams(window.location.search);
-  const essayId = params.get('essayId');
-
-  const scores = criteria.map((_, i) =>
-    Number(document.getElementById(`c${i}`).value || 0)
-  );
-
-  const feedback = document.getElementById('feedback').value;
-
-  await fetch(`${API_URL}/corrections`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      essayId,
-      scores,
-      feedback
-    })
-  });
-
-  alert('Correção salva.');
-});
+carregarRedacao();
