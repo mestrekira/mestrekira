@@ -714,3 +714,8 @@ header, footer {
   }
 }
 
+.cta-botao {
+  display: inline-block;
+  text-decoration: none;
+  cursor: pointer;
+}
