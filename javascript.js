@@ -160,9 +160,10 @@ document.querySelectorAll('.faq-pergunta').forEach(pergunta => {
   });
 });
 
-  document
-    .getElementById('btnPlataformaRedacao')
-    .addEventListener('click', () => {
-      window.location.href = '/app/';
-    });
+document
+  .getElementById('btnPlataformaRedacao')
+  .addEventListener('click', () => {
+    window.location.href = '/app/index.html';
+  });
+
 
