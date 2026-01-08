@@ -4,19 +4,26 @@
   <meta charset="UTF-8" />
   <title>Feedback da Redação</title>
   <link rel="stylesheet" href="css/base.css">
+  <link rel="icon" href="logo1.png" type="image/png">
 </head>
 <body>
 
-  <h1>Feedback da Redação</h1>
+<h2>Feedback da Redação</h2>
 
-  <h3>Texto enviado</h3>
-  <p id="essayContent"></p>
+<section>
+  <h3>Nota final</h3>
+  <p><strong><span id="score"></span></strong></p>
+</section>
 
-  <h2>Nota final: <span id="score">Aguardando correção</span></h2>
-
+<section>
   <h3>Feedback do professor</h3>
-  <p id="feedbackText">Aguardando correção</p>
+  <p id="feedbackText"></p>
+</section>
 
-  <script type="module" src="js/feedback.js"></script>
+<button onclick="history.back()">← Voltar</button>
+
+<p id="status"></p>
+
+<script type="module" src="feedback.js"></script>
 </body>
 </html>
