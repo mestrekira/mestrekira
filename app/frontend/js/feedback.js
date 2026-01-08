@@ -1,33 +1,34 @@
 import { API_URL } from './config.js';
 
 const params = new URLSearchParams(window.location.search);
-const studentId = params.get('userId');
+const essayId = params.get('essayId');
 
-const essayContent = document.getElementById('essayContent');
-const feedbackText = document.getElementById('feedbackText');
 const scoreEl = document.getElementById('score');
+const feedbackEl = document.getElementById('feedbackText');
+const status = document.getElementById('status');
+
+
+if (!essayId) {
+  alert('Redação inválida.');
+  history.back();
+}
+
 
 async function carregarFeedback() {
   try {
-    const response = await fetch(
-      `${API_URL}/essays/by-student?studentId=${studentId}`
-    );
+    const response = await fetch(`${API_URL}/essays/${essayId}`);
+    if (!response.ok) throw new Error();
 
-    const essays = await response.json();
+    const essay = await response.json();
 
-    if (!essays.length) {
-      essayContent.textContent = 'Nenhuma redação enviada.';
-      return;
-    }
+    scoreEl.textContent = essay.score !== null
+      ? `${essay.score} pontos`
+      : 'Ainda não corrigida';
 
-    const essay = essays[essays.length - 1];
+    feedbackEl.textContent = essay.feedback || 'Sem feedback disponível no momento.';
 
-    essayContent.textContent = essay.content;
-    feedbackText.textContent = essay.feedback ?? 'Aguardando correção';
-    scoreEl.textContent = essay.score ?? '—';
-
-  } catch (error) {
-    console.error(error);
+  } catch {
+    status.textContent = 'Erro ao carregar feedback.';
   }
 }
 
