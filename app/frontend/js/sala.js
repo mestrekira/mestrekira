@@ -1,35 +1,41 @@
 import { API_URL } from './config.js';
 
+// 🔹 Elementos do DOM (com proteção)
 const textarea = document.getElementById('essay');
 const status = document.getElementById('status');
 const saveBtn = document.getElementById('saveBtn');
 const sendBtn = document.getElementById('sendBtn');
 
-// BLOQUEIA COLAR TEXTO
+if (!textarea || !status || !saveBtn || !sendBtn) {
+  console.error('Elementos do editor não encontrados no HTML.');
+  throw new Error('Editor incompleto.');
+}
+
+// 🔹 Bloqueia colar texto
 textarea.addEventListener('paste', (e) => {
   e.preventDefault();
   alert('Colar texto não é permitido.');
 });
 
-// OBTÉM PARÂMETROS DA URL
+// 🔹 Parâmetros da URL
 const params = new URLSearchParams(window.location.search);
-const roomId = params.get('roomId');
-const userId = params.get('userId');
+const taskId = params.get('taskId');
+const studentId = localStorage.getItem('studentId');
 
-if (!roomId || !userId) {
-  alert('Sala ou usuário inválido.');
+if (!taskId || !studentId) {
+  alert('Tarefa ou usuário inválido.');
   throw new Error('Parâmetros ausentes');
 }
 
-// SALVAR RASCUNHO
+// 🔹 Salvar rascunho
 saveBtn.addEventListener('click', async () => {
-  const text = textarea.value;
+  const content = textarea.value;
 
   try {
     const response = await fetch(`${API_URL}/essays/draft`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId, userId, text })
+      body: JSON.stringify({ taskId, studentId, content }),
     });
 
     if (!response.ok) throw new Error();
@@ -40,11 +46,11 @@ saveBtn.addEventListener('click', async () => {
   }
 });
 
-// ENVIAR REDAÇÃO DEFINITIVA
+// 🔹 Enviar redação definitiva
 sendBtn.addEventListener('click', async () => {
-  const text = textarea.value;
+  const content = textarea.value;
 
-  if (text.length < 500) {
+  if (content.length < 500) {
     alert('Redação muito curta.');
     return;
   }
@@ -53,21 +59,21 @@ sendBtn.addEventListener('click', async () => {
     const response = await fetch(`${API_URL}/essays/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId, userId, text })
+      body: JSON.stringify({ taskId, studentId, content }),
     });
 
     if (!response.ok) throw new Error();
 
-    const data = await response.json(); // ← recebe o essayId
+    const data = await response.json(); // { essayId }
 
-    // BLOQUEIA EDIÇÃO APÓS ENVIO
+    // 🔒 Bloqueia edição após envio
     textarea.disabled = true;
     saveBtn.disabled = true;
     sendBtn.disabled = true;
 
     status.textContent = 'Redação enviada para correção.';
 
-    // REDIRECIONA PARA FEEDBACK
+    // 🔁 Redireciona para feedback
     setTimeout(() => {
       window.location.href = `feedback.html?essayId=${data.essayId}`;
     }, 1000);
