@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sala do Professor</title>
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+
+<h2 id="roomName">Sala</h2>
+
+<section>
+  <h3>Código da sala</h3>
+  <p id="roomCode"></p>
+  <button id="copyCodeBtn">Copiar código</button>
+</section>
+
+<hr>
+
+<section>
+  <h3>Alunos matriculados</h3>
+  <ul id="studentsList" class="lista"></ul>
+</section>
+
+<hr>
+
+<section>
+  <h3>Tarefas da sala</h3>
+  <ul id="tasksList" class="lista"></ul>
+
+  <h4>Criar nova tarefa</h4>
+  <input type="text" id="taskTitle" placeholder="Tema da redação" />
+  <textarea id="taskGuidelines" placeholder="Orientações para a redação"></textarea>
+  <button id="createTaskBtn">Criar tarefa</button>
+</section>
+
+<script type="module" src="js/sala.js"></script>
+</body>
+</html>
