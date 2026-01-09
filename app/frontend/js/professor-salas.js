@@ -22,7 +22,7 @@ async function carregarSalas() {
     const btn = document.createElement('button');
     btn.textContent = 'Acessar';
     btn.onclick = () => {
-      window.location.href = `correcao/index.html?roomId=${room.id}`;
+     window.location.href = `sala-professor.html?roomId=${room.id}`;
     };
 
     li.appendChild(btn);
