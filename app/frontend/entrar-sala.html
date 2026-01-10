@@ -1,8 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Entrar em uma Sala</title>
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+
 <h2>Entrar em uma sala</h2>
 
-<input type="text" id="roomCode" placeholder="Código da sala" />
-<button id="joinBtn">Entrar</button>
+<p>Digite o código fornecido pelo professor:</p>
+
+<input
+  type="text"
+  id="roomCode"
+  placeholder="Ex: AB3F9Q"
+  maxlength="6"
+/>
+
+<button id="enterRoomBtn">Entrar na sala</button>
 
 <p id="status"></p>
 
 <script type="module" src="js/entrar-sala.js"></script>
+</body>
+</html>
