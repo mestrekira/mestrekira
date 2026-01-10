@@ -1,60 +1,74 @@
 import { API_URL } from './config.js';
 
-const studentId = localStorage.getItem('studentId');
+
 const params = new URLSearchParams(window.location.search);
 const roomId = params.get('roomId');
 
-if (!studentId || !roomId) {
-  alert('Acesso inválido.');
-  window.location.href = 'login-aluno.html';
-}
-
 const roomNameEl = document.getElementById('roomName');
 const tasksList = document.getElementById('tasksList');
+const status = document.getElementById('status');
 
-// 🔹 Dados da sala
-async function carregarSala() {
-  const response = await fetch(`${API_URL}/rooms/${roomId}`);
-  const room = await response.json();
-  roomNameEl.textContent = room.name;
+if (!roomId) {
+  alert('Sala inválida.');
+  window.location.href = 'painel-aluno.html';
+  throw new Error('roomId ausente');
 }
 
-// 🔹 Tarefas do aluno
+
+async function carregarSala() {
+  try {
+    const response = await fetch(`${API_URL}/rooms/${roomId}`);
+    if (!response.ok) throw new Error();
+
+    const room = await response.json();
+    roomNameEl.textContent = room.name;
+
+  } catch {
+    roomNameEl.textContent = 'Erro ao carregar sala';
+  }
+}
+
+
 async function carregarTarefas() {
-  const response = await fetch(
-    `${API_URL}/tasks/by-room-student?roomId=${roomId}&studentId=${studentId}`
-  );
-  const tasks = await response.json();
+  try {
+    const response = await fetch(
+      `${API_URL}/tasks/by-room?roomId=${roomId}`
+    );
 
-  tasksList.innerHTML = '';
+    if (!response.ok) throw new Error();
 
-  tasks.forEach(task => {
-    const li = document.createElement('li');
-    li.textContent = task.title;
+    const tasks = await response.json();
+    tasksList.innerHTML = '';
 
-    const status = document.createElement('span');
-    status.textContent = ` — ${task.status}`;
-
-    const btn = document.createElement('button');
-
-    if (task.status === 'corrigida') {
-      btn.textContent = 'Ver feedback';
-      btn.onclick = () => {
-        window.location.href = `feedback.html?essayId=${task.essayId}`;
-      };
-    } else {
-      btn.textContent = 'Escrever redação';
-      btn.onclick = () => {
-        window.location.href =
-          `tarefa.html?taskId=${task.id}&roomId=${roomId}`;
-      };
+    if (tasks.length === 0) {
+      tasksList.innerHTML = '<li>Nenhuma tarefa disponível.</li>';
+      return;
     }
 
-    li.appendChild(status);
-    li.appendChild(btn);
-    tasksList.appendChild(li);
-  });
+    tasks.forEach(task => {
+      const li = document.createElement('li');
+
+      const title = document.createElement('strong');
+      title.textContent = task.title;
+
+      const btn = document.createElement('button');
+      btn.textContent = 'Escrever redação';
+      btn.onclick = () => {
+        window.location.href = `redacao.html?taskId=${task.id}`;
+      };
+
+      li.appendChild(title);
+      li.appendChild(document.createElement('br'));
+      li.appendChild(btn);
+
+      tasksList.appendChild(li);
+    });
+
+  } catch {
+    status.textContent = 'Erro ao carregar tarefas.';
+  }
 }
+
 
 carregarSala();
 carregarTarefas();
