@@ -1,49 +1,46 @@
 import { API_URL } from './config.js';
 
 const status = document.getElementById('status');
+const enterBtn = document.getElementById('enterBtn');
 
-document.getElementById('enterBtn').addEventListener('click', async () => {
+enterBtn.addEventListener('click', async () => {
   const code = document.getElementById('code').value.trim();
   const name = document.getElementById('name').value.trim();
   const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
 
-  if (!code || !name || !email || !password) {
+  if (!code || !name || !email) {
     status.textContent = 'Preencha todos os campos.';
     return;
   }
 
+  // 🔹 Gera ou reutiliza studentId
+  let studentId = localStorage.getItem('studentId');
+
+  if (!studentId) {
+    studentId = crypto.randomUUID();
+    localStorage.setItem('studentId', studentId);
+    localStorage.setItem('studentName', name);
+    localStorage.setItem('studentEmail', email);
+  }
+
   try {
-    // 1) cria aluno (se já existir, o backend pode retornar erro — ignoramos)
-    await fetch(`${API_URL}/users/student`, {
+    const response = await fetch(`${API_URL}/enrollments/join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    }).catch(() => {});
-
-    // 2) login
-    const loginRes = await fetch(`${API_URL}/users/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ code, studentId }),
     });
-    if (!loginRes.ok) throw new Error('Login falhou');
 
-    const user = await loginRes.json();
-    localStorage.setItem('studentId', user.id);
+    if (!response.ok) {
+      throw new Error('Falha ao entrar na sala');
+    }
 
-    // 3) matrícula por código
-    const joinRes = await fetch(`${API_URL}/enrollments/join-by-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ studentId: user.id, code })
-    });
-    if (!joinRes.ok) throw new Error('Matrícula falhou');
+    const data = await response.json();
 
-    // 4) vai para o painel
-    window.location.href = 'painel-aluno.html';
+    // 🔹 Redireciona para o painel do aluno com roomId
+    window.location.href = `painel-aluno.html?roomId=${data.roomId}`;
 
   } catch (e) {
-    status.textContent = 'Erro ao entrar na sala.';
+    console.error(e);
+    status.textContent = 'Erro ao entrar na sala. Verifique o código.';
   }
 });
