@@ -4,26 +4,23 @@ const studentId = localStorage.getItem('studentId');
 
 if (!studentId) {
   window.location.href = 'login-aluno.html';
-  throw new Error('Aluno não autenticado');
 }
 
+// ELEMENTOS
 const roomsList = document.getElementById('roomsList');
-const status = document.getElementById('status');
+const logoutBtn = document.getElementById('logoutBtn');
 
-// 🔹 Carregar salas do aluno
+// 🔹 CARREGAR SALAS DO ALUNO
 async function carregarSalas() {
   try {
-    const response = await fetch(
-      `${API_URL}/students/${studentId}/rooms`
-    );
-
+    const response = await fetch(`${API_URL}/enrollments/by-student?studentId=${studentId}`);
     if (!response.ok) throw new Error();
 
     const rooms = await response.json();
     roomsList.innerHTML = '';
 
     if (rooms.length === 0) {
-      roomsList.innerHTML = '<li>Você ainda não está em nenhuma sala.</li>';
+      roomsList.innerHTML = '<li>Você ainda não entrou em nenhuma sala.</li>';
       return;
     }
 
@@ -42,14 +39,15 @@ async function carregarSalas() {
     });
 
   } catch {
-    status.textContent = 'Erro ao carregar salas.';
+    roomsList.innerHTML = '<li>Erro ao carregar salas.</li>';
   }
 }
 
-// 🔹 Logout
-document.getElementById('logoutBtn').addEventListener('click', () => {
+// 🔹 LOGOUT
+logoutBtn.addEventListener('click', () => {
   localStorage.removeItem('studentId');
   window.location.href = 'login-aluno.html';
 });
 
+// 🔹 INIT
 carregarSalas();
