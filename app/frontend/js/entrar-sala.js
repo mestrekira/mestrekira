@@ -1,51 +1,49 @@
 import { API_URL } from './config.js';
 
-const studentId = localStorage.getItem('studentId');
 const status = document.getElementById('status');
-const input = document.getElementById('roomCode');
 
-if (!studentId) {
-  window.location.href = 'login-aluno.html';
-}
+document.getElementById('enterBtn').addEventListener('click', async () => {
+  const code = document.getElementById('code').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
 
-document.getElementById('enterRoomBtn').addEventListener('click', async () => {
-  const code = input.value.trim().toUpperCase();
-
-  if (!code) {
-    status.textContent = 'Informe o código da sala.';
+  if (!code || !name || !email || !password) {
+    status.textContent = 'Preencha todos os campos.';
     return;
   }
 
   try {
-    
-    const roomResponse = await fetch(
-      `${API_URL}/rooms/by-code?code=${code}`
-    );
-
-    if (!roomResponse.ok) throw new Error('Código inválido');
-
-    const room = await roomResponse.json();
-
-  
-    const enrollResponse = await fetch(`${API_URL}/enrollments`, {
+    // 1) cria aluno (se já existir, o backend pode retornar erro — ignoramos)
+    await fetch(`${API_URL}/users/student`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        roomId: room.id,
-        studentId,
-      }),
+      body: JSON.stringify({ name, email, password })
+    }).catch(() => {});
+
+    // 2) login
+    const loginRes = await fetch(`${API_URL}/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
     });
+    if (!loginRes.ok) throw new Error('Login falhou');
 
-    if (!enrollResponse.ok) throw new Error('Erro ao matricular');
+    const user = await loginRes.json();
+    localStorage.setItem('studentId', user.id);
 
-    status.textContent = 'Entrada realizada com sucesso!';
+    // 3) matrícula por código
+    const joinRes = await fetch(`${API_URL}/enrollments/join-by-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId: user.id, code })
+    });
+    if (!joinRes.ok) throw new Error('Matrícula falhou');
 
-  
-    setTimeout(() => {
-      window.location.href = 'painel-aluno.html';
-    }, 800);
+    // 4) vai para o painel
+    window.location.href = 'painel-aluno.html';
 
-  } catch (err) {
-    status.textContent = 'Código inválido ou aluno já matriculado.';
+  } catch (e) {
+    status.textContent = 'Erro ao entrar na sala.';
   }
 });
