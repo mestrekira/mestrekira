@@ -1,36 +1,51 @@
 import { API_URL } from './config.js';
 
 const studentId = localStorage.getItem('studentId');
+const status = document.getElementById('status');
+const input = document.getElementById('roomCode');
 
 if (!studentId) {
   window.location.href = 'login-aluno.html';
 }
 
-const status = document.getElementById('status');
-
-document.getElementById('joinBtn').addEventListener('click', async () => {
-  const code = document.getElementById('roomCode').value.trim();
+document.getElementById('enterRoomBtn').addEventListener('click', async () => {
+  const code = input.value.trim().toUpperCase();
 
   if (!code) {
-    alert('Informe o código da sala.');
+    status.textContent = 'Informe o código da sala.';
     return;
   }
 
   try {
-    const response = await fetch(`${API_URL}/enrollments/join`, {
+    
+    const roomResponse = await fetch(
+      `${API_URL}/rooms/by-code?code=${code}`
+    );
+
+    if (!roomResponse.ok) throw new Error('Código inválido');
+
+    const room = await roomResponse.json();
+
+  
+    const enrollResponse = await fetch(`${API_URL}/enrollments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, studentId }),
+      body: JSON.stringify({
+        roomId: room.id,
+        studentId,
+      }),
     });
 
-    if (!response.ok) throw new Error();
-
-    const data = await response.json();
+    if (!enrollResponse.ok) throw new Error('Erro ao matricular');
 
     status.textContent = 'Entrada realizada com sucesso!';
-    window.location.href = `sala-aluno.html?roomId=${data.roomId}`;
 
-  } catch {
-    status.textContent = 'Código inválido ou erro ao entrar na sala.';
+  
+    setTimeout(() => {
+      window.location.href = 'painel-aluno.html';
+    }, 800);
+
+  } catch (err) {
+    status.textContent = 'Código inválido ou aluno já matriculado.';
   }
 });
