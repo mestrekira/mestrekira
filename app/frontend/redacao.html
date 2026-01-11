@@ -7,15 +7,30 @@
 </head>
 <body>
 
-<h2 id="taskTitle">Tema</h2>
-<p id="taskGuidelines"></p>
+<h2 id="taskTitle">Tema da Redação</h2>
 
-<textarea id="essay" placeholder="Digite sua redação aqui..."></textarea>
+<section>
+  <h3>Orientações</h3>
+  <p id="taskGuidelines"></p>
+</section>
 
-<p id="status"></p>
+<hr>
 
-<button id="saveBtn">Salvar rascunho</button>
-<button id="sendBtn">Enviar redação</button>
+<section>
+  <h3>Escreva sua redação</h3>
+
+  <textarea
+    id="essayText"
+    rows="15"
+    placeholder="Digite sua redação aqui..."
+  ></textarea>
+
+  <p>Caracteres: <span id="charCount">0</span></p>
+
+  <button id="sendBtn">Enviar redação</button>
+
+  <p id="status"></p>
+</section>
 
 <script type="module" src="js/redacao.js"></script>
 </body>
