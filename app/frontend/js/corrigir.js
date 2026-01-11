@@ -1,20 +1,20 @@
-import { API_URL } from './config.js';
+import { API_URL } from '../js/config.js';
 
 const params = new URLSearchParams(window.location.search);
 const essayId = params.get('essayId');
 
-const essayText = document.getElementById('essayText');
-const feedbackInput = document.getElementById('feedback');
-const scoreInput = document.getElementById('score');
-const status = document.getElementById('status');
-
-
 if (!essayId) {
   alert('Redação inválida.');
-  window.history.back();
+  throw new Error('essayId ausente');
 }
 
+const contentEl = document.getElementById('essayContent');
+const feedbackEl = document.getElementById('feedback');
+const scoreEl = document.getElementById('score');
+const statusEl = document.getElementById('status');
+const saveBtn = document.getElementById('saveBtn');
 
+// 🔹 CARREGAR REDAÇÃO
 async function carregarRedacao() {
   try {
     const response = await fetch(`${API_URL}/essays/${essayId}`);
@@ -22,22 +22,22 @@ async function carregarRedacao() {
 
     const essay = await response.json();
 
-    essayText.textContent = essay.content;
-    feedbackInput.value = essay.feedback || '';
-    scoreInput.value = essay.score ?? '';
+    contentEl.textContent = essay.content;
+    feedbackEl.value = essay.feedback || '';
+    scoreEl.value = essay.score ?? '';
 
   } catch {
-    status.textContent = 'Erro ao carregar a redação.';
+    alert('Erro ao carregar redação.');
   }
 }
 
-/
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  const feedback = feedbackInput.value.trim();
-  const score = Number(scoreInput.value);
+// 🔹 SALVAR CORREÇÃO
+saveBtn.addEventListener('click', async () => {
+  const feedback = feedbackEl.value.trim();
+  const score = Number(scoreEl.value);
 
-  if (score < 0 || score > 1000) {
-    alert('A nota deve estar entre 0 e 1000.');
+  if (!feedback || isNaN(score)) {
+    statusEl.textContent = 'Preencha feedback e nota.';
     return;
   }
 
@@ -45,15 +45,15 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     const response = await fetch(`${API_URL}/essays/${essayId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ feedback, score })
+      body: JSON.stringify({ feedback, score }),
     });
 
     if (!response.ok) throw new Error();
 
-    status.textContent = 'Correção salva com sucesso.';
+    statusEl.textContent = 'Correção salva com sucesso.';
 
   } catch {
-    status.textContent = 'Erro ao salvar a correção.';
+    statusEl.textContent = 'Erro ao salvar correção.';
   }
 });
 
