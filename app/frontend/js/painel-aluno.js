@@ -13,7 +13,9 @@ const logoutBtn = document.getElementById('logoutBtn');
 // 🔹 CARREGAR SALAS DO ALUNO
 async function carregarSalas() {
   try {
-    const response = await fetch(`${API_URL}/enrollments/by-student?studentId=${studentId}`);
+    const response = await fetch(
+      `${API_URL}/enrollments/by-student?studentId=${studentId}`
+    );
     if (!response.ok) throw new Error();
 
     const rooms = await response.json();
@@ -30,8 +32,10 @@ async function carregarSalas() {
 
       const btn = document.createElement('button');
       btn.textContent = 'Entrar';
+
+      // ✅ REDIRECIONAMENTO CORRETO
       btn.onclick = () => {
-        window.location.href = `sala-aluno.html?roomId=${room.id}`;
+        window.location.href = `tarefas-aluno.html?roomId=${room.id}`;
       };
 
       li.appendChild(btn);
