@@ -2,35 +2,41 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Correção da Redação</title>
-  <link rel="stylesheet" href="css/base.css">
+  <title>Corrigir Redação</title>
+  <link rel="stylesheet" href="../css/base.css">
 </head>
 <body>
 
-<h2>Correção da Redação</h2>
-
-<button onclick="history.back()">← Voltar</button>
+<h2>Redação do aluno</h2>
 
 <section>
-  <h3>Texto do estudante</h3>
-  <p id="essayText"></p>
+  <pre id="essayContent"></pre>
 </section>
+
+<hr>
 
 <section>
   <h3>Feedback do professor</h3>
-  <textarea id="feedback" rows="6" placeholder="Digite o feedback aqui..."></textarea>
+
+  <textarea
+    id="feedback"
+    rows="6"
+    placeholder="Escreva o feedback aqui..."
+  ></textarea>
+
+  <input
+    type="number"
+    id="score"
+    placeholder="Nota"
+    min="0"
+    max="1000"
+  />
+
+  <button id="saveBtn">Salvar correção</button>
+
+  <p id="status"></p>
 </section>
 
-<section>
-  <h3>Nota final (0 a 1000)</h3>
-  <input type="number" id="score" min="0" max="1000">
-</section>
-
-<button id="saveBtn">Salvar correção</button>
-
-<p id="status"></p>
-
-<script type="module" src="../corrigir.js"></script>
+<script type="module" src="corrigir.js"></script>
 </body>
 </html>
-
