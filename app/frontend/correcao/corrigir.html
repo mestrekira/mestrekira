@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Corrigir Redação</title>
+  <link rel="stylesheet" href="../css/base.css">
+</head>
+<body>
+
+<h2>Redação do aluno</h2>
+
+<section>
+  <pre id="essayContent"></pre>
+</section>
+
+<hr>
+
+<section>
+  <h3>Feedback do professor</h3>
+
+  <textarea
+    id="feedback"
+    rows="6"
+    placeholder="Escreva o feedback aqui..."
+  ></textarea>
+
+  <input
+    type="number"
+    id="score"
+    placeholder="Nota"
+    min="0"
+    max="1000"
+  />
+
+  <button id="saveBtn">Salvar correção</button>
+
+  <p id="status"></p>
+</section>
+
+<script type="module" src="corrigir.js"></script>
+</body>
+</html>
