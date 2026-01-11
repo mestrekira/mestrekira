@@ -1,22 +1,16 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
   <title>Correção de Redações</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../css/base.css">
 </head>
 <body>
 
-<h1>Correção de Redações</h1>
+<h2>Redações enviadas</h2>
 
-<label>Sala (roomId):</label>
-<input type="text" id="roomId" placeholder="ID da sala" />
-<button onclick="loadEssays()">Carregar redações</button>
+<ul id="essaysList" class="lista"></ul>
 
-<hr />
-
-<div id="essayArea"></div>
-
-<script src="correcao.js"></script>
+<script type="module" src="correcao.js"></script>
 </body>
 </html>
