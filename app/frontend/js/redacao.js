@@ -42,6 +42,8 @@ sendBtn.addEventListener('click', async () => {
       body: JSON.stringify({ taskId, studentId, content }),
     });
 
+    window.location.href = `feedback-aluno.html?essayId=${data.id}`;
+
     if (!response.ok) throw new Error();
 
     textarea.disabled = true;
@@ -54,3 +56,4 @@ sendBtn.addEventListener('click', async () => {
     status.textContent = 'Erro ao enviar redação.';
   }
 });
+
