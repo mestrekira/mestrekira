@@ -1,27 +1,26 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Feedback da Redação</title>
- <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/base.css">
 </head>
 <body>
-  <h2>Minha Redação</h2>
 
-  <p><strong>Status:</strong> <span id="status"></span></p>
+<h2>Resultado da Redação</h2>
 
-  <h3>Texto enviado</h3>
-  <pre id="content"></pre>
+<section>
+  <h3>Nota</h3>
+  <p id="score">—</p>
+</section>
 
-  <div id="feedbackBox" style="display:none;">
-    <h3>Feedback do professor</h3>
-    <p id="feedback"></p>
+<section>
+  <h3>Feedback do Professor</h3>
+  <p id="feedback">Aguardando correção...</p>
+</section>
 
-    <h3>Nota</h3>
-    <p id="score"></p>
-  </div>
+<button id="backBtn">Voltar ao painel</button>
 
- 
-  <script type="module" src="feedback-aluno.js"></script>
+<script type="module" src="js/feedback-aluno.js"></script>
 </body>
 </html>
