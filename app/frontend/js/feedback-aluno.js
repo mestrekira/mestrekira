@@ -1,33 +1,38 @@
 import { API_URL } from './config.js';
 
 const params = new URLSearchParams(window.location.search);
-const userId = params.get('userId');
+const essayId = params.get('essayId');
 
-const statusEl = document.getElementById('status');
-const contentEl = document.getElementById('content');
-const feedbackBox = document.getElementById('feedbackBox');
-const feedbackEl = document.getElementById('feedback');
+if (!essayId) {
+  alert('Redação inválida.');
+  window.location.href = 'painel-aluno.html';
+}
+
+// ELEMENTOS
 const scoreEl = document.getElementById('score');
+const feedbackEl = document.getElementById('feedback');
+const backBtn = document.getElementById('backBtn');
 
-async function loadEssay() {
-  const res = await fetch(`${API_URL}/essays/by-student?userId=${userId}`);
-  const essays = await res.json();
+// 🔹 CARREGAR FEEDBACK
+async function carregarFeedback() {
+  try {
+    const response = await fetch(`${API_URL}/essays/${essayId}`);
+    if (!response.ok) throw new Error();
 
-  if (!essays.length) {
-    statusEl.textContent = 'Nenhuma redação enviada.';
-    return;
-  }
+    const essay = await response.json();
 
-  const essay = essays[0];
+    scoreEl.textContent = essay.score ?? 'Ainda não corrigida';
+    feedbackEl.textContent = essay.feedback || 'Aguardando correção do professor.';
 
-  statusEl.textContent = essay.status;
-  contentEl.textContent = essay.content;
-
-  if (essay.status === 'CORRECTED') {
-    feedbackBox.style.display = 'block';
-    feedbackEl.textContent = essay.feedback;
-    scoreEl.textContent = essay.score;
+  } catch {
+    feedbackEl.textContent = 'Erro ao carregar feedback.';
   }
 }
 
-loadEssay();
+// 🔹 VOLTAR
+backBtn.addEventListener('click', () => {
+  window.location.href = 'painel-aluno.html';
+});
+
+// INIT
+carregarFeedback();
