@@ -4,7 +4,6 @@ import { API_URL } from './config.js';
 const textarea = document.getElementById('essayText');
 const charCount = document.getElementById('charCount');
 const status = document.getElementById('status');
-const saveBtn = document.getElementById('saveBtn');
 const sendBtn = document.getElementById('sendBtn');
 
 // 🔹 PARÂMETROS
@@ -29,30 +28,6 @@ textarea.addEventListener('input', () => {
   charCount.textContent = textarea.value.length;
 });
 
-// 🔹 SALVAR RASCUNHO
-saveBtn.addEventListener('click', async () => {
-  const text = textarea.value;
-
-  if (!text) {
-    status.textContent = 'Nada para salvar.';
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_URL}/essays/draft`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId, studentId, content: text })
-    });
-
-    if (!response.ok) throw new Error();
-
-    status.textContent = 'Rascunho salvo com sucesso.';
-  } catch {
-    status.textContent = 'Erro ao salvar rascunho.';
-  }
-});
-
 // 🔹 ENVIAR REDAÇÃO DEFINITIVA
 sendBtn.addEventListener('click', async () => {
   const text = textarea.value;
@@ -74,7 +49,6 @@ sendBtn.addEventListener('click', async () => {
     const essay = await response.json();
 
     textarea.disabled = true;
-    saveBtn.disabled = true;
     sendBtn.disabled = true;
 
     status.textContent = 'Redação enviada com sucesso!';
@@ -83,7 +57,7 @@ sendBtn.addEventListener('click', async () => {
       window.location.href = `feedback-aluno.html?essayId=${essay.id}`;
     }, 1000);
 
-  } catch {
+  } catch (e) {
     status.textContent = 'Erro ao enviar redação.';
   }
 });
