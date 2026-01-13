@@ -1,14 +1,19 @@
 import { API_URL } from './config.js';
 
+// 🔹 PARÂMETROS
 const params = new URLSearchParams(window.location.search);
 const essayId = params.get('essayId');
+const studentId = localStorage.getItem('studentId');
 
-if (!essayId) {
-  alert('Redação inválida.');
+if (!essayId || !studentId) {
+  alert('Acesso inválido.');
   window.location.href = 'painel-aluno.html';
+  throw new Error('Parâmetros ausentes');
 }
 
-// ELEMENTOS
+// 🔹 ELEMENTOS
+const taskTitleEl = document.getElementById('taskTitle');
+const essayContentEl = document.getElementById('essayContent');
 const scoreEl = document.getElementById('score');
 const feedbackEl = document.getElementById('feedback');
 const backBtn = document.getElementById('backBtn');
@@ -21,11 +26,27 @@ async function carregarFeedback() {
 
     const essay = await response.json();
 
-    scoreEl.textContent = essay.score ?? 'Ainda não corrigida';
-    feedbackEl.textContent = essay.feedback || 'Aguardando correção do professor.';
+    // 🔐 SEGURANÇA BÁSICA
+    if (essay.studentId !== studentId) {
+      alert('Você não tem permissão para ver esta redação.');
+      window.location.href = 'painel-aluno.html';
+      return;
+    }
+
+    taskTitleEl.textContent = essay.taskTitle || '—';
+    essayContentEl.textContent = essay.content;
+
+    scoreEl.textContent =
+      essay.score !== null && essay.score !== undefined
+        ? essay.score
+        : 'Ainda não corrigida';
+
+    feedbackEl.textContent =
+      essay.feedback || 'Aguardando correção do professor.';
 
   } catch {
-    feedbackEl.textContent = 'Erro ao carregar feedback.';
+    alert('Erro ao carregar feedback.');
+    window.location.href = 'painel-aluno.html';
   }
 }
 
@@ -34,5 +55,5 @@ backBtn.addEventListener('click', () => {
   window.location.href = 'painel-aluno.html';
 });
 
-// INIT
+// 🔹 INIT
 carregarFeedback();
