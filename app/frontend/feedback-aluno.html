@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Feedback da Redação</title>
   <link rel="stylesheet" href="css/base.css">
 </head>
@@ -10,15 +10,29 @@
 <h2>Resultado da Redação</h2>
 
 <section>
-  <h3>Nota</h3>
-  <p id="score">—</p>
+  <h3>Tema</h3>
+  <p id="taskTitle"></p>
 </section>
+
+<hr>
 
 <section>
-  <h3>Feedback do Professor</h3>
-  <p id="feedback">Aguardando correção...</p>
+  <h3>Sua redação</h3>
+  <p id="essayContent" class="box"></p>
 </section>
 
+<hr>
+
+<section>
+  <h3>Correção do professor</h3>
+
+  <p><strong>Nota:</strong> <span id="score">—</span></p>
+
+  <h4>Feedback</h4>
+  <p id="feedback" class="box"></p>
+</section>
+
+<br>
 <button id="backBtn">Voltar ao painel</button>
 
 <script type="module" src="js/feedback-aluno.js"></script>
