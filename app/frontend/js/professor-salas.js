@@ -27,6 +27,24 @@ async function carregarSalas() {
 
     li.appendChild(btn);
     roomsList.appendChild(li);
+
+const delBtn = document.createElement('button');
+delBtn.textContent = 'Excluir';
+delBtn.onclick = async () => {
+  const ok = confirm(`Excluir a sala "${room.name}"?`);
+  if (!ok) return;
+
+  const res = await fetch(`${API_URL}/rooms/${room.id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    alert('Erro ao excluir sala.');
+    return;
+  }
+
+  carregarSalas();
+};
+
+li.appendChild(delBtn);
+
   });
 }
 
