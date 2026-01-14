@@ -100,6 +100,23 @@ async function carregarTarefas() {
 
       li.appendChild(btn);
       tasksList.appendChild(li);
+
+const delBtn = document.createElement('button');
+delBtn.textContent = 'Excluir';
+delBtn.onclick = async () => {
+  const ok = confirm('Excluir esta tarefa?');
+  if (!ok) return;
+
+  const res = await fetch(`${API_URL}/tasks/${task.id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    alert('Erro ao excluir tarefa.');
+    return;
+  }
+  carregarTarefas();
+};
+
+li.appendChild(delBtn);
+
     });
 
   } catch {
