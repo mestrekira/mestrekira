@@ -25,10 +25,7 @@ let currentEssayId = null;
 // 🔹 CARREGAR REDAÇÕES DA TAREFA
 async function carregarRedacoes() {
   try {
-    const response = await fetch(
-      `${API_URL}/essays/by-task/${taskId}/with-student`
-    );
-
+    const response = await fetch(`${API_URL}/essays/by-task/${taskId}/with-student`);
     if (!response.ok) throw new Error();
 
     const essays = await response.json();
@@ -38,20 +35,12 @@ async function carregarRedacoes() {
       essaysList.innerHTML = '<li>Nenhuma redação enviada ainda.</li>';
       return;
     }
-    
-const params = new URLSearchParams(window.location.search);
-const taskId = params.get('taskId');
-
-if (!taskId) {
-  alert('Tarefa inválida.');
-  throw new Error('taskId ausente');
-}
 
     essays.forEach(essay => {
       const li = document.createElement('li');
 
       li.textContent = `${essay.studentName} — ${
-        essay.score !== null ? `Nota: ${essay.score}` : 'Sem correção'
+        essay.score !== null && essay.score !== undefined ? `Nota: ${essay.score}` : 'Sem correção'
       }`;
 
       const btn = document.createElement('button');
@@ -72,7 +61,7 @@ function abrirCorrecao(essay) {
   currentEssayId = essay.id;
 
   studentNameEl.textContent = essay.studentName;
-  studentEmailEl.textContent = essay.studentEmail;
+  studentEmailEl.textContent = essay.studentEmail || '';
   essayContentEl.textContent = essay.content;
 
   feedbackEl.value = essay.feedback || '';
@@ -84,10 +73,15 @@ function abrirCorrecao(essay) {
 
 // 🔹 SALVAR CORREÇÃO
 saveBtn.addEventListener('click', async () => {
+  if (!currentEssayId) {
+    statusEl.textContent = 'Selecione uma redação primeiro.';
+    return;
+  }
+
   const feedback = feedbackEl.value.trim();
   const score = Number(scoreEl.value);
 
-  if (!feedback || isNaN(score)) {
+  if (!feedback || Number.isNaN(score)) {
     statusEl.textContent = 'Preencha feedback e nota.';
     return;
   }
