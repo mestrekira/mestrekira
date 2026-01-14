@@ -95,8 +95,8 @@ async function carregarTarefas() {
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
       btn.onclick = () => {
-        window.location.href = `correcao/index.html?taskId=${task.id}`;
-      };
+  window.location.href = `correcao.html?taskId=${task.id}`;
+};
 
       li.appendChild(btn);
       tasksList.appendChild(li);
