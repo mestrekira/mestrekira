@@ -38,6 +38,14 @@ async function carregarRedacoes() {
       essaysList.innerHTML = '<li>Nenhuma redação enviada ainda.</li>';
       return;
     }
+    
+const params = new URLSearchParams(window.location.search);
+const taskId = params.get('taskId');
+
+if (!taskId) {
+  alert('Tarefa inválida.');
+  throw new Error('taskId ausente');
+}
 
     essays.forEach(essay => {
       const li = document.createElement('li');
