@@ -2,22 +2,30 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Mestre Kira — Login</title>
+  <title>Mestre Kira — Login do Aluno</title>
+  <link rel="stylesheet" href="css/base.css">
   <script defer src="js/api.js"></script>
   <script defer src="js/login-aluno.js"></script>
 </head>
 <body>
 
-<h2>Login</h2>
+<h2>Login do Aluno</h2>
 
-<input type="text" id="id" placeholder="ID" />
-<input type="password" id="password" placeholder="Senha" />
-<button onclick="login()">Entrar</button>
+<section>
+  <input type="text" id="id" placeholder="ID" autocomplete="username" />
+  <input type="password" id="password" placeholder="Senha" autocomplete="current-password" />
 
-<p id="error"></p>
+  <button id="loginBtn">Entrar</button>
+
+  <p id="error"></p>
+</section>
+
+<hr>
+
+<section>
+  <p>Entrou na plataforma pela primeira vez?</p>
+  <a href="entrar-sala.html">Entrar na sala por código</a>
+</section>
 
 </body>
 </html>
-
-
-
