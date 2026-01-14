@@ -1,12 +1,15 @@
 import { API_URL } from './config.js';
 
-// 🔹 ELEMENTOS
+// ELEMENTOS
 const textarea = document.getElementById('essayText');
 const charCount = document.getElementById('charCount');
 const status = document.getElementById('status');
 const sendBtn = document.getElementById('sendBtn');
 
-// 🔹 PARÂMETROS
+const taskTitleEl = document.getElementById('taskTitle');
+const taskGuidelinesEl = document.getElementById('taskGuidelines');
+
+// PARÂMETROS
 const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
 const studentId = localStorage.getItem('studentId');
@@ -17,18 +20,34 @@ if (!taskId || !studentId) {
   throw new Error('Parâmetros ausentes');
 }
 
-// 🔹 BLOQUEAR COLAR TEXTO
+// BLOQUEAR COLAR
 textarea.addEventListener('paste', (e) => {
   e.preventDefault();
   alert('Colar texto não é permitido.');
 });
 
-// 🔹 CONTADOR DE CARACTERES
+// CONTADOR
 textarea.addEventListener('input', () => {
   charCount.textContent = textarea.value.length;
 });
 
-// 🔹 ENVIAR REDAÇÃO DEFINITIVA
+// 🔹 CARREGAR TAREFA (TEMA + ORIENTAÇÕES)
+async function carregarTarefa() {
+  try {
+    const response = await fetch(`${API_URL}/tasks/${taskId}`);
+    if (!response.ok) throw new Error();
+
+    const task = await response.json();
+    taskTitleEl.textContent = task.title || 'Tema da Redação';
+    taskGuidelinesEl.textContent = task.guidelines || 'Sem orientações adicionais.';
+
+  } catch {
+    taskTitleEl.textContent = 'Tema da Redação';
+    taskGuidelinesEl.textContent = 'Não foi possível carregar as orientações.';
+  }
+}
+
+// ENVIAR
 sendBtn.addEventListener('click', async () => {
   const text = textarea.value;
 
@@ -50,14 +69,15 @@ sendBtn.addEventListener('click', async () => {
 
     textarea.disabled = true;
     sendBtn.disabled = true;
-
     status.textContent = 'Redação enviada com sucesso!';
 
     setTimeout(() => {
       window.location.href = `feedback-aluno.html?essayId=${essay.id}`;
-    }, 1000);
+    }, 800);
 
-  } catch (e) {
+  } catch {
     status.textContent = 'Erro ao enviar redação.';
   }
 });
+
+carregarTarefa();
