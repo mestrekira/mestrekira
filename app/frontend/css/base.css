@@ -35,7 +35,7 @@ li {
   border-radius: 4px;
 }
 
-/* ===== Menu de Perfil (reboco) ===== */
+/* ===== Menu de Perfil ===== */
 .menu-btn{
   position: fixed;
   top: 14px;
@@ -139,4 +139,5 @@ li {
   border-color: #e08;
   color: #b03;
 }
+
 
