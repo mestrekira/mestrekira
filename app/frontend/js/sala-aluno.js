@@ -4,6 +4,13 @@ const params = new URLSearchParams(window.location.search);
 const roomId = params.get('roomId');
 const studentId = localStorage.getItem('studentId');
 
+const roomNameEl = document.getElementById('roomName');
+const tasksList = document.getElementById('tasksList');
+const status = document.getElementById('status');
+
+const leaveBtn = document.getElementById('leaveRoomBtn');
+const leaveStatus = document.getElementById('leaveStatus');
+
 if (!studentId) {
   window.location.href = 'login-aluno.html';
   throw new Error('studentId ausente');
@@ -15,18 +22,7 @@ if (!roomId) {
   throw new Error('roomId ausente');
 }
 
-// ELEMENTOS
-const roomNameEl = document.getElementById('roomName');
-const teacherInfoEl = document.getElementById('teacherInfo');
-const classmatesList = document.getElementById('classmatesList');
-
-const tasksList = document.getElementById('tasksList');
-const status = document.getElementById('status');
-
-const leaveBtn = document.getElementById('leaveRoomBtn');
-const leaveStatus = document.getElementById('leaveStatus');
-
-// ✅ SAIR DA SALA
+// ✅ SAIR DA SALA (fica fora para não depender de carregar tarefas)
 if (leaveBtn) {
   leaveBtn.addEventListener('click', async () => {
     const ok = confirm('Tem certeza que deseja sair desta sala?');
@@ -45,6 +41,7 @@ if (leaveBtn) {
       setTimeout(() => {
         window.location.href = 'painel-aluno.html';
       }, 600);
+
     } catch {
       if (leaveStatus) leaveStatus.textContent = 'Erro ao sair da sala.';
       else alert('Erro ao sair da sala.');
@@ -52,58 +49,32 @@ if (leaveBtn) {
   });
 }
 
-// ✅ CARREGAR OVERVIEW: sala + professor + colegas
-async function carregarOverview() {
+async function carregarSala() {
   try {
-    const res = await fetch(`${API_URL}/rooms/${roomId}/overview`);
-    if (!res.ok) throw new Error();
+    const response = await fetch(`${API_URL}/rooms/${roomId}`);
+    if (!response.ok) throw new Error();
 
-    const data = await res.json();
-
-    // Sala
-    roomNameEl.textContent = data?.room?.name || 'Sala';
-
-    // Professor
-    if (data.professor) {
-      teacherInfoEl.textContent = `${data.professor.name} (${data.professor.email})`;
-    } else {
-      teacherInfoEl.textContent = 'Professor não encontrado.';
-    }
-
-    // Colegas
-    classmatesList.innerHTML = '';
-
-    const students = Array.isArray(data.students) ? data.students : [];
-    if (students.length === 0) {
-      classmatesList.innerHTML = '<li>Nenhum colega matriculado ainda.</li>';
-      return;
-    }
-
-    students.forEach(s => {
-      const li = document.createElement('li');
-      li.textContent = `${s.name} (${s.email})`;
-      classmatesList.appendChild(li);
-    });
+    const room = await response.json();
+    roomNameEl.textContent = room.name;
 
   } catch {
-    teacherInfoEl.textContent = 'Erro ao carregar dados da sala.';
-    classmatesList.innerHTML = '<li>Erro ao carregar colegas.</li>';
+    roomNameEl.textContent = 'Erro ao carregar sala';
   }
 }
 
-// ✅ CARREGAR TAREFAS
 async function carregarTarefas() {
   try {
-    status.textContent = '';
+    // (Se quiser bloquear por matrícula, crie endpoint específico depois.
+    // por enquanto, mantém como está)
+    const response = await fetch(`${API_URL}/tasks/by-room?roomId=${roomId}`);
+    if (!response.ok) throw new Error();
+
+    const tasks = await response.json();
     tasksList.innerHTML = '';
-
-    const res = await fetch(`${API_URL}/tasks/by-room?roomId=${roomId}`);
-    if (!res.ok) throw new Error();
-
-    const tasks = await res.json();
 
     if (!Array.isArray(tasks) || tasks.length === 0) {
       tasksList.innerHTML = '<li>Nenhuma tarefa disponível.</li>';
+      status.textContent = '';
       return;
     }
 
@@ -126,11 +97,13 @@ async function carregarTarefas() {
       tasksList.appendChild(li);
     });
 
+    status.textContent = '';
+
   } catch {
     status.textContent = 'Erro ao carregar tarefas.';
+    tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
 }
 
-// INIT
-carregarOverview();
+carregarSala();
 carregarTarefas();
