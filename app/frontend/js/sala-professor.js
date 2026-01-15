@@ -6,11 +6,11 @@ const roomId = params.get('roomId');
 
 if (!roomId) {
   alert('Sala inválida.');
-  window.location.href = 'painel-professor.html';
+  window.location.href = 'professor-salas.html';
   throw new Error('roomId ausente');
 }
 
-// 🔹 Elementos do DOM (com proteção)
+// 🔹 Elementos
 const roomNameEl = document.getElementById('roomName');
 const roomCodeEl = document.getElementById('roomCode');
 const studentsList = document.getElementById('studentsList');
@@ -38,19 +38,22 @@ async function carregarSala() {
   }
 }
 
-// 🔹 Copiar código da sala
+// 🔹 Copiar código
 copyCodeBtn.addEventListener('click', () => {
-  if (!roomCodeEl.textContent || roomCodeEl.textContent === '—') {
+  const code = roomCodeEl.textContent?.trim();
+  if (!code || code === '—') {
     alert('Código da sala indisponível.');
     return;
   }
 
-  navigator.clipboard.writeText(roomCodeEl.textContent);
+  navigator.clipboard.writeText(code);
   alert('Código da sala copiado!');
 });
 
 // 🔹 Carregar alunos
 async function carregarAlunos() {
+  studentsList.innerHTML = '<li>Carregando alunos...</li>';
+
   try {
     const response = await fetch(`${API_URL}/rooms/${roomId}/students`);
     if (!response.ok) throw new Error();
@@ -58,24 +61,36 @@ async function carregarAlunos() {
     const students = await response.json();
     studentsList.innerHTML = '';
 
-    if (students.length === 0) {
-      studentsList.innerHTML = '<li>Nenhum aluno cadastrado.</li>';
+    if (!Array.isArray(students) || students.length === 0) {
+      studentsList.innerHTML = '<li>Nenhum aluno matriculado ainda.</li>';
       return;
     }
 
     students.forEach(student => {
       const li = document.createElement('li');
-      li.textContent = `${student.name} (${student.email})`;
+
+      // se backend ainda estiver retornando só studentId, mostra algo decente
+      if (student.name && student.email) {
+        li.textContent = `${student.name} (${student.email})`;
+      } else if (student.studentId) {
+        li.textContent = `Aluno (ID: ${student.studentId})`;
+      } else {
+        li.textContent = 'Aluno';
+      }
+
       studentsList.appendChild(li);
     });
 
   } catch {
-    studentsList.innerHTML = '<li>Erro ao carregar alunos.</li>';
+    // ✅ não passa insegurança: tenta explicar
+    studentsList.innerHTML = '<li>Não foi possível carregar alunos agora.</li>';
   }
 }
 
 // 🔹 Carregar tarefas
 async function carregarTarefas() {
+  tasksList.innerHTML = '<li>Carregando tarefas...</li>';
+
   try {
     const response = await fetch(`${API_URL}/tasks/by-room?roomId=${roomId}`);
     if (!response.ok) throw new Error();
@@ -83,40 +98,43 @@ async function carregarTarefas() {
     const tasks = await response.json();
     tasksList.innerHTML = '';
 
-    if (tasks.length === 0) {
+    if (!Array.isArray(tasks) || tasks.length === 0) {
       tasksList.innerHTML = '<li>Nenhuma tarefa criada.</li>';
       return;
     }
 
     tasks.forEach(task => {
       const li = document.createElement('li');
-      li.textContent = task.title;
+
+      const title = document.createElement('strong');
+      title.textContent = task.title;
 
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
       btn.onclick = () => {
-  window.location.href = `correcao.html?taskId=${task.id}`;
-};
+        window.location.href = `correcao.html?taskId=${task.id}`;
+      };
 
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Excluir';
+      delBtn.onclick = async () => {
+        const ok = confirm(`Excluir a tarefa "${task.title}"?`);
+        if (!ok) return;
+
+        const res = await fetch(`${API_URL}/tasks/${task.id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          alert('Erro ao excluir tarefa.');
+          return;
+        }
+        carregarTarefas();
+      };
+
+      li.appendChild(title);
+      li.appendChild(document.createElement('br'));
       li.appendChild(btn);
+      li.appendChild(delBtn);
+
       tasksList.appendChild(li);
-
-const delBtn = document.createElement('button');
-delBtn.textContent = 'Excluir';
-delBtn.onclick = async () => {
-  const ok = confirm('Excluir esta tarefa?');
-  if (!ok) return;
-
-  const res = await fetch(`${API_URL}/tasks/${task.id}`, { method: 'DELETE' });
-  if (!res.ok) {
-    alert('Erro ao excluir tarefa.');
-    return;
-  }
-  carregarTarefas();
-};
-
-li.appendChild(delBtn);
-
     });
 
   } catch {
@@ -145,7 +163,6 @@ createTaskBtn.addEventListener('click', async () => {
 
     document.getElementById('taskTitle').value = '';
     document.getElementById('taskGuidelines').value = '';
-
     carregarTarefas();
 
   } catch {
@@ -153,7 +170,7 @@ createTaskBtn.addEventListener('click', async () => {
   }
 });
 
-// 🔹 Inicialização
+// 🔹 INIT
 carregarSala();
 carregarAlunos();
 carregarTarefas();
