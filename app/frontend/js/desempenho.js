@@ -1,115 +1,233 @@
 import { API_URL } from './config.js';
 
-const params = new URLSearchParams(window.location.search);
-const roomId = params.get('roomId');
-const studentId = localStorage.getItem('studentId');
+const statusEl = document.getElementById('status');
+const roomSelect = document.getElementById('roomSelect');
+const profOnly = document.getElementById('profOnly');
+const studentSelect = document.getElementById('studentSelect');
+const chartEl = document.getElementById('chart');
+const historyList = document.getElementById('historyList');
 
-if (!studentId) {
-  window.location.href = 'login-aluno.html';
-  throw new Error('studentId ausente');
+function setStatus(msg) {
+  statusEl.textContent = msg || '';
 }
 
-if (!roomId) {
-  alert('Sala inválida.');
-  window.location.href = 'painel-aluno.html';
-  throw new Error('roomId ausente');
+function getSession() {
+  const professorId = localStorage.getItem('professorId');
+  const studentId = localStorage.getItem('studentId');
+
+  if (professorId) return { role: 'professor', id: professorId };
+  if (studentId) return { role: 'student', id: studentId };
+  return null;
 }
 
-const roomNameEl = document.getElementById('roomName');
-const essaysList = document.getElementById('essaysList');
-const status = document.getElementById('status');
-
-const avgTotal = document.getElementById('avgTotal');
-const avgC1 = document.getElementById('avgC1');
-const avgC2 = document.getElementById('avgC2');
-const avgC3 = document.getElementById('avgC3');
-const avgC4 = document.getElementById('avgC4');
-const avgC5 = document.getElementById('avgC5');
-
-function mean(nums) {
-  const v = nums.filter(n => typeof n === 'number' && !Number.isNaN(n));
-  if (v.length === 0) return null;
-  return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
+const session = getSession();
+if (!session) {
+  window.location.href = 'login.html';
 }
 
-async function carregarSala() {
-  try {
-    const res = await fetch(`${API_URL}/rooms/${roomId}`);
-    if (!res.ok) throw new Error();
-    const room = await res.json();
-    roomNameEl.textContent = room.name || 'Sala';
-  } catch {
-    roomNameEl.textContent = 'Sala';
+// ===== helpers =====
+async function safeJson(res) {
+  try { return await res.json(); } catch { return null; }
+}
+
+// barras simples (sem libs)
+function renderChart(data) {
+  chartEl.innerHTML = '';
+
+  if (!data || data.length === 0) {
+    chartEl.textContent = 'Sem dados para exibir.';
+    return;
   }
+
+  // pega máximos
+  const maxTotal = 1000;
+
+  // container
+  const wrap = document.createElement('div');
+  wrap.style.display = 'grid';
+  wrap.style.gap = '10px';
+
+  data.forEach((item, idx) => {
+    const total = Number(item.total ?? item.score ?? 0);
+    const label = document.createElement('div');
+    label.textContent = `Redação ${idx + 1} — Total: ${total}`;
+
+    const barWrap = document.createElement('div');
+    barWrap.style.border = '1px solid #ccc';
+    barWrap.style.borderRadius = '10px';
+    barWrap.style.overflow = 'hidden';
+    barWrap.style.height = '14px';
+    barWrap.style.background = '#f5f5f5';
+
+    const bar = document.createElement('div');
+    bar.style.height = '100%';
+    bar.style.width = `${Math.max(0, Math.min(100, (total / maxTotal) * 100))}%`;
+    bar.style.background = '#222';
+
+    barWrap.appendChild(bar);
+
+    // detalhamento ENEM (c1..c5)
+    const det = document.createElement('div');
+    const c1 = item.c1 ?? 0, c2 = item.c2 ?? 0, c3 = item.c3 ?? 0, c4 = item.c4 ?? 0, c5 = item.c5 ?? 0;
+    det.textContent = `C1:${c1}  C2:${c2}  C3:${c3}  C4:${c4}  C5:${c5}`;
+
+    const box = document.createElement('div');
+    box.appendChild(label);
+    box.appendChild(barWrap);
+    box.appendChild(det);
+
+    wrap.appendChild(box);
+  });
+
+  chartEl.appendChild(wrap);
 }
 
-async function carregarDesempenho() {
-  try {
-    status.textContent = 'Carregando...';
+function renderHistory(list) {
+  historyList.innerHTML = '';
 
-    const res = await fetch(
-      `${API_URL}/essays/performance/by-room-for-student?roomId=${roomId}&studentId=${studentId}`
-    );
+  if (!list || list.length === 0) {
+    historyList.innerHTML = '<li>Nenhuma redação corrigida/enviada nesta sala.</li>';
+    return;
+  }
+
+  list.forEach((e, idx) => {
+    const li = document.createElement('li');
+
+    const title = document.createElement('div');
+    const total = Number(e.total ?? e.score ?? 0);
+    title.innerHTML = `<strong>Redação ${idx + 1}</strong> — Total: ${total}`;
+
+    const meta = document.createElement('div');
+    const name = e.studentName ? `Aluno: ${e.studentName}` : '';
+    meta.textContent = name;
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Ver redação';
+    btn.onclick = () => {
+      // abre visualização simples via querystring
+      window.location.href = `ver-redacao.html?essayId=${e.id}`;
+    };
+
+    li.appendChild(title);
+    if (name) li.appendChild(meta);
+    li.appendChild(btn);
+    historyList.appendChild(li);
+  });
+}
+
+// ===== carregar salas =====
+async function carregarSalas() {
+  setStatus('Carregando salas...');
+
+  try {
+    let res;
+
+    if (session.role === 'professor') {
+      res = await fetch(`${API_URL}/rooms/by-professor?professorId=${session.id}`);
+    } else {
+      res = await fetch(`${API_URL}/enrollments/by-student?studentId=${session.id}`);
+    }
 
     if (!res.ok) throw new Error();
 
-    const essays = await res.json();
-    essaysList.innerHTML = '';
+    const rooms = await res.json();
 
-    if (!Array.isArray(essays) || essays.length === 0) {
-      status.textContent = 'Nenhuma redação enviada nesta sala ainda.';
-      avgTotal.textContent = '—';
-      avgC1.textContent = '—';
-      avgC2.textContent = '—';
-      avgC3.textContent = '—';
-      avgC4.textContent = '—';
-      avgC5.textContent = '—';
+    roomSelect.innerHTML = '';
+    if (!rooms || rooms.length === 0) {
+      roomSelect.innerHTML = '<option value="">(nenhuma sala)</option>';
+      setStatus('Você não tem salas para analisar.');
       return;
     }
 
-    // médias (somente redações corrigidas)
-    const corrected = essays.filter(e => e.score !== null && e.score !== undefined);
-
-    avgTotal.textContent = mean(corrected.map(e => e.score)) ?? '—';
-    avgC1.textContent = mean(corrected.map(e => e.c1)) ?? '—';
-    avgC2.textContent = mean(corrected.map(e => e.c2)) ?? '—';
-    avgC3.textContent = mean(corrected.map(e => e.c3)) ?? '—';
-    avgC4.textContent = mean(corrected.map(e => e.c4)) ?? '—';
-    avgC5.textContent = mean(corrected.map(e => e.c5)) ?? '—';
-
-    // lista
-    essays.forEach(e => {
-      const li = document.createElement('li');
-
-      const title = document.createElement('strong');
-      title.textContent = e.taskTitle || 'Tarefa';
-
-      const line = document.createElement('div');
-      const nota = (e.score !== null && e.score !== undefined) ? `Nota: ${e.score}` : 'Sem correção';
-      line.textContent = nota;
-
-      const btn = document.createElement('button');
-      btn.textContent = 'Ver redação/feedback';
-      btn.onclick = () => {
-        window.location.href = `feedback-aluno.html?essayId=${e.id}`;
-      };
-
-      li.appendChild(title);
-      li.appendChild(document.createElement('br'));
-      li.appendChild(line);
-      li.appendChild(document.createElement('br'));
-      li.appendChild(btn);
-
-      essaysList.appendChild(li);
+    rooms.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = r.name;
+      roomSelect.appendChild(opt);
     });
 
-    status.textContent = '';
+    setStatus('');
+    await onRoomChange(); // carrega dados iniciais
+
   } catch {
-    status.textContent = 'Erro ao carregar desempenho.';
-    essaysList.innerHTML = '';
+    setStatus('Erro ao carregar salas.');
   }
 }
 
-// INIT
-carregarSala();
-carregarDesempenho();
+async function carregarAlunosDaSala(roomId) {
+  // só professor
+  profOnly.style.display = 'block';
+
+  studentSelect.innerHTML = `<option value="">(todos)</option>`;
+
+  try {
+    const res = await fetch(`${API_URL}/rooms/${roomId}/students`);
+    if (!res.ok) throw new Error();
+
+    const students = await res.json();
+    students.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id; // precisa vir do backend
+      opt.textContent = `${s.name} (${s.email})`;
+      studentSelect.appendChild(opt);
+    });
+
+  } catch {
+    // sem travar
+  }
+}
+
+async function carregarDesempenho(roomId, studentIdFilter = '') {
+  setStatus('Carregando desempenho...');
+
+  try {
+    let url = `${API_URL}/analytics/room/${roomId}/essays`;
+
+    // aluno sempre filtra por si
+    if (session.role === 'student') {
+      url += `?studentId=${encodeURIComponent(session.id)}`;
+    } else if (studentIdFilter) {
+      url += `?studentId=${encodeURIComponent(studentIdFilter)}`;
+    }
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+
+    const data = await res.json();
+
+    // data: lista de redações com c1..c5 e total/score e id e (opcional) studentName
+    renderChart(data);
+    renderHistory(data);
+
+    setStatus('');
+
+  } catch {
+    setStatus('Erro ao carregar desempenho.');
+    renderChart([]);
+    renderHistory([]);
+  }
+}
+
+// ===== eventos =====
+async function onRoomChange() {
+  const roomId = roomSelect.value;
+  if (!roomId) return;
+
+  if (session.role === 'professor') {
+    await carregarAlunosDaSala(roomId);
+    await carregarDesempenho(roomId, studentSelect.value);
+  } else {
+    profOnly.style.display = 'none';
+    await carregarDesempenho(roomId, '');
+  }
+}
+
+roomSelect.addEventListener('change', onRoomChange);
+studentSelect.addEventListener('change', () => {
+  const roomId = roomSelect.value;
+  if (!roomId) return;
+  carregarDesempenho(roomId, studentSelect.value);
+});
+
+// init
+carregarSalas();
