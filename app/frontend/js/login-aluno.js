@@ -28,7 +28,7 @@ async function fazerLogin() {
 
     // ✅ Fluxo do aluno
     localStorage.setItem('studentId', result.id);
-    window.location.href = 'painel-aluno.html';
+    window.location.href = 'professor-salas.html';
 
   } catch (e) {
     errorEl.textContent = 'Erro ao fazer login. Tente novamente.';
@@ -44,3 +44,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') fazerLogin();
   });
 });
+
