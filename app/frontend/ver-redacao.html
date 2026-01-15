@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ver redação</title>
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+
+<h2>Redação</h2>
+
+<p><strong>Aluno:</strong> <span id="student"></span></p>
+<p><strong>Total:</strong> <span id="total"></span></p>
+<p><strong>ENEM:</strong> <span id="enem"></span></p>
+
+<hr>
+
+<h3>Texto</h3>
+<p id="content" class="box"></p>
+
+<hr>
+
+<h3>Feedback</h3>
+<p id="feedback" class="box"></p>
+
+<script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+  initMenuPerfil({
+    loginRedirect: 'login.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html'
+  });
+</script>
+
+<script type="module" src="js/ver-redacao.js"></script>
+</body>
+</html>
