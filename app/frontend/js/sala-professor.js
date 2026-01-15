@@ -151,6 +151,15 @@ createTaskBtn.addEventListener('click', async () => {
     alert('Informe o tema da redação.');
     return;
   }
+  
+// 🔹 BOTÃO DE DESEMPENHO
+const performanceBtn = document.getElementById('performanceBtn');
+
+if (performanceBtn) {
+  performanceBtn.addEventListener('click', () => {
+    window.location.href = `desempenho-professor.html?roomId=${roomId}`;
+  });
+}
 
   try {
     const response = await fetch(`${API_URL}/tasks`, {
