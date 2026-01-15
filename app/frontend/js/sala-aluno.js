@@ -67,6 +67,37 @@ async function carregarTarefas() {
   } catch {
     status.textContent = 'Erro ao carregar tarefas.';
   }
+
+  // ✅ SAIR DA SALA
+const leaveBtn = document.getElementById('leaveRoomBtn');
+const leaveStatus = document.getElementById('leaveStatus');
+
+if (leaveBtn) {
+  leaveBtn.addEventListener('click', async () => {
+    const ok = confirm('Tem certeza que deseja sair desta sala?');
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`${API_URL}/enrollments/leave`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, studentId }),
+      });
+
+      if (!res.ok) throw new Error();
+
+      if (leaveStatus) leaveStatus.textContent = 'Você saiu da sala.';
+      setTimeout(() => {
+        window.location.href = 'painel-aluno.html';
+      }, 600);
+
+    } catch {
+      if (leaveStatus) leaveStatus.textContent = 'Erro ao sair da sala.';
+      else alert('Erro ao sair da sala.');
+    }
+  });
+}
+
 }
 
 
