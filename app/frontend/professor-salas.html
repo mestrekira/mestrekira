@@ -4,12 +4,68 @@
   <meta charset="UTF-8" />
   <title>Painel do Professor</title>
   <link rel="stylesheet" href="css/base.css">
+
+  <!-- CSS mínimo do menu (pode mover para base.css depois) -->
+  <style>
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .menu-btn { font-size: 20px; padding: 8px 12px; cursor:pointer; }
+    .menu-panel {
+      display:none;
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 8px;
+    }
+    .menu-panel.open { display:block; }
+    .menu-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .avatar {
+      width: 64px; height:64px; border-radius: 50%;
+      border: 1px solid #ccc; object-fit: cover;
+      background: #f3f3f3;
+    }
+    .menu-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px; }
+    .danger { border: 1px solid #c00; color: #c00; }
+    .muted { opacity: .8; font-size: .95em; }
+    .field { display:flex; flex-direction:column; gap:6px; margin-top: 10px; }
+    .field input { padding: 8px; }
+  </style>
 </head>
 <body>
 
-<h2>Minhas Salas</h2>
+<header class="topbar">
+  <h2>Minhas Salas</h2>
+  <button id="menuBtn" class="menu-btn" aria-label="Abrir menu">☰</button>
+</header>
 
-<button id="logoutBtn">Sair</button>
+<!-- MENU OCULTO -->
+<section id="menuPanel" class="menu-panel">
+  <div class="menu-row">
+    <img id="avatarImg" class="avatar" alt="Foto de perfil" />
+    <div>
+      <div><strong id="profileRole">Professor</strong></div>
+      <div class="muted" id="profileIdText"></div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="avatarInput"><strong>Foto do perfil (PNG/JPG)</strong></label>
+    <input id="avatarInput" type="file" accept="image/png,image/jpeg" />
+    <small class="muted">A foto fica salva neste navegador (modo gratuito).</small>
+  </div>
+
+  <div class="field">
+    <label><strong>Atualizar dados</strong></label>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)">
+    <input id="newPassword" type="password" placeholder="Nova senha (opcional)">
+    <button id="saveProfileBtn">Salvar alterações</button>
+    <small class="muted" id="profileStatus"></small>
+  </div>
+
+  <div class="menu-actions">
+    <button id="logoutBtn">Sair do sistema</button>
+    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+  </div>
+</section>
 
 <section>
   <h3>Criar nova sala</h3>
@@ -24,6 +80,7 @@
   <ul id="roomsList" class="lista"></ul>
 </section>
 
+<script type="module" src="js/menu.js"></script>
 <script type="module" src="js/professor-salas.js"></script>
 </body>
 </html>
