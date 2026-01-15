@@ -1,17 +1,37 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Meu Desempenho</title>
+  <meta charset="UTF-8" />
+  <title>Desempenho</title>
   <link rel="stylesheet" href="css/base.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-  <h1>Minha evolução nas redações</h1>
+<h2>Meu desempenho na sala</h2>
 
-  <canvas id="chart" width="400" height="200"></canvas>
+<p><strong>Sala:</strong> <span id="roomName">...</span></p>
 
-  <script type="module" src="js/desempenho.js"></script>
+<section>
+  <h3>Resumo</h3>
+  <ul class="lista">
+    <li>Média total: <strong id="avgTotal">—</strong></li>
+    <li>Média C1: <strong id="avgC1">—</strong></li>
+    <li>Média C2: <strong id="avgC2">—</strong></li>
+    <li>Média C3: <strong id="avgC3">—</strong></li>
+    <li>Média C4: <strong id="avgC4">—</strong></li>
+    <li>Média C5: <strong id="avgC5">—</strong></li>
+  </ul>
+</section>
+
+<hr>
+
+<section>
+  <h3>Minhas redações</h3>
+  <ul id="essaysList" class="lista"></ul>
+</section>
+
+<p id="status"></p>
+
+<script type="module" src="js/desempenho.js"></script>
 </body>
 </html>
