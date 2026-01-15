@@ -76,5 +76,15 @@
 </button>
 
 <script type="module" src="js/sala-aluno.js"></script>
+  
+  <script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+  initMenuPerfil({
+    loginRedirect: 'login.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html'
+  });
+</script>
+
 </body>
 </html>
