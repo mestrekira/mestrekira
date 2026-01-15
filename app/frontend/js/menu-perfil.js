@@ -4,14 +4,12 @@ function qs(id) {
   return document.getElementById(id);
 }
 
-function getCurrentUser() {
-  // prioriza professor
+function getSession() {
   const professorId = localStorage.getItem('professorId');
   const studentId = localStorage.getItem('studentId');
 
   if (professorId) return { role: 'professor', id: professorId };
   if (studentId) return { role: 'student', id: studentId };
-
   return null;
 }
 
@@ -19,33 +17,25 @@ function photoKey(userId) {
   return `profilePhoto_${userId}`;
 }
 
-async function fetchMe(userId) {
-  // Você já usa dados no localStorage em alguns fluxos,
-  // mas aqui buscamos do backend para ficar confiável.
-  // Se você não tiver GET /users/:id, o fallback abaixo cobre.
+async function fetchUser(userId) {
   try {
     const res = await fetch(`${API_URL}/users/${userId}`);
     if (!res.ok) throw new Error();
     return await res.json();
   } catch {
-    // fallback mínimo
-    return {
-      id: userId,
-      name: '(nome não carregado)',
-      email: '(email não carregado)',
-    };
+    return { id: userId, name: '(não carregou)', email: '(não carregou)' };
   }
 }
 
-export async function initMenuPerfil(options = {}) {
+export async function initMenuPerfil(opts = {}) {
   const {
-    loginRedirect = 'login.html', // caso sem sessão
+    loginRedirect = 'login.html',
     logoutRedirectProfessor = 'login-professor.html',
     logoutRedirectStudent = 'login-aluno.html',
-  } = options;
+  } = opts;
 
-  const who = getCurrentUser();
-  if (!who) {
+  const session = getSession();
+  if (!session) {
     window.location.href = loginRedirect;
     return;
   }
@@ -71,20 +61,17 @@ export async function initMenuPerfil(options = {}) {
   const logoutBtn = qs('logoutMenuBtn');
   const deleteBtn = qs('deleteAccountBtn');
 
-  // Guardas
   if (!menuBtn || !menuPanel) {
     console.error('Menu de perfil: HTML não encontrado.');
     return;
   }
 
   // ABRIR/FECHAR
-  function openMenu() {
-    menuPanel.classList.add('open');
-  }
-  function closeMenu() {
+  const openMenu = () => menuPanel.classList.add('open');
+  const closeMenu = () => {
     menuPanel.classList.remove('open');
     if (menuStatus) menuStatus.textContent = '';
-  }
+  };
 
   menuBtn.addEventListener('click', openMenu);
   if (menuCloseBtn) menuCloseBtn.addEventListener('click', closeMenu);
@@ -94,29 +81,27 @@ export async function initMenuPerfil(options = {}) {
   });
 
   document.addEventListener('click', (e) => {
-    // clique fora fecha
     if (!menuPanel.classList.contains('open')) return;
-    const clickedInside = menuPanel.contains(e.target) || menuBtn.contains(e.target);
-    if (!clickedInside) closeMenu();
+    const inside = menuPanel.contains(e.target) || menuBtn.contains(e.target);
+    if (!inside) closeMenu();
   });
 
   // FOTO
-  const savedPhoto = localStorage.getItem(photoKey(who.id));
+  const savedPhoto = localStorage.getItem(photoKey(session.id));
   if (savedPhoto && photoImg) photoImg.src = savedPhoto;
 
   if (photoInput) {
-    photoInput.addEventListener('change', async () => {
+    photoInput.addEventListener('change', () => {
       const file = photoInput.files?.[0];
       if (!file) return;
 
-      const okTypes = ['image/png', 'image/jpeg'];
-      if (!okTypes.includes(file.type)) {
+      const allowed = ['image/png', 'image/jpeg'];
+      if (!allowed.includes(file.type)) {
         alert('Use apenas PNG ou JPEG.');
         photoInput.value = '';
         return;
       }
 
-      // Limite simples (2MB) para não lotar localStorage
       if (file.size > 2 * 1024 * 1024) {
         alert('Imagem muito grande. Use até 2MB.');
         photoInput.value = '';
@@ -126,7 +111,7 @@ export async function initMenuPerfil(options = {}) {
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result;
-        localStorage.setItem(photoKey(who.id), dataUrl);
+        localStorage.setItem(photoKey(session.id), dataUrl);
         if (photoImg) photoImg.src = dataUrl;
         if (menuStatus) menuStatus.textContent = 'Foto atualizada.';
       };
@@ -134,15 +119,15 @@ export async function initMenuPerfil(options = {}) {
     });
   }
 
-  // CARREGAR DADOS
-  const me = await fetchMe(who.id);
+  // DADOS DO USUÁRIO
+  const user = await fetchUser(session.id);
 
-  if (meName) meName.textContent = me.name || '—';
-  if (meEmail) meEmail.textContent = me.email || '—';
-  if (meId) meId.textContent = who.id;
-  if (meRole) meRole.textContent = who.role === 'professor' ? 'Professor' : 'Aluno';
+  if (meName) meName.textContent = user.name || '—';
+  if (meEmail) meEmail.textContent = user.email || '—';
+  if (meId) meId.textContent = session.id;
+  if (meRole) meRole.textContent = session.role === 'professor' ? 'Professor' : 'Aluno';
 
-  // SALVAR EMAIL/SENHA
+  // ATUALIZAR EMAIL/SENHA
   if (saveProfileBtn) {
     saveProfileBtn.addEventListener('click', async () => {
       const email = (newEmail?.value || '').trim();
@@ -159,7 +144,7 @@ export async function initMenuPerfil(options = {}) {
       }
 
       try {
-        const res = await fetch(`${API_URL}/users/${who.id}`, {
+        const res = await fetch(`${API_URL}/users/${session.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -173,6 +158,10 @@ export async function initMenuPerfil(options = {}) {
         if (menuStatus) menuStatus.textContent = 'Dados atualizados com sucesso.';
         if (newEmail) newEmail.value = '';
         if (newPass) newPass.value = '';
+
+        // atualiza texto exibido
+        if (email && meEmail) meEmail.textContent = email;
+
       } catch {
         if (menuStatus) menuStatus.textContent = 'Erro ao atualizar dados.';
       }
@@ -185,8 +174,8 @@ export async function initMenuPerfil(options = {}) {
       localStorage.removeItem('professorId');
       localStorage.removeItem('studentId');
 
-      if (who.role === 'professor') window.location.href = logoutRedirectProfessor;
-      else window.location.href = logoutRedirectStudent;
+      window.location.href =
+        session.role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
     });
   }
 
@@ -197,16 +186,17 @@ export async function initMenuPerfil(options = {}) {
       if (!ok) return;
 
       try {
-        const res = await fetch(`${API_URL}/users/${who.id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/users/${session.id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error();
 
-        // limpa sessão + foto
-        localStorage.removeItem(photoKey(who.id));
+        localStorage.removeItem(photoKey(session.id));
         localStorage.removeItem('professorId');
         localStorage.removeItem('studentId');
 
         alert('Conta excluída.');
-        window.location.href = (who.role === 'professor') ? logoutRedirectProfessor : logoutRedirectStudent;
+        window.location.href =
+          session.role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
+
       } catch {
         alert('Erro ao excluir conta.');
       }
