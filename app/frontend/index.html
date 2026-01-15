@@ -2,30 +2,33 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Plataforma de Redação — Mestre Kira</title>
+  <title>Mestre Kira — Plataforma</title>
   <link rel="stylesheet" href="css/base.css">
 </head>
 <body>
 
-<h2>Plataforma de Redação Mestre Kira</h2>
+<h2>Plataforma de Redação — Mestre Kira</h2>
 
-<p>
-Escolha como deseja acessar a plataforma:
-</p>
+<p>Escolha como deseja acessar:</p>
 
-<div>
-  <h3>Sou Professor</h3>
-  <p>Crie salas, acompanhe turmas e corrija redações.</p>
-  <a href="login-professor.html">Acessar como professor</a>
-</div>
+<section>
+  <h3>Professor</h3>
+  <p>Crie salas, proponha tarefas e corrija redações.</p>
+  <button id="goProfessorBtn">Entrar / Cadastrar como Professor</button>
+</section>
 
 <hr>
 
-<div>
-  <h3>Sou Estudante</h3>
-  <p>Escreva redações, receba feedback e acompanhe seu desempenho.</p>
-  <a href="login-aluno.html">Acessar como estudante</a>
-</div>
+<section>
+  <h3>Aluno</h3>
+  <p>Entre em uma sala e envie sua redação para correção.</p>
 
+  <button id="goStudentLoginBtn">Entrar com ID e senha</button>
+  <button id="goStudentCodeBtn">Entrar por código da sala</button>
+</section>
+
+<p id="status"></p>
+
+<script type="module" src="js/login.js"></script>
 </body>
 </html>
