@@ -7,10 +7,8 @@
 </head>
 <body>
 
-  <!-- 🔹 Botão do menu (canto superior) -->
 <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
-<!-- 🔹 Painel oculto -->
 <aside id="menuPanel" class="menu-panel">
   <div class="menu-header">
     <strong>Meu perfil</strong>
@@ -66,7 +64,13 @@
 <section>
   <h3>Correção do professor</h3>
 
-  <p><strong>Nota:</strong> <span id="score">—</span></p>
+  <p><strong>Competência 1:</strong> <span id="c1">—</span> / 200</p>
+  <p><strong>Competência 2:</strong> <span id="c2">—</span> / 200</p>
+  <p><strong>Competência 3:</strong> <span id="c3">—</span> / 200</p>
+  <p><strong>Competência 4:</strong> <span id="c4">—</span> / 200</p>
+  <p><strong>Competência 5:</strong> <span id="c5">—</span> / 200</p>
+
+  <p><strong>Nota final:</strong> <span id="score">—</span> / 1000</p>
 
   <h4>Feedback</h4>
   <p id="feedback" class="box"></p>
@@ -77,7 +81,7 @@
 
 <script type="module" src="js/feedback-aluno.js"></script>
 
-  <script type="module">
+<script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
 
   initMenuPerfil({
@@ -89,4 +93,3 @@
 
 </body>
 </html>
-
