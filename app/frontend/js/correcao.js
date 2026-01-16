@@ -100,24 +100,24 @@ async function carregarRedacoes() {
 function abrirCorrecao(essay) {
   currentEssayId = essay.id;
 
-  studentNameEl.textContent = essay.studentName;
-  studentEmailEl.textContent = essay.studentEmail || '';
+  studentNameEl.textContent =
+    essay.studentName && essay.studentName.trim()
+      ? essay.studentName
+      : 'Aluno não identificado';
+
+  studentEmailEl.textContent =
+    essay.studentEmail && essay.studentEmail.trim()
+      ? essay.studentEmail
+      : '(e-mail indisponível)';
+
   essayContentEl.textContent = essay.content;
 
   feedbackEl.value = essay.feedback || '';
 
-  // carregar competências se existirem
-  c1El.value = essay.c1 ?? '';
-  c2El.value = essay.c2 ?? '';
-  c3El.value = essay.c3 ?? '';
-  c4El.value = essay.c4 ?? '';
-  c5El.value = essay.c5 ?? '';
-
-  calcularTotal();
-
   correctionSection.style.display = 'block';
   statusEl.textContent = '';
 }
+
 
 // 🔹 SALVAR CORREÇÃO
 saveBtn.addEventListener('click', async () => {
