@@ -8,6 +8,7 @@
   <style>
     .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .menu-btn { font-size: 20px; padding: 8px 12px; cursor:pointer; }
+
     .menu-panel {
       display:none;
       border: 1px solid #ccc;
@@ -16,25 +17,36 @@
       border-radius: 8px;
     }
     .menu-panel.open { display:block; }
-    .menu-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    .avatar {
+
+    .menu-header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .menu-close { font-size:16px; padding:6px 10px; cursor:pointer; }
+
+    .menu-photo { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .menu-photo-img {
       width: 64px; height:64px; border-radius: 50%;
       border: 1px solid #ccc; object-fit: cover;
       background: #f3f3f3;
     }
-    .menu-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px; }
+    .menu-photo-label { cursor:pointer; display:inline-block; }
+    .menu-photo-label input { display:block; margin-top:6px; }
+
     .danger { border: 1px solid #c00; color: #c00; }
     .muted { opacity: .8; font-size: .95em; }
+
     .field { display:flex; flex-direction:column; gap:6px; margin-top: 10px; }
     .field input { padding: 8px; }
+
+    .menu-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
   </style>
 </head>
 <body>
 
-  <!-- 🔹 Botão do menu (canto superior) -->
-<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+<header class="topbar">
+  <h2>Minhas Salas</h2>
+  <button id="menuBtn" class="menu-btn" aria-label="Abrir menu">☰</button>
+</header>
 
-<!-- 🔹 Painel oculto -->
+<!-- 🔹 Painel oculto do menu -->
 <aside id="menuPanel" class="menu-panel">
   <div class="menu-header">
     <strong>Meu perfil</strong>
@@ -48,12 +60,18 @@
         Alterar foto
         <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
       </label>
+      <small class="muted">A foto fica salva neste navegador (modo gratuito).</small>
     </div>
 
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
     <p><strong>ID:</strong> <span id="meId">...</span></p>
-    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">Aluno</span></p>
+
+    <div class="menu-actions">
+      <!-- ✅ Link de desempenho aqui -->
+      <a href="desempenho.html"><button type="button">Meu desempenho</button></a>
+    </div>
 
     <hr>
 
@@ -66,53 +84,22 @@
 
     <hr>
 
-    <button id="logoutMenuBtn">Sair</button>
-    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+    <div class="menu-actions">
+      <button id="logoutMenuBtn">Sair</button>
+      <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+    </div>
   </div>
 </aside>
 
-<header class="topbar">
-  <h2>Minhas Salas</h2>
-  <button id="menuBtn" class="menu-btn" aria-label="Abrir menu">☰</button>
-</header>
-
-<section id="menuPanel" class="menu-panel">
-  <div class="menu-row">
-    <img id="avatarImg" class="avatar" alt="Foto de perfil" />
-    <div>
-      <div><strong id="profileRole">Aluno</strong></div>
-      <div class="muted" id="profileIdText"></div>
-    </div>
-  </div>
-
-  <div class="field">
-    <label for="avatarInput"><strong>Foto do perfil (PNG/JPG)</strong></label>
-    <input id="avatarInput" type="file" accept="image/png,image/jpeg" />
-    <small class="muted">A foto fica salva neste navegador (modo gratuito).</small>
-  </div>
-
-  <div class="field">
-    <label><strong>Atualizar dados</strong></label>
-    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)">
-    <input id="newPassword" type="password" placeholder="Nova senha (opcional)">
-    <button id="saveProfileBtn">Salvar alterações</button>
-    <small class="muted" id="profileStatus"></small>
-  </div>
-
-  <div class="menu-actions">
-    <button id="logoutBtn">Sair do sistema</button>
-    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
-  </div>
-</section>
-
+<!-- Lista de salas -->
 <section>
   <ul id="roomsList" class="lista"></ul>
 </section>
 
-<script type="module" src="js/menu.js"></script>
+<!-- ✅ Mantém só o painel-aluno e o menu-perfil (sem menu.js) -->
 <script type="module" src="js/painel-aluno.js"></script>
 
-  <script type="module">
+<script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
   initMenuPerfil({
     loginRedirect: 'login.html',
