@@ -1,204 +1,218 @@
 import { API_URL } from './config.js';
 
-function qs(id) {
+function $(id) {
   return document.getElementById(id);
 }
 
-function getSession() {
+function safeText(el, value, fallback = '—') {
+  if (!el) return;
+  el.textContent = value ? String(value) : fallback;
+}
+
+function getRoleAndId() {
   const professorId = localStorage.getItem('professorId');
   const studentId = localStorage.getItem('studentId');
-
   if (professorId) return { role: 'professor', id: professorId };
   if (studentId) return { role: 'student', id: studentId };
-  return null;
+  return { role: null, id: null };
 }
 
-function photoKey(userId) {
-  return `profilePhoto_${userId}`;
+function photoKey(role, id) {
+  return role && id ? `mk_photo_${role}_${id}` : 'mk_photo_guest';
 }
 
-async function fetchUser(userId) {
-  try {
-    const res = await fetch(`${API_URL}/users/${userId}`);
-    if (!res.ok) throw new Error();
-    return await res.json();
-  } catch {
-    return { id: userId, name: '(não carregou)', email: '(não carregou)' };
+function loadPhoto(role, id) {
+  const img = $('menuPhotoImg');
+  if (!img) return;
+
+  const dataUrl = localStorage.getItem(photoKey(role, id));
+  if (dataUrl) {
+    img.src = dataUrl;
+    img.style.display = 'inline-block';
+  } else {
+    // fallback visual (não quebra)
+    img.removeAttribute('src');
+    img.style.display = 'inline-block';
   }
 }
 
-export async function initMenuPerfil(opts = {}) {
+async function tryFetchMe(role, id) {
+  // tenta buscar no backend, mas não depende disso
+  try {
+    const res = await fetch(`${API_URL}/users/${id}`);
+    if (!res.ok) return null;
+    const me = await res.json();
+    return me;
+  } catch {
+    return null;
+  }
+}
+
+export function initMenuPerfil(options = {}) {
   const {
     loginRedirect = 'login.html',
     logoutRedirectProfessor = 'login-professor.html',
     logoutRedirectStudent = 'login-aluno.html',
-  } = opts;
+  } = options;
 
-  const session = getSession();
-  if (!session) {
-    window.location.href = loginRedirect;
+  const menuBtn = $('menuBtn');
+  const menuPanel = $('menuPanel');
+  const closeBtn = $('menuCloseBtn');
+
+  // Se a página nem tem menu, não faz nada
+  if (!menuBtn || !menuPanel) return;
+
+  menuBtn.addEventListener('click', () => {
+    menuPanel.classList.toggle('open');
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      menuPanel.classList.remove('open');
+    });
+  }
+
+  const { role, id } = getRoleAndId();
+
+  // Se não estiver logado, mantém menu simples e redireciona se tentar ações
+  if (!role || !id) {
+    safeText($('meName'), 'Visitante');
+    safeText($('meEmail'), '');
+    safeText($('meId'), '');
+    safeText($('meRole'), '');
+    loadPhoto(null, null);
+
+    const logoutBtn = $('logoutMenuBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        window.location.href = loginRedirect;
+      });
+    }
+    const delBtn = $('deleteAccountBtn');
+    if (delBtn) {
+      delBtn.addEventListener('click', () => {
+        window.location.href = loginRedirect;
+      });
+    }
     return;
   }
 
-  // ELEMENTOS
-  const menuBtn = qs('menuBtn');
-  const menuPanel = qs('menuPanel');
-  const menuCloseBtn = qs('menuCloseBtn');
+  // Preenche IDs básicos
+  safeText($('meId'), id);
+  safeText($('meRole'), role === 'professor' ? 'Professor' : 'Aluno');
 
-  const photoImg = qs('menuPhotoImg');
-  const photoInput = qs('menuPhotoInput');
+  loadPhoto(role, id);
 
-  const meName = qs('meName');
-  const meEmail = qs('meEmail');
-  const meId = qs('meId');
-  const meRole = qs('meRole');
-
-  const newEmail = qs('newEmail');
-  const newPass = qs('newPass');
-  const saveProfileBtn = qs('saveProfileBtn');
-  const menuStatus = qs('menuStatus');
-
-  const logoutBtn = qs('logoutMenuBtn');
-  const deleteBtn = qs('deleteAccountBtn');
-
-  if (!menuBtn || !menuPanel) {
-    console.error('Menu de perfil: HTML não encontrado.');
-    return;
-  }
-
-  // ABRIR/FECHAR
-  const openMenu = () => menuPanel.classList.add('open');
-  const closeMenu = () => {
-    menuPanel.classList.remove('open');
-    if (menuStatus) menuStatus.textContent = '';
-  };
-
-  menuBtn.addEventListener('click', openMenu);
-  if (menuCloseBtn) menuCloseBtn.addEventListener('click', closeMenu);
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeMenu();
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!menuPanel.classList.contains('open')) return;
-    const inside = menuPanel.contains(e.target) || menuBtn.contains(e.target);
-    if (!inside) closeMenu();
-  });
-
-  // FOTO
-  const savedPhoto = localStorage.getItem(photoKey(session.id));
-  if (savedPhoto && photoImg) photoImg.src = savedPhoto;
-
+  // Foto local
+  const photoInput = $('menuPhotoInput');
   if (photoInput) {
-    photoInput.addEventListener('change', () => {
-      const file = photoInput.files?.[0];
+    photoInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
       if (!file) return;
 
-      const allowed = ['image/png', 'image/jpeg'];
-      if (!allowed.includes(file.type)) {
-        alert('Use apenas PNG ou JPEG.');
-        photoInput.value = '';
-        return;
-      }
-
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Imagem muito grande. Use até 2MB.');
-        photoInput.value = '';
+      if (!['image/png', 'image/jpeg'].includes(file.type)) {
+        alert('Formato inválido. Use PNG ou JPG.');
         return;
       }
 
       const reader = new FileReader();
       reader.onload = () => {
-        const dataUrl = reader.result;
-        localStorage.setItem(photoKey(session.id), dataUrl);
-        if (photoImg) photoImg.src = dataUrl;
-        if (menuStatus) menuStatus.textContent = 'Foto atualizada.';
+        localStorage.setItem(photoKey(role, id), reader.result);
+        loadPhoto(role, id);
       };
       reader.readAsDataURL(file);
     });
   }
 
-  // DADOS DO USUÁRIO
-  const user = await fetchUser(session.id);
+  // Tenta buscar dados reais no backend
+  (async () => {
+    const me = await tryFetchMe(role, id);
+    if (me) {
+      safeText($('meName'), me.name);
+      safeText($('meEmail'), me.email);
+      // se backend retornar role:
+      if (me.role) safeText($('meRole'), me.role === 'professor' ? 'Professor' : 'Aluno');
+    } else {
+      // fallback (não quebra)
+      safeText($('meName'), '—');
+      safeText($('meEmail'), '—');
+    }
+  })();
 
-  if (meName) meName.textContent = user.name || '—';
-  if (meEmail) meEmail.textContent = user.email || '—';
-  if (meId) meId.textContent = session.id;
-  if (meRole) meRole.textContent = session.role === 'professor' ? 'Professor' : 'Aluno';
+  // Salvar alterações (PATCH)
+  const saveBtn = $('saveProfileBtn');
+  const newEmail = $('newEmail');
+  const newPass = $('newPass');
+  const statusEl = $('menuStatus');
 
-  // ATUALIZAR EMAIL/SENHA
-  if (saveProfileBtn) {
-    saveProfileBtn.addEventListener('click', async () => {
-      const email = (newEmail?.value || '').trim();
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      const email = newEmail?.value?.trim();
       const password = newPass?.value || '';
 
       if (!email && !password) {
-        if (menuStatus) menuStatus.textContent = 'Nada para atualizar.';
+        if (statusEl) statusEl.textContent = 'Nada para salvar.';
         return;
       }
 
       if (password && password.length < 8) {
-        if (menuStatus) menuStatus.textContent = 'Senha deve ter no mínimo 8 caracteres.';
+        if (statusEl) statusEl.textContent = 'Senha deve ter no mínimo 8 caracteres.';
         return;
       }
 
       try {
-        const res = await fetch(`${API_URL}/users/${session.id}`, {
+        const res = await fetch(`${API_URL}/users/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email || undefined,
-            password: password || undefined,
-          }),
+          body: JSON.stringify({ email, password }),
         });
 
         if (!res.ok) throw new Error();
 
-        if (menuStatus) menuStatus.textContent = 'Dados atualizados com sucesso.';
+        if (statusEl) statusEl.textContent = 'Dados atualizados.';
         if (newEmail) newEmail.value = '';
         if (newPass) newPass.value = '';
 
-        // atualiza texto exibido
-        if (email && meEmail) meEmail.textContent = email;
-
       } catch {
-        if (menuStatus) menuStatus.textContent = 'Erro ao atualizar dados.';
+        if (statusEl) statusEl.textContent = 'Erro ao atualizar dados (backend pode não ter PATCH ainda).';
       }
     });
   }
 
-  // LOGOUT
+  // Logout
+  const logoutBtn = $('logoutMenuBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('professorId');
       localStorage.removeItem('studentId');
 
-      window.location.href =
-        session.role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
+      window.location.href = role === 'professor'
+        ? logoutRedirectProfessor
+        : logoutRedirectStudent;
     });
   }
 
-  // EXCLUIR CONTA
+  // Excluir conta (DELETE)
+  const deleteBtn = $('deleteAccountBtn');
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
-      const ok = confirm('Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.');
+      const ok = confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.');
       if (!ok) return;
 
       try {
-        const res = await fetch(`${API_URL}/users/${session.id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/users/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error();
 
-        localStorage.removeItem(photoKey(session.id));
         localStorage.removeItem('professorId');
         localStorage.removeItem('studentId');
+        localStorage.removeItem(photoKey(role, id));
 
-        alert('Conta excluída.');
-        window.location.href =
-          session.role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
+        window.location.href = role === 'professor'
+          ? logoutRedirectProfessor
+          : logoutRedirectStudent;
 
       } catch {
-        alert('Erro ao excluir conta.');
+        alert('Erro ao excluir conta (backend pode não ter DELETE ainda).');
       }
     });
   }
