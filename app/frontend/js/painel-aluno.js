@@ -1,27 +1,19 @@
 import { API_URL } from './config.js';
 
 const studentId = localStorage.getItem('studentId');
+if (!studentId) window.location.href = 'login-aluno.html';
 
-if (!studentId) {
-  window.location.href = 'login-aluno.html';
-}
-
-// ELEMENTOS
 const roomsList = document.getElementById('roomsList');
-const logoutBtn = document.getElementById('logoutBtn');
 
-// 🔹 CARREGAR SALAS DO ALUNO
 async function carregarSalas() {
   try {
-    const response = await fetch(
-      `${API_URL}/enrollments/by-student?studentId=${studentId}`
-    );
+    const response = await fetch(`${API_URL}/enrollments/by-student?studentId=${studentId}`);
     if (!response.ok) throw new Error();
 
     const rooms = await response.json();
     roomsList.innerHTML = '';
 
-    if (rooms.length === 0) {
+    if (!Array.isArray(rooms) || rooms.length === 0) {
       roomsList.innerHTML = '<li>Você ainda não entrou em nenhuma sala.</li>';
       return;
     }
@@ -32,10 +24,8 @@ async function carregarSalas() {
 
       const btn = document.createElement('button');
       btn.textContent = 'Entrar';
-
-      // ✅ REDIRECIONAMENTO CORRETO
       btn.onclick = () => {
-        window.location.href = `tarefas-aluno.html?roomId=${room.id}`;
+        window.location.href = `sala-aluno.html?roomId=${room.id}`;
       };
 
       li.appendChild(btn);
@@ -47,11 +37,4 @@ async function carregarSalas() {
   }
 }
 
-// 🔹 LOGOUT
-logoutBtn.addEventListener('click', () => {
-  localStorage.removeItem('studentId');
-  window.location.href = 'login-aluno.html';
-});
-
-// 🔹 INIT
 carregarSalas();
