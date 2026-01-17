@@ -43,8 +43,7 @@ function calcularTotal() {
   const v4 = clamp200(Number(c4El.value));
   const v5 = clamp200(Number(c5El.value));
 
-  // se algum estiver vazio, não calcula total
-  if ([v1, v2, v3, v4, v5].some(v => v === null)) {
+  if ([v1, v2, v3, v4, v5].some((v) => v === null)) {
     totalScoreEl.textContent = '—';
     return null;
   }
@@ -55,7 +54,7 @@ function calcularTotal() {
 }
 
 // recálculo ao digitar
-[c1El, c2El, c3El, c4El, c5El].forEach(el => {
+[c1El, c2El, c3El, c4El, c5El].forEach((el) => {
   el.addEventListener('input', () => calcularTotal());
 });
 
@@ -73,17 +72,13 @@ async function carregarRedacoes() {
       return;
     }
 
-    essays.forEach(essay => {
+    essays.forEach((essay) => {
       const li = document.createElement('li');
-
-      const nome =
-        essay.studentName && String(essay.studentName).trim()
-          ? essay.studentName
-          : 'Aluno não identificado';
 
       const statusNota =
         essay.score !== null && essay.score !== undefined ? `Nota: ${essay.score}` : 'Sem correção';
 
+      const nome = essay.studentName && essay.studentName.trim() ? essay.studentName : 'Aluno';
       li.textContent = `${nome} — ${statusNota}`;
 
       const btn = document.createElement('button');
@@ -93,7 +88,6 @@ async function carregarRedacoes() {
       li.appendChild(btn);
       essaysList.appendChild(li);
     });
-
   } catch {
     essaysList.innerHTML = '<li>Erro ao carregar redações.</li>';
   }
@@ -104,25 +98,22 @@ function abrirCorrecao(essay) {
   currentEssayId = essay.id;
 
   studentNameEl.textContent =
-    essay.studentName && String(essay.studentName).trim()
-      ? essay.studentName
-      : 'Aluno não identificado';
+    essay.studentName && essay.studentName.trim() ? essay.studentName : 'Aluno não identificado';
 
   studentEmailEl.textContent =
-    essay.studentEmail && String(essay.studentEmail).trim()
-      ? essay.studentEmail
-      : '(e-mail indisponível)';
+    essay.studentEmail && essay.studentEmail.trim() ? essay.studentEmail : '(e-mail indisponível)';
 
   essayContentEl.textContent = essay.content || '';
 
   feedbackEl.value = essay.feedback || '';
 
-  // ✅ Preenche competências se já houver correção
+  // preenche competências se já existirem
   c1El.value = essay.c1 ?? '';
   c2El.value = essay.c2 ?? '';
   c3El.value = essay.c3 ?? '';
   c4El.value = essay.c4 ?? '';
   c5El.value = essay.c5 ?? '';
+
   calcularTotal();
 
   correctionSection.style.display = 'block';
@@ -167,7 +158,6 @@ saveBtn.addEventListener('click', async () => {
 
     statusEl.textContent = 'Correção salva com sucesso!';
     carregarRedacoes();
-
   } catch {
     statusEl.textContent = 'Erro ao salvar correção.';
   }
