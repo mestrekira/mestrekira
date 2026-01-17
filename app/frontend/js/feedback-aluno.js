@@ -1,6 +1,6 @@
 import { API_URL } from './config.js';
 
-// 🔹 PARÂMETROS
+// 🔹 PARÂÂMETROS
 const params = new URLSearchParams(window.location.search);
 const essayId = params.get('essayId');
 const studentId = localStorage.getItem('studentId');
@@ -14,95 +14,62 @@ if (!essayId || !studentId) {
 // 🔹 ELEMENTOS
 const taskTitleEl = document.getElementById('taskTitle');
 const essayContentEl = document.getElementById('essayContent');
+const scoreEl = document.getElementById('score');
+const feedbackEl = document.getElementById('feedback');
+const backBtn = document.getElementById('backBtn');
 
+// (opcional) se você decidir mostrar competências no HTML depois
 const c1El = document.getElementById('c1');
 const c2El = document.getElementById('c2');
 const c3El = document.getElementById('c3');
 const c4El = document.getElementById('c4');
 const c5El = document.getElementById('c5');
 
-const scoreEl = document.getElementById('score');
-const feedbackEl = document.getElementById('feedback');
-const backBtn = document.getElementById('backBtn');
-
-function setText(el, value, fallback = '—') {
-  if (!el) return;
-  const v = value === null || value === undefined || value === '' ? fallback : value;
-  el.textContent = String(v);
-}
-
 // 🔹 CARREGAR FEEDBACK
 async function carregarFeedback() {
   try {
-    // 1) carrega a redação
-    const response = await fetch(`${API_URL}/essays/${essayId}`);
-    if (!response.ok) throw new Error();
+    // 1) redação
+    const resEssay = await fetch(`${API_URL}/essays/${essayId}`);
+    if (!resEssay.ok) throw new Error();
 
-    const essay = await response.json();
+    const essay = await resEssay.json();
 
-    // 🔐 SEGURANÇA BÁSICA
-    if (String(essay.studentId) !== String(studentId)) {
+    // 🔐 checagem
+    if (essay.studentId !== studentId) {
       alert('Você não tem permissão para ver esta redação.');
       window.location.href = 'painel-aluno.html';
       return;
     }
 
-    // Redação do aluno
-    setText(essayContentEl, essay.content, '');
+    essayContentEl.textContent = essay.content || '';
 
-    // 2) buscar tema pelo taskId (se existir)
-    setText(taskTitleEl, 'Carregando tema...');
+    // 2) tema (via taskId)
+    taskTitleEl.textContent = '—';
     if (essay.taskId) {
       try {
-        const taskRes = await fetch(`${API_URL}/tasks/${essay.taskId}`);
-        if (taskRes.ok) {
-          const task = await taskRes.json();
-          setText(taskTitleEl, task.title, '—');
-        } else {
-          setText(taskTitleEl, '—');
+        const resTask = await fetch(`${API_URL}/tasks/${essay.taskId}`);
+        if (resTask.ok) {
+          const task = await resTask.json();
+          taskTitleEl.textContent = task.title || '—';
         }
       } catch {
-        setText(taskTitleEl, '—');
+        // ignora (deixa —)
       }
-    } else {
-      setText(taskTitleEl, '—');
     }
 
-    // 3) competências ENEM + total
-    const hasCompetencias =
-      essay.c1 !== null && essay.c1 !== undefined &&
-      essay.c2 !== null && essay.c2 !== undefined &&
-      essay.c3 !== null && essay.c3 !== undefined &&
-      essay.c4 !== null && essay.c4 !== undefined &&
-      essay.c5 !== null && essay.c5 !== undefined;
+    // 3) nota
+    scoreEl.textContent =
+      essay.score !== null && essay.score !== undefined ? String(essay.score) : 'Ainda não corrigida';
 
-    if (hasCompetencias) {
-      setText(c1El, essay.c1, '—');
-      setText(c2El, essay.c2, '—');
-      setText(c3El, essay.c3, '—');
-      setText(c4El, essay.c4, '—');
-      setText(c5El, essay.c5, '—');
+    // 4) feedback
+    feedbackEl.textContent = essay.feedback || 'Aguardando correção do professor.';
 
-      // score pode vir pronto; se não vier, calcula
-      const total =
-        essay.score !== null && essay.score !== undefined
-          ? essay.score
-          : Number(essay.c1) + Number(essay.c2) + Number(essay.c3) + Number(essay.c4) + Number(essay.c5);
-
-      setText(scoreEl, total, '—');
-    } else {
-      // Ainda não corrigido
-      setText(c1El, '—');
-      setText(c2El, '—');
-      setText(c3El, '—');
-      setText(c4El, '—');
-      setText(c5El, '—');
-      setText(scoreEl, 'Ainda não corrigida');
-    }
-
-    // Feedback textual
-    setText(feedbackEl, essay.feedback || 'Aguardando correção do professor.');
-
+    // 5) competências (se tiver elementos no HTML)
+    if (c1El) c1El.textContent = essay.c1 ?? '—';
+    if (c2El) c2El.textContent = essay.c2 ?? '—';
+    if (c3El) c3El.textContent = essay.c3 ?? '—';
+    if (c4El) c4El.textContent = essay.c4 ?? '—';
+    if (c5El) c5El.textContent = essay.c5 ?? '—';
   } catch {
     alert('Erro ao carregar feedback.');
     window.location.href = 'painel-aluno.html';
@@ -114,5 +81,4 @@ backBtn.addEventListener('click', () => {
   window.location.href = 'painel-aluno.html';
 });
 
-// 🔹 INIT
 carregarFeedback();
