@@ -6,14 +6,22 @@ function $(id) {
 
 function safeText(el, value, fallback = '—') {
   if (!el) return;
-  el.textContent = value ? String(value) : fallback;
+  el.textContent =
+    value !== undefined && value !== null && String(value).trim() !== ''
+      ? String(value)
+      : fallback;
 }
 
 function getRoleAndId() {
   const professorId = localStorage.getItem('professorId');
   const studentId = localStorage.getItem('studentId');
-  if (professorId) return { role: 'professor', id: professorId };
-  if (studentId) return { role: 'student', id: studentId };
+
+  if (professorId && professorId !== 'undefined' && professorId !== 'null') {
+    return { role: 'professor', id: professorId };
+  }
+  if (studentId && studentId !== 'undefined' && studentId !== 'null') {
+    return { role: 'student', id: studentId };
+  }
   return { role: null, id: null };
 }
 
@@ -35,13 +43,10 @@ function loadPhoto(role, id) {
   }
 }
 
-/**
- * ✅ ATUALIZAÇÃO PRINCIPAL
- * - Nunca chama /users/undefined
- * - Se id estiver ausente, retorna null sem tentar fetch
- */
+// ✅ nunca chama /users/undefined
 async function tryFetchMe(role, id) {
-  if (!role || !id) return null;
+  if (!role || !id || id === 'undefined' || id === 'null') return null;
+
   try {
     const res = await fetch(`${API_URL}/users/${encodeURIComponent(id)}`);
     if (!res.ok) return null;
@@ -62,12 +67,12 @@ export function initMenuPerfil(options = {}) {
   const menuPanel = $('menuPanel');
   const closeBtn = $('menuCloseBtn');
 
-  // Se a página nem tem menu, não faz nada
+  // se a página nem tem menu, sai
   if (!menuBtn || !menuPanel) return;
 
-  // ✅ evita duplicar listeners caso você chame initMenuPerfil 2x por acidente
-  if (menuBtn.dataset.mkBound === '1') return;
-  menuBtn.dataset.mkBound = '1';
+  // evita duplicar listeners
+  if (menuPanel.dataset.mkInit === '1') return;
+  menuPanel.dataset.mkInit = '1';
 
   menuBtn.addEventListener('click', () => {
     menuPanel.classList.toggle('open');
@@ -81,52 +86,35 @@ export function initMenuPerfil(options = {}) {
 
   const { role, id } = getRoleAndId();
 
-  /**
-   * ✅ ATUALIZAÇÃO PRINCIPAL
-   * Se não estiver logado, não tenta carregar usuário e não deixa
-   * ações fazerem fetch com id ausente.
-   */
+  // ✅ NÃO exibir ID (se existir no HTML, deixa vazio)
+  safeText($('meId'), '');
+
+  // visitante
   if (!role || !id) {
     safeText($('meName'), 'Visitante');
     safeText($('meEmail'), '');
-    safeText($('meId'), '');
     safeText($('meRole'), '');
     loadPhoto(null, null);
 
     const logoutBtn = $('logoutMenuBtn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-        window.location.href = loginRedirect;
-      });
-    }
+    if (logoutBtn) logoutBtn.addEventListener('click', () => (window.location.href = loginRedirect));
 
     const delBtn = $('deleteAccountBtn');
-    if (delBtn) {
-      delBtn.addEventListener('click', () => {
-        window.location.href = loginRedirect;
-      });
-    }
+    if (delBtn) delBtn.addEventListener('click', () => (window.location.href = loginRedirect));
 
     const saveBtn = $('saveProfileBtn');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        window.location.href = loginRedirect;
-      });
-    }
+    if (saveBtn) saveBtn.addEventListener('click', () => (window.location.href = loginRedirect));
 
     return;
   }
 
-  // Preenche IDs básicos
-  safeText($('meId'), id);
   safeText($('meRole'), role === 'professor' ? 'Professor' : 'Aluno');
-
   loadPhoto(role, id);
 
   // Foto local
   const photoInput = $('menuPhotoInput');
   if (photoInput) {
-    photoInput.addEventListener('change', async (e) => {
+    photoInput.addEventListener('change', (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
@@ -144,14 +132,18 @@ export function initMenuPerfil(options = {}) {
     });
   }
 
-  // ✅ Tenta buscar dados reais no backend (sem /undefined)
+  // busca nome/email
   (async () => {
     const me = await tryFetchMe(role, id);
     if (me) {
       safeText($('meName'), me.name);
       safeText($('meEmail'), me.email);
+      // padroniza role, se vier do backend
       if (me.role) {
-        safeText($('meRole'), me.role === 'professor' ? 'Professor' : 'Aluno');
+        safeText(
+          $('meRole'),
+          String(me.role).toUpperCase() === 'PROFESSOR' ? 'Professor' : 'Aluno'
+        );
       }
     } else {
       safeText($('meName'), '—');
@@ -159,7 +151,7 @@ export function initMenuPerfil(options = {}) {
     }
   })();
 
-  // Salvar alterações (PATCH)
+  // salvar alterações
   const saveBtn = $('saveProfileBtn');
   const newEmail = $('newEmail');
   const newPass = $('newPass');
@@ -192,20 +184,18 @@ export function initMenuPerfil(options = {}) {
         if (statusEl) statusEl.textContent = 'Dados atualizados.';
         if (newEmail) newEmail.value = '';
         if (newPass) newPass.value = '';
-
       } catch {
-        if (statusEl) statusEl.textContent = 'Erro ao atualizar dados (backend pode não ter PATCH ainda).';
+        if (statusEl) statusEl.textContent = 'Erro ao atualizar dados.';
       }
     });
   }
 
-  // Logout
+  // logout
   const logoutBtn = $('logoutMenuBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('professorId');
       localStorage.removeItem('studentId');
-      // opcional: fecha menu
       menuPanel.classList.remove('open');
 
       window.location.href =
@@ -213,7 +203,7 @@ export function initMenuPerfil(options = {}) {
     });
   }
 
-  // Excluir conta (DELETE)
+  // excluir conta
   const deleteBtn = $('deleteAccountBtn');
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
@@ -221,9 +211,7 @@ export function initMenuPerfil(options = {}) {
       if (!ok) return;
 
       try {
-        const res = await fetch(`${API_URL}/users/${encodeURIComponent(id)}`, {
-          method: 'DELETE',
-        });
+        const res = await fetch(`${API_URL}/users/${encodeURIComponent(id)}`, { method: 'DELETE' });
         if (!res.ok) throw new Error();
 
         localStorage.removeItem('professorId');
@@ -232,9 +220,8 @@ export function initMenuPerfil(options = {}) {
 
         window.location.href =
           role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
-
       } catch {
-        alert('Erro ao excluir conta (backend pode não ter DELETE ainda).');
+        alert('Erro ao excluir conta.');
       }
     });
   }
