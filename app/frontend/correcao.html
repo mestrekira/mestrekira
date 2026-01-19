@@ -7,6 +7,11 @@
 </head>
 <body>
 
+<!-- ✅ IMPORTANTE (checklist aplicado):
+     - Só existe 1 #menuBtn e 1 #menuPanel nesta página
+     - Apenas 1 initMenuPerfil() no final
+-->
+
 <!-- 🔹 Botão do menu (canto superior) -->
 <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
@@ -28,7 +33,8 @@
 
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
-    <p><strong>ID:</strong> <span id="meId">...</span></p>
+    <!-- ✅ ID removido para simplificar (como você pediu) -->
+    <!-- <p><strong>ID:</strong> <span id="meId">...</span></p> -->
     <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
     <hr>
@@ -65,19 +71,19 @@
   <h4>Correção (ENEM)</h4>
   <p><strong>Competências (0 a 200 cada)</strong></p>
 
-  <label>Competência 1:</label>
+  <label for="c1"><strong>Competência 1:</strong> Domínio da norma culta</label>
   <input type="number" id="c1" min="0" max="200" placeholder="0..200" />
 
-  <label>Competência 2:</label>
+  <label for="c2"><strong>Competência 2:</strong> Compreensão do tema e repertório</label>
   <input type="number" id="c2" min="0" max="200" placeholder="0..200" />
 
-  <label>Competência 3:</label>
+  <label for="c3"><strong>Competência 3:</strong> Argumentação</label>
   <input type="number" id="c3" min="0" max="200" placeholder="0..200" />
 
-  <label>Competência 4:</label>
+  <label for="c4"><strong>Competência 4:</strong> Coesão e coerência</label>
   <input type="number" id="c4" min="0" max="200" placeholder="0..200" />
 
-  <label>Competência 5:</label>
+  <label for="c5"><strong>Competência 5:</strong> Proposta de intervenção</label>
   <input type="number" id="c5" min="0" max="200" placeholder="0..200" />
 
   <p><strong>Total:</strong> <span id="totalScore">—</span> / 1000</p>
