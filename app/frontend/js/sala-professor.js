@@ -17,10 +17,18 @@ const studentsList = document.getElementById('studentsList');
 const tasksList = document.getElementById('tasksList');
 const copyCodeBtn = document.getElementById('copyCodeBtn');
 const createTaskBtn = document.getElementById('createTaskBtn');
+const performanceBtn = document.getElementById('performanceBtn');
 
 if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn || !createTaskBtn) {
   console.error('Elementos da sala do professor não encontrados.');
   throw new Error('HTML incompleto');
+}
+
+// ✅ BOTÃO DE DESEMPENHO (FICA FORA do createTask)
+if (performanceBtn) {
+  performanceBtn.addEventListener('click', () => {
+    window.location.href = `desempenho-professor.html?roomId=${roomId}`;
+  });
 }
 
 // 🔹 Carregar dados da sala
@@ -32,7 +40,6 @@ async function carregarSala() {
     const room = await response.json();
     roomNameEl.textContent = room.name;
     roomCodeEl.textContent = room.code || '—';
-
   } catch {
     alert('Erro ao carregar dados da sala.');
   }
@@ -49,6 +56,24 @@ copyCodeBtn.addEventListener('click', () => {
   navigator.clipboard.writeText(code);
   alert('Código da sala copiado!');
 });
+
+// ✅ Remover aluno da sala
+async function removerAluno(studentId, studentName = 'este aluno') {
+  const ok = confirm(`Remover ${studentName} da sala?`);
+  if (!ok) return;
+
+  try {
+    const res = await fetch(`${API_URL}/rooms/${roomId}/students/${studentId}`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) throw new Error();
+
+    await carregarAlunos();
+  } catch {
+    alert('Erro ao remover aluno da sala.');
+  }
+}
 
 // 🔹 Carregar alunos
 async function carregarAlunos() {
@@ -69,20 +94,25 @@ async function carregarAlunos() {
     students.forEach(student => {
       const li = document.createElement('li');
 
-      // se backend ainda estiver retornando só studentId, mostra algo decente
-      if (student.name && student.email) {
-        li.textContent = `${student.name} (${student.email})`;
-      } else if (student.studentId) {
-        li.textContent = `Aluno (ID: ${student.studentId})`;
-      } else {
-        li.textContent = 'Aluno';
+      const label = document.createElement('span');
+      const name = student.name?.trim() || 'Aluno';
+      const email = student.email?.trim() || '';
+      label.textContent = email ? `${name} (${email})` : name;
+
+      li.appendChild(label);
+
+      // ✅ Botão remover (só se tiver id)
+      if (student.id) {
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = 'Remover';
+        removeBtn.addEventListener('click', () => removerAluno(student.id, name));
+        li.appendChild(document.createTextNode(' '));
+        li.appendChild(removeBtn);
       }
 
       studentsList.appendChild(li);
     });
-
   } catch {
-    // ✅ não passa insegurança: tenta explicar
     studentsList.innerHTML = '<li>Não foi possível carregar alunos agora.</li>';
   }
 }
@@ -111,75 +141,4 @@ async function carregarTarefas() {
 
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
-      btn.onclick = () => {
-        window.location.href = `correcao.html?taskId=${task.id}`;
-      };
-
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Excluir';
-      delBtn.onclick = async () => {
-        const ok = confirm(`Excluir a tarefa "${task.title}"?`);
-        if (!ok) return;
-
-        const res = await fetch(`${API_URL}/tasks/${task.id}`, { method: 'DELETE' });
-        if (!res.ok) {
-          alert('Erro ao excluir tarefa.');
-          return;
-        }
-        carregarTarefas();
-      };
-
-      li.appendChild(title);
-      li.appendChild(document.createElement('br'));
-      li.appendChild(btn);
-      li.appendChild(delBtn);
-
-      tasksList.appendChild(li);
-    });
-
-  } catch {
-    tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
-  }
-}
-
-// 🔹 Criar nova tarefa
-createTaskBtn.addEventListener('click', async () => {
-  const title = document.getElementById('taskTitle').value.trim();
-  const guidelines = document.getElementById('taskGuidelines').value.trim();
-
-  if (!title) {
-    alert('Informe o tema da redação.');
-    return;
-  }
-  
-// 🔹 BOTÃO DE DESEMPENHO
-const performanceBtn = document.getElementById('performanceBtn');
-
-if (performanceBtn) {
-  performanceBtn.addEventListener('click', () => {
-    window.location.href = `desempenho-professor.html?roomId=${roomId}`;
-  });
-}
-
-  try {
-    const response = await fetch(`${API_URL}/tasks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId, title, guidelines }),
-    });
-
-    if (!response.ok) throw new Error();
-
-    document.getElementById('taskTitle').value = '';
-    document.getElementById('taskGuidelines').value = '';
-    carregarTarefas();
-
-  } catch {
-    alert('Erro ao criar tarefa.');
-  }
-});
-
-// 🔹 INIT
-carregarSala();
-carregarAlunos();
-carregarTarefas();
+      btn.onclick =
