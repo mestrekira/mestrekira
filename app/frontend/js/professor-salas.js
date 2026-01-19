@@ -1,88 +1,78 @@
-import { API_URL } from './config.js';
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel do Professor</title>
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
 
-const professorId = localStorage.getItem('professorId');
+  <!-- ✅ ÚNICO botão do menu -->
+  <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
-if (!professorId) {
-  window.location.href = 'login-professor.html';
-}
+  <!-- ✅ ÚNICO painel do menu -->
+  <aside id="menuPanel" class="menu-panel">
+    <div class="menu-header">
+      <strong>Meu perfil</strong>
+      <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+    </div>
 
-const roomsList = document.getElementById('roomsList');
+    <div class="menu-body">
+      <div class="menu-photo">
+        <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+        <label class="menu-photo-label">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
+      </div>
 
-async function carregarSalas() {
-  try {
-    const response = await fetch(`${API_URL}/rooms/by-professor?professorId=${professorId}`);
-    if (!response.ok) throw new Error();
+      <p><strong>Nome:</strong> <span id="meName">...</span></p>
+      <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+      <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
-    const rooms = await response.json();
+      <hr>
 
-    roomsList.innerHTML = '';
+      <h4>Atualizar dados</h4>
+      <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+      <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+      <button id="saveProfileBtn">Salvar</button>
 
-    if (!rooms || rooms.length === 0) {
-      roomsList.innerHTML = '<li>Você ainda não criou nenhuma sala.</li>';
-      return;
-    }
+      <p id="menuStatus"></p>
 
-    rooms.forEach(room => {
-      const li = document.createElement('li');
-      li.textContent = room.name + ' ';
+      <hr>
 
-      // ✅ Acessar
-      const btn = document.createElement('button');
-      btn.textContent = 'Acessar';
-      btn.onclick = () => {
-        window.location.href = `sala-professor.html?roomId=${room.id}`;
-      };
+      <button id="logoutMenuBtn">Sair</button>
+      <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+    </div>
+  </aside>
 
-      // ✅ Excluir
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Excluir';
-      delBtn.onclick = async () => {
-        const ok = confirm(`Excluir a sala "${room.name}"?`);
-        if (!ok) return;
+  <header class="topbar">
+    <h2>Minhas Salas</h2>
+  </header>
 
-        const res = await fetch(`${API_URL}/rooms/${room.id}`, { method: 'DELETE' });
-        if (!res.ok) {
-          alert('Erro ao excluir sala.');
-          return;
-        }
+  <section>
+    <h3>Criar nova sala</h3>
+    <input type="text" id="roomName" placeholder="Nome da sala" />
+    <button id="createRoomBtn">Criar sala</button>
+  </section>
 
-        carregarSalas();
-      };
+  <hr>
 
-      li.appendChild(btn);
-      li.appendChild(delBtn);
-      roomsList.appendChild(li);
+  <section>
+    <h3>Salas criadas</h3>
+    <ul id="roomsList" class="lista"></ul>
+  </section>
+
+  <script type="module" src="js/professor-salas.js"></script>
+
+  <script type="module">
+    import { initMenuPerfil } from './js/menu-perfil.js';
+    initMenuPerfil({
+      loginRedirect: 'login.html',
+      logoutRedirectProfessor: 'login-professor.html',
+      logoutRedirectStudent: 'login-aluno.html'
     });
+  </script>
 
-  } catch {
-    roomsList.innerHTML = '<li>Erro ao carregar salas.</li>';
-  }
-}
-
-document.getElementById('createRoomBtn').addEventListener('click', async () => {
-  const name = document.getElementById('roomName').value.trim();
-  if (!name) return;
-
-  try {
-    const response = await fetch(`${API_URL}/rooms`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, professorId })
-    });
-
-    if (!response.ok) throw new Error();
-
-    document.getElementById('roomName').value = '';
-    carregarSalas();
-
-  } catch {
-    alert('Erro ao criar sala.');
-  }
-});
-
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.removeItem('professorId');
-  window.location.href = 'login-professor.html';
-});
-
-carregarSalas();
+</body>
+</html>
