@@ -4,17 +4,14 @@
   <meta charset="UTF-8" />
   <title>Mestre Kira — Login do Aluno</title>
   <link rel="stylesheet" href="css/base.css">
-  <script defer src="js/api.js"></script>
-  <script defer src="js/login-aluno.js"></script>
 </head>
 <body>
 
 <h2>Login do Aluno</h2>
 
 <section>
-  <input type="text" id="id" placeholder="ID" autocomplete="username" />
+  <input type="email" id="email" placeholder="E-mail" autocomplete="email" />
   <input type="password" id="password" placeholder="Senha" autocomplete="current-password" />
-
   <button id="loginBtn">Entrar</button>
 
   <p id="error"></p>
@@ -23,9 +20,10 @@
 <hr>
 
 <section>
-  <p>Entrou na plataforma pela primeira vez?</p>
+  <p>Primeiro acesso?</p>
   <a href="entrar-sala.html">Entrar na sala por código</a>
 </section>
 
+<script type="module" src="js/login-aluno.js"></script>
 </body>
 </html>
