@@ -1,14 +1,21 @@
 import { API_URL } from './config.js';
 
-async function fazerLogin() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
+function normRole(role) {
+  return String(role || '').trim().toUpperCase(); // "PROFESSOR" | "STUDENT"
+}
 
+async function fazerLogin() {
+  const emailEl = document.getElementById('email');
+  const passEl = document.getElementById('password');
   const errorEl = document.getElementById('error');
-  errorEl.textContent = '';
+
+  const email = emailEl?.value?.trim() || '';
+  const password = passEl?.value || '';
+
+  if (errorEl) errorEl.textContent = '';
 
   if (!email || !password) {
-    errorEl.textContent = 'Preencha e-mail e senha.';
+    if (errorEl) errorEl.textContent = 'Preencha e-mail e senha.';
     return;
   }
 
@@ -19,37 +26,54 @@ async function fazerLogin() {
       body: JSON.stringify({ email, password }),
     });
 
+    // Mesmo quando for erro de credencial, seu backend pode responder 200 com { error }
+    const data = await res.json().catch(() => null);
+
     if (!res.ok) {
-      errorEl.textContent = 'Login inválido.';
+      if (errorEl) errorEl.textContent = 'Erro ao fazer login.';
       return;
     }
 
-    const user = await res.json();
-
-    // segurança básica
-    if (!user?.id) {
-      errorEl.textContent = 'Resposta inválida do servidor.';
+    if (!data || data.error) {
+      if (errorEl) errorEl.textContent = data?.error || 'Usuário ou senha inválidos.';
       return;
     }
 
-    // Se logar professor aqui por acidente, redireciona certo
-    if (user.role === 'professor') {
-      localStorage.setItem('professorId', user.id);
+    if (!data.id) {
+      if (errorEl) errorEl.textContent = 'Resposta inválida do servidor.';
+      return;
+    }
+
+    const role = normRole(data.role);
+
+    // 🔒 evita ficar com os dois IDs no localStorage
+    localStorage.removeItem('professorId');
+    localStorage.removeItem('studentId');
+
+    if (role === 'PROFESSOR') {
+      localStorage.setItem('professorId', data.id);
       window.location.href = 'professor-salas.html';
       return;
     }
 
-    // Fluxo aluno
-    localStorage.setItem('studentId', user.id);
+    // padrão: aluno
+    localStorage.setItem('studentId', data.id);
     window.location.href = 'painel-aluno.html';
   } catch {
-    errorEl.textContent = 'Erro ao fazer login. Tente novamente.';
+    if (errorEl) errorEl.textContent = 'Erro ao fazer login. Tente novamente.';
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('loginBtn').addEventListener('click', fazerLogin);
-  document.getElementById('password').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') fazerLogin();
-  });
+  const btn = document.getElementById('loginBtn');
+  const pass = document.getElementById('password');
+
+  if (btn) btn.addEventListener('click', fazerLogin);
+
+  // Enter para login
+  if (pass) {
+    pass.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') fazerLogin();
+    });
+  }
 });
