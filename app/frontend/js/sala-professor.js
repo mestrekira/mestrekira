@@ -24,7 +24,7 @@ if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn ||
   throw new Error('HTML incompleto');
 }
 
-// ✅ BOTÃO DE DESEMPENHO (FICA FORA do createTask)
+// ✅ Botão de desempenho (fora do createTask)
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
     window.location.href = `desempenho-professor.html?roomId=${roomId}`;
@@ -38,7 +38,7 @@ async function carregarSala() {
     if (!response.ok) throw new Error();
 
     const room = await response.json();
-    roomNameEl.textContent = room.name;
+    roomNameEl.textContent = room.name || 'Sala';
     roomCodeEl.textContent = room.code || '—';
   } catch {
     alert('Erro ao carregar dados da sala.');
@@ -47,7 +47,7 @@ async function carregarSala() {
 
 // 🔹 Copiar código
 copyCodeBtn.addEventListener('click', () => {
-  const code = roomCodeEl.textContent?.trim();
+  const code = (roomCodeEl.textContent || '').trim();
   if (!code || code === '—') {
     alert('Código da sala indisponível.');
     return;
@@ -57,7 +57,7 @@ copyCodeBtn.addEventListener('click', () => {
   alert('Código da sala copiado!');
 });
 
-// ✅ Remover aluno da sala
+// ✅ Remover aluno da sala (precisa do endpoint DELETE /rooms/:roomId/students/:studentId)
 async function removerAluno(studentId, studentName = 'este aluno') {
   const ok = confirm(`Remover ${studentName} da sala?`);
   if (!ok) return;
@@ -94,14 +94,10 @@ async function carregarAlunos() {
     students.forEach(student => {
       const li = document.createElement('li');
 
-      const label = document.createElement('span');
       const name = student.name?.trim() || 'Aluno';
       const email = student.email?.trim() || '';
-      label.textContent = email ? `${name} (${email})` : name;
+      li.textContent = email ? `${name} (${email})` : name;
 
-      li.appendChild(label);
-
-      // ✅ Botão remover (só se tiver id)
       if (student.id) {
         const removeBtn = document.createElement('button');
         removeBtn.textContent = 'Remover';
@@ -141,4 +137,68 @@ async function carregarTarefas() {
 
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
-      btn.onclick =
+      btn.addEventListener('click', () => {
+        window.location.href = `correcao.html?taskId=${task.id}`;
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Excluir';
+      delBtn.addEventListener('click', async () => {
+        const ok = confirm(`Excluir a tarefa "${task.title}"?`);
+        if (!ok) return;
+
+        const res = await fetch(`${API_URL}/tasks/${task.id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          alert('Erro ao excluir tarefa.');
+          return;
+        }
+        carregarTarefas();
+      });
+
+      li.appendChild(title);
+      li.appendChild(document.createElement('br'));
+      li.appendChild(btn);
+      li.appendChild(delBtn);
+
+      tasksList.appendChild(li);
+    });
+  } catch {
+    tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
+  }
+}
+
+// 🔹 Criar nova tarefa
+createTaskBtn.addEventListener('click', async () => {
+  const titleEl = document.getElementById('taskTitle');
+  const guidelinesEl = document.getElementById('taskGuidelines');
+
+  const title = titleEl?.value?.trim() || '';
+  const guidelines = guidelinesEl?.value?.trim() || '';
+
+  if (!title) {
+    alert('Informe o tema da redação.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomId, title, guidelines }),
+    });
+
+    if (!response.ok) throw new Error();
+
+    if (titleEl) titleEl.value = '';
+    if (guidelinesEl) guidelinesEl.value = '';
+
+    carregarTarefas();
+  } catch {
+    alert('Erro ao criar tarefa.');
+  }
+});
+
+// 🔹 INIT
+carregarSala();
+carregarAlunos();
+carregarTarefas();
