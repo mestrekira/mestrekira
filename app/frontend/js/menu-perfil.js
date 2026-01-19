@@ -6,10 +6,22 @@ function $(id) {
 
 function safeText(el, value, fallback = '—') {
   if (!el) return;
-  el.textContent =
-    value !== undefined && value !== null && String(value).trim() !== ''
-      ? String(value)
-      : fallback;
+  const ok =
+    value !== undefined &&
+    value !== null &&
+    String(value).trim() !== '';
+  el.textContent = ok ? String(value) : fallback;
+}
+
+function normalizeRole(role) {
+  if (!role) return null;
+  const r = String(role).trim().toUpperCase();
+  if (r === 'PROFESSOR') return 'professor';
+  if (r === 'STUDENT' || r === 'ALUNO') return 'student';
+  // fallback: se vier "professor" / "student"
+  if (r === 'PROFESSOR'.toUpperCase()) return 'professor';
+  if (r === 'STUDENT'.toUpperCase()) return 'student';
+  return null;
 }
 
 function getRoleAndId() {
@@ -36,11 +48,10 @@ function loadPhoto(role, id) {
   const dataUrl = localStorage.getItem(photoKey(role, id));
   if (dataUrl) {
     img.src = dataUrl;
-    img.style.display = 'inline-block';
   } else {
     img.removeAttribute('src');
-    img.style.display = 'inline-block';
   }
+  img.style.display = 'inline-block';
 }
 
 // ✅ nunca chama /users/undefined
@@ -70,7 +81,7 @@ export function initMenuPerfil(options = {}) {
   // se a página nem tem menu, sai
   if (!menuBtn || !menuPanel) return;
 
-  // evita duplicar listeners
+  // ✅ evita duplicar listeners mesmo se houver 2 scripts/2 chamadas
   if (menuPanel.dataset.mkInit === '1') return;
   menuPanel.dataset.mkInit = '1';
 
@@ -86,14 +97,15 @@ export function initMenuPerfil(options = {}) {
 
   const { role, id } = getRoleAndId();
 
-  // ✅ NÃO exibir ID (se existir no HTML, deixa vazio)
-  safeText($('meId'), '');
+  // ✅ NÃO exibir ID (se existir no HTML)
+  const meIdEl = $('meId');
+  if (meIdEl) meIdEl.textContent = ''; // simples, sem fallback
 
   // visitante
   if (!role || !id) {
-    safeText($('meName'), 'Visitante');
-    safeText($('meEmail'), '');
-    safeText($('meRole'), '');
+    safeText($('meName'), 'Visitante', 'Visitante');
+    safeText($('meEmail'), '', '');
+    safeText($('meRole'), '', '');
     loadPhoto(null, null);
 
     const logoutBtn = $('logoutMenuBtn');
@@ -132,26 +144,26 @@ export function initMenuPerfil(options = {}) {
     });
   }
 
-  // busca nome/email
+  // busca nome/email no backend
   (async () => {
     const me = await tryFetchMe(role, id);
     if (me) {
       safeText($('meName'), me.name);
       safeText($('meEmail'), me.email);
-      // padroniza role, se vier do backend
-      if (me.role) {
-        safeText(
-          $('meRole'),
-          String(me.role).toUpperCase() === 'PROFESSOR' ? 'Professor' : 'Aluno'
-        );
+
+      // se vier role do backend (PROFESSOR/STUDENT)
+      const normalized = normalizeRole(me.role);
+      if (normalized) {
+        safeText($('meRole'), normalized === 'professor' ? 'Professor' : 'Aluno');
       }
     } else {
-      safeText($('meName'), '—');
-      safeText($('meEmail'), '—');
+      // sem backend: mantém algo neutro
+      safeText($('meName'), '—', '—');
+      safeText($('meEmail'), '—', '—');
     }
   })();
 
-  // salvar alterações
+  // salvar alterações (PATCH)
   const saveBtn = $('saveProfileBtn');
   const newEmail = $('newEmail');
   const newPass = $('newPass');
@@ -190,7 +202,7 @@ export function initMenuPerfil(options = {}) {
     });
   }
 
-  // logout
+  // logout (menu)
   const logoutBtn = $('logoutMenuBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
@@ -203,7 +215,7 @@ export function initMenuPerfil(options = {}) {
     });
   }
 
-  // excluir conta
+  // excluir conta (DELETE)
   const deleteBtn = $('deleteAccountBtn');
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
