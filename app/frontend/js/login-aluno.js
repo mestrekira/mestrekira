@@ -1,47 +1,55 @@
+import { API_URL } from './config.js';
+
 async function fazerLogin() {
-  const id = document.getElementById('id').value.trim();
+  const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
   const errorEl = document.getElementById('error');
   errorEl.textContent = '';
 
-  if (!id || !password) {
-    errorEl.textContent = 'Preencha ID e senha.';
+  if (!email || !password) {
+    errorEl.textContent = 'Preencha e-mail e senha.';
     return;
   }
 
   try {
-    const result = await apiRequest('/users/login', 'POST', { id, password });
+    const res = await fetch(`${API_URL}/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    // apiRequest sempre retorna JSON; se o backend responder erro, pode vir assim:
-    if (!result || result.error) {
-      errorEl.textContent = result?.error || 'Login inválido.';
+    if (!res.ok) {
+      errorEl.textContent = 'Login inválido.';
       return;
     }
 
-    // ✅ Se por algum motivo logar com professor aqui, redireciona correto
-    if (result.role === 'professor') {
-      localStorage.setItem('professorId', result.id);
-      window.location.href = 'painel-professor.html';
+    const user = await res.json();
+
+    // segurança básica
+    if (!user?.id) {
+      errorEl.textContent = 'Resposta inválida do servidor.';
       return;
     }
 
-    // ✅ Fluxo do aluno
-    localStorage.setItem('studentId', result.id);
-    window.location.href = 'professor-salas.html';
+    // Se logar professor aqui por acidente, redireciona certo
+    if (user.role === 'professor') {
+      localStorage.setItem('professorId', user.id);
+      window.location.href = 'professor-salas.html';
+      return;
+    }
 
-  } catch (e) {
+    // Fluxo aluno
+    localStorage.setItem('studentId', user.id);
+    window.location.href = 'painel-aluno.html';
+  } catch {
     errorEl.textContent = 'Erro ao fazer login. Tente novamente.';
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('loginBtn');
-  btn.addEventListener('click', fazerLogin);
-
-  // Enter para login
+  document.getElementById('loginBtn').addEventListener('click', fazerLogin);
   document.getElementById('password').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') fazerLogin();
   });
 });
-
