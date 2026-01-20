@@ -2,9 +2,9 @@ import { API_URL } from './config.js';
 
 const professorId = localStorage.getItem('professorId');
 
+// se não estiver logado como professor
 if (!professorId || professorId === 'undefined' || professorId === 'null') {
   window.location.href = 'login-professor.html';
-  throw new Error('professorId ausente');
 }
 
 const roomsList = document.getElementById('roomsList');
@@ -34,40 +34,41 @@ async function carregarSalas() {
       const li = document.createElement('li');
       li.textContent = room.name + ' ';
 
+      // ✅ Acessar
       const btn = document.createElement('button');
       btn.textContent = 'Acessar';
       btn.onclick = () => {
         window.location.href = `sala-professor.html?roomId=${room.id}`;
       };
 
+      // ✅ Excluir
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
       delBtn.onclick = async () => {
         const ok = confirm(`Excluir a sala "${room.name}"?`);
         if (!ok) return;
 
-        const res = await fetch(`${API_URL}/rooms/${room.id}`, { method: 'DELETE' });
-        if (!res.ok) {
+        try {
+          const res = await fetch(`${API_URL}/rooms/${room.id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error();
+          carregarSalas();
+        } catch {
           alert('Erro ao excluir sala.');
-          return;
         }
-
-        carregarSalas();
       };
 
       li.appendChild(btn);
       li.appendChild(delBtn);
       roomsList.appendChild(li);
     });
-
   } catch {
     roomsList.innerHTML = '<li>Erro ao carregar salas.</li>';
   }
 }
 
-if (createRoomBtn) {
+if (createRoomBtn && roomNameInput) {
   createRoomBtn.addEventListener('click', async () => {
-    const name = roomNameInput?.value?.trim() || '';
+    const name = roomNameInput.value.trim();
     if (!name) {
       alert('Informe o nome da sala.');
       return;
@@ -82,12 +83,15 @@ if (createRoomBtn) {
 
       if (!response.ok) throw new Error();
 
-      if (roomNameInput) roomNameInput.value = '';
+      roomNameInput.value = '';
       carregarSalas();
     } catch {
       alert('Erro ao criar sala.');
     }
   });
 }
+
+// ✅ NÃO coloca logout aqui.
+// Quem faz logout é o menu-perfil.js (logoutMenuBtn).
 
 carregarSalas();
