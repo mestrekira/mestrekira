@@ -11,9 +11,11 @@ const status = document.getElementById('status');
 const leaveBtn = document.getElementById('leaveRoomBtn');
 const leaveStatus = document.getElementById('leaveStatus');
 
-// ✅ novos elementos (se não existirem, não quebra)
-const professorInfoEl = document.getElementById('professorInfo');
+// ✅ IDs corretos do seu HTML
+const teacherInfoEl = document.getElementById('teacherInfo');
 const classmatesListEl = document.getElementById('classmatesList');
+
+const performanceBtn = document.getElementById('performanceBtn');
 
 if (!studentId || studentId === 'undefined' || studentId === 'null') {
   window.location.href = 'login-aluno.html';
@@ -24,6 +26,13 @@ if (!roomId) {
   alert('Sala inválida.');
   window.location.href = 'painel-aluno.html';
   throw new Error('roomId ausente');
+}
+
+// ✅ Botão desempenho (sem inline onclick)
+if (performanceBtn) {
+  performanceBtn.addEventListener('click', () => {
+    window.location.href = `desempenho.html?roomId=${encodeURIComponent(roomId)}`;
+  });
 }
 
 // ✅ SAIR DA SALA
@@ -64,10 +73,9 @@ async function carregarSala() {
   }
 }
 
-// ✅ NOVO: professor + colegas
+// ✅ professor + colegas
 async function carregarOverview() {
-  // se a página não tem esses elementos, não precisa fazer nada
-  if (!professorInfoEl && !classmatesListEl) return;
+  if (!teacherInfoEl && !classmatesListEl) return;
 
   try {
     const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`);
@@ -76,12 +84,12 @@ async function carregarOverview() {
     const data = await res.json();
 
     // professor
-    if (professorInfoEl) {
+    if (teacherInfoEl) {
       if (data?.professor?.name) {
         const emailTxt = data.professor.email ? ` (${data.professor.email})` : '';
-        professorInfoEl.textContent = `${data.professor.name}${emailTxt}`;
+        teacherInfoEl.textContent = `${data.professor.name}${emailTxt}`;
       } else {
-        professorInfoEl.textContent = 'Professor não encontrado.';
+        teacherInfoEl.textContent = 'Professor não encontrado.';
       }
     }
 
@@ -90,8 +98,6 @@ async function carregarOverview() {
       classmatesListEl.innerHTML = '';
 
       const students = Array.isArray(data?.students) ? data.students : [];
-
-      // remove eu mesmo da lista
       const classmates = students.filter((s) => s?.id && s.id !== studentId);
 
       if (classmates.length === 0) {
@@ -107,8 +113,7 @@ async function carregarOverview() {
       });
     }
   } catch {
-    // fallback amigável
-    if (professorInfoEl) professorInfoEl.textContent = 'Não foi possível carregar o professor agora.';
+    if (teacherInfoEl) teacherInfoEl.textContent = 'Não foi possível carregar o professor agora.';
     if (classmatesListEl) classmatesListEl.innerHTML = '<li>Não foi possível carregar colegas agora.</li>';
   }
 }
