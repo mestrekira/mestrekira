@@ -44,21 +44,17 @@ async function fazerLogin() {
       return;
     }
 
-    const role = normRole(data.role);
+    const role = String(user.role || '').toUpperCase();
 
-    // 🔒 evita ficar com os dois IDs no localStorage
-    localStorage.removeItem('professorId');
-    localStorage.removeItem('studentId');
+if (role === 'PROFESSOR') {
+  localStorage.setItem('professorId', user.id);
+  window.location.href = 'professor-salas.html';
+  return;
+}
 
-    if (role === 'PROFESSOR') {
-      localStorage.setItem('professorId', data.id);
-      window.location.href = 'professor-salas.html';
-      return;
-    }
+localStorage.setItem('studentId', user.id);
+window.location.href = 'painel-aluno.html';
 
-    // padrão: aluno
-    localStorage.setItem('studentId', data.id);
-    window.location.href = 'painel-aluno.html';
   } catch {
     if (errorEl) errorEl.textContent = 'Erro ao fazer login. Tente novamente.';
   }
@@ -77,3 +73,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
