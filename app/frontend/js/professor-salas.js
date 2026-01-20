@@ -2,9 +2,10 @@ import { API_URL } from './config.js';
 
 const professorId = localStorage.getItem('professorId');
 
-// se não estiver logado como professor
+// ✅ se não estiver logado como professor, redireciona E PARA o script
 if (!professorId || professorId === 'undefined' || professorId === 'null') {
-  window.location.href = 'login-professor.html';
+  window.location.replace('login-professor.html'); // melhor que href para evitar "voltar"
+  throw new Error('professorId ausente/inválido');
 }
 
 const roomsList = document.getElementById('roomsList');
@@ -20,7 +21,7 @@ async function carregarSalas() {
     const response = await fetch(
       `${API_URL}/rooms/by-professor?professorId=${encodeURIComponent(professorId)}`
     );
-    if (!response.ok) throw new Error();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const rooms = await response.json();
     roomsList.innerHTML = '';
@@ -32,30 +33,28 @@ async function carregarSalas() {
 
     rooms.forEach((room) => {
       const li = document.createElement('li');
-      li.textContent = room.name + ' ';
+      li.appendChild(document.createTextNode(room.name + ' '));
 
-      // ✅ Acessar
       const btn = document.createElement('button');
       btn.textContent = 'Acessar';
-      btn.onclick = () => {
+      btn.addEventListener('click', () => {
         window.location.href = `sala-professor.html?roomId=${room.id}`;
-      };
+      });
 
-      // ✅ Excluir
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
-      delBtn.onclick = async () => {
+      delBtn.addEventListener('click', async () => {
         const ok = confirm(`Excluir a sala "${room.name}"?`);
         if (!ok) return;
 
         try {
           const res = await fetch(`${API_URL}/rooms/${room.id}`, { method: 'DELETE' });
-          if (!res.ok) throw new Error();
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
           carregarSalas();
         } catch {
           alert('Erro ao excluir sala.');
         }
-      };
+      });
 
       li.appendChild(btn);
       li.appendChild(delBtn);
@@ -81,7 +80,7 @@ if (createRoomBtn && roomNameInput) {
         body: JSON.stringify({ name, professorId }),
       });
 
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       roomNameInput.value = '';
       carregarSalas();
@@ -90,8 +89,5 @@ if (createRoomBtn && roomNameInput) {
     }
   });
 }
-
-// ✅ NÃO coloca logout aqui.
-// Quem faz logout é o menu-perfil.js (logoutMenuBtn).
 
 carregarSalas();
