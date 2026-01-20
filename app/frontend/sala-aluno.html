@@ -8,83 +8,80 @@
 <body>
 
   <!-- 🔹 Botão do menu (canto superior) -->
-<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+  <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
-<!-- 🔹 Painel oculto -->
-<aside id="menuPanel" class="menu-panel">
-  <div class="menu-header">
-    <strong>Meu perfil</strong>
-    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
-  </div>
-
-  <div class="menu-body">
-    <div class="menu-photo">
-      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <label class="menu-photo-label">
-        Alterar foto
-        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-      </label>
+  <!-- 🔹 Painel oculto -->
+  <aside id="menuPanel" class="menu-panel">
+    <div class="menu-header">
+      <strong>Meu perfil</strong>
+      <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
     </div>
 
-    <p><strong>Nome:</strong> <span id="meName">...</span></p>
-    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
-    <p><strong>ID:</strong> <span id="meId">...</span></p>
-    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+    <div class="menu-body">
+      <div class="menu-photo">
+        <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+        <label class="menu-photo-label">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
+      </div>
 
-    <hr>
+      <p><strong>Nome:</strong> <span id="meName">...</span></p>
+      <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+      <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
-    <h4>Atualizar dados</h4>
-    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" />
-    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" />
-    <button id="saveProfileBtn">Salvar</button>
+      <hr>
 
-    <p id="menuStatus"></p>
+      <h4>Atualizar dados</h4>
+      <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" />
+      <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" />
+      <button id="saveProfileBtn">Salvar</button>
 
-    <hr>
+      <p id="menuStatus"></p>
 
-    <button id="logoutMenuBtn">Sair</button>
-    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
-  </div>
-</aside>
+      <hr>
 
-<button id="leaveRoomBtn">Sair da sala</button>
-<p id="leaveStatus"></p>
+      <button id="logoutMenuBtn">Sair</button>
+      <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+    </div>
+  </aside>
 
-<h2 id="roomName">Sala</h2>
+  <button id="leaveRoomBtn">Sair da sala</button>
+  <p id="leaveStatus"></p>
 
-<section>
-  <h3>Professor</h3>
-  <p id="teacherInfo">Carregando...</p>
-</section>
+  <h2 id="roomName">Sala</h2>
 
-<section>
-  <h3>Colegas na sala</h3>
-  <ul id="classmatesList" class="lista"></ul>
-</section>
+  <section>
+    <h3>Professor</h3>
+    <p id="teacherInfo">Carregando...</p>
+  </section>
 
-<hr>
+  <section>
+    <h3>Colegas na sala</h3>
+    <ul id="classmatesList" class="lista"></ul>
+  </section>
 
-<section>
-  <h3>Tarefas disponíveis</h3>
-  <ul id="tasksList" class="lista"></ul>
-</section>
+  <hr>
 
-<p id="status"></p>
+  <section>
+    <h3>Tarefas disponíveis</h3>
+    <ul id="tasksList" class="lista"></ul>
+  </section>
 
-  <button onclick="window.location.href='desempenho.html?roomId=' + new URLSearchParams(location.search).get('roomId')">
-  Ver desempenho
-</button>
+  <p id="status"></p>
 
-<script type="module" src="js/sala-aluno.js"></script>
-  
+  <button id="performanceBtn">Ver desempenho</button>
+
+  <script type="module" src="js/sala-aluno.js"></script>
+
   <script type="module">
-  import { initMenuPerfil } from './js/menu-perfil.js';
-  initMenuPerfil({
-    loginRedirect: 'login.html',
-    logoutRedirectProfessor: 'login-professor.html',
-    logoutRedirectStudent: 'login-aluno.html'
-  });
-</script>
+    import { initMenuPerfil } from './js/menu-perfil.js';
+    initMenuPerfil({
+      loginRedirect: 'login.html',
+      logoutRedirectProfessor: 'login-professor.html',
+      logoutRedirectStudent: 'login-aluno.html'
+    });
+  </script>
 
 </body>
 </html>
