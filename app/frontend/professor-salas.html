@@ -1,97 +1,78 @@
-import { API_URL } from './config.js';
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel do Professor</title>
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
 
-const professorId = localStorage.getItem('professorId');
+  <!-- ✅ ÚNICO botão do menu -->
+  <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
-// se não estiver logado como professor
-if (!professorId || professorId === 'undefined' || professorId === 'null') {
-  window.location.href = 'login-professor.html';
-}
+  <!-- ✅ ÚNICO painel do menu -->
+  <aside id="menuPanel" class="menu-panel">
+    <div class="menu-header">
+      <strong>Meu perfil</strong>
+      <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+    </div>
 
-const roomsList = document.getElementById('roomsList');
-const createRoomBtn = document.getElementById('createRoomBtn');
-const roomNameInput = document.getElementById('roomName');
+    <div class="menu-body">
+      <div class="menu-photo">
+        <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+        <label class="menu-photo-label">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
+      </div>
 
-async function carregarSalas() {
-  if (!roomsList) return;
+      <p><strong>Nome:</strong> <span id="meName">...</span></p>
+      <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+      <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
-  roomsList.innerHTML = '<li>Carregando...</li>';
+      <hr>
 
-  try {
-    const response = await fetch(
-      `${API_URL}/rooms/by-professor?professorId=${encodeURIComponent(professorId)}`
-    );
-    if (!response.ok) throw new Error();
+      <h4>Atualizar dados</h4>
+      <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+      <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+      <button id="saveProfileBtn">Salvar</button>
 
-    const rooms = await response.json();
-    roomsList.innerHTML = '';
+      <p id="menuStatus"></p>
 
-    if (!Array.isArray(rooms) || rooms.length === 0) {
-      roomsList.innerHTML = '<li>Você ainda não criou nenhuma sala.</li>';
-      return;
-    }
+      <hr>
 
-    rooms.forEach((room) => {
-      const li = document.createElement('li');
-      li.textContent = room.name + ' ';
+      <button id="logoutMenuBtn">Sair</button>
+      <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+    </div>
+  </aside>
 
-      // ✅ Acessar
-      const btn = document.createElement('button');
-      btn.textContent = 'Acessar';
-      btn.onclick = () => {
-        window.location.href = `sala-professor.html?roomId=${room.id}`;
-      };
+  <header class="topbar">
+    <h2>Minhas Salas</h2>
+  </header>
 
-      // ✅ Excluir
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Excluir';
-      delBtn.onclick = async () => {
-        const ok = confirm(`Excluir a sala "${room.name}"?`);
-        if (!ok) return;
+  <section>
+    <h3>Criar nova sala</h3>
+    <input type="text" id="roomName" placeholder="Nome da sala" />
+    <button id="createRoomBtn">Criar sala</button>
+  </section>
 
-        try {
-          const res = await fetch(`${API_URL}/rooms/${room.id}`, { method: 'DELETE' });
-          if (!res.ok) throw new Error();
-          carregarSalas();
-        } catch {
-          alert('Erro ao excluir sala.');
-        }
-      };
+  <hr>
 
-      li.appendChild(btn);
-      li.appendChild(delBtn);
-      roomsList.appendChild(li);
+  <section>
+    <h3>Salas criadas</h3>
+    <ul id="roomsList" class="lista"></ul>
+  </section>
+
+  <script type="module" src="js/professor-salas.js"></script>
+
+  <script type="module">
+    import { initMenuPerfil } from './js/menu-perfil.js';
+    initMenuPerfil({
+      loginRedirect: 'login.html',
+      logoutRedirectProfessor: 'login-professor.html',
+      logoutRedirectStudent: 'login-aluno.html'
     });
-  } catch {
-    roomsList.innerHTML = '<li>Erro ao carregar salas.</li>';
-  }
-}
+  </script>
 
-if (createRoomBtn && roomNameInput) {
-  createRoomBtn.addEventListener('click', async () => {
-    const name = roomNameInput.value.trim();
-    if (!name) {
-      alert('Informe o nome da sala.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/rooms`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, professorId }),
-      });
-
-      if (!response.ok) throw new Error();
-
-      roomNameInput.value = '';
-      carregarSalas();
-    } catch {
-      alert('Erro ao criar sala.');
-    }
-  });
-}
-
-// ✅ NÃO coloca logout aqui.
-// Quem faz logout é o menu-perfil.js (logoutMenuBtn).
-
-carregarSalas();
+</body>
+</html>
