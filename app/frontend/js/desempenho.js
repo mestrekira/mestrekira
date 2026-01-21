@@ -1,233 +1,236 @@
 import { API_URL } from './config.js';
 
+const params = new URLSearchParams(window.location.search);
+const roomId = params.get('roomId');
+
+if (!roomId) {
+  alert('Sala inválida.');
+  window.location.href = 'professor-salas.html';
+  throw new Error('roomId ausente');
+}
+
+const roomNameEl = document.getElementById('roomName');
 const statusEl = document.getElementById('status');
-const roomSelect = document.getElementById('roomSelect');
-const profOnly = document.getElementById('profOnly');
-const studentSelect = document.getElementById('studentSelect');
-const chartEl = document.getElementById('chart');
-const historyList = document.getElementById('historyList');
 
-function setStatus(msg) {
-  statusEl.textContent = msg || '';
+const avgTotal = document.getElementById('avgTotal');
+const avgC1 = document.getElementById('avgC1');
+const avgC2 = document.getElementById('avgC2');
+const avgC3 = document.getElementById('avgC3');
+const avgC4 = document.getElementById('avgC4');
+const avgC5 = document.getElementById('avgC5');
+
+const studentsList = document.getElementById('studentsList');
+
+const studentPanel = document.getElementById('studentPanel');
+const studentNameEl = document.getElementById('studentName');
+const studentEmailEl = document.getElementById('studentEmail');
+
+const sAvgTotal = document.getElementById('sAvgTotal');
+const sAvgC1 = document.getElementById('sAvgC1');
+const sAvgC2 = document.getElementById('sAvgC2');
+const sAvgC3 = document.getElementById('sAvgC3');
+const sAvgC4 = document.getElementById('sAvgC4');
+const sAvgC5 = document.getElementById('sAvgC5');
+
+const studentEssaysList = document.getElementById('studentEssaysList');
+
+function photoKeyStudent(studentId) {
+  return `mk_photo_student_${studentId}`;
 }
 
-function getSession() {
-  const professorId = localStorage.getItem('professorId');
-  const studentId = localStorage.getItem('studentId');
-
-  if (professorId) return { role: 'professor', id: professorId };
-  if (studentId) return { role: 'student', id: studentId };
-  return null;
+function placeholderAvatarDataUrl(letter = '?') {
+  return (
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+        <rect width="100%" height="100%" fill="#eee"/>
+        <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">${letter}</text>
+      </svg>`
+    )
+  );
 }
 
-const session = getSession();
-if (!session) {
-  window.location.href = 'login.html';
+function mean(nums) {
+  const v = nums.filter(n => typeof n === 'number' && !Number.isNaN(n));
+  if (v.length === 0) return null;
+  return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
 }
 
-// ===== helpers =====
-async function safeJson(res) {
-  try { return await res.json(); } catch { return null; }
+function setText(el, value) {
+  el.textContent = (value === null || value === undefined) ? '—' : String(value);
 }
 
-// barras simples (sem libs)
-function renderChart(data) {
-  chartEl.innerHTML = '';
-
-  if (!data || data.length === 0) {
-    chartEl.textContent = 'Sem dados para exibir.';
-    return;
-  }
-
-  // pega máximos
-  const maxTotal = 1000;
-
-  // container
-  const wrap = document.createElement('div');
-  wrap.style.display = 'grid';
-  wrap.style.gap = '10px';
-
-  data.forEach((item, idx) => {
-    const total = Number(item.total ?? item.score ?? 0);
-    const label = document.createElement('div');
-    label.textContent = `Redação ${idx + 1} — Total: ${total}`;
-
-    const barWrap = document.createElement('div');
-    barWrap.style.border = '1px solid #ccc';
-    barWrap.style.borderRadius = '10px';
-    barWrap.style.overflow = 'hidden';
-    barWrap.style.height = '14px';
-    barWrap.style.background = '#f5f5f5';
-
-    const bar = document.createElement('div');
-    bar.style.height = '100%';
-    bar.style.width = `${Math.max(0, Math.min(100, (total / maxTotal) * 100))}%`;
-    bar.style.background = '#222';
-
-    barWrap.appendChild(bar);
-
-    // detalhamento ENEM (c1..c5)
-    const det = document.createElement('div');
-    const c1 = item.c1 ?? 0, c2 = item.c2 ?? 0, c3 = item.c3 ?? 0, c4 = item.c4 ?? 0, c5 = item.c5 ?? 0;
-    det.textContent = `C1:${c1}  C2:${c2}  C3:${c3}  C4:${c4}  C5:${c5}`;
-
-    const box = document.createElement('div');
-    box.appendChild(label);
-    box.appendChild(barWrap);
-    box.appendChild(det);
-
-    wrap.appendChild(box);
-  });
-
-  chartEl.appendChild(wrap);
-}
-
-function renderHistory(list) {
-  historyList.innerHTML = '';
-
-  if (!list || list.length === 0) {
-    historyList.innerHTML = '<li>Nenhuma redação corrigida/enviada nesta sala.</li>';
-    return;
-  }
-
-  list.forEach((e, idx) => {
-    const li = document.createElement('li');
-
-    const title = document.createElement('div');
-    const total = Number(e.total ?? e.score ?? 0);
-    title.innerHTML = `<strong>Redação ${idx + 1}</strong> — Total: ${total}`;
-
-    const meta = document.createElement('div');
-    const name = e.studentName ? `Aluno: ${e.studentName}` : '';
-    meta.textContent = name;
-
-    const btn = document.createElement('button');
-    btn.textContent = 'Ver redação';
-    btn.onclick = () => {
-      // abre visualização simples via querystring
-      window.location.href = `ver-redacao.html?essayId=${e.id}`;
-    };
-
-    li.appendChild(title);
-    if (name) li.appendChild(meta);
-    li.appendChild(btn);
-    historyList.appendChild(li);
-  });
-}
-
-// ===== carregar salas =====
-async function carregarSalas() {
-  setStatus('Carregando salas...');
-
+async function carregarSala() {
   try {
-    let res;
-
-    if (session.role === 'professor') {
-      res = await fetch(`${API_URL}/rooms/by-professor?professorId=${session.id}`);
-    } else {
-      res = await fetch(`${API_URL}/enrollments/by-student?studentId=${session.id}`);
-    }
-
+    const res = await fetch(`${API_URL}/rooms/${roomId}`);
     if (!res.ok) throw new Error();
-
-    const rooms = await res.json();
-
-    roomSelect.innerHTML = '';
-    if (!rooms || rooms.length === 0) {
-      roomSelect.innerHTML = '<option value="">(nenhuma sala)</option>';
-      setStatus('Você não tem salas para analisar.');
-      return;
-    }
-
-    rooms.forEach(r => {
-      const opt = document.createElement('option');
-      opt.value = r.id;
-      opt.textContent = r.name;
-      roomSelect.appendChild(opt);
-    });
-
-    setStatus('');
-    await onRoomChange(); // carrega dados iniciais
-
+    const room = await res.json();
+    roomNameEl.textContent = room.name || 'Sala';
   } catch {
-    setStatus('Erro ao carregar salas.');
+    roomNameEl.textContent = 'Sala';
   }
 }
 
-async function carregarAlunosDaSala(roomId) {
-  // só professor
-  profOnly.style.display = 'block';
-
-  studentSelect.innerHTML = `<option value="">(todos)</option>`;
-
+async function carregarDados() {
   try {
-    const res = await fetch(`${API_URL}/rooms/${roomId}/students`);
-    if (!res.ok) throw new Error();
+    statusEl.textContent = 'Carregando...';
 
-    const students = await res.json();
-    students.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id; // precisa vir do backend
-      opt.textContent = `${s.name} (${s.email})`;
-      studentSelect.appendChild(opt);
-    });
-
-  } catch {
-    // sem travar
-  }
-}
-
-async function carregarDesempenho(roomId, studentIdFilter = '') {
-  setStatus('Carregando desempenho...');
-
-  try {
-    let url = `${API_URL}/analytics/room/${roomId}/essays`;
-
-    // aluno sempre filtra por si
-    if (session.role === 'student') {
-      url += `?studentId=${encodeURIComponent(session.id)}`;
-    } else if (studentIdFilter) {
-      url += `?studentId=${encodeURIComponent(studentIdFilter)}`;
-    }
-
-    const res = await fetch(url);
+    const res = await fetch(`${API_URL}/essays/performance/by-room?roomId=${roomId}`);
     if (!res.ok) throw new Error();
 
     const data = await res.json();
 
-    // data: lista de redações com c1..c5 e total/score e id e (opcional) studentName
-    renderChart(data);
-    renderHistory(data);
+    if (!Array.isArray(data) || data.length === 0) {
+      statusEl.textContent = 'Ainda não há redações nesta sala.';
+      studentsList.innerHTML = '<li>Nenhuma redação enviada ainda.</li>';
 
-    setStatus('');
+      setText(avgTotal, null);
+      setText(avgC1, null);
+      setText(avgC2, null);
+      setText(avgC3, null);
+      setText(avgC4, null);
+      setText(avgC5, null);
 
+      studentPanel.style.display = 'none';
+      return;
+    }
+
+    // ✅ só corrigidas para médias
+    const corrected = data.filter(e => e.score !== null && e.score !== undefined);
+
+    setText(avgTotal, mean(corrected.map(e => e.score)));
+    setText(avgC1, mean(corrected.map(e => e.c1)));
+    setText(avgC2, mean(corrected.map(e => e.c2)));
+    setText(avgC3, mean(corrected.map(e => e.c3)));
+    setText(avgC4, mean(corrected.map(e => e.c4)));
+    setText(avgC5, mean(corrected.map(e => e.c5)));
+
+    // agrupar por aluno
+    const byStudent = new Map();
+    data.forEach(e => {
+      if (!byStudent.has(e.studentId)) {
+        byStudent.set(e.studentId, {
+          studentId: e.studentId,
+          studentName: e.studentName,
+          studentEmail: e.studentEmail,
+          essays: [],
+        });
+      }
+      byStudent.get(e.studentId).essays.push(e);
+    });
+
+    studentsList.innerHTML = '';
+
+    const students = Array.from(byStudent.values());
+
+    // ordenar por nome
+    students.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+
+    students.forEach(s => {
+      const li = document.createElement('li');
+
+      const correctedEssays = s.essays.filter(e => e.score !== null && e.score !== undefined);
+
+      const mTotal = mean(correctedEssays.map(e => e.score));
+      const mC1 = mean(correctedEssays.map(e => e.c1));
+      const mC2 = mean(correctedEssays.map(e => e.c2));
+      const mC3 = mean(correctedEssays.map(e => e.c3));
+      const mC4 = mean(correctedEssays.map(e => e.c4));
+      const mC5 = mean(correctedEssays.map(e => e.c5));
+
+      // ✅ header com foto
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.alignItems = 'center';
+      header.style.gap = '10px';
+
+      const avatar = document.createElement('img');
+      avatar.width = 36;
+      avatar.height = 36;
+      avatar.style.borderRadius = '50%';
+      avatar.style.objectFit = 'cover';
+      avatar.style.border = '1px solid #ccc';
+
+      const nome = s.studentName && s.studentName.trim() ? s.studentName : 'Aluno';
+      const dataUrl = localStorage.getItem(photoKeyStudent(s.studentId));
+      avatar.src = dataUrl || placeholderAvatarDataUrl(nome.trim().slice(0, 1).toUpperCase());
+
+      const info = document.createElement('div');
+      info.innerHTML = `<strong>${nome}</strong><br><small>${s.studentEmail || ''}</small>`;
+
+      header.appendChild(avatar);
+      header.appendChild(info);
+
+      const resumo = document.createElement('div');
+      resumo.textContent = `Média: ${mTotal ?? '—'} | C1 ${mC1 ?? '—'} C2 ${mC2 ?? '—'} C3 ${mC3 ?? '—'} C4 ${mC4 ?? '—'} C5 ${mC5 ?? '—'}`;
+
+      const btn = document.createElement('button');
+      btn.textContent = 'Ver desempenho individual';
+      btn.onclick = () => abrirAluno(s, { mTotal, mC1, mC2, mC3, mC4, mC5 });
+
+      li.appendChild(header);
+      li.appendChild(document.createElement('br'));
+      li.appendChild(resumo);
+      li.appendChild(document.createElement('br'));
+      li.appendChild(btn);
+
+      studentsList.appendChild(li);
+    });
+
+    statusEl.textContent = '';
   } catch {
-    setStatus('Erro ao carregar desempenho.');
-    renderChart([]);
-    renderHistory([]);
+    statusEl.textContent = 'Erro ao carregar dados de desempenho.';
+    studentsList.innerHTML = '<li>Erro ao carregar.</li>';
+    studentPanel.style.display = 'none';
   }
 }
 
-// ===== eventos =====
-async function onRoomChange() {
-  const roomId = roomSelect.value;
-  if (!roomId) return;
+function abrirAluno(studentGroup, medias) {
+  studentPanel.style.display = 'block';
 
-  if (session.role === 'professor') {
-    await carregarAlunosDaSala(roomId);
-    await carregarDesempenho(roomId, studentSelect.value);
-  } else {
-    profOnly.style.display = 'none';
-    await carregarDesempenho(roomId, '');
-  }
+  studentNameEl.textContent = studentGroup.studentName || 'Aluno';
+  studentEmailEl.textContent = studentGroup.studentEmail || '';
+
+  setText(sAvgTotal, medias.mTotal ?? null);
+  setText(sAvgC1, medias.mC1 ?? null);
+  setText(sAvgC2, medias.mC2 ?? null);
+  setText(sAvgC3, medias.mC3 ?? null);
+  setText(sAvgC4, medias.mC4 ?? null);
+  setText(sAvgC5, medias.mC5 ?? null);
+
+  studentEssaysList.innerHTML = '';
+
+  const essays = [...studentGroup.essays];
+  essays.sort((a, b) => (a.taskTitle || '').localeCompare(b.taskTitle || ''));
+
+  essays.forEach(e => {
+    const li = document.createElement('li');
+
+    const title = document.createElement('strong');
+    title.textContent = e.taskTitle || 'Tarefa';
+
+    const nota = document.createElement('div');
+    nota.textContent = (e.score !== null && e.score !== undefined)
+      ? `Nota: ${e.score} (C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${e.c4 ?? '—'} C5 ${e.c5 ?? '—'})`
+      : 'Sem correção';
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Ver redação/feedback';
+    btn.onclick = () => {
+      // ✅ Vai para a correção do professor e já abre o aluno (não vai para página do aluno)
+      window.location.href = `correcao.html?taskId=${encodeURIComponent(e.taskId)}&studentId=${encodeURIComponent(e.studentId)}`;
+    };
+
+    li.appendChild(title);
+    li.appendChild(document.createElement('br'));
+    li.appendChild(nota);
+    li.appendChild(document.createElement('br'));
+    li.appendChild(btn);
+
+    studentEssaysList.appendChild(li);
+  });
 }
 
-roomSelect.addEventListener('change', onRoomChange);
-studentSelect.addEventListener('change', () => {
-  const roomId = roomSelect.value;
-  if (!roomId) return;
-  carregarDesempenho(roomId, studentSelect.value);
-});
-
-// init
-carregarSalas();
+// INIT
+carregarSala();
+carregarDados();
