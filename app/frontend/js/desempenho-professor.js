@@ -46,6 +46,7 @@ function setText(el, value) {
   el.textContent = value === null || value === undefined ? '—' : String(value);
 }
 
+/** ✅ Foto local (mesma do perfil do aluno) */
 function studentPhotoKey(studentId) {
   return studentId ? `mk_photo_student_${studentId}` : null;
 }
@@ -73,13 +74,22 @@ function makeAvatar(studentId, size = 34) {
   img.style.borderRadius = '50%';
   img.style.objectFit = 'cover';
   img.style.border = '1px solid #ccc';
-  img.style.display = 'none';
 
   const key = studentPhotoKey(studentId);
   const dataUrl = key ? localStorage.getItem(key) : null;
+
   if (dataUrl) {
     img.src = dataUrl;
-    img.style.display = 'inline-block';
+  } else {
+    // placeholder simples
+    img.src =
+      'data:image/svg+xml;utf8,' +
+      encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+          <rect width="100%" height="100%" fill="#eee"/>
+          <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">?</text>
+        </svg>`
+      );
   }
 
   return img;
@@ -90,26 +100,33 @@ async function carregarSala() {
     const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
     if (!res.ok) throw new Error();
     const room = await res.json();
-    roomNameEl.textContent = room?.name || 'Sala';
+    if (roomNameEl) roomNameEl.textContent = room?.name || 'Sala';
   } catch {
-    roomNameEl.textContent = 'Sala';
+    if (roomNameEl) roomNameEl.textContent = 'Sala';
   }
 }
 
+/**
+ * ✅ Importante:
+ * Seu backend (essays.service.ts) hoje retorna performanceByRoom como lista de alunos agrupados
+ * { studentId, studentName, studentEmail, averageScore, essays: [{id, taskId, score, c1..c5}] }
+ *
+ * Então aqui a gente consome como "lista de alunos", não como "lista de redações".
+ */
 async function carregarDados() {
   try {
-    statusEl.textContent = 'Carregando...';
+    if (statusEl) statusEl.textContent = 'Carregando...';
 
     const res = await fetch(
       `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`
     );
     if (!res.ok) throw new Error();
 
-    const data = await res.json();
+    const studentsData = await res.json();
 
-    if (!Array.isArray(data) || data.length === 0) {
-      statusEl.textContent = 'Ainda não há redações nesta sala.';
-      studentsList.innerHTML = '<li>Nenhuma redação enviada ainda.</li>';
+    if (!Array.isArray(studentsData) || studentsData.length === 0) {
+      if (statusEl) statusEl.textContent = 'Ainda não há redações nesta sala.';
+      if (studentsList) studentsList.innerHTML = '<li>Nenhuma redação enviada ainda.</li>';
 
       setText(avgTotal, null);
       setText(avgC1, null);
@@ -122,8 +139,12 @@ async function carregarDados() {
       return;
     }
 
-    // só corrigidas para médias
-    const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
+    // ✅ Médias gerais: calcular a partir das redações corrigidas de TODOS os alunos
+    const allEssays = studentsData
+      .flatMap((s) => Array.isArray(s.essays) ? s.essays : [])
+      .filter((e) => e && typeof e === 'object');
+
+    const corrected = allEssays.filter((e) => e.score !== null && e.score !== undefined);
 
     setText(avgTotal, mean(corrected.map((e) => e.score)));
     setText(avgC1, mean(corrected.map((e) => e.c1)));
@@ -132,35 +153,17 @@ async function carregarDados() {
     setText(avgC4, mean(corrected.map((e) => e.c4)));
     setText(avgC5, mean(corrected.map((e) => e.c5)));
 
-    // agrupar por aluno
-    const byStudent = new Map();
-
-    data.forEach((e) => {
-      const sid = e.studentId;
-      if (!sid) return;
-
-      if (!byStudent.has(sid)) {
-        byStudent.set(sid, {
-          studentId: sid,
-          studentName: e.studentName || '',
-          studentEmail: e.studentEmail || '',
-          essays: [],
-        });
-      }
-
-      // se algum item vier com nome/email e outro não, “completa”
-      const g = byStudent.get(sid);
-      if (!g.studentName && e.studentName) g.studentName = e.studentName;
-      if (!g.studentEmail && e.studentEmail) g.studentEmail = e.studentEmail;
-
-      g.essays.push(e);
-    });
-
-    studentsList.innerHTML = '';
-
-    const students = Array.from(byStudent.values());
+    // ✅ Lista de alunos (ordenar por nome)
+    const students = studentsData.map((s) => ({
+      studentId: s.studentId,
+      studentName: s.studentName || '',
+      studentEmail: s.studentEmail || '',
+      essays: Array.isArray(s.essays) ? s.essays : [],
+    }));
 
     students.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+
+    if (studentsList) studentsList.innerHTML = '';
 
     students.forEach((s) => {
       const li = document.createElement('li');
@@ -206,13 +209,13 @@ async function carregarDados() {
       li.appendChild(avatar);
       li.appendChild(content);
 
-      studentsList.appendChild(li);
+      if (studentsList) studentsList.appendChild(li);
     });
 
-    statusEl.textContent = '';
+    if (statusEl) statusEl.textContent = '';
   } catch {
-    statusEl.textContent = 'Erro ao carregar dados de desempenho.';
-    studentsList.innerHTML = '<li>Erro ao carregar.</li>';
+    if (statusEl) statusEl.textContent = 'Erro ao carregar dados de desempenho.';
+    if (studentsList) studentsList.innerHTML = '<li>Erro ao carregar.</li>';
     if (studentPanel) studentPanel.style.display = 'none';
   }
 }
@@ -221,15 +224,19 @@ function abrirAluno(studentGroup, medias) {
   if (!studentPanel) return;
   studentPanel.style.display = 'block';
 
-  studentNameEl.textContent =
-    studentGroup.studentName && String(studentGroup.studentName).trim()
-      ? studentGroup.studentName
-      : 'Aluno';
+  if (studentNameEl) {
+    studentNameEl.textContent =
+      studentGroup.studentName && String(studentGroup.studentName).trim()
+        ? studentGroup.studentName
+        : 'Aluno';
+  }
 
-  studentEmailEl.textContent =
-    studentGroup.studentEmail && String(studentGroup.studentEmail).trim()
-      ? studentGroup.studentEmail
-      : '';
+  if (studentEmailEl) {
+    studentEmailEl.textContent =
+      studentGroup.studentEmail && String(studentGroup.studentEmail).trim()
+        ? studentGroup.studentEmail
+        : '';
+  }
 
   setStudentPhoto(studentGroup.studentId);
 
@@ -240,16 +247,18 @@ function abrirAluno(studentGroup, medias) {
   setText(sAvgC4, medias.mC4 ?? null);
   setText(sAvgC5, medias.mC5 ?? null);
 
-  studentEssaysList.innerHTML = '';
+  if (studentEssaysList) studentEssaysList.innerHTML = '';
 
   const essays = [...(studentGroup.essays || [])];
-  essays.sort((a, b) => (a.taskTitle || '').localeCompare(b.taskTitle || ''));
+
+  // ✅ ordenar por taskId (não temos taskTitle no retorno atual do backend)
+  essays.sort((a, b) => (a.taskId || '').localeCompare(b.taskId || ''));
 
   essays.forEach((e) => {
     const li = document.createElement('li');
 
     const title = document.createElement('strong');
-    title.textContent = e.taskTitle || 'Tarefa';
+    title.textContent = e.taskTitle || e.taskId || 'Tarefa';
 
     const nota = document.createElement('div');
     nota.textContent =
@@ -261,16 +270,10 @@ function abrirAluno(studentGroup, medias) {
 
     const btn = document.createElement('button');
     btn.textContent = 'Ver redação/feedback';
+
+    // ✅ professor vai para página de professor (por essayId)
     btn.onclick = () => {
-      const tId = e.taskId || e.task?.id || null;
-      if (!tId) {
-        alert('Não encontrei o taskId desta redação no retorno do servidor.');
-        return;
-      }
-      // ✅ professor vai para correção (não feedback-aluno)
-      window.location.href = `correcao.html?taskId=${encodeURIComponent(
-        tId
-      )}&studentId=${encodeURIComponent(studentGroup.studentId)}`;
+      window.location.href = `feedback-professor.html?essayId=${encodeURIComponent(e.id)}`;
     };
 
     li.appendChild(title);
@@ -279,7 +282,7 @@ function abrirAluno(studentGroup, medias) {
     li.appendChild(document.createElement('br'));
     li.appendChild(btn);
 
-    studentEssaysList.appendChild(li);
+    if (studentEssaysList) studentEssaysList.appendChild(li);
   });
 }
 
