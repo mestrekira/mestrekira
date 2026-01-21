@@ -16,7 +16,7 @@ const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
 const studentId = localStorage.getItem('studentId');
 
-if (!taskId || !studentId) {
+if (!taskId || !studentId || studentId === 'undefined' || studentId === 'null') {
   alert('Acesso inválido.');
   window.location.href = 'painel-aluno.html';
   throw new Error('Parâmetros ausentes');
@@ -27,21 +27,64 @@ if (!textarea || !charCount || !status || !sendBtn || !saveBtn) {
   throw new Error('Elementos não encontrados');
 }
 
-// BLOQUEAR COLAR
+// ✅ RASCUNHO via localStorage (gratuito, sem backend)
+function draftKey() {
+  return `mk_draft_${studentId}_${taskId}`;
+}
+
+function loadDraft() {
+  const data = localStorage.getItem(draftKey());
+  if (!data) return false;
+
+  try {
+    const obj = JSON.parse(data);
+    if (obj && typeof obj.text === 'string') {
+      textarea.value = obj.text;
+      charCount.textContent = String(obj.text.length);
+      status.textContent = obj.savedAt
+        ? `Rascunho recuperado (${new Date(obj.savedAt).toLocaleString()}).`
+        : 'Rascunho recuperado.';
+      return true;
+    }
+  } catch {
+    // se tiver lixo salvo, ignora
+  }
+  return false;
+}
+
+function saveDraft() {
+  const text = textarea.value || '';
+  const payload = {
+    text,
+    savedAt: Date.now(),
+  };
+  localStorage.setItem(draftKey(), JSON.stringify(payload));
+}
+
+// ✅ BLOQUEAR COLAR
 textarea.addEventListener('paste', (e) => {
   e.preventDefault();
   alert('Colar texto não é permitido.');
 });
 
-// CONTADOR
+// CONTADOR + autosave leve
+let autosaveTimer = null;
 textarea.addEventListener('input', () => {
-  charCount.textContent = textarea.value.length;
+  charCount.textContent = String(textarea.value.length);
+
+  // autosave a cada ~800ms enquanto digita (não atrapalha)
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    if ((textarea.value || '').trim().length > 0) {
+      saveDraft();
+    }
+  }, 800);
 });
 
 // 🔹 CARREGAR TAREFA (TEMA + ORIENTAÇÕES)
 async function carregarTarefa() {
   try {
-    const response = await fetch(`${API_URL}/tasks/${taskId}`);
+    const response = await fetch(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
     if (!response.ok) throw new Error();
 
     const task = await response.json();
@@ -53,35 +96,45 @@ async function carregarTarefa() {
   }
 }
 
-// ✅ SALVAR RASCUNHO
-saveBtn.addEventListener('click', async () => {
-  const text = textarea.value;
+// ✅ Verifica se já existe redação enviada (pra bloquear UI antes)
+async function checarSeJaEnviou() {
+  try {
+    const res = await fetch(`${API_URL}/essays/by-task/${encodeURIComponent(taskId)}`);
+    if (!res.ok) return null;
+
+    const essays = await res.json();
+    if (!Array.isArray(essays)) return null;
+
+    const mine = essays.find((e) => e && e.studentId === studentId);
+    return mine || null;
+  } catch {
+    return null;
+  }
+}
+
+function bloquearEnvio(msg) {
+  textarea.disabled = true;
+  saveBtn.disabled = true;
+  sendBtn.disabled = true;
+  status.textContent = msg;
+}
+
+// ✅ SALVAR RASCUNHO (botão)
+saveBtn.addEventListener('click', () => {
+  const text = textarea.value || '';
 
   if (!text.trim()) {
     status.textContent = 'Nada para salvar.';
     return;
   }
 
-  status.textContent = 'Salvando rascunho...';
-
-  try {
-    const response = await fetch(`${API_URL}/essays/draft`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId, studentId, content: text }),
-    });
-
-    if (!response.ok) throw new Error();
-
-    status.textContent = 'Rascunho salvo com sucesso.';
-  } catch {
-    status.textContent = 'Erro ao salvar rascunho.';
-  }
+  saveDraft();
+  status.textContent = 'Rascunho salvo neste navegador.';
 });
 
 // ✅ ENVIAR REDAÇÃO
 sendBtn.addEventListener('click', async () => {
-  const text = textarea.value;
+  const text = textarea.value || '';
 
   if (text.length < 500) {
     alert('A redação deve ter pelo menos 500 caracteres.');
@@ -89,6 +142,7 @@ sendBtn.addEventListener('click', async () => {
   }
 
   status.textContent = 'Enviando redação...';
+  sendBtn.disabled = true;
 
   try {
     const response = await fetch(`${API_URL}/essays`, {
@@ -97,9 +151,25 @@ sendBtn.addEventListener('click', async () => {
       body: JSON.stringify({ taskId, studentId, content: text }),
     });
 
-    if (!response.ok) throw new Error();
+    // ✅ se backend bloquear duplicado, mostra mensagem boa
+    if (!response.ok) {
+      const msg = await response.text().catch(() => '');
+      sendBtn.disabled = false;
+
+      // tenta deixar amigável
+      if (String(msg).toLowerCase().includes('já enviou')) {
+        status.textContent = 'Você já enviou esta redação. Não é possível enviar duas vezes.';
+        // opcional: você pode redirecionar para desempenho/feedback se achar melhor
+        return;
+      }
+
+      throw new Error();
+    }
 
     const essay = await response.json();
+
+    // remove rascunho após enviar
+    localStorage.removeItem(draftKey());
 
     textarea.disabled = true;
     saveBtn.disabled = true;
@@ -108,12 +178,24 @@ sendBtn.addEventListener('click', async () => {
     status.textContent = 'Redação enviada com sucesso!';
 
     setTimeout(() => {
-      window.location.href = `feedback-aluno.html?essayId=${essay.id}`;
+      window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
     }, 800);
   } catch {
     status.textContent = 'Erro ao enviar redação.';
+    sendBtn.disabled = false;
   }
 });
 
 // INIT
-carregarTarefa();
+(async () => {
+  await carregarTarefa();
+
+  // 1) tenta recuperar rascunho
+  loadDraft();
+
+  // 2) checa se já enviou
+  const existing = await checarSeJaEnviou();
+  if (existing?.id) {
+    bloquearEnvio('Você já enviou esta redação. Aguarde a correção do professor.');
+  }
+})();
