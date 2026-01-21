@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Redação e Feedback (Professor)</title>
+  <title>Feedback da Redação</title>
   <link rel="stylesheet" href="css/base.css">
 </head>
 <body>
@@ -26,6 +26,7 @@
 
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>ID:</strong> <span id="meId">...</span></p>
     <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
     <hr>
@@ -44,37 +45,30 @@
   </div>
 </aside>
 
-<h2>Redação e Feedback (Professor)</h2>
-
-<section>
-  <h3>Aluno</h3>
-  <p><strong id="studentName">—</strong><br><span id="studentEmail"></span></p>
-</section>
-
-<hr>
+<h2>Resultado da Redação</h2>
 
 <section>
   <h3>Tema</h3>
-  <p id="taskTitle">—</p>
+  <p id="taskTitle"></p>
 </section>
 
 <hr>
 
 <section>
-  <h3>Redação</h3>
+  <h3>Sua redação</h3>
   <p id="essayContent" class="box"></p>
 </section>
 
 <hr>
 
 <section>
-  <h3>Correção</h3>
+  <h3>Correção do professor</h3>
 
-  <p><strong>Competência 1 Domínio da escrita formal:</strong> <span id="c1">—</span> / 200</p>
-  <p><strong>Competência 2 Compreensão do tema:</strong> <span id="c2">—</span> / 200</p>
-  <p><strong>Competência 3 Organização da ideias:</strong> <span id="c3">—</span> / 200</p>
-  <p><strong>Competência 4 Coesão e coerência:</strong> <span id="c4">—</span> / 200</p>
-  <p><strong>Competência 5 Proposta de intervenção:</strong> <span id="c5">—</span> / 200</p>
+  <p><strong>Competência 1:</strong> <span id="c1">—</span> / 200</p>
+  <p><strong>Competência 2:</strong> <span id="c2">—</span> / 200</p>
+  <p><strong>Competência 3:</strong> <span id="c3">—</span> / 200</p>
+  <p><strong>Competência 4:</strong> <span id="c4">—</span> / 200</p>
+  <p><strong>Competência 5:</strong> <span id="c5">—</span> / 200</p>
 
   <p><strong>Nota final:</strong> <span id="score">—</span> / 1000</p>
 
@@ -83,9 +77,9 @@
 </section>
 
 <br>
-<button id="backBtn">Voltar</button>
+<button id="backBtn">Voltar ao painel</button>
 
-<script type="module" src="js/feedback-professor.js"></script>
+<script type="module" src="js/feedback-aluno.js"></script>
 
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
@@ -99,3 +93,6 @@
 
 </body>
 </html>
+
+
+
