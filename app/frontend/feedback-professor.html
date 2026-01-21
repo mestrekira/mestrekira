@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redação e Feedback (Professor)</title>
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+
+<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+
+<aside id="menuPanel" class="menu-panel">
+  <div class="menu-header">
+    <strong>Meu perfil</strong>
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+  </div>
+
+  <div class="menu-body">
+    <div class="menu-photo">
+      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+      <label class="menu-photo-label">
+        Alterar foto
+        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+      </label>
+    </div>
+
+    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+
+    <hr>
+
+    <h4>Atualizar dados</h4>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+    <button id="saveProfileBtn">Salvar</button>
+
+    <p id="menuStatus"></p>
+
+    <hr>
+
+    <button id="logoutMenuBtn">Sair</button>
+    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+  </div>
+</aside>
+
+<h2>Redação e Feedback (Professor)</h2>
+
+<section>
+  <h3>Aluno</h3>
+  <p><strong id="studentName">—</strong><br><span id="studentEmail"></span></p>
+</section>
+
+<hr>
+
+<section>
+  <h3>Tema</h3>
+  <p id="taskTitle">—</p>
+</section>
+
+<hr>
+
+<section>
+  <h3>Redação</h3>
+  <p id="essayContent" class="box"></p>
+</section>
+
+<hr>
+
+<section>
+  <h3>Correção</h3>
+
+  <p><strong>Competência 1 Domínio da escrita formal:</strong> <span id="c1">—</span> / 200</p>
+  <p><strong>Competência 2 Compreensão do tema:</strong> <span id="c2">—</span> / 200</p>
+  <p><strong>Competência 3 Organização da ideias:</strong> <span id="c3">—</span> / 200</p>
+  <p><strong>Competência 4 Coesão e coerência:</strong> <span id="c4">—</span> / 200</p>
+  <p><strong>Competência 5 Proposta de intervenção:</strong> <span id="c5">—</span> / 200</p>
+
+  <p><strong>Nota final:</strong> <span id="score">—</span> / 1000</p>
+
+  <h4>Feedback</h4>
+  <p id="feedback" class="box"></p>
+</section>
+
+<br>
+<button id="backBtn">Voltar</button>
+
+<script type="module" src="js/feedback-professor.js"></script>
+
+<script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+
+  initMenuPerfil({
+    loginRedirect: 'login.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html'
+  });
+</script>
+
+</body>
+</html>
