@@ -24,6 +24,7 @@ const studentsList = document.getElementById('studentsList');
 const studentPanel = document.getElementById('studentPanel');
 const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
+const studentPhotoImg = document.getElementById('studentPhotoImg');
 
 const sAvgTotal = document.getElementById('sAvgTotal');
 const sAvgC1 = document.getElementById('sAvgC1');
@@ -35,21 +36,61 @@ const sAvgC5 = document.getElementById('sAvgC5');
 const studentEssaysList = document.getElementById('studentEssaysList');
 
 function mean(nums) {
-  const v = nums.filter(n => typeof n === 'number' && !Number.isNaN(n));
+  const v = nums.filter((n) => typeof n === 'number' && !Number.isNaN(n));
   if (v.length === 0) return null;
   return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
 }
 
 function setText(el, value) {
-  el.textContent = (value === null || value === undefined) ? '—' : String(value);
+  if (!el) return;
+  el.textContent = value === null || value === undefined ? '—' : String(value);
+}
+
+function studentPhotoKey(studentId) {
+  return studentId ? `mk_photo_student_${studentId}` : null;
+}
+
+function setStudentPhoto(studentId) {
+  if (!studentPhotoImg) return;
+
+  const key = studentPhotoKey(studentId);
+  const dataUrl = key ? localStorage.getItem(key) : null;
+
+  if (dataUrl) {
+    studentPhotoImg.src = dataUrl;
+    studentPhotoImg.style.display = 'inline-block';
+  } else {
+    studentPhotoImg.removeAttribute('src');
+    studentPhotoImg.style.display = 'none';
+  }
+}
+
+function makeAvatar(studentId, size = 34) {
+  const img = document.createElement('img');
+  img.alt = 'Foto do aluno';
+  img.style.width = `${size}px`;
+  img.style.height = `${size}px`;
+  img.style.borderRadius = '50%';
+  img.style.objectFit = 'cover';
+  img.style.border = '1px solid #ccc';
+  img.style.display = 'none';
+
+  const key = studentPhotoKey(studentId);
+  const dataUrl = key ? localStorage.getItem(key) : null;
+  if (dataUrl) {
+    img.src = dataUrl;
+    img.style.display = 'inline-block';
+  }
+
+  return img;
 }
 
 async function carregarSala() {
   try {
-    const res = await fetch(`${API_URL}/rooms/${roomId}`);
+    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
     if (!res.ok) throw new Error();
     const room = await res.json();
-    roomNameEl.textContent = room.name || 'Sala';
+    roomNameEl.textContent = room?.name || 'Sala';
   } catch {
     roomNameEl.textContent = 'Sala';
   }
@@ -59,12 +100,13 @@ async function carregarDados() {
   try {
     statusEl.textContent = 'Carregando...';
 
-    const res = await fetch(`${API_URL}/essays/performance/by-room?roomId=${roomId}`);
+    const res = await fetch(
+      `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`
+    );
     if (!res.ok) throw new Error();
 
     const data = await res.json();
 
-    // data: lista de essays da sala com aluno+tarefa
     if (!Array.isArray(data) || data.length === 0) {
       statusEl.textContent = 'Ainda não há redações nesta sala.';
       studentsList.innerHTML = '<li>Nenhuma redação enviada ainda.</li>';
@@ -76,69 +118,93 @@ async function carregarDados() {
       setText(avgC4, null);
       setText(avgC5, null);
 
-      studentPanel.style.display = 'none';
+      if (studentPanel) studentPanel.style.display = 'none';
       return;
     }
 
-    // ✅ só corrigidas para médias
-    const corrected = data.filter(e => e.score !== null && e.score !== undefined);
+    // só corrigidas para médias
+    const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
 
-    setText(avgTotal, mean(corrected.map(e => e.score)));
-    setText(avgC1, mean(corrected.map(e => e.c1)));
-    setText(avgC2, mean(corrected.map(e => e.c2)));
-    setText(avgC3, mean(corrected.map(e => e.c3)));
-    setText(avgC4, mean(corrected.map(e => e.c4)));
-    setText(avgC5, mean(corrected.map(e => e.c5)));
+    setText(avgTotal, mean(corrected.map((e) => e.score)));
+    setText(avgC1, mean(corrected.map((e) => e.c1)));
+    setText(avgC2, mean(corrected.map((e) => e.c2)));
+    setText(avgC3, mean(corrected.map((e) => e.c3)));
+    setText(avgC4, mean(corrected.map((e) => e.c4)));
+    setText(avgC5, mean(corrected.map((e) => e.c5)));
 
     // agrupar por aluno
     const byStudent = new Map();
-    data.forEach(e => {
-      if (!byStudent.has(e.studentId)) {
-        byStudent.set(e.studentId, {
-          studentId: e.studentId,
-          studentName: e.studentName,
-          studentEmail: e.studentEmail,
+
+    data.forEach((e) => {
+      const sid = e.studentId;
+      if (!sid) return;
+
+      if (!byStudent.has(sid)) {
+        byStudent.set(sid, {
+          studentId: sid,
+          studentName: e.studentName || '',
+          studentEmail: e.studentEmail || '',
           essays: [],
         });
       }
-      byStudent.get(e.studentId).essays.push(e);
+
+      // se algum item vier com nome/email e outro não, “completa”
+      const g = byStudent.get(sid);
+      if (!g.studentName && e.studentName) g.studentName = e.studentName;
+      if (!g.studentEmail && e.studentEmail) g.studentEmail = e.studentEmail;
+
+      g.essays.push(e);
     });
 
-    // montar lista de alunos com médias
     studentsList.innerHTML = '';
 
     const students = Array.from(byStudent.values());
 
-    // ordenar por nome
     students.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
 
-    students.forEach(s => {
+    students.forEach((s) => {
       const li = document.createElement('li');
+      li.style.display = 'flex';
+      li.style.alignItems = 'flex-start';
+      li.style.gap = '10px';
 
-      const correctedEssays = s.essays.filter(e => e.score !== null && e.score !== undefined);
+      const avatar = makeAvatar(s.studentId, 38);
 
-      const mTotal = mean(correctedEssays.map(e => e.score));
-      const mC1 = mean(correctedEssays.map(e => e.c1));
-      const mC2 = mean(correctedEssays.map(e => e.c2));
-      const mC3 = mean(correctedEssays.map(e => e.c3));
-      const mC4 = mean(correctedEssays.map(e => e.c4));
-      const mC5 = mean(correctedEssays.map(e => e.c5));
+      const content = document.createElement('div');
+      content.style.flex = '1';
+
+      const correctedEssays = s.essays.filter((e) => e.score !== null && e.score !== undefined);
+
+      const mTotal = mean(correctedEssays.map((e) => e.score));
+      const mC1 = mean(correctedEssays.map((e) => e.c1));
+      const mC2 = mean(correctedEssays.map((e) => e.c2));
+      const mC3 = mean(correctedEssays.map((e) => e.c3));
+      const mC4 = mean(correctedEssays.map((e) => e.c4));
+      const mC5 = mean(correctedEssays.map((e) => e.c5));
 
       const header = document.createElement('div');
-      header.innerHTML = `<strong>${s.studentName}</strong><br><small>${s.studentEmail || ''}</small>`;
+      const nome = s.studentName && String(s.studentName).trim() ? s.studentName : 'Aluno';
+      const email = s.studentEmail && String(s.studentEmail).trim() ? s.studentEmail : '';
+
+      header.innerHTML = `<strong>${nome}</strong>${email ? `<br><small>${email}</small>` : ''}`;
 
       const resumo = document.createElement('div');
-      resumo.textContent = `Média: ${mTotal ?? '—'} | C1 ${mC1 ?? '—'} C2 ${mC2 ?? '—'} C3 ${mC3 ?? '—'} C4 ${mC4 ?? '—'} C5 ${mC5 ?? '—'}`;
+      resumo.textContent = `Média: ${mTotal ?? '—'} | C1 ${mC1 ?? '—'} C2 ${mC2 ?? '—'} C3 ${
+        mC3 ?? '—'
+      } C4 ${mC4 ?? '—'} C5 ${mC5 ?? '—'}`;
 
       const btn = document.createElement('button');
       btn.textContent = 'Ver desempenho individual';
       btn.onclick = () => abrirAluno(s, { mTotal, mC1, mC2, mC3, mC4, mC5 });
 
-      li.appendChild(header);
-      li.appendChild(document.createElement('br'));
-      li.appendChild(resumo);
-      li.appendChild(document.createElement('br'));
-      li.appendChild(btn);
+      content.appendChild(header);
+      content.appendChild(document.createElement('br'));
+      content.appendChild(resumo);
+      content.appendChild(document.createElement('br'));
+      content.appendChild(btn);
+
+      li.appendChild(avatar);
+      li.appendChild(content);
 
       studentsList.appendChild(li);
     });
@@ -147,15 +213,25 @@ async function carregarDados() {
   } catch {
     statusEl.textContent = 'Erro ao carregar dados de desempenho.';
     studentsList.innerHTML = '<li>Erro ao carregar.</li>';
-    studentPanel.style.display = 'none';
+    if (studentPanel) studentPanel.style.display = 'none';
   }
 }
 
 function abrirAluno(studentGroup, medias) {
+  if (!studentPanel) return;
   studentPanel.style.display = 'block';
 
-  studentNameEl.textContent = studentGroup.studentName || 'Aluno';
-  studentEmailEl.textContent = studentGroup.studentEmail || '';
+  studentNameEl.textContent =
+    studentGroup.studentName && String(studentGroup.studentName).trim()
+      ? studentGroup.studentName
+      : 'Aluno';
+
+  studentEmailEl.textContent =
+    studentGroup.studentEmail && String(studentGroup.studentEmail).trim()
+      ? studentGroup.studentEmail
+      : '';
+
+  setStudentPhoto(studentGroup.studentId);
 
   setText(sAvgTotal, medias.mTotal ?? null);
   setText(sAvgC1, medias.mC1 ?? null);
@@ -166,25 +242,35 @@ function abrirAluno(studentGroup, medias) {
 
   studentEssaysList.innerHTML = '';
 
-  // ordenar por tarefa/título
-  const essays = [...studentGroup.essays];
+  const essays = [...(studentGroup.essays || [])];
   essays.sort((a, b) => (a.taskTitle || '').localeCompare(b.taskTitle || ''));
 
-  essays.forEach(e => {
+  essays.forEach((e) => {
     const li = document.createElement('li');
 
     const title = document.createElement('strong');
     title.textContent = e.taskTitle || 'Tarefa';
 
     const nota = document.createElement('div');
-    nota.textContent = (e.score !== null && e.score !== undefined)
-      ? `Nota: ${e.score} (C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${e.c4 ?? '—'} C5 ${e.c5 ?? '—'})`
-      : 'Sem correção';
+    nota.textContent =
+      e.score !== null && e.score !== undefined
+        ? `Nota: ${e.score} (C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${
+            e.c4 ?? '—'
+          } C5 ${e.c5 ?? '—'})`
+        : 'Sem correção';
 
     const btn = document.createElement('button');
     btn.textContent = 'Ver redação/feedback';
     btn.onclick = () => {
-      window.location.href = `feedback-aluno.html?essayId=${e.id}`;
+      const tId = e.taskId || e.task?.id || null;
+      if (!tId) {
+        alert('Não encontrei o taskId desta redação no retorno do servidor.');
+        return;
+      }
+      // ✅ professor vai para correção (não feedback-aluno)
+      window.location.href = `correcao.html?taskId=${encodeURIComponent(
+        tId
+      )}&studentId=${encodeURIComponent(studentGroup.studentId)}`;
     };
 
     li.appendChild(title);
