@@ -75,9 +75,13 @@ async function removerAluno(studentId, studentName = 'este aluno') {
   }
 }
 
-// 🔹 Carregar alunos
+
+// 🔹 Carregar alunos (com foto localStorage)
 async function carregarAlunos() {
   studentsList.innerHTML = '<li>Carregando alunos...</li>';
+
+  // helper: foto do aluno salva localmente
+  const photoKey = (studentId) => `mk_photo_student_${studentId}`;
 
   try {
     const response = await fetch(`${API_URL}/rooms/${roomId}/students`);
@@ -91,27 +95,50 @@ async function carregarAlunos() {
       return;
     }
 
-    students.forEach(student => {
+    students.forEach((student) => {
       const li = document.createElement('li');
+      li.style.display = 'flex';
+      li.style.alignItems = 'center';
+      li.style.gap = '10px';
 
-      const name = student.name?.trim() || 'Aluno';
-      const email = student.email?.trim() || '';
-      li.textContent = email ? `${name} (${email})` : name;
+      // foto (fallback se não existir)
+      const img = document.createElement('img');
+      img.alt = 'Foto do aluno';
+      img.width = 36;
+      img.height = 36;
+      img.style.borderRadius = '50%';
+      img.style.objectFit = 'cover';
+      img.style.border = '1px solid #ccc';
 
-      if (student.id) {
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = 'Remover';
-        removeBtn.addEventListener('click', () => removerAluno(student.id, name));
-        li.appendChild(document.createTextNode(' '));
-        li.appendChild(removeBtn);
+      const dataUrl = localStorage.getItem(photoKey(student.id));
+      if (dataUrl) img.src = dataUrl;
+      else {
+        // placeholder simples
+        img.src =
+          'data:image/svg+xml;utf8,' +
+          encodeURIComponent(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+              <rect width="100%" height="100%" fill="#eee"/>
+              <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">?</text>
+            </svg>`
+          );
       }
 
+      // texto
+      const text = document.createElement('div');
+      const name = student.name || 'Aluno';
+      const email = student.email || '';
+      text.innerHTML = `<strong>${name}</strong><br><small>${email}</small>`;
+
+      li.appendChild(img);
+      li.appendChild(text);
       studentsList.appendChild(li);
     });
   } catch {
     studentsList.innerHTML = '<li>Não foi possível carregar alunos agora.</li>';
   }
 }
+
 
 // 🔹 Carregar tarefas
 async function carregarTarefas() {
