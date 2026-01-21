@@ -3,6 +3,7 @@ import { API_URL } from './config.js';
 // 🔹 PARÂMETROS
 const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
+const focusStudentId = params.get('studentId'); // ✅ opcional: abrir direto um aluno
 
 if (!taskId) {
   alert('Tarefa inválida.');
@@ -16,6 +17,8 @@ const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
 const essayContentEl = document.getElementById('essayContent');
 
+const studentPhotoImg = document.getElementById('studentPhotoImg'); // ✅ foto no topo da correção
+
 const feedbackEl = document.getElementById('feedback');
 const saveBtn = document.getElementById('saveCorrectionBtn');
 const statusEl = document.getElementById('status');
@@ -28,6 +31,36 @@ const c5El = document.getElementById('c5');
 const totalScoreEl = document.getElementById('totalScore');
 
 let currentEssayId = null;
+
+function photoKeyStudent(studentId) {
+  return `mk_photo_student_${studentId}`;
+}
+
+function placeholderAvatarDataUrl(letter = '?') {
+  return (
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+        <rect width="100%" height="100%" fill="#eee"/>
+        <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">${letter}</text>
+      </svg>`
+    )
+  );
+}
+
+function setStudentPhoto(studentId, studentName = '') {
+  if (!studentPhotoImg) return;
+  const dataUrl = studentId ? localStorage.getItem(photoKeyStudent(studentId)) : null;
+
+  if (dataUrl) {
+    studentPhotoImg.src = dataUrl;
+    studentPhotoImg.style.display = 'inline-block';
+  } else {
+    // se não tiver foto, esconde (ou você pode deixar placeholder)
+    studentPhotoImg.removeAttribute('src');
+    studentPhotoImg.style.display = 'none';
+  }
+}
 
 function clamp200(n) {
   if (Number.isNaN(n)) return null;
@@ -58,6 +91,41 @@ function calcularTotal() {
   el.addEventListener('input', () => calcularTotal());
 });
 
+// 🔹 ABRIR REDAÇÃO
+function abrirCorrecao(essay) {
+  currentEssayId = essay.id;
+
+  const nome =
+    essay.studentName && essay.studentName.trim()
+      ? essay.studentName
+      : 'Aluno não identificado';
+
+  studentNameEl.textContent = nome;
+
+  studentEmailEl.textContent =
+    essay.studentEmail && essay.studentEmail.trim()
+      ? essay.studentEmail
+      : '(e-mail indisponível)';
+
+  // ✅ foto do aluno (localStorage)
+  setStudentPhoto(essay.studentId, nome);
+
+  essayContentEl.textContent = essay.content || '';
+  feedbackEl.value = essay.feedback || '';
+
+  // preenche competências se já existirem
+  c1El.value = essay.c1 ?? '';
+  c2El.value = essay.c2 ?? '';
+  c3El.value = essay.c3 ?? '';
+  c4El.value = essay.c4 ?? '';
+  c5El.value = essay.c5 ?? '';
+
+  calcularTotal();
+
+  correctionSection.style.display = 'block';
+  statusEl.textContent = '';
+}
+
 // 🔹 CARREGAR REDAÇÕES DA TAREFA
 async function carregarRedacoes() {
   try {
@@ -72,52 +140,61 @@ async function carregarRedacoes() {
       return;
     }
 
+    // ✅ se veio studentId pela URL, abre automaticamente o primeiro match
+    if (focusStudentId) {
+      const target = essays.find((e) => e.studentId === focusStudentId);
+      if (target) abrirCorrecao(target);
+    }
+
     essays.forEach((essay) => {
       const li = document.createElement('li');
+      li.style.display = 'flex';
+      li.style.alignItems = 'center';
+      li.style.justifyContent = 'space-between';
+      li.style.gap = '12px';
 
+      const left = document.createElement('div');
+      left.style.display = 'flex';
+      left.style.alignItems = 'center';
+      left.style.gap = '10px';
+
+      // ✅ avatar do aluno
+      const avatar = document.createElement('img');
+      avatar.width = 36;
+      avatar.height = 36;
+      avatar.style.borderRadius = '50%';
+      avatar.style.objectFit = 'cover';
+      avatar.style.border = '1px solid #ccc';
+
+      const nome =
+        essay.studentName && essay.studentName.trim() ? essay.studentName : 'Aluno';
+
+      const dataUrl = localStorage.getItem(photoKeyStudent(essay.studentId));
+      avatar.src = dataUrl || placeholderAvatarDataUrl((nome || 'A').trim().slice(0, 1).toUpperCase());
+
+      const text = document.createElement('div');
       const statusNota =
-        essay.score !== null && essay.score !== undefined ? `Nota: ${essay.score}` : 'Sem correção';
+        essay.score !== null && essay.score !== undefined
+          ? `Nota: ${essay.score}`
+          : 'Sem correção';
 
-      const nome = essay.studentName && essay.studentName.trim() ? essay.studentName : 'Aluno';
-      li.textContent = `${nome} — ${statusNota}`;
+      text.innerHTML = `<strong>${nome}</strong><br><small>${statusNota}</small>`;
 
       const btn = document.createElement('button');
       btn.textContent = 'Corrigir';
       btn.onclick = () => abrirCorrecao(essay);
 
+      left.appendChild(avatar);
+      left.appendChild(text);
+
+      li.appendChild(left);
       li.appendChild(btn);
+
       essaysList.appendChild(li);
     });
   } catch {
     essaysList.innerHTML = '<li>Erro ao carregar redações.</li>';
   }
-}
-
-// 🔹 ABRIR REDAÇÃO
-function abrirCorrecao(essay) {
-  currentEssayId = essay.id;
-
-  studentNameEl.textContent =
-    essay.studentName && essay.studentName.trim() ? essay.studentName : 'Aluno não identificado';
-
-  studentEmailEl.textContent =
-    essay.studentEmail && essay.studentEmail.trim() ? essay.studentEmail : '(e-mail indisponível)';
-
-  essayContentEl.textContent = essay.content || '';
-
-  feedbackEl.value = essay.feedback || '';
-
-  // preenche competências se já existirem
-  c1El.value = essay.c1 ?? '';
-  c2El.value = essay.c2 ?? '';
-  c3El.value = essay.c3 ?? '';
-  c4El.value = essay.c4 ?? '';
-  c5El.value = essay.c5 ?? '';
-
-  calcularTotal();
-
-  correctionSection.style.display = 'block';
-  statusEl.textContent = '';
 }
 
 // 🔹 SALVAR CORREÇÃO
