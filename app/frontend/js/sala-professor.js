@@ -24,22 +24,22 @@ if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn ||
   throw new Error('HTML incompleto');
 }
 
-// ✅ Botão de desempenho (fora do createTask)
+// ✅ Botão de desempenho
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
-    window.location.href = `desempenho-professor.html?roomId=${roomId}`;
+    window.location.href = `desempenho-professor.html?roomId=${encodeURIComponent(roomId)}`;
   });
 }
 
 // 🔹 Carregar dados da sala
 async function carregarSala() {
   try {
-    const response = await fetch(`${API_URL}/rooms/${roomId}`);
+    const response = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
     if (!response.ok) throw new Error();
 
     const room = await response.json();
-    roomNameEl.textContent = room.name || 'Sala';
-    roomCodeEl.textContent = room.code || '—';
+    roomNameEl.textContent = room?.name || 'Sala';
+    roomCodeEl.textContent = room?.code || '—';
   } catch {
     alert('Erro ao carregar dados da sala.');
   }
@@ -52,20 +52,20 @@ copyCodeBtn.addEventListener('click', () => {
     alert('Código da sala indisponível.');
     return;
   }
-
   navigator.clipboard.writeText(code);
   alert('Código da sala copiado!');
 });
 
-// ✅ Remover aluno da sala (precisa do endpoint DELETE /rooms/:roomId/students/:studentId)
+// ✅ Remover aluno da sala (endpoint DELETE /rooms/:roomId/students/:studentId)
 async function removerAluno(studentId, studentName = 'este aluno') {
   const ok = confirm(`Remover ${studentName} da sala?`);
   if (!ok) return;
 
   try {
-    const res = await fetch(`${API_URL}/rooms/${roomId}/students/${studentId}`, {
-      method: 'DELETE',
-    });
+    const res = await fetch(
+      `${API_URL}/rooms/${encodeURIComponent(roomId)}/students/${encodeURIComponent(studentId)}`,
+      { method: 'DELETE' }
+    );
 
     if (!res.ok) throw new Error();
 
@@ -75,19 +75,18 @@ async function removerAluno(studentId, studentName = 'este aluno') {
   }
 }
 
-
 // 🔹 Carregar alunos (com foto localStorage)
 async function carregarAlunos() {
   studentsList.innerHTML = '<li>Carregando alunos...</li>';
 
-  // helper: foto do aluno salva localmente
+  // foto do aluno salva localmente pelo menu-perfil.js no navegador do aluno
   const photoKey = (studentId) => `mk_photo_student_${studentId}`;
 
   try {
-    const response = await fetch(`${API_URL}/rooms/${roomId}/students`);
+    const response = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
     if (!response.ok) throw new Error();
 
-    const students = await response.json();
+    let students = await response.json();
     studentsList.innerHTML = '';
 
     if (!Array.isArray(students) || students.length === 0) {
@@ -95,13 +94,28 @@ async function carregarAlunos() {
       return;
     }
 
+    // ✅ ordena por nome (se vier vazio, joga pro fim)
+    students = students.sort((a, b) => {
+      const an = (a?.name || '').trim().toLowerCase();
+      const bn = (b?.name || '').trim().toLowerCase();
+      if (!an && bn) return 1;
+      if (an && !bn) return -1;
+      return an.localeCompare(bn);
+    });
+
     students.forEach((student) => {
       const li = document.createElement('li');
       li.style.display = 'flex';
       li.style.alignItems = 'center';
+      li.style.justifyContent = 'space-between';
       li.style.gap = '10px';
 
-      // foto (fallback se não existir)
+      const left = document.createElement('div');
+      left.style.display = 'flex';
+      left.style.alignItems = 'center';
+      left.style.gap = '10px';
+
+      // foto
       const img = document.createElement('img');
       img.alt = 'Foto do aluno';
       img.width = 36;
@@ -110,10 +124,12 @@ async function carregarAlunos() {
       img.style.objectFit = 'cover';
       img.style.border = '1px solid #ccc';
 
-      const dataUrl = localStorage.getItem(photoKey(student.id));
-      if (dataUrl) img.src = dataUrl;
-      else {
-        // placeholder simples
+      const dataUrl = student?.id ? localStorage.getItem(photoKey(student.id)) : null;
+
+      if (dataUrl) {
+        img.src = dataUrl;
+      } else {
+        // placeholder
         img.src =
           'data:image/svg+xml;utf8,' +
           encodeURIComponent(
@@ -126,12 +142,28 @@ async function carregarAlunos() {
 
       // texto
       const text = document.createElement('div');
-      const name = student.name || 'Aluno';
-      const email = student.email || '';
-      text.innerHTML = `<strong>${name}</strong><br><small>${email}</small>`;
+      const name = (student?.name || '').trim() || 'Aluno';
+      const email = (student?.email || '').trim();
 
-      li.appendChild(img);
-      li.appendChild(text);
+      // evita "undefined"
+      text.innerHTML = `<strong>${name}</strong>${email ? `<br><small>${email}</small>` : ''}`;
+
+      left.appendChild(img);
+      left.appendChild(text);
+
+      // botão remover (se tiver student.id)
+      const right = document.createElement('div');
+
+      if (student?.id) {
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = 'Remover';
+        removeBtn.addEventListener('click', () => removerAluno(student.id, name));
+        right.appendChild(removeBtn);
+      }
+
+      li.appendChild(left);
+      li.appendChild(right);
+
       studentsList.appendChild(li);
     });
   } catch {
@@ -139,13 +171,12 @@ async function carregarAlunos() {
   }
 }
 
-
 // 🔹 Carregar tarefas
 async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando tarefas...</li>';
 
   try {
-    const response = await fetch(`${API_URL}/tasks/by-room?roomId=${roomId}`);
+    const response = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
     if (!response.ok) throw new Error();
 
     const tasks = await response.json();
@@ -156,25 +187,25 @@ async function carregarTarefas() {
       return;
     }
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       const li = document.createElement('li');
 
       const title = document.createElement('strong');
-      title.textContent = task.title;
+      title.textContent = task?.title || 'Tarefa';
 
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
       btn.addEventListener('click', () => {
-        window.location.href = `correcao.html?taskId=${task.id}`;
+        window.location.href = `correcao.html?taskId=${encodeURIComponent(task.id)}`;
       });
 
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
       delBtn.addEventListener('click', async () => {
-        const ok = confirm(`Excluir a tarefa "${task.title}"?`);
+        const ok = confirm(`Excluir a tarefa "${task?.title || 'sem título'}"?`);
         if (!ok) return;
 
-        const res = await fetch(`${API_URL}/tasks/${task.id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/tasks/${encodeURIComponent(task.id)}`, { method: 'DELETE' });
         if (!res.ok) {
           alert('Erro ao excluir tarefa.');
           return;
