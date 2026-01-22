@@ -16,7 +16,12 @@ function setStatus(msg) {
   if (status) status.textContent = msg || '';
 }
 
-enterBtn.addEventListener('click', async () => {
+function setBusy(busy) {
+  if (enterBtn) enterBtn.disabled = !!busy;
+  if (codeEl) codeEl.disabled = !!busy;
+}
+
+async function entrar() {
   const code = (codeEl?.value || '').trim().toUpperCase();
 
   if (!code) {
@@ -25,6 +30,7 @@ enterBtn.addEventListener('click', async () => {
   }
 
   setStatus('Entrando na sala...');
+  setBusy(true);
 
   try {
     const response = await fetch(`${API_URL}/enrollments/join`, {
@@ -33,25 +39,28 @@ enterBtn.addEventListener('click', async () => {
       body: JSON.stringify({ code, studentId }),
     });
 
-    if (!response.ok) throw new Error();
+    const data = await response.json().catch(() => null);
 
-    const data = await response.json();
+    if (!response.ok) throw new Error();
 
     if (!data?.roomId) {
       setStatus('Resposta inválida do servidor.');
+      setBusy(false);
       return;
     }
 
-    // ✅ vai direto para a sala
     window.location.href = `sala-aluno.html?roomId=${encodeURIComponent(data.roomId)}`;
   } catch {
     setStatus('Erro ao entrar na sala. Verifique o código.');
+    setBusy(false);
   }
-});
+}
+
+if (enterBtn) enterBtn.addEventListener('click', entrar);
 
 // Enter no input
 if (codeEl) {
   codeEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') enterBtn.click();
+    if (e.key === 'Enter') entrar();
   });
 }
