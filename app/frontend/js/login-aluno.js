@@ -26,7 +26,6 @@ async function fazerLogin() {
       body: JSON.stringify({ email, password }),
     });
 
-    // Mesmo quando for erro de credencial, seu backend pode responder 200 com { error }
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
@@ -44,17 +43,21 @@ async function fazerLogin() {
       return;
     }
 
-    const role = String(user.role || '').toUpperCase();
+    const role = normRole(data.role);
 
-if (role === 'PROFESSOR') {
-  localStorage.setItem('professorId', user.id);
-  window.location.href = 'professor-salas.html';
-  return;
-}
+    // ✅ limpa o outro papel para evitar conflitos
+    localStorage.removeItem('professorId');
+    localStorage.removeItem('studentId');
 
-localStorage.setItem('studentId', user.id);
-window.location.href = 'painel-aluno.html';
+    if (role === 'PROFESSOR') {
+      localStorage.setItem('professorId', data.id);
+      window.location.replace('professor-salas.html');
+      return;
+    }
 
+    // default: aluno
+    localStorage.setItem('studentId', data.id);
+    window.location.replace('painel-aluno.html');
   } catch {
     if (errorEl) errorEl.textContent = 'Erro ao fazer login. Tente novamente.';
   }
@@ -66,11 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btn) btn.addEventListener('click', fazerLogin);
 
-  // Enter para login
   if (pass) {
     pass.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') fazerLogin();
     });
   }
 });
-
