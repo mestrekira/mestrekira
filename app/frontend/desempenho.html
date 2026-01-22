@@ -7,6 +7,44 @@
 </head>
 <body>
 
+<!-- MENU PERFIL -->
+<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+
+<aside id="menuPanel" class="menu-panel">
+  <div class="menu-header">
+    <strong>Meu perfil</strong>
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+  </div>
+
+  <div class="menu-body">
+    <div class="menu-photo">
+      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+      <label class="menu-photo-label">
+        Alterar foto
+        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+      </label>
+    </div>
+
+    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+
+    <hr>
+
+    <h4>Atualizar dados</h4>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+    <button id="saveProfileBtn">Salvar</button>
+
+    <p id="menuStatus"></p>
+
+    <hr>
+
+    <button id="logoutMenuBtn">Sair</button>
+    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+  </div>
+</aside>
+
 <h2>Desempenho</h2>
 
 <section>
@@ -17,24 +55,28 @@
     <select id="roomSelect"></select>
   </label>
 
-  <div id="profOnly" style="display:none; margin-top:10px;">
-    <label>
-      Aluno:
-      <select id="studentSelect">
-        <option value="">(todos)</option>
-      </select>
-    </label>
-  </div>
-
   <p id="status"></p>
 </section>
 
 <hr>
 
 <section>
-  <h3>Gráfico (Total / ENEM)</h3>
-  <p class="muted">Clique em uma redação na lista para ver o texto.</p>
+  <h3>Resumo</h3>
+  <ul class="lista">
+    <li>Média total (0–1000): <strong id="avgTotal">—</strong></li>
+    <li>Média C1: <strong id="avgC1">—</strong></li>
+    <li>Média C2: <strong id="avgC2">—</strong></li>
+    <li>Média C3: <strong id="avgC3">—</strong></li>
+    <li>Média C4: <strong id="avgC4">—</strong></li>
+    <li>Média C5: <strong id="avgC5">—</strong></li>
+  </ul>
+</section>
 
+<hr>
+
+<section>
+  <h3>Gráfico (Total / ENEM)</h3>
+  <p class="muted">Quanto maior a barra, maior a nota.</p>
   <div id="chart" class="box" style="padding:10px;"></div>
 </section>
 
@@ -45,7 +87,6 @@
   <ul id="historyList" class="lista"></ul>
 </section>
 
-<!-- ✅ Menu já está instalado por você (A), então só precisa inicializar aqui também -->
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
   initMenuPerfil({
