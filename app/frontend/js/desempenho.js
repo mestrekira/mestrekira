@@ -3,7 +3,7 @@ import { API_URL } from './config.js';
 // ✅ aluno logado
 const studentId = localStorage.getItem('studentId');
 if (!studentId || studentId === 'undefined' || studentId === 'null') {
-  window.location.href = 'login-aluno.html';
+  window.location.replace('login-aluno.html');
   throw new Error('studentId ausente');
 }
 
@@ -29,7 +29,9 @@ function setText(el, value) {
 }
 
 function mean(nums) {
-  const v = nums.filter((n) => typeof n === 'number' && !Number.isNaN(n));
+  const v = nums
+    .map((n) => (n === null || n === undefined ? null : Number(n)))
+    .filter((n) => typeof n === 'number' && !Number.isNaN(n));
   if (v.length === 0) return null;
   return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
 }
@@ -43,6 +45,23 @@ function clearResumo() {
   setText(avgC5, null);
 }
 
+function setStatus(msg) {
+  if (statusEl) statusEl.textContent = msg || '';
+}
+
+function safeScore(v) {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
+}
+
+// 🔹 cria um “rótulo” de tarefa sem backend extra:
+// (se você depois adicionar taskTitle no endpoint, aqui fica ainda melhor)
+function makeLabelFromTaskId(taskId, idx) {
+  const short = (taskId || '').slice(0, 6);
+  return taskId ? `Tarefa ${short}…` : `Redação ${idx + 1}`;
+}
+
 function renderChart(essays) {
   if (!chartEl) return;
   chartEl.innerHTML = '';
@@ -52,12 +71,10 @@ function renderChart(essays) {
     return;
   }
 
-  // ordena por "mais recente" de forma estável:
-  // se tiver createdAt no futuro, troca pra isso. Por enquanto usa ordem do array.
   const max = 1000;
 
   essays.forEach((e, idx) => {
-    const score = (e.score !== null && e.score !== undefined) ? Number(e.score) : null;
+    const score = safeScore(e.score);
 
     const row = document.createElement('div');
     row.style.display = 'flex';
@@ -66,10 +83,10 @@ function renderChart(essays) {
     row.style.margin = '8px 0';
 
     const label = document.createElement('div');
-    label.style.width = '90px';
+    label.style.width = '120px';
     label.style.fontSize = '12px';
     label.style.opacity = '0.85';
-    label.textContent = `Redação ${idx + 1}`;
+    label.textContent = makeLabelFromTaskId(e.taskId, idx);
 
     const barWrap = document.createElement('div');
     barWrap.style.flex = '1';
@@ -82,7 +99,9 @@ function renderChart(essays) {
     const pct = score === null ? 0 : Math.max(0, Math.min(100, Math.round((score / max) * 100)));
     bar.style.height = '100%';
     bar.style.width = `${pct}%`;
-    bar.style.background = '#888'; // simples (sem depender de css)
+    // ✅ sem cor fixa inline: deixa no CSS se quiser
+    bar.className = 'bar';
+
     barWrap.appendChild(bar);
 
     const val = document.createElement('div');
@@ -108,25 +127,24 @@ function renderHistory(essays) {
     return;
   }
 
-  // mostra primeiro as mais corrigidas no topo, e depois por score (opcional)
-  const ordered = [...essays].sort((a, b) => {
-    const ac = a.score !== null && a.score !== undefined;
-    const bc = b.score !== null && b.score !== undefined;
-    if (ac !== bc) return ac ? -1 : 1;
-    return (Number(b.score || 0) - Number(a.score || 0));
-  });
+  // ✅ mantém ordem "natural" do backend (mais estável pro aluno)
+  const ordered = [...essays];
 
   ordered.forEach((e, idx) => {
     const li = document.createElement('li');
 
     const title = document.createElement('div');
-    title.innerHTML = `<strong>Redação ${idx + 1}</strong>`;
+    title.innerHTML = `<strong>${makeLabelFromTaskId(e.taskId, idx)}</strong>`;
 
     const nota = document.createElement('div');
     nota.style.marginTop = '6px';
 
-    if (e.score !== null && e.score !== undefined) {
-      nota.textContent = `Nota: ${e.score} (C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${e.c4 ?? '—'} C5 ${e.c5 ?? '—'})`;
+    const score = safeScore(e.score);
+
+    if (score !== null) {
+      nota.textContent =
+        `Nota: ${score} ` +
+        `(C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${e.c4 ?? '—'} C5 ${e.c5 ?? '—'})`;
     } else {
       nota.textContent = 'Ainda não corrigida.';
     }
@@ -137,7 +155,6 @@ function renderHistory(essays) {
     const btn = document.createElement('button');
     btn.textContent = 'Ver feedback';
     btn.onclick = () => {
-      // feedback-aluno.js já valida permissão por studentId
       window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(e.id)}`;
     };
 
@@ -151,7 +168,7 @@ function renderHistory(essays) {
   });
 }
 
-// ✅ carrega salas do aluno (para popular select)
+// ✅ carrega salas do aluno (popular select)
 async function carregarSalasDoAluno() {
   if (!roomSelect) return [];
 
@@ -178,7 +195,6 @@ async function carregarSalasDoAluno() {
       roomSelect.appendChild(opt);
     });
 
-    // seleciona a sala da URL se existir, senão pega a 1ª
     const exists = rooms.some((r) => r.id === roomIdFromUrl);
     roomSelect.value = exists ? roomIdFromUrl : rooms[0].id;
 
@@ -192,14 +208,14 @@ async function carregarSalasDoAluno() {
 // ✅ carrega desempenho do aluno na sala
 async function carregarDesempenho(roomId) {
   if (!roomId) {
-    statusEl.textContent = 'Selecione uma sala.';
+    setStatus('Selecione uma sala.');
     clearResumo();
     renderChart([]);
     renderHistory([]);
     return;
   }
 
-  statusEl.textContent = 'Carregando...';
+  setStatus('Carregando...');
   clearResumo();
   renderChart([]);
   renderHistory([]);
@@ -211,29 +227,29 @@ async function carregarDesempenho(roomId) {
     if (!res.ok) throw new Error();
 
     const essays = await res.json();
+
     if (!Array.isArray(essays) || essays.length === 0) {
-      statusEl.textContent = 'Sem redações nesta sala ainda.';
+      setStatus('Sem redações nesta sala ainda.');
       renderChart([]);
       renderHistory([]);
       return;
     }
 
-    // médias só das corrigidas
     const corrected = essays.filter((e) => e.score !== null && e.score !== undefined);
 
-    setText(avgTotal, mean(corrected.map((e) => Number(e.score))));
-    setText(avgC1, mean(corrected.map((e) => Number(e.c1))));
-    setText(avgC2, mean(corrected.map((e) => Number(e.c2))));
-    setText(avgC3, mean(corrected.map((e) => Number(e.c3))));
-    setText(avgC4, mean(corrected.map((e) => Number(e.c4))));
-    setText(avgC5, mean(corrected.map((e) => Number(e.c5))));
+    setText(avgTotal, mean(corrected.map((e) => e.score)));
+    setText(avgC1, mean(corrected.map((e) => e.c1)));
+    setText(avgC2, mean(corrected.map((e) => e.c2)));
+    setText(avgC3, mean(corrected.map((e) => e.c3)));
+    setText(avgC4, mean(corrected.map((e) => e.c4)));
+    setText(avgC5, mean(corrected.map((e) => e.c5)));
 
     renderChart(essays);
     renderHistory(essays);
 
-    statusEl.textContent = '';
+    setStatus('');
   } catch {
-    statusEl.textContent = 'Erro ao carregar desempenho.';
+    setStatus('Erro ao carregar desempenho.');
     renderChart([]);
     renderHistory([]);
   }
@@ -243,11 +259,9 @@ async function carregarDesempenho(roomId) {
 (async () => {
   const rooms = await carregarSalasDoAluno();
 
-  // listeners
   if (roomSelect) {
     roomSelect.addEventListener('change', () => {
       const rid = roomSelect.value || '';
-      // mantém URL coerente
       const url = new URL(window.location.href);
       url.searchParams.set('roomId', rid);
       window.history.replaceState({}, '', url);
@@ -258,6 +272,6 @@ async function carregarDesempenho(roomId) {
   if (rooms.length > 0) {
     carregarDesempenho(roomSelect.value);
   } else {
-    statusEl.textContent = 'Você não está matriculado em nenhuma sala.';
+    setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
