@@ -253,7 +253,13 @@ async function carregarDesempenho(roomId) {
     renderChart([]);
     renderHistory([]);
   }
+
+  btn.textContent = 'Ver redação';
+btn.onclick = () => {
+  window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
+};
 }
+
 
 // INIT
 (async () => {
@@ -275,3 +281,4 @@ async function carregarDesempenho(roomId) {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
+
