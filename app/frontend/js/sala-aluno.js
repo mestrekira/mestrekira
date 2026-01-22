@@ -83,7 +83,6 @@ if (leaveBtn) {
 
 // ✅ sala + professor + colegas
 async function carregarOverview() {
-  // fallbacks visuais
   if (teacherInfo) teacherInfo.textContent = 'Carregando...';
   if (classmatesList) classmatesList.innerHTML = '<li>Carregando colegas...</li>';
 
@@ -92,6 +91,7 @@ async function carregarOverview() {
     if (!res.ok) throw new Error();
     const data = await res.json();
 
+    // sala
     if (roomNameEl) roomNameEl.textContent = data?.room?.name || 'Sala';
 
     // professor
@@ -100,7 +100,6 @@ async function carregarOverview() {
       if (!p) {
         teacherInfo.textContent = 'Professor não identificado.';
       } else {
-        // monta com foto
         const wrap = document.createElement('div');
         wrap.style.display = 'flex';
         wrap.style.alignItems = 'center';
@@ -113,8 +112,8 @@ async function carregarOverview() {
         );
 
         const text = document.createElement('div');
-        const name = p.name || 'Professor';
-        const email = p.email || '';
+        const name = (p.name || 'Professor').trim();
+        const email = (p.email || '').trim();
         text.innerHTML = `<strong>${name}</strong>${email ? `<br><small>${email}</small>` : ''}`;
 
         wrap.appendChild(avatar);
@@ -125,20 +124,28 @@ async function carregarOverview() {
       }
     }
 
-    // colegas
+    // colegas (students)
     if (classmatesList) {
       classmatesList.innerHTML = '';
-      const students = Array.isArray(data?.students) ? data.students : [];
 
-      // exclui o próprio aluno da lista
-      const classmates = students.filter((s) => s?.id && s.id !== studentId);
+      // aceita variações de shape: [{id,...}] ou [{studentId,...}]
+      const studentsRaw = Array.isArray(data?.students) ? data.students : [];
+      const students = studentsRaw
+        .map((s) => ({
+          id: s?.id || s?.studentId || '',
+          name: s?.name || s?.studentName || '',
+          email: s?.email || s?.studentEmail || '',
+        }))
+        .filter((s) => !!s.id);
+
+      // exclui o próprio aluno
+      const classmates = students.filter((s) => s.id !== studentId);
 
       if (classmates.length === 0) {
         classmatesList.innerHTML = '<li>Nenhum colega ainda (só você na sala).</li>';
         return;
       }
 
-      // ordena por nome
       classmates.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
       classmates.forEach((s) => {
@@ -154,8 +161,8 @@ async function carregarOverview() {
         );
 
         const text = document.createElement('div');
-        const name = s.name || 'Aluno';
-        const email = s.email || '';
+        const name = s.name && s.name.trim() ? s.name : 'Aluno';
+        const email = s.email && s.email.trim() ? s.email : '';
         text.innerHTML = `<strong>${name}</strong>${email ? `<br><small>${email}</small>` : ''}`;
 
         li.appendChild(avatar);
@@ -170,9 +177,10 @@ async function carregarOverview() {
   }
 }
 
-// tarefas continuam como estavam
+// tarefas (como estava)
 async function carregarTarefas() {
   if (!tasksList) return;
+
   try {
     const response = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
     if (!response.ok) throw new Error();
@@ -194,7 +202,7 @@ async function carregarTarefas() {
 
       const btn = document.createElement('button');
       btn.textContent = 'Escrever redação';
-      btn.onclick = () => (window.location.href = `redacao.html?taskId=${task.id}`);
+      btn.onclick = () => (window.location.href = `redacao.html?taskId=${encodeURIComponent(task.id)}`);
 
       li.appendChild(title);
       li.appendChild(document.createElement('br'));
