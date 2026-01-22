@@ -2,26 +2,29 @@ import { API_URL } from './config.js';
 
 const status = document.getElementById('status');
 const enterBtn = document.getElementById('enterBtn');
+const codeEl = document.getElementById('code');
+
+const studentId = localStorage.getItem('studentId');
+
+// ✅ precisa estar logado como aluno
+if (!studentId || studentId === 'undefined' || studentId === 'null') {
+  window.location.href = 'login-aluno.html';
+  throw new Error('studentId ausente (login necessário)');
+}
+
+function setStatus(msg) {
+  if (status) status.textContent = msg || '';
+}
 
 enterBtn.addEventListener('click', async () => {
-  const code = document.getElementById('code').value.trim();
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
+  const code = (codeEl?.value || '').trim().toUpperCase();
 
-  if (!code || !name || !email) {
-    status.textContent = 'Preencha todos os campos.';
+  if (!code) {
+    setStatus('Informe o código da sala.');
     return;
   }
 
-  // 🔹 Gera ou reutiliza studentId
-  let studentId = localStorage.getItem('studentId');
-
-  if (!studentId) {
-    studentId = crypto.randomUUID();
-    localStorage.setItem('studentId', studentId);
-    localStorage.setItem('studentName', name);
-    localStorage.setItem('studentEmail', email);
-  }
+  setStatus('Entrando na sala...');
 
   try {
     const response = await fetch(`${API_URL}/enrollments/join`, {
@@ -30,17 +33,25 @@ enterBtn.addEventListener('click', async () => {
       body: JSON.stringify({ code, studentId }),
     });
 
-    if (!response.ok) {
-      throw new Error('Falha ao entrar na sala');
-    }
+    if (!response.ok) throw new Error();
 
     const data = await response.json();
 
-    // 🔹 Redireciona para o painel do aluno com roomId
-    window.location.href = `painel-aluno.html?roomId=${data.roomId}`;
+    if (!data?.roomId) {
+      setStatus('Resposta inválida do servidor.');
+      return;
+    }
 
-  } catch (e) {
-    console.error(e);
-    status.textContent = 'Erro ao entrar na sala. Verifique o código.';
+    // ✅ vai direto para a sala
+    window.location.href = `sala-aluno.html?roomId=${encodeURIComponent(data.roomId)}`;
+  } catch {
+    setStatus('Erro ao entrar na sala. Verifique o código.');
   }
 });
+
+// Enter no input
+if (codeEl) {
+  codeEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') enterBtn.click();
+  });
+}
