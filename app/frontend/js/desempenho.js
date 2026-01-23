@@ -153,10 +153,10 @@ function renderHistory(essays) {
     actions.style.marginTop = '10px';
 
     const btn = document.createElement('button');
-    btn.textContent = 'Ver feedback';
-    btn.onclick = () => {
-      window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(e.id)}`;
-    };
+  btn.textContent = 'Ver redação';
+btn.onclick = () => {
+  window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
+};
 
     actions.appendChild(btn);
 
@@ -253,11 +253,6 @@ async function carregarDesempenho(roomId) {
     renderChart([]);
     renderHistory([]);
   }
-
-  btn.textContent = 'Ver redação';
-btn.onclick = () => {
-  window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
-};
 }
 
 
@@ -281,4 +276,5 @@ btn.onclick = () => {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
+
 
