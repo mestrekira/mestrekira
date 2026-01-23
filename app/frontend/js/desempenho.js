@@ -115,6 +115,14 @@ function renderChart(essays) {
     row.appendChild(val);
 
     chartEl.appendChild(row);
+
+    // ✅ clicar na barra/linha abre a redação
+row.style.cursor = 'pointer';
+row.title = 'Clique para ver a redação';
+row.addEventListener('click', () => {
+  window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
+});
+
   });
 }
 
@@ -276,5 +284,6 @@ async function carregarDesempenho(roomId) {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
+
 
 
