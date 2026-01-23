@@ -122,30 +122,50 @@ async function carregarDados() {
     );
     if (!res.ok) throw new Error();
 
-    const studentsData = await res.json();
+    const raw = await res.json();
 
-    if (!Array.isArray(studentsData) || studentsData.length === 0) {
+    // ✅ normaliza para LISTA PLANA: 1 item por redação
+    let essays = [];
+
+    if (Array.isArray(raw) && raw.length > 0 && Array.isArray(raw[0]?.essays)) {
+      // formato AGRUPADO (por aluno)
+      raw.forEach((g) => {
+        const studentId = g.studentId;
+        const studentName = g.studentName;
+        const studentEmail = g.studentEmail;
+        (g.essays || []).forEach((e) => {
+          essays.push({
+            id: e.id,
+            taskId: e.taskId,
+            taskTitle: e.taskTitle || '', // pode não vir
+            studentId,
+            studentName,
+            studentEmail,
+            score: e.score ?? null,
+            c1: e.c1 ?? null,
+            c2: e.c2 ?? null,
+            c3: e.c3 ?? null,
+            c4: e.c4 ?? null,
+            c5: e.c5 ?? null,
+          });
+        });
+      });
+    } else if (Array.isArray(raw)) {
+      // formato PLANO (por redação)
+      essays = raw;
+    }
+
+    if (!Array.isArray(essays) || essays.length === 0) {
       if (statusEl) statusEl.textContent = 'Ainda não há redações nesta sala.';
       if (studentsList) studentsList.innerHTML = '<li>Nenhuma redação enviada ainda.</li>';
-
-      setText(avgTotal, null);
-      setText(avgC1, null);
-      setText(avgC2, null);
-      setText(avgC3, null);
-      setText(avgC4, null);
-      setText(avgC5, null);
-
+      setText(avgTotal, null); setText(avgC1, null); setText(avgC2, null);
+      setText(avgC3, null); setText(avgC4, null); setText(avgC5, null);
       if (studentPanel) studentPanel.style.display = 'none';
       return;
     }
 
-    // ✅ Médias gerais: calcular a partir das redações corrigidas de TODOS os alunos
-    const allEssays = studentsData
-      .flatMap((s) => Array.isArray(s.essays) ? s.essays : [])
-      .filter((e) => e && typeof e === 'object');
-
-    const corrected = allEssays.filter((e) => e.score !== null && e.score !== undefined);
-
+    // médias gerais só das corrigidas
+    const corrected = essays.filter((e) => e.score !== null && e.score !== undefined);
     setText(avgTotal, mean(corrected.map((e) => e.score)));
     setText(avgC1, mean(corrected.map((e) => e.c1)));
     setText(avgC2, mean(corrected.map((e) => e.c2)));
@@ -153,17 +173,25 @@ async function carregarDados() {
     setText(avgC4, mean(corrected.map((e) => e.c4)));
     setText(avgC5, mean(corrected.map((e) => e.c5)));
 
-    // ✅ Lista de alunos (ordenar por nome)
-    const students = studentsData.map((s) => ({
-      studentId: s.studentId,
-      studentName: s.studentName || '',
-      studentEmail: s.studentEmail || '',
-      essays: Array.isArray(s.essays) ? s.essays : [],
-    }));
-
-    students.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+    // agrupar por aluno no front
+    const byStudent = new Map();
+    essays.forEach((e) => {
+      if (!e.studentId) return;
+      if (!byStudent.has(e.studentId)) {
+        byStudent.set(e.studentId, {
+          studentId: e.studentId,
+          studentName: e.studentName || '',
+          studentEmail: e.studentEmail || '',
+          essays: [],
+        });
+      }
+      byStudent.get(e.studentId).essays.push(e);
+    });
 
     if (studentsList) studentsList.innerHTML = '';
+
+    const students = Array.from(byStudent.values());
+    students.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
 
     students.forEach((s) => {
       const li = document.createElement('li');
@@ -176,8 +204,7 @@ async function carregarDados() {
       const content = document.createElement('div');
       content.style.flex = '1';
 
-      const correctedEssays = s.essays.filter((e) => e.score !== null && e.score !== undefined);
-
+      const correctedEssays = (s.essays || []).filter((e) => e.score !== null && e.score !== undefined);
       const mTotal = mean(correctedEssays.map((e) => e.score));
       const mC1 = mean(correctedEssays.map((e) => e.c1));
       const mC2 = mean(correctedEssays.map((e) => e.c2));
@@ -185,16 +212,14 @@ async function carregarDados() {
       const mC4 = mean(correctedEssays.map((e) => e.c4));
       const mC5 = mean(correctedEssays.map((e) => e.c5));
 
-      const header = document.createElement('div');
-      const nome = s.studentName && String(s.studentName).trim() ? s.studentName : 'Aluno';
-      const email = s.studentEmail && String(s.studentEmail).trim() ? s.studentEmail : '';
+      const nome = (s.studentName || '').trim() ? s.studentName : 'Aluno';
+      const email = (s.studentEmail || '').trim() ? s.studentEmail : '';
 
+      const header = document.createElement('div');
       header.innerHTML = `<strong>${nome}</strong>${email ? `<br><small>${email}</small>` : ''}`;
 
       const resumo = document.createElement('div');
-      resumo.textContent = `Média: ${mTotal ?? '—'} | C1 ${mC1 ?? '—'} C2 ${mC2 ?? '—'} C3 ${
-        mC3 ?? '—'
-      } C4 ${mC4 ?? '—'} C5 ${mC5 ?? '—'}`;
+      resumo.textContent = `Média: ${mTotal ?? '—'} | C1 ${mC1 ?? '—'} C2 ${mC2 ?? '—'} C3 ${mC3 ?? '—'} C4 ${mC4 ?? '—'} C5 ${mC5 ?? '—'}`;
 
       const btn = document.createElement('button');
       btn.textContent = 'Ver desempenho individual';
@@ -209,11 +234,12 @@ async function carregarDados() {
       li.appendChild(avatar);
       li.appendChild(content);
 
-      if (studentsList) studentsList.appendChild(li);
+      studentsList.appendChild(li);
     });
 
     if (statusEl) statusEl.textContent = '';
-  } catch {
+  } catch (e) {
+    console.error(e);
     if (statusEl) statusEl.textContent = 'Erro ao carregar dados de desempenho.';
     if (studentsList) studentsList.innerHTML = '<li>Erro ao carregar.</li>';
     if (studentPanel) studentPanel.style.display = 'none';
