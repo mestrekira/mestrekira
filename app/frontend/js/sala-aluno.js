@@ -25,6 +25,14 @@ if (!roomId) {
   throw new Error('roomId ausente');
 }
 
+const performanceBtn = document.getElementById('performanceBtn');
+
+if (performanceBtn) {
+  performanceBtn.addEventListener('click', () => {
+    window.location.href = `desempenho.html?roomId=${encodeURIComponent(roomId)}`;
+  });
+}
+
 // foto salva localmente (mesma lógica que você usa)
 function photoKeyStudent(id) {
   return id ? `mk_photo_student_${id}` : null;
