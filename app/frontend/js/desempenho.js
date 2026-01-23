@@ -82,6 +82,13 @@ function renderChart(essays) {
     row.style.gap = '10px';
     row.style.margin = '8px 0';
 
+    // ✅ clicar na barra/linha abre a redação
+row.style.cursor = 'pointer';
+row.title = 'Clique para ver a redação';
+row.addEventListener('click', () => {
+  window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
+});
+
     const label = document.createElement('div');
     label.style.width = '120px';
     label.style.fontSize = '12px';
@@ -115,15 +122,6 @@ function renderChart(essays) {
     row.appendChild(val);
 
     chartEl.appendChild(row);
-
-    // ✅ clicar na barra/linha abre a redação
-row.style.cursor = 'pointer';
-row.title = 'Clique para ver a redação';
-row.addEventListener('click', () => {
-  window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
-});
-
-  });
 }
 
 function renderHistory(essays) {
@@ -284,6 +282,7 @@ async function carregarDesempenho(roomId) {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
+
 
 
 
