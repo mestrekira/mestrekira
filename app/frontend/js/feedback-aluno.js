@@ -26,63 +26,79 @@ const c5El = document.getElementById('c5');
 
 function setText(el, value, fallback = '—') {
   if (!el) return;
-  el.textContent = value === null || value === undefined || value === '' ? fallback : String(value);
+  const v = value === null || value === undefined ? '' : String(value).trim();
+  el.textContent = v ? v : fallback;
 }
 
-// ✅ Lê o título do formato: "__TITLE__:Meu título\n\ncorpo..."
-function unpackContent(raw) {
-  const text = String(raw || '');
+// ✅ separa título (primeira linha não vazia) e corpo (resto)
+function splitTitleAndBody(raw) {
+  const text = (raw ?? '').replace(/\r\n/g, '\n');
+  const trimmed = text.trim();
+  if (!trimmed) return { title: '—', body: '' };
 
-  const m = text.match(/^__TITLE__:(.*)\n\n([\s\S]*)$/);
-  if (!m) return { title: '', body: text };
+  const lines = text.split('\n');
 
-  return {
-    title: String(m[1] || '').trim(),
-    body: String(m[2] || ''),
-  };
-}
+  let firstIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (String(lines[i] || '').trim()) {
+      firstIdx = i;
+      break;
+    }
+  }
+  if (firstIdx === -1) return { title: '—', body: '' };
 
-// ✅ aplica estilo de “caixa + justificado” e injeta o título centralizado dentro da própria caixa
-function renderEssayFormatted(containerEl, packedContent) {
-  if (!containerEl) return;
+  const title = String(lines[firstIdx] || '').trim();
 
-  const { title, body } = unpackContent(packedContent);
+  const bodyLines = lines.slice(firstIdx + 1);
 
-  // limpa
-  containerEl.innerHTML = '';
-
-  // garante aparência de "caixa"
-  containerEl.style.whiteSpace = 'pre-wrap';
-  containerEl.style.textAlign = 'justify';
-
-  // título (centralizado, negrito)
-  if (title) {
-    const h = document.createElement('div');
-    h.textContent = title;
-    h.style.textAlign = 'center';
-    h.style.fontWeight = '700';
-    h.style.marginBottom = '10px';
-    containerEl.appendChild(h);
+  // remove linhas vazias iniciais do corpo
+  while (bodyLines.length && !String(bodyLines[0] || '').trim()) {
+    bodyLines.shift();
   }
 
-  // corpo (justificado)
-  const p = document.createElement('div');
-  p.textContent = body || '';
-  p.style.textAlign = 'justify';
-  containerEl.appendChild(p);
+  const body = bodyLines.join('\n').trimEnd();
+
+  return { title: title || '—', body };
+}
+
+// ✅ aplica estilo: caixa + título centralizado + corpo justificado (preserva quebras)
+function renderEssayFormatted(containerEl, rawContent) {
+  if (!containerEl) return;
+
+  const { title, body } = splitTitleAndBody(rawContent);
+
+  containerEl.innerHTML = '';
+
+  // como o elemento já tem class="box", só ajusta comportamento do texto
+  containerEl.style.whiteSpace = 'pre-wrap';
+  containerEl.style.textAlign = 'justify';
+  containerEl.style.lineHeight = '1.6';
+
+  // título
+  const h = document.createElement('div');
+  h.textContent = title;
+  h.style.textAlign = 'center';
+  h.style.fontWeight = '700';
+  h.style.marginBottom = '10px';
+  containerEl.appendChild(h);
+
+  // corpo
+  const b = document.createElement('div');
+  b.textContent = body || '';
+  b.style.textAlign = 'justify';
+  containerEl.appendChild(b);
 }
 
 // nomes das competências (ENEM)
 const COMP_NAMES = {
   c1: 'Domínio da norma culta',
-  c2: 'Compreensão do tema',
-  c3: 'Seleção e organização de argumentos',
-  c4: 'Coesão e coerência',
+  c2: 'Compreensão do tema e repertório',
+  c3: 'Argumentação e projeto de texto',
+  c4: 'Coesão e mecanismos linguísticos',
   c5: 'Proposta de intervenção',
 };
 
-// (opcional) se você quiser deixar ainda mais explícito sem mexer no HTML,
-// eu ajusto o texto do <strong>Competência X:</strong> para incluir o nome.
+// ✅ ajusta os <strong> do HTML para incluir o nome da competência
 function patchCompetencyLabels() {
   const map = [
     { id: 'c1', name: COMP_NAMES.c1 },
@@ -96,14 +112,12 @@ function patchCompetencyLabels() {
     const span = document.getElementById(id);
     if (!span) return;
 
-    // procura o <p> pai e o <strong> dentro dele
     const p = span.closest('p');
     if (!p) return;
 
     const strong = p.querySelector('strong');
     if (!strong) return;
 
-    // Ex.: "Competência 1:" -> "Competência 1 (Domínio da norma culta):"
     const base = strong.textContent || '';
     if (base.includes('(')) return; // evita duplicar
     strong.textContent = base.replace(':', ` (${name}):`);
@@ -140,18 +154,19 @@ async function carregarFeedback() {
       }
     }
 
-    // 3) redação formatada (título centralizado + corpo justificado)
+    // 3) redação formatada
     renderEssayFormatted(essayContentEl, essay.content || '');
 
     // 4) nota
     const hasScore = essay.score !== null && essay.score !== undefined;
     setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida');
 
-    // 5) feedback (em caixa e justificado também)
+    // 5) feedback (caixa + justificado)
     if (feedbackEl) {
       feedbackEl.textContent = essay.feedback || 'Aguardando correção do professor.';
       feedbackEl.style.whiteSpace = 'pre-wrap';
       feedbackEl.style.textAlign = 'justify';
+      feedbackEl.style.lineHeight = '1.6';
     }
 
     // 6) competências
@@ -161,9 +176,10 @@ async function carregarFeedback() {
     if (c4El) setText(c4El, essay.c4 ?? '—');
     if (c5El) setText(c5El, essay.c5 ?? '—');
 
-    // 7) inclui nome das competências no label (sem mexer no HTML)
+    // 7) nomes das competências no label
     patchCompetencyLabels();
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert('Erro ao carregar feedback.');
     window.location.href = 'painel-aluno.html';
   }
