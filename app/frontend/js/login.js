@@ -7,6 +7,7 @@ function validId(v) {
 const professorId = localStorage.getItem('professorId');
 const studentId = localStorage.getItem('studentId');
 
+// ✅ Se já estiver logado, manda direto
 if (validId(professorId)) {
   if (status) status.textContent = 'Você já está logado como professor. Redirecionando...';
   window.location.replace('professor-salas.html');
@@ -15,13 +16,17 @@ if (validId(professorId)) {
   window.location.replace('painel-aluno.html');
 }
 
-// Botões
+// ✅ Botões
 document.getElementById('goProfessorBtn')?.addEventListener('click', () => {
   window.location.href = 'login-professor.html';
 });
 
 document.getElementById('goStudentLoginBtn')?.addEventListener('click', () => {
   window.location.href = 'login-aluno.html';
+});
+
+document.getElementById('goStudentSignupBtn')?.addEventListener('click', () => {
+  window.location.href = 'cadastro-aluno.html';
 });
 
 document.getElementById('goStudentCodeBtn')?.addEventListener('click', () => {
