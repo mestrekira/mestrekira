@@ -144,4 +144,46 @@ li {
   background: #888;
 }
 
+/* título digitado pelo aluno */
+.essay-title-input{
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* textarea com texto justificado (quando suportado) */
+.essay-textarea{
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  line-height: 1.7;
+  text-align: justify;
+  resize: vertical;
+}
+
+/* caixa de leitura (para exibir redação/feedback formatado) */
+.essay-box{
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.essay-box .essay-title{
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.essay-box .essay-body{
+  text-align: justify;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 
