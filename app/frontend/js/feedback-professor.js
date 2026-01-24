@@ -115,7 +115,9 @@ async function carregar() {
     setText(c5El, essay.c5);
 
     // ✅ Tema (via taskId)
-    setText(taskTitleEl, '—');
+   const title = task?.title ?? task?.name ?? task?.taskTitle ?? '';
+setText(taskTitleEl, title, '—');
+
     if (essay.taskId) {
       try {
         const resTask = await fetch(`${API_URL}/tasks/${encodeURIComponent(essay.taskId)}`);
