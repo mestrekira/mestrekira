@@ -1,6 +1,7 @@
 import { API_URL } from './config.js';
 
 // ELEMENTOS
+const titleInput = document.getElementById('essayTitle');
 const textarea = document.getElementById('essayText');
 const charCount = document.getElementById('charCount');
 const status = document.getElementById('status');
@@ -22,7 +23,7 @@ if (!taskId || !studentId || studentId === 'undefined' || studentId === 'null') 
   throw new Error('Parâmetros ausentes');
 }
 
-if (!textarea || !charCount || !status || !sendBtn || !saveBtn) {
+if (!titleInput || !textarea || !charCount || !status || !sendBtn || !saveBtn) {
   console.error('HTML incompleto em redacao.html');
   throw new Error('Elementos não encontrados');
 }
@@ -32,17 +33,46 @@ function setStatus(msg) {
 }
 
 function setDisabledAll(disabled) {
+  titleInput.disabled = disabled;
   textarea.disabled = disabled;
   saveBtn.disabled = disabled;
   sendBtn.disabled = disabled;
+}
+
+function updateCount() {
+  charCount.textContent = String((textarea.value || '').length);
 }
 
 function draftKey() {
   return `mk_draft_${studentId}_${taskId}`;
 }
 
-function updateCount() {
-  charCount.textContent = String(textarea.value.length);
+function saveDraftLocal(title, content) {
+  const payload = { title: title || '', content: content || '' };
+  localStorage.setItem(draftKey(), JSON.stringify(payload));
+}
+
+function loadDraftLocal() {
+  const raw = localStorage.getItem(draftKey());
+  if (!raw) return null;
+
+  try {
+    const obj = JSON.parse(raw);
+    if (!obj) return null;
+    return {
+      title: String(obj.title || ''),
+      content: String(obj.content || ''),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Empacota título + corpo no content (sem mexer no backend)
+function packContent(title, body) {
+  const t = String(title || '').trim();
+  const b = String(body || '');
+  return `__TITLE__:${t}\n\n${b}`;
 }
 
 // BLOQUEAR COLAR
@@ -53,19 +83,26 @@ textarea.addEventListener('paste', (e) => {
 
 // CONTADOR + AUTOSAVE (leve)
 let autosaveTimer = null;
-textarea.addEventListener('input', () => {
-  updateCount();
 
-  // autosave com debounce
+function scheduleAutosave() {
   if (autosaveTimer) clearTimeout(autosaveTimer);
+
   autosaveTimer = setTimeout(() => {
+    const title = (titleInput.value || '').trim();
     const text = textarea.value || '';
-    // salva mesmo vazio? aqui salva só se tiver algo
-    if (text.trim()) {
-      localStorage.setItem(draftKey(), text);
-      // sem spammar status
+    if (title || text.trim()) {
+      saveDraftLocal(title, text);
     }
   }, 600);
+}
+
+titleInput.addEventListener('input', () => {
+  scheduleAutosave();
+});
+
+textarea.addEventListener('input', () => {
+  updateCount();
+  scheduleAutosave();
 });
 
 // 🔹 CARREGAR TAREFA (TEMA + ORIENTAÇÕES)
@@ -85,9 +122,10 @@ async function carregarTarefa() {
 
 // ✅ CARREGAR RASCUNHO LOCAL (SE EXISTIR)
 function carregarRascunhoLocal() {
-  const saved = localStorage.getItem(draftKey());
-  if (saved && saved.trim()) {
-    textarea.value = saved;
+  const draft = loadDraftLocal();
+  if (draft && (draft.title.trim() || draft.content.trim())) {
+    titleInput.value = draft.title;
+    textarea.value = draft.content;
     updateCount();
     setStatus('Rascunho carregado.');
   } else {
@@ -97,16 +135,16 @@ function carregarRascunhoLocal() {
 
 // ✅ SALVAR RASCUNHO (LOCALSTORAGE)
 saveBtn.addEventListener('click', () => {
+  const title = (titleInput.value || '').trim();
   const text = textarea.value || '';
 
-  if (!text.trim()) {
-    // se estava salvo antes e o aluno apagou, remove o draft
+  if (!title && !text.trim()) {
     localStorage.removeItem(draftKey());
     setStatus('Nada para salvar. Rascunho removido.');
     return;
   }
 
-  localStorage.setItem(draftKey(), text);
+  saveDraftLocal(title, text);
   setStatus('Rascunho salvo.');
 });
 
@@ -134,7 +172,13 @@ async function checarJaEnviou() {
 
 // ✅ ENVIAR REDAÇÃO (BACKEND)
 sendBtn.addEventListener('click', async () => {
+  const title = (titleInput.value || '').trim();
   const text = textarea.value || '';
+
+  if (!title) {
+    alert('Informe o título da redação.');
+    return;
+  }
 
   if (text.length < 500) {
     alert('A redação deve ter pelo menos 500 caracteres.');
@@ -149,7 +193,7 @@ sendBtn.addEventListener('click', async () => {
   if (ja.sent) {
     setStatus('Você já enviou esta redação. Não é permitido reenviar.');
     setDisabledAll(true);
-    // leva direto pro feedback já enviado
+
     window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`;
     return;
   }
@@ -160,7 +204,11 @@ sendBtn.addEventListener('click', async () => {
     const response = await fetch(`${API_URL}/essays`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId, studentId, content: text }),
+      body: JSON.stringify({
+        taskId,
+        studentId,
+        content: packContent(title, text),
+      }),
     });
 
     if (!response.ok) throw new Error();
