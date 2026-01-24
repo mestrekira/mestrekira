@@ -55,8 +55,7 @@ function safeScore(v) {
   return Number.isNaN(n) ? null : n;
 }
 
-// 🔹 cria um “rótulo” de tarefa sem backend extra:
-// (se você depois adicionar taskTitle no endpoint, aqui fica ainda melhor)
+// rótulo simples (sem backend extra)
 function makeLabelFromTaskId(taskId, idx) {
   const short = (taskId || '').slice(0, 6);
   return taskId ? `Tarefa ${short}…` : `Redação ${idx + 1}`;
@@ -82,12 +81,12 @@ function renderChart(essays) {
     row.style.gap = '10px';
     row.style.margin = '8px 0';
 
-    // ✅ clicar na barra/linha abre a redação
-row.style.cursor = 'pointer';
-row.title = 'Clique para ver a redação';
-row.addEventListener('click', () => {
-  window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
-});
+    // ✅ clicar na linha abre a redação
+    row.style.cursor = 'pointer';
+    row.title = 'Clique para ver a redação';
+    row.addEventListener('click', () => {
+      window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
+    });
 
     const label = document.createElement('div');
     label.style.width = '120px';
@@ -103,11 +102,15 @@ row.addEventListener('click', () => {
     barWrap.style.overflow = 'hidden';
 
     const bar = document.createElement('div');
-    const pct = score === null ? 0 : Math.max(0, Math.min(100, Math.round((score / max) * 100)));
+    const pct =
+      score === null ? 0 : Math.max(0, Math.min(100, Math.round((score / max) * 100)));
     bar.style.height = '100%';
     bar.style.width = `${pct}%`;
-    // ✅ sem cor fixa inline: deixa no CSS se quiser
+    // deixa a cor por CSS se quiser; se não tiver CSS, ainda aparece a barra com largura
     bar.className = 'bar';
+
+    // fallback simples caso você não tenha .bar no CSS
+    if (!bar.style.background) bar.style.background = '#888';
 
     barWrap.appendChild(bar);
 
@@ -122,6 +125,7 @@ row.addEventListener('click', () => {
     row.appendChild(val);
 
     chartEl.appendChild(row);
+  });
 }
 
 function renderHistory(essays) {
@@ -133,7 +137,7 @@ function renderHistory(essays) {
     return;
   }
 
-  // ✅ mantém ordem "natural" do backend (mais estável pro aluno)
+  // mantém ordem do backend
   const ordered = [...essays];
 
   ordered.forEach((e, idx) => {
@@ -150,7 +154,9 @@ function renderHistory(essays) {
     if (score !== null) {
       nota.textContent =
         `Nota: ${score} ` +
-        `(C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${e.c4 ?? '—'} C5 ${e.c5 ?? '—'})`;
+        `(C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${e.c4 ?? '—'} C5 ${
+          e.c5 ?? '—'
+        })`;
     } else {
       nota.textContent = 'Ainda não corrigida.';
     }
@@ -159,10 +165,10 @@ function renderHistory(essays) {
     actions.style.marginTop = '10px';
 
     const btn = document.createElement('button');
-  btn.textContent = 'Ver redação';
-btn.onclick = () => {
-  window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
-};
+    btn.textContent = 'Ver redação';
+    btn.onclick = () => {
+      window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
+    };
 
     actions.appendChild(btn);
 
@@ -228,7 +234,9 @@ async function carregarDesempenho(roomId) {
 
   try {
     const res = await fetch(
-      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(roomId)}&studentId=${encodeURIComponent(studentId)}`
+      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(
+        roomId
+      )}&studentId=${encodeURIComponent(studentId)}`
     );
     if (!res.ok) throw new Error();
 
@@ -261,7 +269,6 @@ async function carregarDesempenho(roomId) {
   }
 }
 
-
 // INIT
 (async () => {
   const rooms = await carregarSalasDoAluno();
@@ -282,7 +289,3 @@ async function carregarDesempenho(roomId) {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
-
-
-
-
