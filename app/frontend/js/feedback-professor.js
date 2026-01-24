@@ -15,7 +15,13 @@ const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
 
 const taskTitleEl = document.getElementById('taskTitle');
+
+const essayTitleEl = document.getElementById('essayTitle');
+const essayBodyEl = document.getElementById('essayBody');
+
+// fallback antigo (oculto no HTML)
 const essayContentEl = document.getElementById('essayContent');
+
 const scoreEl = document.getElementById('score');
 const feedbackEl = document.getElementById('feedback');
 
@@ -29,8 +35,47 @@ const backBtn = document.getElementById('backBtn');
 
 function setText(el, value, fallback = '—') {
   if (!el) return;
-  const v = (value === null || value === undefined) ? '' : String(value).trim();
+  const v = value === null || value === undefined ? '' : String(value).trim();
   el.textContent = v ? v : fallback;
+}
+
+function setMultiline(el, value, fallback = '') {
+  if (!el) return;
+  const v = value === null || value === undefined ? '' : String(value);
+  el.textContent = v.trim() ? v : fallback;
+}
+
+function splitTitleAndBody(raw) {
+  const text = (raw ?? '').replace(/\r\n/g, '\n'); // normaliza
+  const trimmed = text.trim();
+  if (!trimmed) return { title: '—', body: '' };
+
+  // pega a primeira linha não vazia como título
+  const lines = text.split('\n');
+
+  // encontra índice da primeira linha com conteúdo
+  let firstIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (String(lines[i] || '').trim()) {
+      firstIdx = i;
+      break;
+    }
+  }
+  if (firstIdx === -1) return { title: '—', body: '' };
+
+  const title = String(lines[firstIdx] || '').trim();
+
+  // corpo = resto após a linha do título
+  const bodyLines = lines.slice(firstIdx + 1);
+
+  // remove linhas vazias iniciais do corpo para não "colar"
+  while (bodyLines.length && !String(bodyLines[0] || '').trim()) {
+    bodyLines.shift();
+  }
+
+  const body = bodyLines.join('\n').trimEnd();
+
+  return { title: title || '—', body };
 }
 
 async function carregar() {
@@ -45,18 +90,31 @@ async function carregar() {
     setText(studentNameEl, essay.studentName, 'Aluno');
     setText(studentEmailEl, essay.studentEmail, '');
 
-    setText(essayContentEl, essay.content, '');
-    setText(scoreEl, (essay.score !== null && essay.score !== undefined) ? essay.score : 'Ainda não corrigida');
+    // ✅ separa título e corpo para não “embaralhar”
+    const { title, body } = splitTitleAndBody(essay.content);
 
-    setText(feedbackEl, essay.feedback, 'Aguardando correção do professor.');
+    setText(essayTitleEl, title, '—');
+    setMultiline(essayBodyEl, body, '');
 
+    // fallback (se alguém abriu HTML antigo)
+    if (essayContentEl) setMultiline(essayContentEl, essay.content || '', '');
+
+    // nota + feedback
+    setText(
+      scoreEl,
+      essay.score !== null && essay.score !== undefined ? essay.score : 'Ainda não corrigida'
+    );
+
+    setMultiline(feedbackEl, essay.feedback || '', 'Aguardando correção do professor.');
+
+    // competências
     setText(c1El, essay.c1);
     setText(c2El, essay.c2);
     setText(c3El, essay.c3);
     setText(c4El, essay.c4);
     setText(c5El, essay.c5);
 
-    // Tema (via taskId)
+    // ✅ Tema (via taskId)
     setText(taskTitleEl, '—');
     if (essay.taskId) {
       try {
@@ -69,13 +127,14 @@ async function carregar() {
         // ignora
       }
     }
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert('Erro ao carregar redação/feedback.');
     window.location.href = 'professor-salas.html';
   }
 }
 
-// VOLTAR (volta uma página)
+// VOLTAR
 if (backBtn) {
   backBtn.addEventListener('click', () => history.back());
 }
