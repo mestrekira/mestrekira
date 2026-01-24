@@ -2,63 +2,20 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Entrar na Sala</title>
+  <title>Entrar em uma sala</title>
   <link rel="stylesheet" href="css/base.css">
 </head>
 <body>
 
-<!-- menu (mesmo padrão das outras páginas) -->
-<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
-<aside id="menuPanel" class="menu-panel">
-  <div class="menu-header">
-    <strong>Meu perfil</strong>
-    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
-  </div>
-
-  <div class="menu-body">
-    <div class="menu-photo">
-      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <label class="menu-photo-label">
-        Alterar foto
-        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-      </label>
-    </div>
-
-    <p><strong>Nome:</strong> <span id="meName">...</span></p>
-    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
-    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
-
-    <hr>
-
-    <h4>Atualizar dados</h4>
-    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
-    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
-    <button id="saveProfileBtn">Salvar</button>
-
-    <p id="menuStatus"></p>
-
-    <hr>
-
-    <button id="logoutMenuBtn">Sair</button>
-    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
-  </div>
-</aside>
-
 <h2>Entrar em uma sala</h2>
 
-<input id="code" placeholder="Código da sala" autocomplete="one-time-code" />
+<p>Digite o código da sala para entrar.</p>
+
+<input id="code" placeholder="Código da sala" />
 <button id="enterBtn">Entrar</button>
 
 <p id="status"></p>
 
 <script type="module" src="js/entrar-sala.js"></script>
-<script type="module">
-  import { initMenuPerfil } from './js/menu-perfil.js';
-  initMenuPerfil({
-    loginRedirect: 'login.html',
-    logoutRedirectProfessor: 'login-professor.html',
-    logoutRedirectStudent: 'login-aluno.html'
-  });
-</script>
 </body>
 </html>
