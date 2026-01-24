@@ -2,27 +2,33 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Entrar na Sala</title>
+  <title>Login do Aluno</title>
   <link rel="stylesheet" href="css/base.css">
 </head>
 <body>
 
-<h2>Entrar em uma sala</h2>
+<h2>Login do Aluno</h2>
 
-<p>Se você já tem conta, basta informar o código. Se for seu primeiro acesso, preencha também seus dados.</p>
+<section>
+  <input type="email" id="email" placeholder="E-mail" autocomplete="email" />
+  <input type="password" id="password" placeholder="Senha" autocomplete="current-password" />
+  <button id="loginBtn">Entrar</button>
 
-<input id="code" placeholder="Código da sala" />
+  <p id="error"></p>
+</section>
 
-<div id="firstAccessBox" style="margin-top:10px;">
-  <h3>Primeiro acesso (criar conta)</h3>
-  <input id="name" placeholder="Nome completo" />
-  <input id="email" placeholder="E-mail" type="email" autocomplete="email" />
-  <input id="password" type="password" placeholder="Senha (mín. 8)" autocomplete="new-password" />
-</div>
+<hr>
 
-<button id="enterBtn">Entrar</button>
-<p id="status"></p>
+<section>
+  <p>Primeiro acesso?</p>
+  <a href="cadastro-aluno.html">Criar conta</a>
+</section>
 
-<script type="module" src="js/entrar-sala.js"></script>
+<section style="margin-top:10px;">
+  <p>Já tem conta e só quer entrar na sala?</p>
+  <a href="entrar-sala.html">Entrar por código da sala</a>
+</section>
+
+<script type="module" src="js/login-aluno.js"></script>
 </body>
 </html>
