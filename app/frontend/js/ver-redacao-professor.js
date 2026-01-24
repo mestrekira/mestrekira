@@ -15,45 +15,41 @@ if (!essayId) {
   throw new Error('essayId ausente');
 }
 
-const studentEl = document.getElementById('student');
-const totalEl = document.getElementById('total');
-const enemEl = document.getElementById('enem');
-const contentEl = document.getElementById('content');
-const feedbackEl = document.getElementById('feedback');
-const backBtn = document.getElementById('backBtn');
-
-function setText(el, value, fallback = '—') {
-  if (!el) return;
-  el.textContent = value === null || value === undefined || value === '' ? fallback : String(value);
+function unpackContent(raw) {
+  const txt = String(raw || '');
+  if (txt.startsWith('__TITLE__:')) {
+    const rest = txt.slice('__TITLE__:'.length);
+    const i = rest.indexOf('\n\n');
+    if (i >= 0) {
+      const title = rest.slice(0, i).trim();
+      const body = rest.slice(i + 2);
+      return { title, body };
+    }
+  }
+  return { title: '', body: txt };
 }
 
 async function carregar() {
-  try {
-    // ✅ endpoint "com aluno" (professor)
-    const res = await fetch(`${API_URL}/essays/${encodeURIComponent(essayId)}/with-student`);
-    if (!res.ok) throw new Error();
-
-    const e = await res.json();
-
-    setText(studentEl, e.studentName || '');
-    setText(totalEl, e.score ?? null, 'Ainda não corrigida');
-
-    const enemTxt =
-      e.score === null || e.score === undefined
-        ? 'Ainda não corrigida'
-        : `C1:${e.c1 ?? '—'} C2:${e.c2 ?? '—'} C3:${e.c3 ?? '—'} C4:${e.c4 ?? '—'} C5:${e.c5 ?? '—'}`;
-    setText(enemEl, enemTxt);
-
-    setText(contentEl, e.content || '');
-    setText(feedbackEl, e.feedback || 'Sem feedback.');
-  } catch {
+  const res = await fetch(`${API_URL}/essays/${encodeURIComponent(essayId)}/with-student`);
+  if (!res.ok) {
     alert('Não foi possível carregar a redação.');
-    window.location.href = 'professor-salas.html';
+    return;
   }
-}
 
-if (backBtn) {
-  backBtn.addEventListener('click', () => window.history.back());
+  const e = await res.json();
+
+  document.getElementById('student').textContent = e.studentName || '';
+  document.getElementById('total').textContent = e.score ?? 0;
+  document.getElementById('enem').textContent = `C1:${e.c1 ?? '—'} C2:${e.c2 ?? '—'} C3:${e.c3 ?? '—'} C4:${e.c4 ?? '—'} C5:${e.c5 ?? '—'}`;
+
+  const parts = unpackContent(e.content || '');
+  const titleEl = document.getElementById('essayTitleFmt');
+  const bodyEl = document.getElementById('essayBodyFmt');
+
+  if (titleEl) titleEl.textContent = parts.title || '';
+  if (bodyEl) bodyEl.textContent = parts.body || '';
+
+  document.getElementById('feedback').textContent = e.feedback || 'Sem feedback.';
 }
 
 carregar();
