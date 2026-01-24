@@ -22,22 +22,51 @@ function setText(el, value, fallback = '—') {
   el.textContent = value === null || value === undefined || value === '' ? fallback : String(value);
 }
 
+function unpackContent(raw) {
+  const text = String(raw || '');
+  const m = text.match(/^__TITLE__:(.*)\n\n([\s\S]*)$/);
+  if (!m) return { title: '', body: text };
+  return { title: String(m[1] || '').trim(), body: String(m[2] || '') };
+}
+
+function renderEssayFormatted(containerEl, packedContent) {
+  if (!containerEl) return;
+
+  const { title, body } = unpackContent(packedContent);
+
+  containerEl.innerHTML = '';
+  containerEl.style.whiteSpace = 'pre-wrap';
+  containerEl.style.textAlign = 'justify';
+
+  if (title) {
+    const h = document.createElement('div');
+    h.textContent = title;
+    h.style.textAlign = 'center';
+    h.style.fontWeight = '700';
+    h.style.marginBottom = '10px';
+    containerEl.appendChild(h);
+  }
+
+  const p = document.createElement('div');
+  p.textContent = body || '';
+  p.style.textAlign = 'justify';
+  containerEl.appendChild(p);
+}
+
 async function carregar() {
   try {
-    // 1) redação (endpoint seguro)
     const res = await fetch(`${API_URL}/essays/${encodeURIComponent(essayId)}`);
     if (!res.ok) throw new Error();
 
     const e = await res.json();
 
-    // 🔐 Permissão (igual feedback-aluno.js)
     if (String(e.studentId) !== String(studentId)) {
       alert('Você não tem permissão para ver esta redação.');
       window.location.href = 'desempenho.html';
       return;
     }
 
-    // 2) tema (opcional, mas ajuda muito)
+    // tema (opcional)
     setText(taskTitleEl, '—');
     if (e.taskId) {
       try {
@@ -51,21 +80,24 @@ async function carregar() {
       }
     }
 
-    // 3) nota
-    const score =
-      e.score !== null && e.score !== undefined ? Number(e.score) : null;
+    const score = e.score !== null && e.score !== undefined ? Number(e.score) : null;
     setText(totalEl, score, 'Ainda não corrigida');
 
-    // 4) enem
     const enemTxt =
       score === null
         ? 'Ainda não corrigida'
         : `C1:${e.c1 ?? '—'} C2:${e.c2 ?? '—'} C3:${e.c3 ?? '—'} C4:${e.c4 ?? '—'} C5:${e.c5 ?? '—'}`;
     setText(enemEl, enemTxt);
 
-    // 5) texto e feedback
-    setText(contentEl, e.content || '');
-    setText(feedbackEl, e.feedback || 'Aguardando correção do professor.');
+    // ✅ redação formatada
+    renderEssayFormatted(contentEl, e.content || '');
+
+    // ✅ feedback justificado
+    if (feedbackEl) {
+      feedbackEl.textContent = e.feedback || 'Aguardando correção do professor.';
+      feedbackEl.style.whiteSpace = 'pre-wrap';
+      feedbackEl.style.textAlign = 'justify';
+    }
   } catch {
     alert('Não foi possível carregar a redação.');
     window.location.href = 'desempenho.html';
