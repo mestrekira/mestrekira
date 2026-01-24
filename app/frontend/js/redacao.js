@@ -68,7 +68,7 @@ function loadDraftLocal() {
   }
 }
 
-// Empacota título + corpo no content (sem mexer no backend)
+// ✅ Empacota título + corpo no content (sem mexer no backend)
 function packContent(title, body) {
   const t = String(title || '').trim();
   const b = String(body || '');
@@ -157,7 +157,7 @@ async function checarJaEnviou() {
     const list = await res.json();
     if (!Array.isArray(list)) return { sent: false };
 
-    const mine = list.find((e) => e && e.studentId === studentId);
+    const mine = list.find((e) => e && String(e.studentId) === String(studentId));
 
     if (mine && mine.id) {
       return { sent: true, essayId: mine.id };
@@ -165,7 +165,6 @@ async function checarJaEnviou() {
 
     return { sent: false };
   } catch {
-    // se der erro, não bloqueia (só evita travar o aluno)
     return { sent: false };
   }
 }
@@ -193,7 +192,6 @@ sendBtn.addEventListener('click', async () => {
   if (ja.sent) {
     setStatus('Você já enviou esta redação. Não é permitido reenviar.');
     setDisabledAll(true);
-
     window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`;
     return;
   }
@@ -225,7 +223,6 @@ sendBtn.addEventListener('click', async () => {
       window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
     }, 600);
   } catch {
-    // reabilita envio em caso de erro
     sendBtn.disabled = false;
     setStatus('Erro ao enviar redação.');
   }
@@ -235,10 +232,8 @@ sendBtn.addEventListener('click', async () => {
 (async () => {
   await carregarTarefa();
 
-  // primeiro tenta carregar rascunho local
   carregarRascunhoLocal();
 
-  // depois checa se já existe envio (se existir, bloqueia e manda pro feedback)
   setStatus('Verificando envio...');
   const ja = await checarJaEnviou();
 
