@@ -62,7 +62,20 @@
 
 <section>
   <h3>Redação</h3>
-  <p id="essayContent" class="box"></p>
+
+  <!-- ✅ título separado -->
+  <div class="box" style="padding:12px;">
+    <div id="essayTitle" style="font-weight:700; text-align:center; margin-bottom:10px;">—</div>
+
+    <!-- ✅ corpo preserva quebras e permite justificar -->
+    <div
+      id="essayBody"
+      style="white-space:pre-wrap; text-align:justify; line-height:1.6;"
+    ></div>
+  </div>
+
+  <!-- fallback (se quiser manter compatibilidade, opcional) -->
+  <p id="essayContent" class="box" style="display:none;"></p>
 </section>
 
 <hr>
@@ -70,16 +83,20 @@
 <section>
   <h3>Correção</h3>
 
-  <p><strong>Competência 1 Domínio da escrita formal:</strong> <span id="c1">—</span> / 200</p>
-  <p><strong>Competência 2 Compreensão do tema:</strong> <span id="c2">—</span> / 200</p>
-  <p><strong>Competência 3 Organização da ideias:</strong> <span id="c3">—</span> / 200</p>
-  <p><strong>Competência 4 Coesão e coerência:</strong> <span id="c4">—</span> / 200</p>
-  <p><strong>Competência 5 Proposta de intervenção:</strong> <span id="c5">—</span> / 200</p>
+  <p><strong>C1 — Domínio da norma culta:</strong> <span id="c1">—</span> / 200</p>
+  <p><strong>C2 — Compreensão do tema e repertório:</strong> <span id="c2">—</span> / 200</p>
+  <p><strong>C3 — Argumentação e projeto de texto:</strong> <span id="c3">—</span> / 200</p>
+  <p><strong>C4 — Coesão e mecanismos linguísticos:</strong> <span id="c4">—</span> / 200</p>
+  <p><strong>C5 — Proposta de intervenção:</strong> <span id="c5">—</span> / 200</p>
 
   <p><strong>Nota final:</strong> <span id="score">—</span> / 1000</p>
 
   <h4>Feedback</h4>
-  <p id="feedback" class="box"></p>
+  <div
+    id="feedback"
+    class="box"
+    style="white-space:pre-wrap; text-align:justify; line-height:1.6;"
+  ></div>
 </section>
 
 <br>
@@ -89,7 +106,6 @@
 
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
-
   initMenuPerfil({
     loginRedirect: 'login.html',
     logoutRedirectProfessor: 'login-professor.html',
