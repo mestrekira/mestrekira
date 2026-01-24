@@ -17,7 +17,7 @@ const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
 const essayContentEl = document.getElementById('essayContent');
 
-const studentPhotoImg = document.getElementById('studentPhotoImg'); // ✅ foto no topo da correção
+const studentPhotoImg = document.getElementById('studentPhotoImg');
 
 const feedbackEl = document.getElementById('feedback');
 const saveBtn = document.getElementById('saveCorrectionBtn');
@@ -48,15 +48,15 @@ function placeholderAvatarDataUrl(letter = '?') {
   );
 }
 
-function setStudentPhoto(studentId, studentName = '') {
+function setStudentPhoto(studentId) {
   if (!studentPhotoImg) return;
+
   const dataUrl = studentId ? localStorage.getItem(photoKeyStudent(studentId)) : null;
 
   if (dataUrl) {
     studentPhotoImg.src = dataUrl;
     studentPhotoImg.style.display = 'inline-block';
   } else {
-    // se não tiver foto, esconde (ou você pode deixar placeholder)
     studentPhotoImg.removeAttribute('src');
     studentPhotoImg.style.display = 'none';
   }
@@ -91,6 +91,79 @@ function calcularTotal() {
   el.addEventListener('input', () => calcularTotal());
 });
 
+function setStatus(msg) {
+  if (statusEl) statusEl.textContent = msg || '';
+}
+
+/**
+ * ✅ Remove o marcador e separa título/corpo.
+ * Aceita:
+ *  - "__TITLE__:Meu título\n\ncorpo..."
+ *  - "_TITLE_:Meu título\n\ncorpo..."
+ *  - "TITLE:Meu título\n\ncorpo..."
+ * Caso não encontre, usa "primeira linha" como título (fallback).
+ */
+function splitTitleAndBody(raw) {
+  const text = String(raw || '').replace(/\r\n/g, '\n');
+
+  // 1) padrão com marcador (variações)
+  const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
+  const m = text.match(re);
+  if (m) {
+    return {
+      title: String(m[1] || '').trim(),
+      body: String(m[2] || '').trimEnd(),
+    };
+  }
+
+  // 2) fallback: primeira linha não vazia = título
+  const lines = text.split('\n');
+
+  let firstIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (String(lines[i] || '').trim()) {
+      firstIdx = i;
+      break;
+    }
+  }
+  if (firstIdx === -1) return { title: '—', body: '' };
+
+  const title = String(lines[firstIdx] || '').trim();
+  const bodyLines = lines.slice(firstIdx + 1);
+
+  while (bodyLines.length && !String(bodyLines[0] || '').trim()) bodyLines.shift();
+
+  const body = bodyLines.join('\n').trimEnd();
+  return { title: title || '—', body };
+}
+
+/**
+ * ✅ Renderiza a redação para o professor (título limpo e bonito).
+ */
+function renderEssayForProfessor(containerEl, packedContent) {
+  if (!containerEl) return;
+
+  const { title, body } = splitTitleAndBody(packedContent);
+
+  containerEl.innerHTML = '';
+  containerEl.style.whiteSpace = 'pre-wrap';
+  containerEl.style.textAlign = 'justify';
+
+  if (title && title !== '—') {
+    const h = document.createElement('div');
+    h.textContent = title; // ✅ sem _TITLE_
+    h.style.textAlign = 'center';
+    h.style.fontWeight = '700';
+    h.style.marginBottom = '10px';
+    containerEl.appendChild(h);
+  }
+
+  const b = document.createElement('div');
+  b.textContent = body || '';
+  b.style.textAlign = 'justify';
+  containerEl.appendChild(b);
+}
+
 // 🔹 ABRIR REDAÇÃO
 function abrirCorrecao(essay) {
   currentEssayId = essay.id;
@@ -107,10 +180,11 @@ function abrirCorrecao(essay) {
       ? essay.studentEmail
       : '(e-mail indisponível)';
 
-  // ✅ foto do aluno (localStorage)
-  setStudentPhoto(essay.studentId, nome);
+  setStudentPhoto(essay.studentId);
 
-  essayContentEl.textContent = essay.content || '';
+  // ✅ redação formatada (título sem marcador + corpo justificado)
+  renderEssayForProfessor(essayContentEl, essay.content || '');
+
   feedbackEl.value = essay.feedback || '';
 
   // preenche competências se já existirem
@@ -123,13 +197,15 @@ function abrirCorrecao(essay) {
   calcularTotal();
 
   correctionSection.style.display = 'block';
-  statusEl.textContent = '';
+  setStatus('');
 }
 
 // 🔹 CARREGAR REDAÇÕES DA TAREFA
 async function carregarRedacoes() {
   try {
-    const response = await fetch(`${API_URL}/essays/by-task/${taskId}/with-student`);
+    const response = await fetch(
+      `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`
+    );
     if (!response.ok) throw new Error();
 
     const essays = await response.json();
@@ -142,7 +218,7 @@ async function carregarRedacoes() {
 
     // ✅ se veio studentId pela URL, abre automaticamente o primeiro match
     if (focusStudentId) {
-      const target = essays.find((e) => e.studentId === focusStudentId);
+      const target = essays.find((e) => String(e.studentId) === String(focusStudentId));
       if (target) abrirCorrecao(target);
     }
 
@@ -170,7 +246,8 @@ async function carregarRedacoes() {
         essay.studentName && essay.studentName.trim() ? essay.studentName : 'Aluno';
 
       const dataUrl = localStorage.getItem(photoKeyStudent(essay.studentId));
-      avatar.src = dataUrl || placeholderAvatarDataUrl((nome || 'A').trim().slice(0, 1).toUpperCase());
+      avatar.src =
+        dataUrl || placeholderAvatarDataUrl((nome || 'A').trim().slice(0, 1).toUpperCase());
 
       const text = document.createElement('div');
       const statusNota =
@@ -200,25 +277,27 @@ async function carregarRedacoes() {
 // 🔹 SALVAR CORREÇÃO
 saveBtn.addEventListener('click', async () => {
   if (!currentEssayId) {
-    statusEl.textContent = 'Selecione uma redação primeiro.';
+    setStatus('Selecione uma redação primeiro.');
     return;
   }
 
-  const feedback = feedbackEl.value.trim();
+  const feedback = (feedbackEl.value || '').trim();
   const totalObj = calcularTotal();
 
   if (!feedback) {
-    statusEl.textContent = 'Escreva o feedback.';
+    setStatus('Escreva o feedback.');
     return;
   }
 
   if (!totalObj) {
-    statusEl.textContent = 'Preencha todas as competências (0 a 200).';
+    setStatus('Preencha todas as competências (0 a 200).');
     return;
   }
 
+  setStatus('Salvando correção...');
+
   try {
-    const response = await fetch(`${API_URL}/essays/${currentEssayId}/correct`, {
+    const response = await fetch(`${API_URL}/essays/${encodeURIComponent(currentEssayId)}/correct`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -233,10 +312,10 @@ saveBtn.addEventListener('click', async () => {
 
     if (!response.ok) throw new Error();
 
-    statusEl.textContent = 'Correção salva com sucesso!';
+    setStatus('Correção salva com sucesso!');
     carregarRedacoes();
   } catch {
-    statusEl.textContent = 'Erro ao salvar correção.';
+    setStatus('Erro ao salvar correção.');
   }
 });
 
