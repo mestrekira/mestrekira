@@ -59,8 +59,17 @@
 <section>
   <h3>Escreva sua redação</h3>
 
+  <!-- ✅ TÍTULO separado -->
+  <input
+    id="essayTitle"
+    class="essay-title-input"
+    maxlength="120"
+    placeholder="Título da redação (obrigatório)"
+  />
+
   <textarea
     id="essayText"
+    class="essay-textarea"
     rows="15"
     placeholder="Digite sua redação aqui..."
   ></textarea>
@@ -72,7 +81,7 @@
 
   <p id="status"></p>
 </section>
-
+  
 <script type="module" src="js/redacao.js"></script>
 
   <script type="module">
@@ -87,5 +96,6 @@
 
 </body>
 </html>
+
 
 
