@@ -126,7 +126,28 @@ async function carregar() {
       } catch {
         // ignora
       }
+
+ console.log('[feedback-professor] essay.taskId =', essay.taskId);
+
+if (essay.taskId) {
+  try {
+    const url = `${API_URL}/tasks/${encodeURIComponent(essay.taskId)}`;
+    console.log('[feedback-professor] fetching:', url);
+
+    const resTask = await fetch(url);
+    console.log('[feedback-professor] tasks status:', resTask.status);
+
+    const task = await resTask.json().catch(() => null);
+    console.log('[feedback-professor] task payload:', task);
+
+    if (resTask.ok) {
+      setText(taskTitleEl, task?.title, '—');
     }
+  } catch (e) {
+    console.log('[feedback-professor] erro tasks:', e);
+  }
+}
+ }
   } catch (err) {
     console.error(err);
     alert('Erro ao carregar redação/feedback.');
