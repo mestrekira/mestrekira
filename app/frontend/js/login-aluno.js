@@ -1,7 +1,7 @@
 import { API_URL } from './config.js';
 
 function normRole(role) {
-  return String(role || '').trim().toUpperCase(); // "PROFESSOR" | "STUDENT"
+  return String(role || '').trim().toUpperCase();
 }
 
 async function fazerLogin() {
@@ -45,7 +45,7 @@ async function fazerLogin() {
 
     const role = normRole(data.role);
 
-    // ✅ limpa o outro papel para evitar conflitos
+    // evita conflito de papéis
     localStorage.removeItem('professorId');
     localStorage.removeItem('studentId');
 
@@ -55,7 +55,6 @@ async function fazerLogin() {
       return;
     }
 
-    // default: aluno
     localStorage.setItem('studentId', data.id);
     window.location.replace('painel-aluno.html');
   } catch {
