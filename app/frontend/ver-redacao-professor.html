@@ -7,15 +7,12 @@
 </head>
 <body>
 
-<!-- MENU PERFIL -->
 <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
-
 <aside id="menuPanel" class="menu-panel">
   <div class="menu-header">
     <strong>Meu perfil</strong>
     <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
   </div>
-
   <div class="menu-body">
     <div class="menu-photo">
       <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
@@ -45,30 +42,24 @@
   </div>
 </aside>
 
-<h2>Redação (visão do professor)</h2>
+<h2 class="title-center">Redação do aluno</h2>
 
-<section>
-  <p><strong>Aluno:</strong> <span id="student">—</span></p>
-  <p><strong>Total:</strong> <span id="total">—</span></p>
-  <p><strong>ENEM:</strong> <span id="enem">—</span></p>
-</section>
+<p><strong>Aluno:</strong> <span id="student"></span></p>
+<p><strong>Total:</strong> <span id="total"></span></p>
+<p><strong>ENEM:</strong> <span id="enem"></span></p>
 
 <hr>
 
-<section>
-  <h3>Texto</h3>
-  <p id="content" class="box"></p>
-</section>
+<h3>Texto</h3>
+<div id="essayBox" class="essay-box">
+  <div id="essayTitleFmt" class="essay-title"></div>
+  <div id="essayBodyFmt" class="essay-body"></div>
+</div>
 
 <hr>
 
-<section>
-  <h3>Feedback</h3>
-  <p id="feedback" class="box"></p>
-</section>
-
-<br>
-<button id="backBtn">Voltar</button>
+<h3>Feedback</h3>
+<p id="feedback" class="essay-box"></p>
 
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
