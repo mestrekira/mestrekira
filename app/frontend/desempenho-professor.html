@@ -1,3 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Desempenho da Sala</title>
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+
+<!-- MENU PERFIL -->
+<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+
+<aside id="menuPanel" class="menu-panel">
+  <div class="menu-header">
+    <strong>Meu perfil</strong>
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+  </div>
+
+  <div class="menu-body">
+    <div class="menu-photo">
+      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+      <label class="menu-photo-label">
+        Alterar foto
+        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+      </label>
+    </div>
+
+    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+
+    <hr>
+
+    <h4>Atualizar dados</h4>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+    <button id="saveProfileBtn">Salvar</button>
+
+    <p id="menuStatus"></p>
+
+    <hr>
+
+    <button id="logoutMenuBtn">Sair</button>
+    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+  </div>
+</aside>
+
+<h2>Desempenho da sala</h2>
+<p><strong>Sala:</strong> <span id="roomName">Sala</span></p>
+
+<p id="status"></p>
+
+<hr>
+
+<section>
+  <h3>Médias da sala (somente redações corrigidas)</h3>
+
+  <ul class="lista">
+    <li>Média total: <strong id="avgTotal">—</strong></li>
+
+    <li>C1 — Domínio da norma culta: <strong id="avgC1">—</strong></li>
+    <li>C2 — Compreensão do tema e repertório: <strong id="avgC2">—</strong></li>
+    <li>C3 — Argumentação e projeto de texto: <strong id="avgC3">—</strong></li>
+    <li>C4 — Coesão e mecanismos linguísticos: <strong id="avgC4">—</strong></li>
+    <li>C5 — Proposta de intervenção: <strong id="avgC5">—</strong></li>
+  </ul>
+</section>
+
+<hr>
+
+<section>
+  <h3>Alunos</h3>
+  <ul id="studentsList" class="lista"></ul>
+</section>
+
+<hr>
+
+<!-- ✅ painel individual (o seu trecho, agora dentro da página completa) -->
 <section id="studentPanel" style="display:none;">
   <h3>Desempenho individual</h3>
 
@@ -16,32 +94,27 @@
   <ul class="lista">
     <li>Média total: <strong id="sAvgTotal">—</strong></li>
 
-    <li>
-      C1 — Domínio da norma culta:
-      <strong id="sAvgC1">—</strong>
-    </li>
-
-    <li>
-      C2 — Compreensão do tema e repertório:
-      <strong id="sAvgC2">—</strong>
-    </li>
-
-    <li>
-      C3 — Argumentação e projeto de texto:
-      <strong id="sAvgC3">—</strong>
-    </li>
-
-    <li>
-      C4 — Coesão e mecanismos linguísticos:
-      <strong id="sAvgC4">—</strong>
-    </li>
-
-    <li>
-      C5 — Proposta de intervenção:
-      <strong id="sAvgC5">—</strong>
-    </li>
+    <li>C1 — Domínio da norma culta: <strong id="sAvgC1">—</strong></li>
+    <li>C2 — Compreensão do tema e repertório: <strong id="sAvgC2">—</strong></li>
+    <li>C3 — Argumentação e projeto de texto: <strong id="sAvgC3">—</strong></li>
+    <li>C4 — Coesão e mecanismos linguísticos: <strong id="sAvgC4">—</strong></li>
+    <li>C5 — Proposta de intervenção: <strong id="sAvgC5">—</strong></li>
   </ul>
 
   <h4>Redações do aluno</h4>
   <ul id="studentEssaysList" class="lista"></ul>
 </section>
+
+<!-- init menu -->
+<script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+  initMenuPerfil({
+    loginRedirect: 'login.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html'
+  });
+</script>
+
+<script type="module" src="js/desempenho-professor.js"></script>
+</body>
+</html>
