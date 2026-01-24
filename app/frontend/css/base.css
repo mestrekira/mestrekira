@@ -1,90 +1,281 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 40px;
-  background: #f7f9fc;
+/* =========================================================
+   Mestre Kira — base.css (moderno, limpo, responsivo)
+   ========================================================= */
+
+/* --------- Design tokens --------- */
+:root{
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #475569;
+  --border: rgba(15, 23, 42, 0.12);
+
+  --primary: #2563eb;
+  --primary-600: #1d4ed8;
+  --primary-700: #1e40af;
+
+  --danger: #dc2626;
+  --danger-700: #b91c1c;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+
+  --shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+  --shadow-sm: 0 6px 18px rgba(2, 6, 23, 0.08);
+
+  --ring: 0 0 0 4px rgba(37, 99, 235, 0.15);
+
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 26px;
+
+  --maxw: 980px;
 }
 
-h1 {
-  color: #1e3a8a;
+/* --------- Reset leve --------- */
+*{ box-sizing: border-box; }
+html, body{ height: 100%; }
+body{
+  margin: 0;
+  padding: 28px;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(37,99,235,.10), transparent 60%),
+              radial-gradient(900px 500px at 100% 0%, rgba(99,102,241,.10), transparent 55%),
+              var(--bg);
+  line-height: 1.5;
 }
 
-input, button {
-  padding: 8px;
-  margin: 6px 0;
+/* Conteúdo central sem exigir alterar HTML */
+body > *{
+  max-width: var(--maxw);
+  margin-left: auto;
+  margin-right: auto;
 }
 
-button {
-  background: #2563eb;
-  color: white;
-  border: none;
+/* --------- Tipografia --------- */
+h1, h2, h3, h4{
+  margin: 0 0 var(--space-3);
+  letter-spacing: -0.02em;
+}
+h1{ font-size: 28px; color: var(--text); }
+h2{ font-size: 24px; color: var(--text); }
+h3{ font-size: 18px; color: var(--text); }
+h4{ font-size: 15px; color: var(--text); }
+
+p{ margin: 0 0 var(--space-3); color: var(--muted); }
+strong{ color: var(--text); }
+small{ color: var(--muted); }
+
+hr{
+  border: 0;
+  height: 1px;
+  background: rgba(15, 23, 42, 0.10);
+  margin: var(--space-5) 0;
+}
+
+/* --------- Seções como “cards” automaticamente --------- */
+section{
+  background: var(--card);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  margin: var(--space-4) 0;
+}
+
+/* Seções que você quer “sem card” podem usar inline style (já existe em algumas)
+   e não quebra. */
+
+/* --------- Forms --------- */
+label{
+  display: block;
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+input, textarea, select{
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: #fff;
+  color: var(--text);
+  outline: none;
+  transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
+}
+
+input:focus, textarea:focus, select:focus{
+  border-color: rgba(37,99,235,0.55);
+  box-shadow: var(--ring);
+}
+
+textarea{
+  min-height: 140px;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+::placeholder{
+  color: rgba(71, 85, 105, 0.75);
+}
+
+/* --------- Buttons --------- */
+button{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: var(--primary);
+  color: #fff;
   cursor: pointer;
+  font-weight: 700;
+  transition: transform .05s ease, background .15s ease, box-shadow .15s ease, border-color .15s ease;
+  box-shadow: 0 10px 20px rgba(37,99,235,0.18);
 }
 
-button:hover {
-  background: #1d4ed8;
+button:hover{ background: var(--primary-600); }
+button:active{ transform: translateY(1px); }
+button:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
-ul {
-  margin-top: 20px;
+/* Botão “neutro” (quando você quiser) */
+button.secondary{
+  background: #fff;
+  color: var(--text);
+  box-shadow: none;
+}
+button.secondary:hover{
+  background: rgba(15,23,42,0.04);
 }
 
-li {
-  background: white;
-  padding: 10px;
-  margin-bottom: 6px;
-  border-radius: 4px;
+/* Danger */
+button.danger{
+  background: #fff;
+  color: var(--danger);
+  border-color: rgba(220, 38, 38, 0.35);
+  box-shadow: none;
+}
+button.danger:hover{
+  background: rgba(220, 38, 38, 0.08);
 }
 
-/* ===== Menu de Perfil ===== */
+/* --------- Lists --------- */
+ul{ margin: 0; padding: 0; list-style: none; }
+
+.lista li{
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.10);
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: var(--radius);
+  box-shadow: 0 6px 14px rgba(2, 6, 23, 0.05);
+}
+
+.lista li button{
+  margin-top: 10px;
+}
+
+/* --------- Boxes (redação/feedback/áreas de leitura) --------- */
+.box{
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.12);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.06);
+  color: var(--text);
+}
+
+.muted{ color: var(--muted); }
+
+/* --------- Chart bar --------- */
+.bar{
+  background: linear-gradient(90deg, rgba(37,99,235,0.85), rgba(99,102,241,0.85));
+  border-radius: 999px;
+}
+
+/* =========================================================
+   Menu de Perfil (refinado)
+   ========================================================= */
 .menu-btn{
   position: fixed;
-  top: 14px;
-  right: 14px;
+  top: 16px;
+  right: 16px;
   z-index: 999;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  background: #fff;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.14);
+  background: rgba(255,255,255,0.9);
+  color: var(--text);
   cursor: pointer;
   font-size: 18px;
+  box-shadow: 0 10px 25px rgba(2,6,23,0.10);
+  backdrop-filter: blur(8px);
+}
+
+.menu-btn:hover{
+  background: rgba(255,255,255,1);
 }
 
 .menu-panel{
   position: fixed;
   top: 0;
-  right: -360px;
-  width: 340px;
+  right: -380px;
+  width: 360px;
   height: 100%;
   z-index: 1000;
   background: #fff;
-  border-left: 1px solid #ddd;
-  box-shadow: -10px 0 30px rgba(0,0,0,.12);
+  border-left: 1px solid rgba(15,23,42,0.10);
+  box-shadow: -12px 0 40px rgba(2,6,23,.14);
   transition: right .2s ease;
   display: flex;
   flex-direction: column;
 }
 
-.menu-panel.open{
-  right: 0;
-}
+.menu-panel.open{ right: 0; }
 
 .menu-header{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px;
-  border-bottom: 1px solid #eee;
+  padding: 16px 16px;
+  border-bottom: 1px solid rgba(15,23,42,0.10);
+}
+
+.menu-header strong{
+  font-size: 14px;
+  color: var(--text);
+  letter-spacing: .02em;
+  text-transform: uppercase;
 }
 
 .menu-close{
-  border: 0;
-  background: transparent;
-  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: #fff;
+  color: var(--text);
   cursor: pointer;
+  box-shadow: none;
 }
 
+.menu-close:hover{ background: rgba(15,23,42,0.04); }
+
 .menu-body{
-  padding: 14px;
+  padding: 16px;
   overflow-y: auto;
 }
 
@@ -96,94 +287,101 @@ li {
 }
 
 .menu-photo-img{
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(15,23,42,0.14);
   object-fit: cover;
-  background: #f5f5f5;
+  background: rgba(15,23,42,0.05);
 }
 
 .menu-photo-label{
-  display: inline-block;
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(15,23,42,0.14);
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: #fff;
 }
 
-.menu-photo-label input{
-  display: none;
+.menu-photo-label:hover{
+  background: rgba(15,23,42,0.04);
 }
+
+.menu-photo-label input{ display:none; }
 
 .menu-body input{
   width: 100%;
-  margin: 6px 0;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
+  margin: 8px 0;
 }
 
 .menu-body button{
   width: 100%;
-  margin-top: 8px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  background: #fff;
-  cursor: pointer;
+  margin-top: 10px;
+  padding: 12px 12px;
+  border-radius: 12px;
 }
 
-.menu-body button.danger{
-  border-color: #e08;
-  color: #b03;
-}
-
-.bar {
-  background: #888;
-}
+/* =========================================================
+   Redação — título/textarea/box (já compatível com seus JS)
+   ========================================================= */
 
 /* título digitado pelo aluno */
 .essay-title-input{
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  font-weight: 700;
+  padding: 12px 12px;
+  border: 1px solid rgba(15,23,42,0.14);
+  border-radius: 12px;
+  font-weight: 800;
   text-align: center;
   margin-bottom: 10px;
 }
 
-/* textarea com texto justificado (quando suportado) */
+/* textarea com texto justificado */
 .essay-textarea{
   width: 100%;
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  line-height: 1.7;
+  border: 1px solid rgba(15,23,42,0.14);
+  border-radius: 12px;
+  line-height: 1.8;
   text-align: justify;
   resize: vertical;
 }
 
-/* caixa de leitura (para exibir redação/feedback formatado) */
+/* caixa de leitura (exibir redação/feedback formatado) */
 .essay-box{
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid rgba(15,23,42,0.12);
+  border-radius: var(--radius);
   background: #fff;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.06);
 }
 
 .essay-box .essay-title{
-  font-weight: 700;
+  font-weight: 800;
   text-align: center;
   margin-bottom: 12px;
+  color: var(--text);
 }
 
 .essay-box .essay-body{
   text-align: justify;
-  line-height: 1.7;
+  line-height: 1.8;
   white-space: pre-wrap;
+  color: var(--text);
 }
 
-
+/* =========================================================
+   Responsivo
+   ========================================================= */
+@media (max-width: 720px){
+  body{ padding: 16px; }
+  .menu-panel{ width: 92vw; right: -95vw; }
+  section{ padding: 14px; }
+  .menu-btn{ top: 12px; right: 12px; }
+}
