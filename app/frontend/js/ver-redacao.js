@@ -23,7 +23,6 @@ function setText(el, value, fallback = '—') {
   el.textContent = v ? v : fallback;
 }
 
-// ✅ separa título (primeira linha não vazia) e corpo (resto)
 function splitTitleAndBody(raw) {
   const text = (raw ?? '').replace(/\r\n/g, '\n');
   const trimmed = text.trim();
@@ -40,11 +39,15 @@ function splitTitleAndBody(raw) {
   }
   if (firstIdx === -1) return { title: '—', body: '' };
 
-  const title = String(lines[firstIdx] || '').trim();
+  let title = String(lines[firstIdx] || '').trim();
+
+  // ✅ remove "__TITLE__:" se existir (compatibilidade com versões antigas)
+  if (title.startsWith('__TITLE__:')) {
+    title = title.replace(/^__TITLE__:\s*/, '').trim();
+  }
 
   const bodyLines = lines.slice(firstIdx + 1);
 
-  // remove linhas vazias iniciais do corpo
   while (bodyLines.length && !String(bodyLines[0] || '').trim()) {
     bodyLines.shift();
   }
@@ -53,6 +56,7 @@ function splitTitleAndBody(raw) {
 
   return { title: title || '—', body };
 }
+
 
 // ✅ renderiza: título centralizado + corpo justificado dentro da mesma caixa
 function renderEssayFormatted(containerEl, rawContent) {
