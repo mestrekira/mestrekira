@@ -191,6 +191,7 @@ footer {
   color: #0077cc;
 }
 
+/* ===== Busca no site (header) ===== */
 .busca-container{
   max-width: 1200px;
   margin: 10px auto 0;
@@ -207,6 +208,11 @@ footer {
   outline: none;
 }
 
+.busca-input:focus{
+  border-color: rgba(0,64,128,0.8);
+  box-shadow: 0 0 0 3px rgba(0,64,128,0.15);
+}
+
 .busca-sugestoes{
   position: absolute;
   left: 20px;
@@ -214,10 +220,42 @@ footer {
   top: calc(100% + 6px);
   background: #fff;
   border: 1px solid rgba(0,0,0,0.15);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-  max-height: 280px;
+  max-height: 300px;
   overflow: auto;
-  display: none; /* JS liga/desliga */
+  display: none;
   z-index: 9999;
 }
+
+.busca-item{
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.busca-item:last-child{
+  border-bottom: none;
+}
+
+.busca-item .busca-titulo{
+  font-weight: 700;
+  color: #0b2239;
+  margin-bottom: 2px;
+}
+
+.busca-item .busca-sub{
+  font-size: 12px;
+  color: #555;
+}
+
+.busca-item.ativo,
+.busca-item:hover{
+  background: rgba(0,64,128,0.08);
+}
+
+.busca-vazio{
+  padding: 10px 12px;
+  color: #555;
+}
+
