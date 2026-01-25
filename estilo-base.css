@@ -190,3 +190,34 @@ footer {
 .social-icons a:hover {
   color: #0077cc;
 }
+
+.busca-container{
+  max-width: 1200px;
+  margin: 10px auto 0;
+  padding: 0 20px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.busca-input{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.2);
+  outline: none;
+}
+
+.busca-sugestoes{
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  max-height: 280px;
+  overflow: auto;
+  display: none; /* JS liga/desliga */
+  z-index: 9999;
+}
