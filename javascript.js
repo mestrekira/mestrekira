@@ -11,7 +11,10 @@ function incluirHTML(id, url, callback) {
 }
 
 // Inclui partes fixas
-incluirHTML("header", "header.html", configurarLinks);
+incluirHTML("header", "header.html", () => {
+  configurarLinks();
+  inicializarBuscaSite(); // novo
+});
 incluirHTML("aside", "aside.html");
 incluirHTML("footer", "footer.html");
 
@@ -54,6 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarBotaoPlataformaRedacao();
 });
 
+/* =========================
+   Paginação (cards)
+========================= */
 function inicializarPaginacao() {
   const posts = Array.from(document.querySelectorAll(".publicacoes .post"));
   if (posts.length === 0) return;
@@ -63,19 +69,15 @@ function inicializarPaginacao() {
   let paginaAtual = 1;
 
   function mostrarPagina(pagina) {
-    // Normaliza limites
     paginaAtual = Math.min(Math.max(pagina, 1), totalPaginas);
 
-    // Esconde tudo
     posts.forEach((p) => (p.style.display = "none"));
 
-    // Mostra intervalo da página atual
     const inicio = (paginaAtual - 1) * porPagina;
     const fim = inicio + porPagina;
 
     for (let i = inicio; i < fim && i < posts.length; i++) {
-      // Seus cards são flex no CSS
-      posts[i].style.display = "flex";
+      posts[i].style.display = "flex"; // compatível com seu CSS
     }
 
     atualizarPaginacao();
@@ -85,7 +87,6 @@ function inicializarPaginacao() {
     const paginacaoDiv = document.getElementById("paginacao");
     if (!paginacaoDiv) return;
 
-    // Se só existe 1 página, não mostra controles
     if (totalPaginas <= 1) {
       paginacaoDiv.innerHTML = "";
       return;
@@ -123,6 +124,9 @@ function inicializarPaginacao() {
   mostrarPagina(paginaAtual);
 }
 
+/* =========================
+   Player de áudio (com guards)
+========================= */
 function inicializarPlayerAudio() {
   const audio = document.getElementById("playerAudio");
   const speedSelect = document.getElementById("speedSelect");
@@ -132,7 +136,6 @@ function inicializarPlayerAudio() {
   const audioDuration = document.getElementById("audioDuration");
   const downloadLink = document.getElementById("downloadLink");
 
-  // Se não estiver na página do player, sai sem erro
   if (
     !audio ||
     !speedSelect ||
@@ -141,16 +144,12 @@ function inicializarPlayerAudio() {
     !decreaseBtn ||
     !audioDuration ||
     !downloadLink
-  ) {
-    return;
-  }
+  ) return;
 
   audio.addEventListener("loadedmetadata", () => {
     if (!isNaN(audio.duration)) {
       const sec = Math.round(audio.duration);
-      const mm = Math.floor(sec / 60)
-        .toString()
-        .padStart(2, "0");
+      const mm = Math.floor(sec / 60).toString().padStart(2, "0");
       const ss = (sec % 60).toString().padStart(2, "0");
       audioDuration.textContent = `Duração: ${mm}:${ss}`;
     }
@@ -169,9 +168,7 @@ function inicializarPlayerAudio() {
     setPlaybackRate(val);
   });
 
-  const speedOptions = Array.from(speedSelect.options).map((o) =>
-    parseFloat(o.value)
-  );
+  const speedOptions = Array.from(speedSelect.options).map((o) => parseFloat(o.value));
 
   function stepSpeed(direction) {
     const current = parseFloat(speedSelect.value) || 1;
@@ -180,17 +177,12 @@ function inicializarPlayerAudio() {
     if (idx === -1) {
       idx = speedOptions.reduce(
         (acc, v, i) =>
-          Math.abs(v - current) < Math.abs(speedOptions[acc] - current)
-            ? i
-            : acc,
+          Math.abs(v - current) < Math.abs(speedOptions[acc] - current) ? i : acc,
         0
       );
     }
 
-    const nextIdx = Math.min(
-      Math.max(idx + direction, 0),
-      speedOptions.length - 1
-    );
+    const nextIdx = Math.min(Math.max(idx + direction, 0), speedOptions.length - 1);
     setPlaybackRate(speedOptions[nextIdx]);
   }
 
@@ -214,6 +206,9 @@ function inicializarPlayerAudio() {
   });
 }
 
+/* =========================
+   FAQ (guard)
+========================= */
 function inicializarFAQ() {
   const perguntas = document.querySelectorAll(".faq-pergunta");
   if (!perguntas.length) return;
@@ -227,11 +222,226 @@ function inicializarFAQ() {
   });
 }
 
+/* =========================
+   Botão plataforma (guard)
+========================= */
 function inicializarBotaoPlataformaRedacao() {
   const btn = document.getElementById("btnPlataformaRedacao");
   if (!btn) return;
 
   btn.addEventListener("click", () => {
-    window.location.href = "index.html";
+    window.location.href = "/app/index.html";
   });
+}
+
+/* =========================
+   Busca no site (novo)
+========================= */
+function inicializarBuscaSite() {
+  const input = document.getElementById("buscaSite");
+  const sugestoes = document.getElementById("buscaSugestoes");
+
+  // Se a página não tiver busca (ou header ainda não carregou), sai
+  if (!input || !sugestoes) return;
+
+  // Carrega o índice, se ainda não estiver carregado
+  carregarSearchIndex(() => configurarBusca(input, sugestoes));
+}
+
+function carregarSearchIndex(cb) {
+  if (Array.isArray(window.SEARCH_INDEX) && window.SEARCH_INDEX.length) {
+    cb();
+    return;
+  }
+
+  // Evita injetar duas vezes
+  if (document.querySelector('script[data-search-index="1"]')) {
+    // espera um pouco e tenta de novo
+    const t = setInterval(() => {
+      if (Array.isArray(window.SEARCH_INDEX) && window.SEARCH_INDEX.length) {
+        clearInterval(t);
+        cb();
+      }
+    }, 50);
+    setTimeout(() => clearInterval(t), 3000);
+    return;
+  }
+
+  const s = document.createElement("script");
+  s.src = "search-index.js";
+  s.defer = true;
+  s.dataset.searchIndex = "1";
+  s.onload = () => cb();
+  s.onerror = () => {
+    console.error("Não foi possível carregar search-index.js");
+    cb(); // ainda assim não quebra o site
+  };
+  document.head.appendChild(s);
+}
+
+function configurarBusca(input, sugestoes) {
+  let resultadosAtuais = [];
+  let ativo = -1;
+
+  function normalizar(str) {
+    return (str || "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
+  function abrirSugestoes() {
+    sugestoes.style.display = "block";
+  }
+
+  function fecharSugestoes() {
+    sugestoes.style.display = "none";
+    sugestoes.innerHTML = "";
+    resultadosAtuais = [];
+    ativo = -1;
+  }
+
+  function navegarPara(url) {
+    if (!url) return;
+    window.location.href = url;
+  }
+
+  function render(lista, query) {
+    sugestoes.innerHTML = "";
+    ativo = -1;
+
+    if (!lista.length) {
+      sugestoes.innerHTML = `<div class="busca-vazio">Nenhum resultado para “${escapeHtml(query)}”.</div>`;
+      abrirSugestoes();
+      return;
+    }
+
+    lista.forEach((item, idx) => {
+      const div = document.createElement("div");
+      div.className = "busca-item";
+      div.setAttribute("role", "option");
+
+      div.innerHTML = `
+        <div class="busca-titulo">${escapeHtml(item.title || item.url)}</div>
+        <div class="busca-sub">${escapeHtml(item.url)}</div>
+      `;
+
+      div.addEventListener("mousedown", (e) => {
+        // mousedown para não perder o foco antes do clique (blur)
+        e.preventDefault();
+        navegarPara(item.url);
+      });
+
+      sugestoes.appendChild(div);
+    });
+
+    abrirSugestoes();
+  }
+
+  function marcarAtivo(novo) {
+    const itens = Array.from(sugestoes.querySelectorAll(".busca-item"));
+    itens.forEach((el) => el.classList.remove("ativo"));
+
+    ativo = novo;
+    if (ativo >= 0 && ativo < itens.length) {
+      itens[ativo].classList.add("ativo");
+      itens[ativo].scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  function buscar(queryRaw) {
+    const q = normalizar(queryRaw);
+    if (!q) {
+      fecharSugestoes();
+      return;
+    }
+
+    const idx = Array.isArray(window.SEARCH_INDEX) ? window.SEARCH_INDEX : [];
+    const tokens = q.split(/\s+/).filter(Boolean);
+
+    function score(item) {
+      const title = normalizar(item.title);
+      const url = normalizar(item.url);
+      const keys = Array.isArray(item.keywords) ? item.keywords.map(normalizar) : [];
+      const blob = [title, url, ...keys].join(" ");
+
+      let s = 0;
+
+      // Prioriza match no título
+      if (title.includes(q)) s += 50;
+
+      // URL também conta
+      if (url.includes(q)) s += 25;
+
+      // Tokens: cada token encontrado soma
+      tokens.forEach((t) => {
+        if (title.includes(t)) s += 12;
+        else if (keys.some((k) => k.includes(t))) s += 8;
+        else if (blob.includes(t)) s += 4;
+      });
+
+      return s;
+    }
+
+    const encontrados = idx
+      .map((item) => ({ item, s: score(item) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .slice(0, 10)
+      .map((x) => x.item);
+
+    resultadosAtuais = encontrados;
+    render(encontrados, queryRaw);
+  }
+
+  // Eventos
+  input.addEventListener("input", () => buscar(input.value));
+
+  input.addEventListener("focus", () => {
+    if (input.value.trim()) buscar(input.value);
+  });
+
+  input.addEventListener("keydown", (e) => {
+    const itens = Array.from(sugestoes.querySelectorAll(".busca-item"));
+
+    if (e.key === "Escape") {
+      fecharSugestoes();
+      input.blur();
+      return;
+    }
+
+    if (sugestoes.style.display !== "block") return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      marcarAtivo(Math.min(ativo + 1, itens.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      marcarAtivo(Math.max(ativo - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (ativo >= 0 && resultadosAtuais[ativo]) {
+        navegarPara(resultadosAtuais[ativo].url);
+      } else if (resultadosAtuais[0]) {
+        navegarPara(resultadosAtuais[0].url);
+      }
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    const dentro = e.target === input || sugestoes.contains(e.target);
+    if (!dentro) fecharSugestoes();
+  });
+}
+
+// evita injeção HTML no texto do usuário
+function escapeHtml(str) {
+  return (str || "").toString()
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
