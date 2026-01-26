@@ -378,6 +378,17 @@ ul{ margin: 0; padding: 0; list-style: none; }
 section button{ margin-right: 10px; margin-top: 10px; }
 section button:last-child{ margin-right: 0; }
 
+/* --- Rubricas ENEM (mínimo) --- */
+.comp-wrap { margin-bottom: 14px; }
+.comp-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.rubric-btn { padding: 6px 10px; cursor:pointer; }
+.rubric-hint { font-size: 0.92rem; opacity: 0.85; margin: 6px 0; }
+.rubric-panel { border:1px solid #ddd; padding:10px; border-radius:10px; margin-top:8px; }
+.rubric-table { width:100%; border-collapse: collapse; }
+.rubric-table td, .rubric-table th { border-bottom:1px solid #eee; padding:8px; vertical-align: top; }
+.rubric-level { width:72px; font-weight:700; }
+.rubric-active { background: rgba(0,0,0,0.04); }
+
 /* =========================================================
    Responsivo
    ========================================================= */
@@ -387,3 +398,4 @@ section button:last-child{ margin-right: 0; }
   .menu-panel{ width: 92vw; right: -95vw; }
   .menu-btn{ top: 12px; right: 12px; }
 }
+
