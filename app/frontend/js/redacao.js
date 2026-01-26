@@ -43,109 +43,16 @@ function updateCount() {
   charCount.textContent = String((textarea.value || '').length);
 }
 
-// ===============================
-// LOCAL DRAFT (fallback)
-// ===============================
-function draftKey() {
-  return `mk_draft_${studentId}_${taskId}`;
-}
-
-function saveDraftLocal(title, content) {
-  const payload = { title: title || '', content: content || '', updatedAt: Date.now() };
-  localStorage.setItem(draftKey(), JSON.stringify(payload));
-}
-
-function loadDraftLocal() {
-  const raw = localStorage.getItem(draftKey());
-  if (!raw) return null;
-
-  try {
-    const obj = JSON.parse(raw);
-    if (!obj) return null;
-    return {
-      title: String(obj.title || ''),
-      content: String(obj.content || ''),
-      updatedAt: Number(obj.updatedAt || 0) || 0,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function clearDraftLocal() {
-  localStorage.removeItem(draftKey());
-}
-
-// ===============================
-// REMOTE DRAFT (backend)
-// ===============================
-// GET /drafts?taskId=...&studentId=...
-async function fetchDraftRemote() {
-  const url =
-    `${API_URL}/drafts?taskId=${encodeURIComponent(taskId)}` +
-    `&studentId=${encodeURIComponent(studentId)}`;
-
-  const res = await fetch(url);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Draft GET HTTP ${res.status}`);
-
-  const data = await res.json().catch(() => null);
-  if (!data) return null;
-
-  return {
-    title: String(data.title || ''),
-    content: String(data.content || ''),
-    updatedAt: data.updatedAt ? new Date(data.updatedAt).getTime() : 0,
-  };
-}
-
-// PUT /drafts { taskId, studentId, title, content }
-async function saveDraftRemote(title, content) {
-  const res = await fetch(`${API_URL}/drafts`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      taskId,
-      studentId,
-      title: title || '',
-      content: content || '',
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Draft PUT HTTP ${res.status}`);
-
-  const data = await res.json().catch(() => null);
-  return data || true;
-}
-
-// (opcional) DELETE /drafts?taskId=...&studentId=...
-async function deleteDraftRemote() {
-  const url =
-    `${API_URL}/drafts?taskId=${encodeURIComponent(taskId)}` +
-    `&studentId=${encodeURIComponent(studentId)}`;
-
-  const res = await fetch(url, { method: 'DELETE' });
-  // se não existir, ok
-  if (res.status === 404) return true;
-  if (!res.ok) throw new Error(`Draft DELETE HTTP ${res.status}`);
-  return true;
-}
-
-// ===============================
-// CONTENT PACK (título + corpo)
-// ===============================
+// ✅ Empacota título + corpo no content (sem mexer no backend de essays)
 function packContent(title, body) {
   const t = String(title || '').trim();
   const b = String(body || '');
   return `__TITLE__:${t}\n\n${b}`;
 }
 
-// ===============================
-// ANTI-PASTE (mobile + desktop)
-// ===============================
+// ✅ BLOQUEAR COLAR / ARRASTAR (inclui fallback p/ mobile)
 function antiPaste(el, fieldName, options = {}) {
   if (!el) return;
-
   const maxJump = Number(options.maxJump ?? 25);
   let lastValue = el.value || '';
   let lastLen = lastValue.length;
@@ -154,16 +61,8 @@ function antiPaste(el, fieldName, options = {}) {
     alert(`Colar texto não é permitido em ${fieldName}. Digite no sistema.`);
   }
 
-  el.addEventListener('paste', (e) => {
-    e.preventDefault();
-    warn();
-  });
-
-  el.addEventListener('drop', (e) => {
-    e.preventDefault();
-    warn();
-  });
-
+  el.addEventListener('paste', (e) => { e.preventDefault(); warn(); });
+  el.addEventListener('drop', (e) => { e.preventDefault(); warn(); });
   el.addEventListener('dragover', (e) => e.preventDefault());
 
   el.addEventListener('beforeinput', (e) => {
@@ -186,9 +85,7 @@ function antiPaste(el, fieldName, options = {}) {
 
     if (diff > maxJump) {
       el.value = lastValue;
-      try {
-        el.setSelectionRange(lastLen, lastLen);
-      } catch {}
+      try { el.setSelectionRange(lastLen, lastLen); } catch {}
       warn();
       return;
     }
@@ -208,67 +105,42 @@ function antiPaste(el, fieldName, options = {}) {
 const antiTitle = antiPaste(titleInput, 'Título', { maxJump: 15 });
 const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
 
-// ===============================
-// AUTOSAVE (backend first; local fallback)
-// ===============================
-let autosaveTimer = null;
-let isSaving = false;
-let lastSavedHash = '';
+// ===== BACKEND DRAFTS =====
 
-function makeHash(title, content) {
-  // hash simples (evita salvar o mesmo conteúdo toda hora)
-  const t = String(title || '');
-  const c = String(content || '');
-  return `${t.length}:${c.length}:${t.slice(0, 20)}:${c.slice(0, 20)}`;
+async function loadDraftServer() {
+  const url = `${API_URL}/drafts?taskId=${encodeURIComponent(taskId)}&studentId=${encodeURIComponent(studentId)}`;
+  const res = await fetch(url);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const d = await res.json();
+  return {
+    title: String(d?.title || ''),
+    content: String(d?.content || ''),
+  };
 }
 
-async function autosaveNow({ silent = true } = {}) {
-  const title = (titleInput.value || '').trim();
-  const text = textarea.value || '';
-
-  // não salva vazio
-  if (!title && !text.trim()) return;
-
-  const hash = makeHash(title, text);
-  if (hash === lastSavedHash) return;
-
-  if (isSaving) return;
-  isSaving = true;
-
-  try {
-    await saveDraftRemote(title, text);
-    lastSavedHash = hash;
-
-    // também guarda local como backup (opcional, mas aumenta resiliência)
-    saveDraftLocal(title, text);
-
-    if (!silent) setStatus('Rascunho salvo no servidor.');
-  } catch (err) {
-    // fallback local
-    saveDraftLocal(title, text);
-    if (!silent) setStatus('Rascunho salvo localmente (sem conexão com o servidor).');
-  } finally {
-    isSaving = false;
-  }
+async function saveDraftServer(title, content) {
+  const res = await fetch(`${API_URL}/drafts`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      taskId,
+      studentId,
+      title: String(title || ''),
+      content: String(content || ''),
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json().catch(() => null);
 }
 
-function scheduleAutosave() {
-  if (autosaveTimer) clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(() => autosaveNow({ silent: true }), 700);
+async function deleteDraftServer() {
+  const url = `${API_URL}/drafts?taskId=${encodeURIComponent(taskId)}&studentId=${encodeURIComponent(studentId)}`;
+  const res = await fetch(url, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
 }
 
-titleInput.addEventListener('input', () => {
-  scheduleAutosave();
-});
-
-textarea.addEventListener('input', () => {
-  updateCount();
-  scheduleAutosave();
-});
-
-// ===============================
-// CARREGAR TAREFA (tema/orientações)
-// ===============================
+// 🔹 CARREGAR TAREFA (TEMA + ORIENTAÇÕES)
 async function carregarTarefa() {
   try {
     const response = await fetch(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
@@ -283,80 +155,91 @@ async function carregarTarefa() {
   }
 }
 
-// ===============================
-// CARREGAR RASCUNHO (remote com fallback local)
-// ===============================
+// ✅ CARREGAR RASCUNHO (BACKEND)
 async function carregarRascunho() {
-  // 1) tenta remoto
   try {
-    const remote = await fetchDraftRemote();
-    if (remote && (remote.title.trim() || remote.content.trim())) {
-      titleInput.value = remote.title;
-      textarea.value = remote.content;
+    const draft = await loadDraftServer();
+    if (draft && (draft.title.trim() || draft.content.trim())) {
+      titleInput.value = draft.title;
+      textarea.value = draft.content;
       updateCount();
       setStatus('Rascunho carregado do servidor.');
-
       antiTitle?.sync?.();
       antiEssay?.sync?.();
-
-      // atualiza hash p/ não salvar igual logo em seguida
-      lastSavedHash = makeHash(remote.title, remote.content);
-
-      // também atualiza local como backup
-      saveDraftLocal(remote.title, remote.content);
       return;
     }
-  } catch {
-    // ignora e tenta local
+  } catch (err) {
+    console.error('Erro ao carregar rascunho:', err);
   }
-
-  // 2) fallback local
-  const local = loadDraftLocal();
-  if (local && (local.title.trim() || local.content.trim())) {
-    titleInput.value = local.title;
-    textarea.value = local.content;
-    updateCount();
-    setStatus('Rascunho carregado (backup local).');
-
-    antiTitle?.sync?.();
-    antiEssay?.sync?.();
-
-    lastSavedHash = makeHash(local.title, local.content);
-
-    // tenta sincronizar pro servidor em background (sem travar)
-    autosaveNow({ silent: true });
-    return;
-  }
-
   updateCount();
 }
 
-// ===============================
-// SALVAR RASCUNHO (botão)
-// ===============================
+// AUTOSAVE (BACKEND) com debounce
+let autosaveTimer = null;
+let autosaveBusy = false;
+
+function scheduleAutosave() {
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+
+  autosaveTimer = setTimeout(async () => {
+    const title = (titleInput.value || '').trim();
+    const text = textarea.value || '';
+
+    // não salva vazio
+    if (!title && !text.trim()) return;
+
+    // evita fila de requests
+    if (autosaveBusy) return;
+    autosaveBusy = true;
+
+    try {
+      await saveDraftServer(title, text);
+      // não spammar status
+    } catch (err) {
+      console.error('Autosave falhou:', err);
+      // aqui você pode mostrar um aviso curto se quiser
+    } finally {
+      autosaveBusy = false;
+    }
+  }, 700);
+}
+
+titleInput.addEventListener('input', () => {
+  scheduleAutosave();
+});
+
+textarea.addEventListener('input', () => {
+  updateCount();
+  scheduleAutosave();
+});
+
+// ✅ SALVAR RASCUNHO (BACKEND)
 saveBtn.addEventListener('click', async () => {
   const title = (titleInput.value || '').trim();
   const text = textarea.value || '';
 
   if (!title && !text.trim()) {
-    // limpa ambos
-    clearDraftLocal();
+    // remove draft no servidor (se existir)
     try {
-      await deleteDraftRemote();
+      await deleteDraftServer();
+      setStatus('Nada para salvar. Rascunho removido do servidor.');
     } catch {
-      // se não der, ok
+      setStatus('Nada para salvar.');
     }
-    setStatus('Nada para salvar. Rascunho removido.');
     return;
   }
 
-  // salva no servidor (com fallback local)
-  await autosaveNow({ silent: false });
+  try {
+    setStatus('Salvando rascunho...');
+    await saveDraftServer(title, text);
+    setStatus('Rascunho salvo no servidor.');
+  } catch (err) {
+    console.error(err);
+    setStatus('Erro ao salvar rascunho no servidor.');
+  }
 });
 
-// ===============================
-// CHECAR SE JÁ ENVIOU (bloqueia reenvio)
-// ===============================
+// ✅ VERIFICAR SE JÁ ENVIOU (bloqueia reenvio)
 async function checarJaEnviou() {
   try {
     const res = await fetch(`${API_URL}/essays/by-task/${encodeURIComponent(taskId)}`);
@@ -366,17 +249,15 @@ async function checarJaEnviou() {
     if (!Array.isArray(list)) return { sent: false };
 
     const mine = list.find((e) => e && String(e.studentId) === String(studentId));
-    if (mine && mine.id) return { sent: true, essayId: mine.id };
 
+    if (mine && mine.id) return { sent: true, essayId: mine.id };
     return { sent: false };
   } catch {
     return { sent: false };
   }
 }
 
-// ===============================
-// ENVIAR REDAÇÃO (backend)
-// ===============================
+// ✅ ENVIAR REDAÇÃO (BACKEND)
 sendBtn.addEventListener('click', async () => {
   const title = (titleInput.value || '').trim();
   const text = textarea.value || '';
@@ -390,9 +271,6 @@ sendBtn.addEventListener('click', async () => {
     alert('A redação deve ter pelo menos 500 caracteres.');
     return;
   }
-
-  // salva rascunho antes de enviar (segurança)
-  await autosaveNow({ silent: true });
 
   sendBtn.disabled = true;
 
@@ -421,13 +299,8 @@ sendBtn.addEventListener('click', async () => {
 
     const essay = await response.json();
 
-    // remove rascunho local + remoto
-    clearDraftLocal();
-    try {
-      await deleteDraftRemote();
-    } catch {
-      // ok
-    }
+    // ✅ remove o rascunho do servidor após envio
+    try { await deleteDraftServer(); } catch {}
 
     setDisabledAll(true);
     setStatus('Redação enviada com sucesso!');
@@ -441,14 +314,9 @@ sendBtn.addEventListener('click', async () => {
   }
 });
 
-// ===============================
 // INIT
-// ===============================
 (async () => {
   await carregarTarefa();
-
-  // carrega rascunho do servidor (com fallback)
-  await carregarRascunho();
 
   setStatus('Verificando envio...');
   const ja = await checarJaEnviou();
@@ -456,13 +324,13 @@ sendBtn.addEventListener('click', async () => {
   if (ja.sent) {
     setStatus('Você já enviou esta redação. Redirecionando para o feedback...');
     setDisabledAll(true);
-
     setTimeout(() => {
       window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`;
     }, 400);
-
     return;
   }
 
+  setStatus('Carregando rascunho...');
+  await carregarRascunho();
   setStatus('');
 })();
