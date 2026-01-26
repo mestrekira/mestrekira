@@ -43,11 +43,23 @@ function updateCount() {
   charCount.textContent = String((textarea.value || '').length);
 }
 
-// ✅ Empacota título + corpo no content (sem mexer no backend de essays)
+// ✅ Empacota título + corpo no content (compatível com seu backend)
 function packContent(title, body) {
   const t = String(title || '').trim();
   const b = String(body || '');
   return `__TITLE__:${t}\n\n${b}`;
+}
+
+// ✅ Desempacota (compatível com redações antigas)
+function unpackContent(raw) {
+  const text = String(raw || '').replace(/\r\n/g, '\n');
+  const re = /^__TITLE__\s*:\s*(.*)\n\n([\s\S]*)$/i;
+  const m = text.match(re);
+  if (m) {
+    return { title: String(m[1] || '').trim(), body: String(m[2] || '') };
+  }
+  // fallback: sem marcador
+  return { title: '', body: text };
 }
 
 // ✅ BLOQUEAR COLAR / ARRASTAR (inclui fallback p/ mobile)
@@ -61,8 +73,16 @@ function antiPaste(el, fieldName, options = {}) {
     alert(`Colar texto não é permitido em ${fieldName}. Digite no sistema.`);
   }
 
-  el.addEventListener('paste', (e) => { e.preventDefault(); warn(); });
-  el.addEventListener('drop', (e) => { e.preventDefault(); warn(); });
+  el.addEventListener('paste', (e) => {
+    e.preventDefault();
+    warn();
+  });
+
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    warn();
+  });
+
   el.addEventListener('dragover', (e) => e.preventDefault());
 
   el.addEventListener('beforeinput', (e) => {
@@ -78,6 +98,7 @@ function antiPaste(el, fieldName, options = {}) {
     }
   });
 
+  // fallback universal (mobile): salto grande de caracteres = cola
   el.addEventListener('input', () => {
     const cur = el.value || '';
     const curLen = cur.length;
@@ -85,7 +106,9 @@ function antiPaste(el, fieldName, options = {}) {
 
     if (diff > maxJump) {
       el.value = lastValue;
-      try { el.setSelectionRange(lastLen, lastLen); } catch {}
+      try {
+        el.setSelectionRange(lastLen, lastLen);
+      } catch {}
       warn();
       return;
     }
@@ -105,39 +128,52 @@ function antiPaste(el, fieldName, options = {}) {
 const antiTitle = antiPaste(titleInput, 'Título', { maxJump: 15 });
 const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
 
-// ===== BACKEND DRAFTS =====
+// ===== BACKEND (ESSAYS COMO RASCUNHO) =====
 
-async function loadDraftServer() {
-  const url = `${API_URL}/drafts?taskId=${encodeURIComponent(taskId)}&studentId=${encodeURIComponent(studentId)}`;
+// Busca a redação do aluno naquela tarefa (rascunho ou enviada)
+async function getMyEssayByTask() {
+  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student?studentId=${encodeURIComponent(studentId)}`;
   const res = await fetch(url);
+
+  // dependendo do seu Nest, pode retornar 200 null ou 404
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const d = await res.json();
-  return {
-    title: String(d?.title || ''),
-    content: String(d?.content || ''),
-  };
+
+  const data = await res.json();
+  if (!data) return null;
+  return data;
 }
 
-async function saveDraftServer(title, content) {
-  const res = await fetch(`${API_URL}/drafts`, {
-    method: 'PUT',
+// Salva rascunho (upsert) no backend: POST /essays/draft
+async function saveDraftServerPacked(packedContent) {
+  const res = await fetch(`${API_URL}/essays/draft`, {
+    method: 'POST', // seu controller está @Post('draft')
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       taskId,
       studentId,
-      title: String(title || ''),
-      content: String(content || ''),
+      content: String(packedContent || ''),
     }),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  if (!res.ok) {
+    // se já enviou, o backend retorna ConflictException
+    throw new Error(`HTTP ${res.status}`);
+  }
+
   return res.json().catch(() => null);
 }
 
-async function deleteDraftServer() {
-  const url = `${API_URL}/drafts?taskId=${encodeURIComponent(taskId)}&studentId=${encodeURIComponent(studentId)}`;
-  const res = await fetch(url, { method: 'DELETE' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+// Não há endpoint de DELETE rascunho hoje.
+// Solução simples: "limpar" salvando rascunho vazio NÃO é permitido no backend atual,
+// então aqui nós só deixamos sem remover. Após enviar, não precisa apagar: submit() já marca isDraft=false.
+// Se depois você quiser apagar, eu adiciono DELETE /essays/draft em 10 linhas.
+async function clearDraftUXOnly() {
+  titleInput.value = '';
+  textarea.value = '';
+  updateCount();
+  antiTitle?.sync?.();
+  antiEssay?.sync?.();
 }
 
 // 🔹 CARREGAR TAREFA (TEMA + ORIENTAÇÕES)
@@ -155,23 +191,41 @@ async function carregarTarefa() {
   }
 }
 
-// ✅ CARREGAR RASCUNHO (BACKEND)
+// ✅ CARREGAR RASCUNHO (BACKEND via essays)
 async function carregarRascunho() {
   try {
-    const draft = await loadDraftServer();
-    if (draft && (draft.title.trim() || draft.content.trim())) {
-      titleInput.value = draft.title;
-      textarea.value = draft.content;
+    const essay = await getMyEssayByTask();
+
+    // não existe nada ainda
+    if (!essay) {
       updateCount();
-      setStatus('Rascunho carregado do servidor.');
-      antiTitle?.sync?.();
-      antiEssay?.sync?.();
       return;
     }
+
+    // se já foi enviada, redireciona (segurança extra)
+    if (essay.isDraft === false && essay.id) {
+      setStatus('Você já enviou esta redação. Redirecionando para o feedback...');
+      setDisabledAll(true);
+      setTimeout(() => {
+        window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
+      }, 350);
+      return;
+    }
+
+    // é rascunho: carrega conteúdo
+    const { title, body } = unpackContent(essay.content || '');
+    titleInput.value = title || '';
+    textarea.value = body || '';
+    updateCount();
+
+    antiTitle?.sync?.();
+    antiEssay?.sync?.();
+
+    setStatus('Rascunho carregado do servidor.');
   } catch (err) {
     console.error('Erro ao carregar rascunho:', err);
+    updateCount();
   }
-  updateCount();
 }
 
 // AUTOSAVE (BACKEND) com debounce
@@ -193,11 +247,11 @@ function scheduleAutosave() {
     autosaveBusy = true;
 
     try {
-      await saveDraftServer(title, text);
+      await saveDraftServerPacked(packContent(title, text));
       // não spammar status
     } catch (err) {
       console.error('Autosave falhou:', err);
-      // aqui você pode mostrar um aviso curto se quiser
+      // opcional: setStatus('Falha no autosave (conexão).');
     } finally {
       autosaveBusy = false;
     }
@@ -219,38 +273,30 @@ saveBtn.addEventListener('click', async () => {
   const text = textarea.value || '';
 
   if (!title && !text.trim()) {
-    // remove draft no servidor (se existir)
-    try {
-      await deleteDraftServer();
-      setStatus('Nada para salvar. Rascunho removido do servidor.');
-    } catch {
-      setStatus('Nada para salvar.');
-    }
+    // sem endpoint de delete no backend atual: só limpa a UI
+    await clearDraftUXOnly();
+    setStatus('Nada para salvar.');
     return;
   }
 
   try {
     setStatus('Salvando rascunho...');
-    await saveDraftServer(title, text);
+    await saveDraftServerPacked(packContent(title, text));
     setStatus('Rascunho salvo no servidor.');
   } catch (err) {
     console.error(err);
+    // se já enviou, o backend pode retornar 409
     setStatus('Erro ao salvar rascunho no servidor.');
   }
 });
 
-// ✅ VERIFICAR SE JÁ ENVIOU (bloqueia reenvio)
+// ✅ VERIFICAR SE JÁ ENVIOU (sem listar turma inteira)
 async function checarJaEnviou() {
   try {
-    const res = await fetch(`${API_URL}/essays/by-task/${encodeURIComponent(taskId)}`);
-    if (!res.ok) return { sent: false };
-
-    const list = await res.json();
-    if (!Array.isArray(list)) return { sent: false };
-
-    const mine = list.find((e) => e && String(e.studentId) === String(studentId));
-
-    if (mine && mine.id) return { sent: true, essayId: mine.id };
+    const mine = await getMyEssayByTask();
+    if (mine && mine.id && mine.isDraft === false) {
+      return { sent: true, essayId: mine.id };
+    }
     return { sent: false };
   } catch {
     return { sent: false };
@@ -295,20 +341,19 @@ sendBtn.addEventListener('click', async () => {
       }),
     });
 
-    if (!response.ok) throw new Error();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const essay = await response.json();
 
-    // ✅ remove o rascunho do servidor após envio
-    try { await deleteDraftServer(); } catch {}
-
+    // ✅ não precisa deletar rascunho: submit() marca isDraft=false no mesmo registro
     setDisabledAll(true);
     setStatus('Redação enviada com sucesso!');
 
     setTimeout(() => {
       window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
     }, 600);
-  } catch {
+  } catch (err) {
+    console.error(err);
     sendBtn.disabled = false;
     setStatus('Erro ao enviar redação.');
   }
