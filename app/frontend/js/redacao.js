@@ -96,6 +96,81 @@ function scheduleAutosave() {
   }, 600);
 }
 
+// ✅ BLOQUEAR COLAR / ARRASTAR (inclui fallback p/ mobile)
+function antiPaste(el, fieldName, options = {}) {
+  if (!el) return;
+
+  const maxJump = Number(options.maxJump ?? 25); // tolera digitação normal; cola costuma inserir muito
+  let lastValue = el.value || '';
+  let lastLen = lastValue.length;
+
+  function warn() {
+    alert(`Colar texto não é permitido em ${fieldName}. Digite no sistema.`);
+  }
+
+  // 1) Tentativas explícitas (desktop e alguns mobiles)
+  el.addEventListener('paste', (e) => {
+    e.preventDefault();
+    warn();
+  });
+
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    warn();
+  });
+
+  el.addEventListener('dragover', (e) => e.preventDefault());
+
+  el.addEventListener('beforeinput', (e) => {
+    const t = e.inputType;
+    if (
+      t === 'insertFromPaste' ||
+      t === 'insertFromDrop' ||
+      t === 'insertFromYank' ||          // alguns navegadores
+      t === 'insertReplacementText'      // autocorreção/cola em certos casos (vai cair no fallback também)
+    ) {
+      e.preventDefault();
+      warn();
+    }
+  });
+
+  // 2) Fallback universal (funciona melhor no mobile):
+  // Se entrar texto "grande" de uma vez, reverte.
+  el.addEventListener('input', () => {
+    const cur = el.value || '';
+    const curLen = cur.length;
+
+    const diff = curLen - lastLen;
+
+    // Se aumentou muito de uma vez, é quase sempre cola
+    if (diff > maxJump) {
+      el.value = lastValue; // reverte
+      // força cursor no final (evita comportamento estranho)
+      try { el.setSelectionRange(lastLen, lastLen); } catch {}
+      warn();
+      return;
+    }
+
+    // atualiza histórico
+    lastValue = cur;
+    lastLen = curLen;
+  });
+
+  // Se o valor for preenchido programaticamente (rascunho carregado etc.)
+  function sync() {
+    lastValue = el.value || '';
+    lastLen = lastValue.length;
+  }
+
+  return { sync };
+}
+
+// Ativa nos dois campos.
+// Para título, um salto de 15 já é suficiente.
+// Para redação, 25 é um bom equilíbrio (aceita digitação rápida/auto-sugestão sem travar).
+const antiTitle = antiPaste(titleInput, 'Título', { maxJump: 15 });
+const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
+
 titleInput.addEventListener('input', () => {
   scheduleAutosave();
 });
@@ -128,6 +203,10 @@ function carregarRascunhoLocal() {
     textarea.value = draft.content;
     updateCount();
     setStatus('Rascunho carregado.');
+
+    antiTitle?.sync?.();
+    antiEssay?.sync?.();
+
   } else {
     updateCount();
   }
@@ -250,3 +329,4 @@ sendBtn.addEventListener('click', async () => {
 
   setStatus('');
 })();
+
