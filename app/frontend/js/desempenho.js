@@ -70,7 +70,117 @@ function renderChart(essays) {
     return;
   }
 
-  const max = 1000;
+  const MAX = 1000;
+
+  // cores fixas (depois você pode jogar pro CSS, se quiser)
+  const COLORS = {
+    c1: '#4f46e5',
+    c2: '#16a34a',
+    c3: '#f59e0b',
+    c4: '#0ea5e9',
+    c5: '#ef4444',
+    gap: '#ffffff', // margem de evolução (branco)
+    stroke: '#e5e7eb',
+  };
+
+  function clamp0to200(n) {
+    const v = Number(n);
+    if (Number.isNaN(v)) return 0;
+    return Math.max(0, Math.min(200, v));
+  }
+
+  function polarToCartesian(cx, cy, r, angleDeg) {
+    const rad = ((angleDeg - 90) * Math.PI) / 180.0;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function arcPath(cx, cy, r, startAngle, endAngle) {
+    const start = polarToCartesian(cx, cy, r, endAngle);
+    const end = polarToCartesian(cx, cy, r, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+    return [
+      `M ${cx} ${cy}`,
+      `L ${start.x} ${start.y}`,
+      `A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
+      'Z',
+    ].join(' ');
+  }
+
+  function createPieSvg(segments, size = 64) {
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2 - 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', String(size));
+    svg.setAttribute('height', String(size));
+    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+    // base (borda)
+    const base = document.createElementNS(svgNS, 'circle');
+    base.setAttribute('cx', String(cx));
+    base.setAttribute('cy', String(cy));
+    base.setAttribute('r', String(r));
+    base.setAttribute('fill', '#fff');
+    base.setAttribute('stroke', COLORS.stroke);
+    base.setAttribute('stroke-width', '1');
+    svg.appendChild(base);
+
+    const total = segments.reduce((a, s) => a + s.value, 0);
+    if (total <= 0) return svg;
+
+    let angle = 0;
+    segments.forEach((seg) => {
+      const portion = seg.value / total;
+      const delta = portion * 360;
+      const start = angle;
+      const end = angle + delta;
+
+      // se a fatia for minúscula, ainda desenha
+      const path = document.createElementNS(svgNS, 'path');
+      path.setAttribute('d', arcPath(cx, cy, r, start, end));
+      path.setAttribute('fill', seg.color);
+      path.setAttribute('stroke', COLORS.stroke);
+      path.setAttribute('stroke-width', '1');
+      svg.appendChild(path);
+
+      angle += delta;
+    });
+
+    // “miolo” opcional para aparência donut (pode remover se quiser pizza cheia)
+    const hole = document.createElementNS(svgNS, 'circle');
+    hole.setAttribute('cx', String(cx));
+    hole.setAttribute('cy', String(cy));
+    hole.setAttribute('r', String(Math.max(0, r - 18)));
+    hole.setAttribute('fill', '#fff');
+    svg.appendChild(hole);
+
+    return svg;
+  }
+
+  function legendItem(label, color) {
+    const item = document.createElement('div');
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.gap = '8px';
+    item.style.fontSize = '12px';
+
+    const dot = document.createElement('span');
+    dot.style.display = 'inline-block';
+    dot.style.width = '10px';
+    dot.style.height = '10px';
+    dot.style.borderRadius = '2px';
+    dot.style.background = color;
+    dot.style.border = `1px solid ${COLORS.stroke}`;
+
+    const text = document.createElement('span');
+    text.textContent = label;
+
+    item.appendChild(dot);
+    item.appendChild(text);
+    return item;
+  }
 
   essays.forEach((e, idx) => {
     const score = safeScore(e.score);
@@ -78,55 +188,101 @@ function renderChart(essays) {
     const row = document.createElement('div');
     row.style.display = 'flex';
     row.style.alignItems = 'center';
-    row.style.gap = '10px';
-    row.style.margin = '8px 0';
+    row.style.justifyContent = 'space-between';
+    row.style.gap = '14px';
+    row.style.margin = '10px 0';
+    row.style.padding = '10px';
+    row.style.border = '1px solid #e5e7eb';
+    row.style.borderRadius = '12px';
 
-    // ✅ clicar na linha abre a redação
+    // clicável
     row.style.cursor = 'pointer';
     row.title = 'Clique para ver a redação';
     row.addEventListener('click', () => {
       window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
     });
 
+    const left = document.createElement('div');
+    left.style.display = 'flex';
+    left.style.alignItems = 'center';
+    left.style.gap = '12px';
+
     const label = document.createElement('div');
-    label.style.width = '120px';
+    label.style.width = '140px';
     label.style.fontSize = '12px';
     label.style.opacity = '0.85';
-    label.textContent = makeLabelFromTaskId(e.taskId, idx);
+    label.innerHTML = `<strong>${makeLabelFromTaskId(e.taskId, idx)}</strong>`;
 
-    const barWrap = document.createElement('div');
-    barWrap.style.flex = '1';
-    barWrap.style.height = '12px';
-    barWrap.style.border = '1px solid #ddd';
-    barWrap.style.borderRadius = '6px';
-    barWrap.style.overflow = 'hidden';
+    left.appendChild(label);
 
-    const bar = document.createElement('div');
-    const pct =
-      score === null ? 0 : Math.max(0, Math.min(100, Math.round((score / max) * 100)));
-    bar.style.height = '100%';
-    bar.style.width = `${pct}%`;
-    // deixa a cor por CSS se quiser; se não tiver CSS, ainda aparece a barra com largura
-    bar.className = 'bar';
+    // area do gráfico
+    const pieWrap = document.createElement('div');
+    pieWrap.style.display = 'flex';
+    pieWrap.style.alignItems = 'center';
+    pieWrap.style.gap = '14px';
 
-    // fallback simples caso você não tenha .bar no CSS
-    if (!bar.style.background) bar.style.background = '#888';
+    if (score === null) {
+      const not = document.createElement('div');
+      not.style.fontSize = '12px';
+      not.style.opacity = '0.8';
+      not.textContent = 'Ainda não corrigida.';
+      pieWrap.appendChild(not);
+    } else {
+      const c1 = clamp0to200(e.c1);
+      const c2 = clamp0to200(e.c2);
+      const c3 = clamp0to200(e.c3);
+      const c4 = clamp0to200(e.c4);
+      const c5 = clamp0to200(e.c5);
 
-    barWrap.appendChild(bar);
+      // margem até 1000
+      const used = Math.max(0, Math.min(MAX, c1 + c2 + c3 + c4 + c5));
+      const gap = Math.max(0, MAX - used);
 
-    const val = document.createElement('div');
-    val.style.width = '70px';
-    val.style.textAlign = 'right';
-    val.style.fontSize = '12px';
-    val.textContent = score === null ? '—' : String(score);
+      const segments = [
+        { key: 'c1', value: c1, color: COLORS.c1, label: `C1 (${c1})` },
+        { key: 'c2', value: c2, color: COLORS.c2, label: `C2 (${c2})` },
+        { key: 'c3', value: c3, color: COLORS.c3, label: `C3 (${c3})` },
+        { key: 'c4', value: c4, color: COLORS.c4, label: `C4 (${c4})` },
+        { key: 'c5', value: c5, color: COLORS.c5, label: `C5 (${c5})` },
+        { key: 'gap', value: gap, color: COLORS.gap, label: `Margem de evolução (${gap})` },
+      ].filter((s) => s.value > 0);
 
-    row.appendChild(label);
-    row.appendChild(barWrap);
-    row.appendChild(val);
+      const svg = createPieSvg(segments, 66);
+      pieWrap.appendChild(svg);
+
+      // legenda compacta (2 colunas)
+      const legend = document.createElement('div');
+      legend.style.display = 'grid';
+      legend.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+      legend.style.columnGap = '14px';
+      legend.style.rowGap = '6px';
+      legend.style.minWidth = '260px';
+
+      legend.appendChild(legendItem(`C1 (${c1})`, COLORS.c1));
+      legend.appendChild(legendItem(`C2 (${c2})`, COLORS.c2));
+      legend.appendChild(legendItem(`C3 (${c3})`, COLORS.c3));
+      legend.appendChild(legendItem(`C4 (${c4})`, COLORS.c4));
+      legend.appendChild(legendItem(`C5 (${c5})`, COLORS.c5));
+      legend.appendChild(legendItem(`Margem de evolução (${gap})`, COLORS.gap));
+
+      pieWrap.appendChild(legend);
+    }
+
+    left.appendChild(pieWrap);
+
+    const right = document.createElement('div');
+    right.style.width = '90px';
+    right.style.textAlign = 'right';
+    right.style.fontSize = '12px';
+    right.innerHTML = score === null ? '—' : `<strong>${score}</strong> / 1000`;
+
+    row.appendChild(left);
+    row.appendChild(right);
 
     chartEl.appendChild(row);
   });
 }
+
 
 function renderHistory(essays) {
   if (!historyList) return;
@@ -289,3 +445,4 @@ async function carregarDesempenho(roomId) {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
+
