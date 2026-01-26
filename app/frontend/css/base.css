@@ -57,11 +57,16 @@ body{
     radial-gradient(1200px 650px at 100% 0%, rgba(11,31,75,.14), transparent 55%),
     var(--bg);
   line-height: 1.5;
+
+  /* ✅ Centralização robusta (funciona mesmo com wrappers) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* ✅ Centralização com largura maior */
-body > *{
-  max-width: var(--maxw);
+/* ✅ tudo centralizado com largura controlada, exceto o menu fixo */
+body > *:not(.menu-btn):not(.menu-panel){
+  width: min(100%, var(--maxw));
   margin-left: auto;
   margin-right: auto;
 }
@@ -94,6 +99,7 @@ hr{
   height: 1px;
   background: rgba(11, 18, 32, 0.10);
   margin: var(--space-5) 0;
+  width: min(100%, var(--maxw));
 }
 
 /* --------- Cards (sections) --------- */
@@ -206,9 +212,7 @@ ul{ margin: 0; padding: 0; list-style: none; }
 }
 
 /* melhora para texto longo dentro da box */
-.box *{
-  max-width: 100%;
-}
+.box *{ max-width: 100%; }
 
 /* --------- Texto “muted” --------- */
 .muted{ color: var(--muted); }
@@ -398,4 +402,3 @@ section button:last-child{ margin-right: 0; }
   .menu-panel{ width: 92vw; right: -95vw; }
   .menu-btn{ top: 12px; right: 12px; }
 }
-
