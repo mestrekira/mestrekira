@@ -86,6 +86,172 @@ function calcularTotal() {
   return { v1, v2, v3, v4, v5, total };
 }
 
+// ✅ RUBRICAS ENEM (0–200 de 40 em 40) — base INEP/Cartilha
+const ENEM_RUBRICS = {
+  c1: {
+    title: 'Competência 1 — Domínio da modalidade escrita formal',
+    levels: [
+      { score: 200, text: 'Excelente domínio da modalidade formal; desvios raros e não reincidentes.' },
+      { score: 160, text: 'Bom domínio; poucos desvios gramaticais e de convenções.' },
+      { score: 120, text: 'Domínio mediano; alguns desvios gramaticais e de convenções.' },
+      { score: 80,  text: 'Domínio insuficiente; muitos desvios, inclusive de registro e convenções.' },
+      { score: 40,  text: 'Domínio precário e sistemático; desvios frequentes e diversificados.' },
+      { score: 0,   text: 'Desconhecimento da modalidade escrita formal.' },
+    ],
+  },
+  c2: {
+    title: 'Competência 2 — Compreender o tema e o tipo dissertativo-argumentativo',
+    levels: [
+      { score: 200, text: 'Argumentação consistente com repertório produtivo; excelente domínio do texto dissertativo-argumentativo.' },
+      { score: 160, text: 'Argumentação consistente; bom domínio (proposição, argumentação e conclusão).' },
+      { score: 120, text: 'Argumentação previsível; domínio mediano (proposição, argumentação e conclusão).' },
+      { score: 80,  text: 'Cópia de trechos motivadores ou domínio insuficiente; estrutura não plenamente atendida.' },
+      { score: 40,  text: 'Tangencia o tema ou domínio precário; traços constantes de outros tipos textuais.' },
+      { score: 0,   text: 'Fuga ao tema e/ou não atendimento ao tipo dissertativo-argumentativo.' },
+    ],
+  },
+  c3: {
+    title: 'Competência 3 — Selecionar/organizar argumentos em defesa do ponto de vista',
+    levels: [
+      { score: 200, text: 'Informações/fatos/opiniões consistentes e organizados; autoria clara; defende ponto de vista.' },
+      { score: 160, text: 'Organizado, com indícios de autoria; defende ponto de vista.' },
+      { score: 120, text: 'Limitado aos textos motivadores e pouco organizado; ainda defende ponto de vista.' },
+      { score: 80,  text: 'Desorganizado/contraditório e limitado aos motivadores; defende ponto de vista.' },
+      { score: 40,  text: 'Pouco relacionado ao tema ou incoerente; sem defesa de ponto de vista.' },
+      { score: 0,   text: 'Não relacionado ao tema; sem defesa de ponto de vista.' },
+    ],
+  },
+  c4: {
+    title: 'Competência 4 — Coesão e mecanismos linguísticos de articulação',
+    levels: [
+      { score: 200, text: 'Articula muito bem as partes; repertório diversificado de recursos coesivos.' },
+      { score: 160, text: 'Articula bem, com poucas inadequações; repertório diversificado.' },
+      { score: 120, text: 'Articulação mediana, com inadequações; repertório pouco diversificado.' },
+      { score: 80,  text: 'Articulação insuficiente, muitas inadequações; repertório limitado.' },
+      { score: 40,  text: 'Articula de forma precária.' },
+      { score: 0,   text: 'Não articula as informações.' },
+    ],
+  },
+  c5: {
+    title: 'Competência 5 — Proposta de intervenção (direitos humanos)',
+    levels: [
+      { score: 200, text: 'Proposta muito bem elaborada, detalhada, relacionada ao tema e articulada à discussão.' },
+      { score: 160, text: 'Proposta bem elaborada, relacionada ao tema e articulada à discussão.' },
+      { score: 120, text: 'Proposta mediana, relacionada ao tema e articulada à discussão.' },
+      { score: 80,  text: 'Proposta insuficiente; relacionada ao tema, ou não articulada à discussão.' },
+      { score: 40,  text: 'Proposta vaga/precária ou apenas relacionada ao assunto.' },
+      { score: 0,   text: 'Não apresenta proposta ou propõe algo não relacionado ao tema/assunto.' },
+    ],
+  },
+};
+
+function snapToNearestEnemLevel(value) {
+  if (value === null || value === undefined) return null;
+  const n = Number(value);
+  if (Number.isNaN(n)) return null;
+  const clamped = Math.max(0, Math.min(200, n));
+  // ENEM: 0, 40, 80, 120, 160, 200
+  const levels = [0, 40, 80, 120, 160, 200];
+  let best = levels[0];
+  let bestDist = Math.abs(clamped - best);
+  for (const lv of levels) {
+    const d = Math.abs(clamped - lv);
+    if (d < bestDist) { best = lv; bestDist = d; }
+  }
+  return best;
+}
+
+function renderRubric(compKey) {
+  const panel = document.getElementById(`rubric-${compKey}`);
+  if (!panel) return;
+
+  const rubric = ENEM_RUBRICS[compKey];
+  if (!rubric) return;
+
+  panel.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.style.fontWeight = '700';
+  title.style.marginBottom = '8px';
+  title.textContent = rubric.title;
+  panel.appendChild(title);
+
+  const table = document.createElement('table');
+  table.className = 'rubric-table';
+
+  rubric.levels.forEach((lv) => {
+    const tr = document.createElement('tr');
+    tr.dataset.score = String(lv.score);
+
+    const tdScore = document.createElement('td');
+    tdScore.className = 'rubric-level';
+    tdScore.textContent = String(lv.score);
+
+    const tdText = document.createElement('td');
+    tdText.textContent = lv.text;
+
+    tr.appendChild(tdScore);
+    tr.appendChild(tdText);
+    table.appendChild(tr);
+  });
+
+  panel.appendChild(table);
+}
+
+function setRubricActiveRow(compKey, score) {
+  const panel = document.getElementById(`rubric-${compKey}`);
+  if (!panel) return;
+  const rows = panel.querySelectorAll('tr[data-score]');
+  rows.forEach((r) => r.classList.remove('rubric-active'));
+  const target = panel.querySelector(`tr[data-score="${score}"]`);
+  if (target) target.classList.add('rubric-active');
+}
+
+function updateRubricHint(compKey, rawValue) {
+  const hint = document.getElementById(`hint-${compKey}`);
+  if (!hint) return;
+
+  const snapped = snapToNearestEnemLevel(rawValue);
+  if (snapped === null) {
+    hint.textContent = '';
+    return;
+  }
+
+  const rubric = ENEM_RUBRICS[compKey];
+  const levelObj = rubric?.levels?.find((x) => x.score === snapped);
+
+  hint.innerHTML = `<strong>Nível sugerido:</strong> ${snapped} — ${levelObj ? levelObj.text : ''}`;
+  setRubricActiveRow(compKey, snapped);
+}
+
+function initRubricsUI() {
+  // Renderiza todas as tabelas uma vez
+  ['c1','c2','c3','c4','c5'].forEach((k) => renderRubric(k));
+
+  // Toggle abrir/fechar
+  document.querySelectorAll('.rubric-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const compKey = btn.getAttribute('data-comp');
+      const panel = document.getElementById(`rubric-${compKey}`);
+      if (!panel) return;
+
+      const willOpen = panel.hidden === true;
+      panel.hidden = !willOpen;
+      btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+  });
+
+  // Atualiza “nível sugerido” ao digitar
+  const map = {
+    c1: c1El, c2: c2El, c3: c3El, c4: c4El, c5: c5El,
+  };
+
+  Object.entries(map).forEach(([k, input]) => {
+    if (!input) return;
+    input.addEventListener('input', () => updateRubricHint(k, input.value));
+  });
+}
+
 // recálculo ao digitar
 [c1El, c2El, c3El, c4El, c5El].forEach((el) => {
   el.addEventListener('input', () => calcularTotal());
@@ -195,6 +361,13 @@ function abrirCorrecao(essay) {
   c5El.value = essay.c5 ?? '';
 
   calcularTotal();
+
+    // ✅ Atualiza as sugestões/realces ao abrir uma redação já corrigida
+  updateRubricHint('c1', c1El.value);
+  updateRubricHint('c2', c2El.value);
+  updateRubricHint('c3', c3El.value);
+  updateRubricHint('c4', c4El.value);
+  updateRubricHint('c5', c5El.value);
 
   correctionSection.style.display = 'block';
   setStatus('');
@@ -321,3 +494,5 @@ saveBtn.addEventListener('click', async () => {
 
 // INIT
 carregarRedacoes();
+initRubricsUI();
+
