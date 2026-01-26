@@ -323,7 +323,12 @@ ul{ margin: 0; padding: 0; list-style: none; }
 .menu-photo-label input{ display:none; }
 
 .menu-body input{ width: 100%; margin: 8px 0; }
-.menu-body button{ width: 100%; margin-top: 10px; }
+/* Botões do menu lateral continuam full */
+.menu-body button{
+  width: 100%;
+  margin-top: 10px;
+}
+
 
 /* =========================================================
    Redação — classes que você já usa
@@ -394,6 +399,23 @@ section button:last-child{ margin-right: 0; }
 .rubric-active { background: rgba(0,0,0,0.04); }
 
 /* =========================================================
+   Botões de AÇÃO das páginas (ex: sala-aluno)
+   ========================================================= */
+.actions-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.actions-row button{
+  width: auto;          /* 🔥 impede de virar botão gigante */
+  min-width: 160px;     /* tamanho agradável */
+  flex: 0 0 auto;
+}
+
+
+/* =========================================================
    Responsivo
    ========================================================= */
 @media (max-width: 820px){
@@ -402,3 +424,4 @@ section button:last-child{ margin-right: 0; }
   .menu-panel{ width: 92vw; right: -95vw; }
   .menu-btn{ top: 12px; right: 12px; }
 }
+
