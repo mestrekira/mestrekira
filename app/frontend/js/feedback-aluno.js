@@ -30,7 +30,6 @@ function setText(el, value, fallback = '—') {
   el.textContent = v ? v : fallback;
 }
 
-// ✅ separa título (primeira linha não vazia) e corpo (resto)
 function splitTitleAndBody(raw) {
   const text = (raw ?? '').replace(/\r\n/g, '\n');
   const trimmed = text.trim();
@@ -38,6 +37,7 @@ function splitTitleAndBody(raw) {
 
   const lines = text.split('\n');
 
+  // acha a primeira linha não vazia
   let firstIdx = -1;
   for (let i = 0; i < lines.length; i++) {
     if (String(lines[i] || '').trim()) {
@@ -47,19 +47,38 @@ function splitTitleAndBody(raw) {
   }
   if (firstIdx === -1) return { title: '—', body: '' };
 
-  const title = String(lines[firstIdx] || '').trim();
+  let title = String(lines[firstIdx] || '').trim();
 
-  const bodyLines = lines.slice(firstIdx + 1);
+  // ✅ ignora placeholders comuns que podem ter sido salvos sem querer
+  const isPlaceholderTitle =
+    /^_+title_+$/i.test(title) || // _TITLE_
+    /^title$/i.test(title) ||     // TITLE
+    /^_+t[ií]tulo_+$/i.test(title) || // _TITULO_ / _TÍTULO_
+    /^t[ií]tulo$/i.test(title);   // Título
+
+  // corpo = resto
+  let bodyLines = lines.slice(firstIdx + 1);
 
   // remove linhas vazias iniciais do corpo
   while (bodyLines.length && !String(bodyLines[0] || '').trim()) {
     bodyLines.shift();
   }
 
-  const body = bodyLines.join('\n').trimEnd();
+  let body = bodyLines.join('\n').trimEnd();
+
+  // ✅ se o "título" era placeholder, não mostra
+  if (isPlaceholderTitle) {
+    title = '—';
+
+    // e, se o corpo ficou vazio (caso raro), tenta usar o texto inteiro como corpo
+    if (!body.trim()) {
+      body = lines.slice(firstIdx + 1).join('\n').trimEnd();
+    }
+  }
 
   return { title: title || '—', body };
 }
+
 
 // ✅ aplica estilo: caixa + título centralizado + corpo justificado (preserva quebras)
 function renderEssayFormatted(containerEl, rawContent) {
@@ -193,3 +212,4 @@ if (backBtn) {
 }
 
 carregarFeedback();
+
