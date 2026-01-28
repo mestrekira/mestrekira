@@ -185,7 +185,22 @@ async function carregarOverview() {
   }
 }
 
-// tarefas (como estava)
+// ✅ redação do aluno naquela tarefa (rascunho ou enviada)
+async function getMyEssayByTask(taskId) {
+  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student?studentId=${encodeURIComponent(studentId)}`;
+  const res = await fetch(url);
+
+  if (res.status === 404) return null; // não existe
+  if (!res.ok) {
+    console.warn('[sala-aluno] Falha ao consultar essay da tarefa', taskId, res.status);
+    return null;
+  }
+
+  const data = await res.json().catch(() => null);
+  return data || null;
+}
+
+// tarefas (AJUSTADO: mostra Feedback quando enviada)
 async function carregarTarefas() {
   if (!tasksList) return;
 
@@ -202,22 +217,65 @@ async function carregarTarefas() {
       return;
     }
 
-    tasks.forEach((task) => {
+    // opcional: renderiza primeiro e depois vai atualizando os botões
+    for (const task of tasks) {
       const li = document.createElement('li');
 
       const title = document.createElement('strong');
-      title.textContent = task.title;
+      title.textContent = task.title || 'Tarefa';
 
-      const btn = document.createElement('button');
-      btn.textContent = 'Escrever redação';
-      btn.onclick = () => (window.location.href = `redacao.html?taskId=${encodeURIComponent(task.id)}`);
+      // wrapper dos botões (lado a lado)
+      const actions = document.createElement('div');
+      actions.style.display = 'flex';
+      actions.style.gap = '10px';
+      actions.style.marginTop = '8px';
+      actions.style.flexWrap = 'wrap';
+
+      // Botão Escrever
+      const btnWrite = document.createElement('button');
+      btnWrite.textContent = 'Escrever redação';
+      btnWrite.onclick = () => {
+        window.location.href = `redacao.html?taskId=${encodeURIComponent(task.id)}`;
+      };
+
+      // Botão Feedback (começa escondido)
+      const btnFeedback = document.createElement('button');
+      btnFeedback.textContent = 'Feedback';
+      btnFeedback.style.display = 'none';
+      btnFeedback.onclick = () => {}; // vai ser setado quando soubermos o essayId
+
+      actions.appendChild(btnWrite);
+      actions.appendChild(btnFeedback);
 
       li.appendChild(title);
       li.appendChild(document.createElement('br'));
-      li.appendChild(btn);
+      li.appendChild(actions);
 
       tasksList.appendChild(li);
-    });
+
+      // ✅ verifica no servidor se já existe essay e se foi enviada
+      try {
+        const essay = await getMyEssayByTask(task.id);
+
+        // enviada → mostra Feedback e esconde Escrever
+        if (essay && essay.id && essay.isDraft === false) {
+          btnWrite.style.display = 'none';
+          btnFeedback.style.display = 'inline-block';
+          btnFeedback.onclick = () => {
+            window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
+          };
+        } else {
+          // rascunho ou não existe → mantém escrever
+          btnFeedback.style.display = 'none';
+          btnWrite.style.display = 'inline-block';
+        }
+      } catch (e) {
+        console.warn('[sala-aluno] Erro ao checar status da redação', task.id, e);
+        // em caso de erro, mantém “Escrever”
+        btnFeedback.style.display = 'none';
+        btnWrite.style.display = 'inline-block';
+      }
+    }
 
     if (status) status.textContent = '';
   } catch {
@@ -225,6 +283,7 @@ async function carregarTarefas() {
     if (tasksList) tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
 }
+
 
 // INIT
 carregarOverview();
