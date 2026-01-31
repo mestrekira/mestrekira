@@ -21,20 +21,6 @@ const avgC5 = document.getElementById('avgC5');
 
 const studentsList = document.getElementById('studentsList');
 
-const studentPanel = document.getElementById('studentPanel');
-const studentNameEl = document.getElementById('studentName');
-const studentEmailEl = document.getElementById('studentEmail');
-const studentPhotoImg = document.getElementById('studentPhotoImg');
-
-const sAvgTotal = document.getElementById('sAvgTotal');
-const sAvgC1 = document.getElementById('sAvgC1');
-const sAvgC2 = document.getElementById('sAvgC2');
-const sAvgC3 = document.getElementById('sAvgC3');
-const sAvgC4 = document.getElementById('sAvgC4');
-const sAvgC5 = document.getElementById('sAvgC5');
-
-const studentEssaysList = document.getElementById('studentEssaysList');
-
 function mean(nums) {
   const v = nums
     .map((n) => (n === null || n === undefined ? null : Number(n)))
@@ -53,25 +39,16 @@ function setStatus(msg) {
   statusEl.textContent = msg || '';
 }
 
+// =====================
+// Fotos (localStorage)
+// =====================
 function studentPhotoKey(studentId) {
   return studentId ? `mk_photo_student_${studentId}` : null;
 }
-
-function setStudentPhoto(studentId) {
-  if (!studentPhotoImg) return;
-
+function getStudentPhotoDataUrl(studentId) {
   const key = studentPhotoKey(studentId);
-  const dataUrl = key ? localStorage.getItem(key) : null;
-
-  if (dataUrl) {
-    studentPhotoImg.src = dataUrl;
-    studentPhotoImg.style.display = 'inline-block';
-  } else {
-    studentPhotoImg.removeAttribute('src');
-    studentPhotoImg.style.display = 'none';
-  }
+  return key ? localStorage.getItem(key) : null;
 }
-
 function makeAvatar(studentId, size = 34) {
   const img = document.createElement('img');
   img.alt = 'Foto do aluno';
@@ -82,8 +59,7 @@ function makeAvatar(studentId, size = 34) {
   img.style.border = '1px solid #ccc';
   img.style.display = 'none';
 
-  const key = studentPhotoKey(studentId);
-  const dataUrl = key ? localStorage.getItem(key) : null;
+  const dataUrl = getStudentPhotoDataUrl(studentId);
   if (dataUrl) {
     img.src = dataUrl;
     img.style.display = 'inline-block';
@@ -92,6 +68,9 @@ function makeAvatar(studentId, size = 34) {
   return img;
 }
 
+// =====================
+// Fetch auxiliares
+// =====================
 async function carregarSala() {
   if (!roomNameEl) return;
   try {
@@ -104,16 +83,203 @@ async function carregarSala() {
   }
 }
 
+// ✅ pega alunos ATIVOS/matriculados
+async function getActiveStudentsSet() {
+  try {
+    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
+    if (!res.ok) throw new Error();
+
+    const list = await res.json();
+    const arr = Array.isArray(list) ? list : [];
+
+    // aceita variações: id ou studentId
+    const ids = arr
+      .map((s) => String(s?.id || s?.studentId || '').trim())
+      .filter(Boolean);
+
+    return new Set(ids);
+  } catch {
+    // se falhar, retorna null e não filtra
+    return null;
+  }
+}
+
+// =====================
+// UI: painel inline
+// =====================
+function closeAllInlinePanels() {
+  if (!studentsList) return;
+  const panels = studentsList.querySelectorAll('.mk-inline-panel');
+  panels.forEach((p) => (p.style.display = 'none'));
+}
+
+function buildInlinePanel() {
+  const wrap = document.createElement('div');
+  wrap.className = 'mk-inline-panel';
+  wrap.style.display = 'none';
+  wrap.style.marginTop = '10px';
+  wrap.style.padding = '10px';
+  wrap.style.border = '1px solid #ddd';
+  wrap.style.borderRadius = '10px';
+  wrap.style.background = '#fff';
+
+  // cabeçalho aluno
+  const head = document.createElement('div');
+  head.style.display = 'flex';
+  head.style.alignItems = 'center';
+  head.style.gap = '10px';
+
+  const photo = document.createElement('img');
+  photo.alt = 'Foto do aluno';
+  photo.style.width = '42px';
+  photo.style.height = '42px';
+  photo.style.borderRadius = '50%';
+  photo.style.objectFit = 'cover';
+  photo.style.border = '1px solid #ccc';
+  photo.style.display = 'none';
+  photo.id = 'mkInlinePhoto';
+
+  const nameBox = document.createElement('div');
+  const nameEl = document.createElement('strong');
+  nameEl.id = 'mkInlineName';
+  const emailEl = document.createElement('div');
+  emailEl.id = 'mkInlineEmail';
+  emailEl.style.fontSize = '12px';
+  emailEl.style.opacity = '0.85';
+  nameBox.appendChild(nameEl);
+  nameBox.appendChild(emailEl);
+
+  head.appendChild(photo);
+  head.appendChild(nameBox);
+
+  // médias
+  const ul = document.createElement('ul');
+  ul.className = 'lista';
+  ul.style.marginTop = '10px';
+  ul.id = 'mkInlineAvgs';
+
+  // redações
+  const h4 = document.createElement('h4');
+  h4.textContent = 'Redações do aluno';
+  h4.style.marginTop = '10px';
+
+  const essaysUl = document.createElement('ul');
+  essaysUl.className = 'lista';
+  essaysUl.id = 'mkInlineEssays';
+
+  wrap.appendChild(head);
+  wrap.appendChild(ul);
+  wrap.appendChild(h4);
+  wrap.appendChild(essaysUl);
+
+  return wrap;
+}
+
+function fillInlinePanel(panel, studentGroup, medias) {
+  if (!panel) return;
+
+  // nome/email/foto
+  const nameEl = panel.querySelector('#mkInlineName');
+  const emailEl = panel.querySelector('#mkInlineEmail');
+  const photoEl = panel.querySelector('#mkInlinePhoto');
+
+  const nome =
+    studentGroup.studentName && String(studentGroup.studentName).trim()
+      ? studentGroup.studentName
+      : 'Aluno';
+  const email =
+    studentGroup.studentEmail && String(studentGroup.studentEmail).trim()
+      ? studentGroup.studentEmail
+      : '';
+
+  if (nameEl) nameEl.textContent = nome;
+  if (emailEl) emailEl.textContent = email;
+
+  const dataUrl = getStudentPhotoDataUrl(studentGroup.studentId);
+  if (photoEl) {
+    if (dataUrl) {
+      photoEl.src = dataUrl;
+      photoEl.style.display = 'inline-block';
+    } else {
+      photoEl.removeAttribute('src');
+      photoEl.style.display = 'none';
+    }
+  }
+
+  // médias
+  const avgsUl = panel.querySelector('#mkInlineAvgs');
+  if (avgsUl) {
+    avgsUl.innerHTML = `
+      <li>Média total: <strong>${medias.mTotal ?? '—'}</strong></li>
+      <li>C1 — Domínio da norma culta: <strong>${medias.mC1 ?? '—'}</strong></li>
+      <li>C2 — Compreensão do tema e repertório: <strong>${medias.mC2 ?? '—'}</strong></li>
+      <li>C3 — Argumentação e projeto de texto: <strong>${medias.mC3 ?? '—'}</strong></li>
+      <li>C4 — Coesão e mecanismos linguísticos: <strong>${medias.mC4 ?? '—'}</strong></li>
+      <li>C5 — Proposta de intervenção: <strong>${medias.mC5 ?? '—'}</strong></li>
+    `;
+  }
+
+  // redações
+  const essaysUl = panel.querySelector('#mkInlineEssays');
+  if (!essaysUl) return;
+
+  essaysUl.innerHTML = '';
+  const essays = [...(studentGroup.essays || [])];
+  essays.sort((a, b) => (a.taskTitle || '').localeCompare(b.taskTitle || ''));
+
+  essays.forEach((e) => {
+    const li = document.createElement('li');
+
+    const title = document.createElement('strong');
+    title.textContent = e.taskTitle || 'Tarefa';
+
+    const nota = document.createElement('div');
+    nota.textContent =
+      e.score !== null && e.score !== undefined
+        ? `Nota: ${e.score} (C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${
+            e.c4 ?? '—'
+          } C5 ${e.c5 ?? '—'})`
+        : 'Sem correção';
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Ver redação/feedback';
+    btn.onclick = () => {
+      const tId = e.taskId || e.task?.id || null;
+      if (!tId) {
+        alert('Não encontrei o taskId desta redação no retorno do servidor.');
+        return;
+      }
+      window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
+        tId
+      )}&studentId=${encodeURIComponent(studentGroup.studentId)}`;
+    };
+
+    li.appendChild(title);
+    li.appendChild(document.createElement('br'));
+    li.appendChild(nota);
+    li.appendChild(document.createElement('br'));
+    li.appendChild(btn);
+
+    essaysUl.appendChild(li);
+  });
+}
+
+// =====================
+// Carregar desempenho
+// =====================
 async function carregarDados() {
   try {
     setStatus('Carregando...');
+
+    // ✅ pega os alunos ativos (matriculados)
+    const activeSet = await getActiveStudentsSet();
 
     const res = await fetch(
       `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`
     );
     if (!res.ok) throw new Error();
 
-    const data = await res.json();
+    let data = await res.json();
 
     if (!Array.isArray(data) || data.length === 0) {
       setStatus('Ainda não há redações nesta sala.');
@@ -125,8 +291,24 @@ async function carregarDados() {
       setText(avgC3, null);
       setText(avgC4, null);
       setText(avgC5, null);
+      return;
+    }
 
-      if (studentPanel) studentPanel.style.display = 'none';
+    // ✅ FILTRO: só alunos ativos
+    if (activeSet && activeSet.size > 0) {
+      data = data.filter((e) => activeSet.has(String(e.studentId)));
+    }
+
+    if (data.length === 0) {
+      setStatus('Não há redações de alunos ativos nesta sala.');
+      if (studentsList) studentsList.innerHTML = '<li>Nenhuma redação de alunos ativos.</li>';
+
+      setText(avgTotal, null);
+      setText(avgC1, null);
+      setText(avgC2, null);
+      setText(avgC3, null);
+      setText(avgC4, null);
+      setText(avgC5, null);
       return;
     }
 
@@ -202,14 +384,32 @@ async function carregarDados() {
 
         const btn = document.createElement('button');
         btn.textContent = 'Ver desempenho individual';
-        btn.onclick = () => abrirAluno(s, { mTotal, mC1, mC2, mC3, mC4, mC5 });
 
-        // ✅ deixa o item clicável também
+        // ✅ painel inline (fica DENTRO do li)
+        const inlinePanel = buildInlinePanel();
+
+        function toggleInline() {
+          const isOpen = inlinePanel.style.display === 'block';
+
+          closeAllInlinePanels();
+
+          if (!isOpen) {
+            fillInlinePanel(inlinePanel, s, { mTotal, mC1, mC2, mC3, mC4, mC5 });
+            inlinePanel.style.display = 'block';
+          }
+        }
+
+        btn.onclick = (ev) => {
+          ev.stopPropagation();
+          toggleInline();
+        };
+
+        // opcional: clicar no item também abre
         li.style.cursor = 'pointer';
         li.title = 'Clique para ver o desempenho individual';
         li.addEventListener('click', (ev) => {
           if (ev.target && ev.target.tagName === 'BUTTON') return;
-          abrirAluno(s, { mTotal, mC1, mC2, mC3, mC4, mC5 });
+          toggleInline();
         });
 
         content.appendChild(header);
@@ -217,6 +417,7 @@ async function carregarDados() {
         content.appendChild(resumo);
         content.appendChild(document.createElement('br'));
         content.appendChild(btn);
+        content.appendChild(inlinePanel);
 
         li.appendChild(avatar);
         li.appendChild(content);
@@ -230,78 +431,7 @@ async function carregarDados() {
     console.error(err);
     setStatus('Erro ao carregar dados de desempenho.');
     if (studentsList) studentsList.innerHTML = '<li>Erro ao carregar.</li>';
-    if (studentPanel) studentPanel.style.display = 'none';
   }
-}
-
-function abrirAluno(studentGroup, medias) {
-  if (!studentPanel) return;
-  studentPanel.style.display = 'block';
-
-  if (studentNameEl) {
-    studentNameEl.textContent =
-      studentGroup.studentName && String(studentGroup.studentName).trim()
-        ? studentGroup.studentName
-        : 'Aluno';
-  }
-
-  if (studentEmailEl) {
-    studentEmailEl.textContent =
-      studentGroup.studentEmail && String(studentGroup.studentEmail).trim()
-        ? studentGroup.studentEmail
-        : '';
-  }
-
-  setStudentPhoto(studentGroup.studentId);
-
-  setText(sAvgTotal, medias.mTotal ?? null);
-  setText(sAvgC1, medias.mC1 ?? null);
-  setText(sAvgC2, medias.mC2 ?? null);
-  setText(sAvgC3, medias.mC3 ?? null);
-  setText(sAvgC4, medias.mC4 ?? null);
-  setText(sAvgC5, medias.mC5 ?? null);
-
-  if (!studentEssaysList) return;
-  studentEssaysList.innerHTML = '';
-
-  const essays = [...(studentGroup.essays || [])];
-  essays.sort((a, b) => (a.taskTitle || '').localeCompare(b.taskTitle || ''));
-
-  essays.forEach((e) => {
-    const li = document.createElement('li');
-
-    const title = document.createElement('strong');
-    title.textContent = e.taskTitle || 'Tarefa';
-
-    const nota = document.createElement('div');
-    nota.textContent =
-      e.score !== null && e.score !== undefined
-        ? `Nota: ${e.score} (C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${
-            e.c4 ?? '—'
-          } C5 ${e.c5 ?? '—'})`
-        : 'Sem correção';
-
-    const btn = document.createElement('button');
-    btn.textContent = 'Ver redação/feedback';
-    btn.onclick = () => {
-      const tId = e.taskId || e.task?.id || null;
-      if (!tId) {
-        alert('Não encontrei o taskId desta redação no retorno do servidor.');
-        return;
-      }
-      window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-        tId
-      )}&studentId=${encodeURIComponent(studentGroup.studentId)}`;
-    };
-
-    li.appendChild(title);
-    li.appendChild(document.createElement('br'));
-    li.appendChild(nota);
-    li.appendChild(document.createElement('br'));
-    li.appendChild(btn);
-
-    studentEssaysList.appendChild(li);
-  });
 }
 
 // INIT
