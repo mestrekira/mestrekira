@@ -77,41 +77,11 @@
 
 <hr>
 
-<!-- ✅ painel individual (o seu trecho, agora dentro da página completa) -->
-<section id="studentPanel" style="display:none;">
-  <h3>Desempenho individual</h3>
-
-  <p style="display:flex; align-items:center; gap:10px;">
-    <img
-      id="studentPhotoImg"
-      alt="Foto do aluno"
-      style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid #ccc;display:none;"
-    />
-    <span>
-      <strong id="studentName">Aluno</strong><br />
-      <span id="studentEmail"></span>
-    </span>
-  </p>
-
-  <ul class="lista">
-    <li>Média total: <strong id="sAvgTotal">—</strong></li>
-
-    <li>C1 — Domínio da norma culta: <strong id="sAvgC1">—</strong></li>
-    <li>C2 — Compreensão do tema e repertório: <strong id="sAvgC2">—</strong></li>
-    <li>C3 — Argumentação e projeto de texto: <strong id="sAvgC3">—</strong></li>
-    <li>C4 — Coesão e mecanismos linguísticos: <strong id="sAvgC4">—</strong></li>
-    <li>C5 — Proposta de intervenção: <strong id="sAvgC5">—</strong></li>
-  </ul>
-
-  <h4>Redações do aluno</h4>
-  <ul id="studentEssaysList" class="lista"></ul>
-</section>
-
 <!-- init menu -->
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
   initMenuPerfil({
-    loginRedirect: 'login.html',
+    loginRedirect: 'index.html',
     logoutRedirectProfessor: 'login-professor.html',
     logoutRedirectStudent: 'login-aluno.html'
   });
