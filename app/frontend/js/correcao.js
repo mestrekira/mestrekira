@@ -373,6 +373,42 @@ function abrirCorrecao(essay) {
   setStatus('');
 }
 
+async function getRoomIdByTask(taskId) {
+  try {
+    const res = await fetch(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
+    if (!res.ok) throw new Error();
+    const task = await res.json();
+    // seu backend provavelmente retorna { id, roomId, title, guidelines ... }
+    const rid = task?.roomId || task?.room?.id || null;
+    return rid ? String(rid) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getActiveStudentsSet(roomId) {
+  try {
+    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
+    if (!res.ok) throw new Error();
+    const list = await res.json();
+    const arr = Array.isArray(list) ? list : [];
+    const ids = arr
+      .map((s) => String(s?.id || s?.studentId || '').trim())
+      .filter(Boolean);
+    return new Set(ids);
+  } catch {
+    return null; // se falhar, não filtra
+  }
+}
+
+// filtra redações mantendo apenas alunos ainda matriculados
+function filterEssaysByActiveStudents(essays, activeSet) {
+  if (!activeSet) return essays;
+  return (Array.isArray(essays) ? essays : []).filter((e) =>
+    activeSet.has(String(e?.studentId || ''))
+  );
+}
+
 // 🔹 CARREGAR REDAÇÕES DA TAREFA
 async function carregarRedacoes() {
   try {
@@ -381,7 +417,7 @@ async function carregarRedacoes() {
     );
     if (!response.ok) throw new Error();
 
-    const essays = await response.json();
+    let essays = await response.json();
     essaysList.innerHTML = '';
 
     if (!Array.isArray(essays) || essays.length === 0) {
@@ -389,10 +425,30 @@ async function carregarRedacoes() {
       return;
     }
 
-    // ✅ se veio studentId pela URL, abre automaticamente o primeiro match
+    // ✅ Descobre a sala dessa tarefa e filtra só alunos ativos
+    const roomIdFromTask = await getRoomIdByTask(taskId);
+    const activeSet = roomIdFromTask ? await getActiveStudentsSet(roomIdFromTask) : null;
+
+    essays = filterEssaysByActiveStudents(essays, activeSet);
+
+    if (!Array.isArray(essays) || essays.length === 0) {
+      essaysList.innerHTML =
+        '<li>Nenhuma redação de alunos ativos (alunos removidos foram ocultados).</li>';
+      // se estava com correção aberta de alguém removido, esconde
+      if (correctionSection) correctionSection.style.display = 'none';
+      currentEssayId = null;
+      return;
+    }
+
+    // ✅ se veio studentId pela URL, abre automaticamente o primeiro match (somente se ativo)
     if (focusStudentId) {
       const target = essays.find((e) => String(e.studentId) === String(focusStudentId));
-      if (target) abrirCorrecao(target);
+      if (target) {
+        abrirCorrecao(target);
+      } else {
+        // aluno removido ou sem redação ativa
+        // (não faz alert pra não ser chato)
+      }
     }
 
     essays.forEach((essay) => {
@@ -446,6 +502,7 @@ async function carregarRedacoes() {
     essaysList.innerHTML = '<li>Erro ao carregar redações.</li>';
   }
 }
+
 
 // 🔹 SALVAR CORREÇÃO
 saveBtn.addEventListener('click', async () => {
