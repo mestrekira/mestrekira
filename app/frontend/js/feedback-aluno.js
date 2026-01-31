@@ -30,54 +30,83 @@ function setText(el, value, fallback = '—') {
   el.textContent = v ? v : fallback;
 }
 
-function splitTitleAndBody(raw) {
-  const text = (raw ?? '').replace(/\r\n/g, '\n');
-  const trimmed = text.trim();
-  if (!trimmed) return { title: '—', body: '' };
+// ✅ Desempacota título + corpo (MESMA lógica do redacao.js)
+function unpackContent(raw) {
+  const text = String(raw || '').replace(/\r\n/g, '\n');
 
-  const lines = text.split('\n');
-
-  // acha a primeira linha não vazia
-  let firstIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (String(lines[i] || '').trim()) {
-      firstIdx = i;
-      break;
-    }
-  }
-  if (firstIdx === -1) return { title: '—', body: '' };
-
-  let title = String(lines[firstIdx] || '').trim();
-
-  // ✅ ignora placeholders comuns que podem ter sido salvos sem querer
-  const isPlaceholderTitle =
-    /^_+title_+$/i.test(title) || // _TITLE_
-    /^title$/i.test(title) ||     // TITLE
-    /^_+t[ií]tulo_+$/i.test(title) || // _TITULO_ / _TÍTULO_
-    /^t[ií]tulo$/i.test(title);   // Título
-
-  // corpo = resto
-  let bodyLines = lines.slice(firstIdx + 1);
-
-  // remove linhas vazias iniciais do corpo
-  while (bodyLines.length && !String(bodyLines[0] || '').trim()) {
-    bodyLines.shift();
+  // padrão novo: __TITLE__:...
+  const re = /^__TITLE__\s*:\s*(.*)\n\n([\s\S]*)$/i;
+  const m = text.match(re);
+  if (m) {
+    return {
+      title: String(m[1] || '').trim(),
+      body: String(m[2] || ''),
+    };
   }
 
-  let body = bodyLines.join('\n').trimEnd();
-
-  // ✅ se o "título" era placeholder, não mostra
-  if (isPlaceholderTitle) {
-    title = '—';
-
-    // e, se o corpo ficou vazio (caso raro), tenta usar o texto inteiro como corpo
-    if (!body.trim()) {
-      body = lines.slice(firstIdx + 1).join('\n').trimEnd();
-    }
-  }
-
-  return { title: title || '—', body };
+  // fallback: sem marcador
+  return { title: '', body: text };
 }
+
+// ✅ remove lixo comum que pode ter ficado salvo em versões antigas
+function cleanLeadingGarbage(str) {
+  let s = String(str || '').replace(/\r\n/g, '\n');
+
+  // remove linhas iniciais vazias
+  s = s.replace(/^\s+/, '');
+
+  // remove _TITLE_ (e variações) se for a primeira linha
+  s = s.replace(/^_+title_+\s*\n+/i, '');
+  s = s.replace(/^_+t[ií]tulo_+\s*\n+/i, '');
+
+  // remove "TITLE" / "TÍTULO" solto como primeira linha
+  s = s.replace(/^(title|t[ií]tulo)\s*\n+/i, '');
+
+  return s;
+}
+
+// ✅ aplica estilo: caixa + título centralizado + corpo justificado (preserva quebras)
+function renderEssayFormatted(containerEl, rawContent) {
+  if (!containerEl) return;
+
+  // 1) desempacota
+  const unpacked = unpackContent(rawContent);
+  let title = (unpacked.title || '').trim();
+  let body = unpacked.body || '';
+
+  // 2) limpa lixo antigo (caso exista)
+  title = cleanLeadingGarbage(title).trim();
+  body = cleanLeadingGarbage(body);
+
+  // 3) se título estiver vazio ou ainda for lixo, não mostra
+  const badTitle =
+    !title ||
+    /^_+title_+$/i.test(title) ||
+    /^_+t[ií]tulo_+$/i.test(title) ||
+    /^title$/i.test(title) ||
+    /^t[ií]tulo$/i.test(title);
+
+  if (badTitle) title = '—';
+
+  // 4) render
+  containerEl.innerHTML = '';
+  containerEl.style.whiteSpace = 'pre-wrap';
+  containerEl.style.textAlign = 'justify';
+  containerEl.style.lineHeight = '1.6';
+
+  const h = document.createElement('div');
+  h.textContent = title;
+  h.style.textAlign = 'center';
+  h.style.fontWeight = '700';
+  h.style.marginBottom = '10px';
+  containerEl.appendChild(h);
+
+  const b = document.createElement('div');
+  b.textContent = String(body || '').trimEnd();
+  b.style.textAlign = 'justify';
+  containerEl.appendChild(b);
+}
+
 
 
 // ✅ aplica estilo: caixa + título centralizado + corpo justificado (preserva quebras)
@@ -212,4 +241,5 @@ if (backBtn) {
 }
 
 carregarFeedback();
+
 
