@@ -289,7 +289,7 @@ function abrirAluno(studentGroup, medias) {
         alert('Não encontrei o taskId desta redação no retorno do servidor.');
         return;
       }
-      window.location.href = `correcao.html?taskId=${encodeURIComponent(
+      window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
         tId
       )}&studentId=${encodeURIComponent(studentGroup.studentId)}`;
     };
