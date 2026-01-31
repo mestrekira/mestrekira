@@ -171,6 +171,27 @@ async function carregarAlunos() {
   }
 }
 
+async function getActiveStudentsSet(roomId) {
+  try {
+    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
+    if (!res.ok) throw new Error();
+    const list = await res.json();
+    const arr = Array.isArray(list) ? list : [];
+    const ids = arr
+      .map((s) => String(s?.id || s?.studentId || '').trim())
+      .filter(Boolean);
+    return new Set(ids);
+  } catch {
+    return null; // se falhar, não filtra
+  }
+}
+
+const activeSet = await getActiveStudentsSet(roomId);
+if (activeSet) {
+  data = data.filter((e) => activeSet.has(String(e.studentId)));
+}
+
+
 // 🔹 Carregar tarefas
 async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando tarefas...</li>';
