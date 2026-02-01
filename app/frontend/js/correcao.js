@@ -16,6 +16,8 @@ const correctionSection = document.getElementById('correctionSection');
 const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
 const essayContentEl = document.getElementById('essayContent');
+const taskTitleEl = document.getElementById('taskTitle');
+const taskMetaEl = document.getElementById('taskMeta'); // opcional
 
 const studentPhotoImg = document.getElementById('studentPhotoImg');
 
@@ -29,6 +31,7 @@ const c3El = document.getElementById('c3');
 const c4El = document.getElementById('c4');
 const c5El = document.getElementById('c5');
 const totalScoreEl = document.getElementById('totalScore');
+
 
 let currentEssayId = null;
 
