@@ -6,6 +6,179 @@
   <title>Desempenho da Sala</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="icon" href="logo1.png" type="image/png">
+
+  <!-- estilos específicos (responsivo + layout dos cards + donut) -->
+  <style>
+    .mk-row {
+      display: flex;
+      gap: 14px;
+      align-items: stretch;
+      flex-wrap: wrap;
+    }
+
+    .mk-card {
+      background: #fff;
+      border: 1px solid #e6e6e6;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+    }
+
+    .mk-card-tight { padding: 12px; }
+
+    .mk-col {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    /* tarefas */
+    .mk-taskbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .mk-taskbtn {
+      border: 1px solid #ddd;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .mk-taskbtn[aria-pressed="true"] {
+      border-color: #111827;
+      background: #111827;
+      color: #fff;
+    }
+
+    /* aluno card */
+    .mk-student {
+      padding: 14px;
+      border: 1px solid #e6e6e6;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+    }
+
+    .mk-student-top {
+      display: grid;
+      grid-template-columns: 1fr 140px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .mk-student-id {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .mk-student-id img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #ccc;
+      flex: 0 0 auto;
+    }
+
+    .mk-student-name {
+      min-width: 0;
+    }
+
+    .mk-student-name strong {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mk-student-name small {
+      opacity: .85;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mk-student-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mk-inline-panel {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #fafafa;
+      display: none;
+    }
+
+    .mk-inline-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .mk-muted {
+      opacity: .8;
+      font-size: 12px;
+    }
+
+    /* donut */
+    .mk-donut-wrap {
+      width: 140px;
+      height: 140px;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mk-donut {
+      width: 140px;
+      height: 140px;
+      display: block;
+    }
+    .mk-donut text {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .mk-donut-legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 10px;
+      margin-top: 10px;
+      font-size: 12px;
+      opacity: .9;
+    }
+    .mk-dot {
+      display:inline-block;
+      width:10px;height:10px;border-radius:50%;
+      margin-right:6px;
+      vertical-align: middle;
+    }
+
+    /* responsivo: no mobile o gráfico vai pra baixo */
+    @media (max-width: 560px) {
+      .mk-student-top {
+        grid-template-columns: 1fr;
+      }
+      .mk-donut-wrap {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -54,28 +227,51 @@
 
 <hr>
 
-<section>
-  <h3>Médias da sala (somente redações corrigidas)</h3>
+<!-- topo: médias da sala + donut -->
+<section class="mk-row">
+  <div class="mk-card mk-col">
+    <h3>Médias da sala (somente redações corrigidas)</h3>
 
-  <ul class="lista">
-    <li>Média total: <strong id="avgTotal">—</strong></li>
+    <ul class="lista">
+      <li>Média total: <strong id="avgTotal">—</strong></li>
 
-    <li>C1 — Domínio da norma culta: <strong id="avgC1">—</strong></li>
-    <li>C2 — Compreensão do tema e repertório: <strong id="avgC2">—</strong></li>
-    <li>C3 — Argumentação e projeto de texto: <strong id="avgC3">—</strong></li>
-    <li>C4 — Coesão e mecanismos linguísticos: <strong id="avgC4">—</strong></li>
-    <li>C5 — Proposta de intervenção: <strong id="avgC5">—</strong></li>
-  </ul>
+      <li>C1 — Domínio da norma culta: <strong id="avgC1">—</strong></li>
+      <li>C2 — Compreensão do tema e repertório: <strong id="avgC2">—</strong></li>
+      <li>C3 — Argumentação e projeto de texto: <strong id="avgC3">—</strong></li>
+      <li>C4 — Coesão e mecanismos linguísticos: <strong id="avgC4">—</strong></li>
+      <li>C5 — Proposta de intervenção: <strong id="avgC5">—</strong></li>
+    </ul>
+
+    <div id="roomDonutLegend" class="mk-donut-legend"></div>
+  </div>
+
+  <div class="mk-card mk-card-tight" style="min-width:260px; flex: 0 0 320px;">
+    <h3 style="margin-top:0;">Gráfico da sala</h3>
+    <div id="roomDonut" class="mk-donut-wrap"></div>
+    <p class="mk-muted" style="margin-top:10px;">
+      Cada anel mostra a evolução (% de 0 a 200) de C1–C5.
+    </p>
+  </div>
 </section>
 
 <hr>
 
+<!-- tarefas -->
 <section>
-  <h3>Alunos</h3>
+  <h3>Tarefas</h3>
+  <p class="mk-muted" style="margin-top:-6px;">Clique em uma tarefa para ver apenas os alunos que enviaram.</p>
+  <div id="tasksBar" class="mk-taskbar"></div>
+
+  <div id="taskInfo" class="mk-muted" style="margin-top:10px;"></div>
+</section>
+
+<hr>
+
+<!-- alunos por tarefa -->
+<section>
+  <h3>Alunos que enviaram nesta tarefa</h3>
   <ul id="studentsList" class="lista"></ul>
 </section>
-
-<hr>
 
 <!-- init menu -->
 <script type="module">
