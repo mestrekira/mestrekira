@@ -414,6 +414,54 @@ section button:last-child{ margin-right: 0; }
   flex: 0 0 auto;
 }
 
+/* ========= Responsivo (mobile) ========= */
+
+.task-header {
+  padding: 10px 0;
+}
+
+.muted {
+  opacity: 0.75;
+  font-size: 0.95em;
+}
+
+.corr-top-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Botões e inputs em telas pequenas */
+@media (max-width: 640px) {
+  body {
+    padding: 12px;
+  }
+
+  .lista li {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .lista li button {
+    width: 100%;
+  }
+
+  input, textarea, button, select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .menu-panel {
+    width: min(92vw, 360px);
+  }
+
+  .rubric-table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+  }
+}
 
 /* =========================================================
    Responsivo
@@ -424,4 +472,5 @@ section button:last-child{ margin-right: 0; }
   .menu-panel{ width: 92vw; right: -95vw; }
   .menu-btn{ top: 12px; right: 12px; }
 }
+
 
