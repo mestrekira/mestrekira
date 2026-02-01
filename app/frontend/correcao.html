@@ -55,11 +55,11 @@
 
 <h2>Correção de Redações</h2>
 
-<!-- ✅ Tema / Tarefa -->
-<p><strong>Tema:</strong> <span id="taskTitle">Carregando...</span></p>
-
-<!-- (opcional) sala -->
-<p style="margin-top:-6px;"><small id="taskMeta"></small></p>
+<!-- ✅ tema da tarefa -->
+<section class="task-header">
+  <h3 id="taskTitle" style="margin:0;">Tema: —</h3>
+  <p id="taskMeta" class="muted" style="margin:6px 0 0;"></p>
+</section>
 
 <hr>
 
@@ -71,6 +71,13 @@
 <hr>
 
 <section id="correctionSection" style="display:none;">
+
+  <div class="corr-top-actions">
+  <button id="closeCorrectionBtn" type="button" class="secondary">
+    Fechar correção
+  </button>
+</div>
+
   <img id="studentPhotoImg" alt="Foto do aluno" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #ccc;display:none;" />
   <h3 id="studentName"></h3>
   <p id="studentEmail"></p>
