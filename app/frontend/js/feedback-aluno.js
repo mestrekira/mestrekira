@@ -24,113 +24,88 @@ const c3El = document.getElementById('c3');
 const c4El = document.getElementById('c4');
 const c5El = document.getElementById('c5');
 
+// ---------------- util ----------------
+
 function setText(el, value, fallback = '—') {
   if (!el) return;
   const v = value === null || value === undefined ? '' : String(value).trim();
   el.textContent = v ? v : fallback;
 }
 
-// ✅ Desempacota título + corpo (MESMA lógica do redacao.js)
-function unpackContent(raw) {
+function setMultiline(el, value, fallback = '') {
+  if (!el) return;
+  const v = value === null || value === undefined ? '' : String(value);
+  el.textContent = v.trim() ? v : fallback;
+}
+
+/**
+ * ✅ Separa título e corpo, aceitando:
+ *  - "__TITLE__:Meu título\n\ncorpo..."
+ *  - "_TITLE_:Meu título\n\ncorpo..." (legado)
+ *  - "TITLE:Meu título\n\ncorpo..."  (legado)
+ * Se não achar marcador, usa primeira linha não vazia como título.
+ */
+function splitTitleAndBody(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
 
-  // padrão novo: __TITLE__:...
-  const re = /^__TITLE__\s*:\s*(.*)\n\n([\s\S]*)$/i;
+  // 1) padrão com marcador (variações)
+  const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
   const m = text.match(re);
   if (m) {
     return {
-      title: String(m[1] || '').trim(),
-      body: String(m[2] || ''),
+      title: String(m[1] || '').trim() || '—',
+      body: String(m[2] || '').trimEnd(),
     };
   }
 
-  // fallback: sem marcador
-  return { title: '', body: text };
+  // 2) fallback: primeira linha não vazia como título
+  const trimmed = text.trim();
+  if (!trimmed) return { title: '—', body: '' };
+
+  const lines = text.split('\n');
+
+  let firstIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (String(lines[i] || '').trim()) {
+      firstIdx = i;
+      break;
+    }
+  }
+  if (firstIdx === -1) return { title: '—', body: '' };
+
+  const title = String(lines[firstIdx] || '').trim() || '—';
+  const bodyLines = lines.slice(firstIdx + 1);
+
+  // remove linhas vazias iniciais do corpo
+  while (bodyLines.length && !String(bodyLines[0] || '').trim()) bodyLines.shift();
+
+  const body = bodyLines.join('\n').trimEnd();
+  return { title, body };
 }
 
-// ✅ remove lixo comum que pode ter ficado salvo em versões antigas
-function cleanLeadingGarbage(str) {
-  let s = String(str || '').replace(/\r\n/g, '\n');
-
-  // remove linhas iniciais vazias
-  s = s.replace(/^\s+/, '');
-
-  // remove _TITLE_ (e variações) se for a primeira linha
-  s = s.replace(/^_+title_+\s*\n+/i, '');
-  s = s.replace(/^_+t[ií]tulo_+\s*\n+/i, '');
-
-  // remove "TITLE" / "TÍTULO" solto como primeira linha
-  s = s.replace(/^(title|t[ií]tulo)\s*\n+/i, '');
-
-  return s;
-}
-
-// ✅ aplica estilo: caixa + título centralizado + corpo justificado (preserva quebras)
-function renderEssayFormatted(containerEl, rawContent) {
-  if (!containerEl) return;
-
-  // 1) desempacota
-  const unpacked = unpackContent(rawContent);
-  let title = (unpacked.title || '').trim();
-  let body = unpacked.body || '';
-
-  // 2) limpa lixo antigo (caso exista)
-  title = cleanLeadingGarbage(title).trim();
-  body = cleanLeadingGarbage(body);
-
-  // 3) se título estiver vazio ou ainda for lixo, não mostra
-  const badTitle =
-    !title ||
-    /^_+title_+$/i.test(title) ||
-    /^_+t[ií]tulo_+$/i.test(title) ||
-    /^title$/i.test(title) ||
-    /^t[ií]tulo$/i.test(title);
-
-  if (badTitle) title = '—';
-
-  // 4) render
-  containerEl.innerHTML = '';
-  containerEl.style.whiteSpace = 'pre-wrap';
-  containerEl.style.textAlign = 'justify';
-  containerEl.style.lineHeight = '1.6';
-
-  const h = document.createElement('div');
-  h.textContent = title;
-  h.style.textAlign = 'center';
-  h.style.fontWeight = '700';
-  h.style.marginBottom = '10px';
-  containerEl.appendChild(h);
-
-  const b = document.createElement('div');
-  b.textContent = String(body || '').trimEnd();
-  b.style.textAlign = 'justify';
-  containerEl.appendChild(b);
-}
-
-
-
-// ✅ aplica estilo: caixa + título centralizado + corpo justificado (preserva quebras)
+/**
+ * ✅ Renderiza a redação:
+ * - título centralizado
+ * - corpo justificado
+ * - preserva quebras
+ */
 function renderEssayFormatted(containerEl, rawContent) {
   if (!containerEl) return;
 
   const { title, body } = splitTitleAndBody(rawContent);
 
   containerEl.innerHTML = '';
-
-  // como o elemento já tem class="box", só ajusta comportamento do texto
   containerEl.style.whiteSpace = 'pre-wrap';
   containerEl.style.textAlign = 'justify';
   containerEl.style.lineHeight = '1.6';
 
-  // título
   const h = document.createElement('div');
-  h.textContent = title;
+  h.textContent = title || '—';
   h.style.textAlign = 'center';
   h.style.fontWeight = '700';
   h.style.marginBottom = '10px';
   containerEl.appendChild(h);
 
-  // corpo
   const b = document.createElement('div');
   b.textContent = body || '';
   b.style.textAlign = 'justify';
@@ -177,7 +152,7 @@ async function carregarFeedback() {
   try {
     // 1) redação
     const resEssay = await fetch(`${API_URL}/essays/${encodeURIComponent(essayId)}`);
-    if (!resEssay.ok) throw new Error();
+    if (!resEssay.ok) throw new Error(`HTTP ${resEssay.status}`);
 
     const essay = await resEssay.json();
 
@@ -207,22 +182,22 @@ async function carregarFeedback() {
 
     // 4) nota
     const hasScore = essay.score !== null && essay.score !== undefined;
-    setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida');
+    setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida', '—');
 
-    // 5) feedback (caixa + justificado)
+    // 5) feedback
     if (feedbackEl) {
-      feedbackEl.textContent = essay.feedback || 'Aguardando correção do professor.';
+      setMultiline(feedbackEl, essay.feedback || '', 'Aguardando correção do professor.');
       feedbackEl.style.whiteSpace = 'pre-wrap';
       feedbackEl.style.textAlign = 'justify';
       feedbackEl.style.lineHeight = '1.6';
     }
 
     // 6) competências
-    if (c1El) setText(c1El, essay.c1 ?? '—');
-    if (c2El) setText(c2El, essay.c2 ?? '—');
-    if (c3El) setText(c3El, essay.c3 ?? '—');
-    if (c4El) setText(c4El, essay.c4 ?? '—');
-    if (c5El) setText(c5El, essay.c5 ?? '—');
+    setText(c1El, essay.c1 ?? '—', '—');
+    setText(c2El, essay.c2 ?? '—', '—');
+    setText(c3El, essay.c3 ?? '—', '—');
+    setText(c4El, essay.c4 ?? '—', '—');
+    setText(c5El, essay.c5 ?? '—', '—');
 
     // 7) nomes das competências no label
     patchCompetencyLabels();
@@ -241,5 +216,3 @@ if (backBtn) {
 }
 
 carregarFeedback();
-
-
