@@ -9,7 +9,6 @@ if (!roomId) {
   throw new Error('roomId ausente');
 }
 
-// ---------- elementos ----------
 const roomNameEl = document.getElementById('roomName');
 const statusEl = document.getElementById('status');
 
@@ -20,24 +19,15 @@ const avgC3 = document.getElementById('avgC3');
 const avgC4 = document.getElementById('avgC4');
 const avgC5 = document.getElementById('avgC5');
 
-const roomDonutEl = document.getElementById('roomDonut');
-const roomDonutLegendEl = document.getElementById('roomDonutLegend');
-
-const tasksBar = document.getElementById('tasksBar');
-const taskInfo = document.getElementById('taskInfo');
+const tasksListEl = document.getElementById('tasksList');
+const taskPanelEl = document.getElementById('taskPanel');
+const taskPanelTitleEl = document.getElementById('taskPanelTitle');
+const taskPanelMetaEl = document.getElementById('taskPanelMeta');
+const closeTaskPanelBtn = document.getElementById('closeTaskPanelBtn');
 
 const studentsList = document.getElementById('studentsList');
 
-// ---------- util ----------
-function setStatus(msg) {
-  if (!statusEl) return;
-  statusEl.textContent = msg || '';
-}
-
-function setText(el, value) {
-  if (!el) return;
-  el.textContent = value === null || value === undefined ? '—' : String(value);
-}
+// ---------------- utils ----------------
 
 function mean(nums) {
   const v = (Array.isArray(nums) ? nums : [])
@@ -47,11 +37,18 @@ function mean(nums) {
   return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
 }
 
-function isCorrected(e) {
-  return e && e.score !== null && e.score !== undefined;
+function setText(el, value) {
+  if (!el) return;
+  el.textContent = value === null || value === undefined ? '—' : String(value);
 }
 
-// ---------- fotos localStorage ----------
+function setStatus(msg) {
+  if (!statusEl) return;
+  statusEl.textContent = msg || '';
+}
+
+// ---------------- Fotos (localStorage) ----------------
+
 function studentPhotoKey(studentId) {
   return studentId ? `mk_photo_student_${studentId}` : null;
 }
@@ -59,16 +56,22 @@ function getStudentPhotoDataUrl(studentId) {
   const key = studentPhotoKey(studentId);
   return key ? localStorage.getItem(key) : null;
 }
-function makeAvatar(studentId, size = 42) {
+function makeAvatar(studentId, size = 38) {
   const img = document.createElement('img');
   img.alt = 'Foto do aluno';
-  img.width = size;
-  img.height = size;
+  img.style.width = `${size}px`;
+  img.style.height = `${size}px`;
+  img.style.borderRadius = '50%';
+  img.style.objectFit = 'cover';
+  img.style.border = '1px solid #ccc';
+  img.style.display = 'none';
 
   const dataUrl = getStudentPhotoDataUrl(studentId);
   if (dataUrl) {
     img.src = dataUrl;
+    img.style.display = 'inline-block';
   } else {
+    // placeholder simples
     img.src =
       'data:image/svg+xml;utf8,' +
       encodeURIComponent(
@@ -77,124 +80,290 @@ function makeAvatar(studentId, size = 42) {
           <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">?</text>
         </svg>`
       );
+    img.style.display = 'inline-block';
   }
+
   return img;
 }
 
-// ---------- donut (5 anéis concêntricos C1–C5) ----------
-const COMP_COLORS = {
-  c1: '#1f2937', // cinza escuro
-  c2: '#2563eb', // azul
-  c3: '#16a34a', // verde
-  c4: '#f59e0b', // amarelo
-  c5: '#dc2626', // vermelho
+// ---------------- donut (estilo sua imagem) ----------------
+
+// cores fixas para manter padrão
+const DONUT_COLORS = {
+  c1: '#4f46e5',  // roxo/azul
+  c2: '#16a34a',  // verde
+  c3: '#f59e0b',  // laranja
+  c4: '#0ea5e9',  // azul claro
+  c5: '#ef4444',  // vermelho
+  margin: '#ffffff', // branco
+  marginStroke: 'rgba(0,0,0,0.12)',
 };
 
-function pctFrom200(v) {
-  const n = Number(v);
-  if (Number.isNaN(n)) return 0;
-  return Math.max(0, Math.min(1, n / 200));
-}
-
-function buildDonutSVG({ c1, c2, c3, c4, c5, centerText = '' }) {
-  const values = {
-    c1: pctFrom200(c1),
-    c2: pctFrom200(c2),
-    c3: pctFrom200(c3),
-    c4: pctFrom200(c4),
-    c5: pctFrom200(c5),
-  };
-
-  // SVG
-  const size = 140;
-  const cx = 70;
-  const cy = 70;
-
-  // 5 anéis (raios do maior para o menor)
-  const rings = [
-    { key: 'c1', r: 58, w: 10 },
-    { key: 'c2', r: 46, w: 10 },
-    { key: 'c3', r: 34, w: 10 },
-    { key: 'c4', r: 22, w: 10 },
-    { key: 'c5', r: 10, w: 10 },
+function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 18) {
+  const values = [
+    { key: 'c1', label: `C1 (${c1 ?? 0})`, value: Number(c1 || 0), color: DONUT_COLORS.c1 },
+    { key: 'c2', label: `C2 (${c2 ?? 0})`, value: Number(c2 || 0), color: DONUT_COLORS.c2 },
+    { key: 'c3', label: `C3 (${c3 ?? 0})`, value: Number(c3 || 0), color: DONUT_COLORS.c3 },
+    { key: 'c4', label: `C4 (${c4 ?? 0})`, value: Number(c4 || 0), color: DONUT_COLORS.c4 },
+    { key: 'c5', label: `C5 (${c5 ?? 0})`, value: Number(c5 || 0), color: DONUT_COLORS.c5 },
   ];
 
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  const safeTotal = Number.isFinite(Number(total)) ? Number(total) : null;
+  const margin = safeTotal === null ? 1000 : Math.max(0, 1000 - safeTotal);
+
+  values.push({
+    key: 'margin',
+    label: `Margem de evolução (${margin})`,
+    value: margin,
+    color: DONUT_COLORS.margin,
+    isMargin: true,
+  });
+
+  const sum = values.reduce((acc, x) => acc + (Number.isFinite(x.value) ? x.value : 0), 0) || 1000;
+
+  const r = (size - thickness) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const C = 2 * Math.PI * r;
+
+  let offset = 0; // em unidades de circunferência
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-  svg.setAttribute('class', 'mk-donut');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
 
-  const makeCircle = (r, stroke, dash, dashOffset, width, opacity = 1) => {
-    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    c.setAttribute('cx', String(cx));
-    c.setAttribute('cy', String(cy));
-    c.setAttribute('r', String(r));
-    c.setAttribute('fill', 'none');
-    c.setAttribute('stroke', stroke);
-    c.setAttribute('stroke-width', String(width));
-    c.setAttribute('stroke-linecap', 'round');
-    c.setAttribute('opacity', String(opacity));
-    if (dash) c.setAttribute('stroke-dasharray', dash);
-    if (dashOffset !== null && dashOffset !== undefined) {
-      c.setAttribute('stroke-dashoffset', String(dashOffset));
+  // fundo (anel “vazio”)
+  const base = document.createElementNS(svgNS, 'circle');
+  base.setAttribute('cx', String(cx));
+  base.setAttribute('cy', String(cy));
+  base.setAttribute('r', String(r));
+  base.setAttribute('fill', 'none');
+  base.setAttribute('stroke', 'rgba(0,0,0,0.08)');
+  base.setAttribute('stroke-width', String(thickness));
+  svg.appendChild(base);
+
+  // segmentos
+  values.forEach((seg) => {
+    const frac = seg.value / sum;
+    const segLen = Math.max(0, frac * C);
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', String(cx));
+    circle.setAttribute('cy', String(cy));
+    circle.setAttribute('r', String(r));
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke-width', String(thickness));
+    circle.setAttribute('stroke-linecap', 'butt');
+
+    // margem branca precisa de borda leve (igual sua imagem)
+    if (seg.isMargin) {
+      circle.setAttribute('stroke', DONUT_COLORS.margin);
+      circle.setAttribute('stroke', DONUT_COLORS.margin);
+      circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
+      circle.setAttribute('stroke-dashoffset', String(-offset));
+      circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+      // stroke externo leve para “aparecer” no branco
+      circle.style.filter = 'none';
+      circle.setAttribute('stroke', DONUT_COLORS.margin);
+      circle.setAttribute('stroke-opacity', '1');
+      // desenha borda com outro círculo por cima
+      const border = document.createElementNS(svgNS, 'circle');
+      border.setAttribute('cx', String(cx));
+      border.setAttribute('cy', String(cy));
+      border.setAttribute('r', String(r));
+      border.setAttribute('fill', 'none');
+      border.setAttribute('stroke', DONUT_COLORS.marginStroke);
+      border.setAttribute('stroke-width', '1');
+      svg.appendChild(circle);
+      svg.appendChild(border);
+    } else {
+      circle.setAttribute('stroke', seg.color);
+      circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
+      circle.setAttribute('stroke-dashoffset', String(-offset));
+      circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+      svg.appendChild(circle);
     }
-    // inicia no topo (12h)
-    c.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-    return c;
-  };
 
-  rings.forEach((rg) => {
-    const p = values[rg.key] ?? 0;
-    const circumference = 2 * Math.PI * rg.r;
-    const filled = circumference * p;
-    const empty = Math.max(0, circumference - filled);
-
-    // fundo (cinza claro)
-    svg.appendChild(makeCircle(rg.r, '#e5e7eb', null, null, rg.w, 1));
-
-    // progresso
-    svg.appendChild(
-      makeCircle(
-        rg.r,
-        COMP_COLORS[rg.key],
-        `${filled} ${empty}`,
-        0,
-        rg.w,
-        1
-      )
-    );
+    offset += segLen;
   });
 
   // texto central
-  const t1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  t1.setAttribute('x', String(cx));
-  t1.setAttribute('y', String(cy + 5));
-  t1.setAttribute('text-anchor', 'middle');
-  t1.setAttribute('font-size', '14');
-  t1.setAttribute('font-weight', '700');
-  t1.textContent = centerText || '';
-  svg.appendChild(t1);
+  const centerText = document.createElementNS(svgNS, 'text');
+  centerText.setAttribute('x', String(cx));
+  centerText.setAttribute('y', String(cy + 6));
+  centerText.setAttribute('text-anchor', 'middle');
+  centerText.setAttribute('font-size', '18');
+  centerText.setAttribute('font-weight', '700');
+  centerText.setAttribute('fill', '#111827');
+  centerText.textContent = safeTotal === null ? '—' : String(safeTotal);
+  svg.appendChild(centerText);
 
-  return svg;
+  return { svg, legend: values };
 }
 
-function renderDonut(container, data, centerText) {
-  if (!container) return;
-  container.innerHTML = '';
-  container.appendChild(buildDonutSVG({ ...data, centerText }));
+function buildLegendGrid(values) {
+  const legend = document.createElement('div');
+  legend.className = 'mk-legend';
+
+  values.forEach((v) => {
+    const item = document.createElement('div');
+    item.className = 'mk-legend-item';
+
+    const dot = document.createElement('span');
+    dot.className = 'mk-dot';
+    dot.style.background = v.color;
+
+    // margem branca com borda pra não “sumir”
+    if (v.key === 'margin') {
+      dot.style.border = `1px solid ${DONUT_COLORS.marginStroke}`;
+    }
+
+    const label = document.createElement('span');
+    label.textContent = v.label;
+
+    item.appendChild(dot);
+    item.appendChild(label);
+    legend.appendChild(item);
+  });
+
+  return legend;
 }
 
-function renderLegend(container) {
-  if (!container) return;
-  container.innerHTML = `
-    <div><span class="mk-dot" style="background:${COMP_COLORS.c1}"></span> C1</div>
-    <div><span class="mk-dot" style="background:${COMP_COLORS.c2}"></span> C2</div>
-    <div><span class="mk-dot" style="background:${COMP_COLORS.c3}"></span> C3</div>
-    <div><span class="mk-dot" style="background:${COMP_COLORS.c4}"></span> C4</div>
-    <div><span class="mk-dot" style="background:${COMP_COLORS.c5}"></span> C5</div>
-  `;
+// ---------------- alunos ativos ----------------
+
+async function getActiveStudentsSet() {
+  try {
+    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
+    if (!res.ok) throw new Error();
+
+    const list = await res.json();
+    const arr = Array.isArray(list) ? list : [];
+
+    const ids = arr
+      .map((s) => String(s?.id || s?.studentId || '').trim())
+      .filter(Boolean);
+
+    return new Set(ids);
+  } catch {
+    return null;
+  }
 }
 
-// ---------- fetch auxiliares ----------
+// ---------------- UI: inline panel (desempenho individual) ----------------
+
+function closeAllInlinePanels() {
+  if (!studentsList) return;
+  const panels = studentsList.querySelectorAll('.mk-inline-panel');
+  panels.forEach((p) => (p.style.display = 'none'));
+}
+
+function buildInlinePanel() {
+  const wrap = document.createElement('div');
+  wrap.className = 'mk-inline-panel';
+  wrap.style.display = 'none';
+
+  const head = document.createElement('div');
+  head.className = 'mk-inline-head';
+
+  const title = document.createElement('strong');
+  title.textContent = 'Desempenho individual';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.textContent = 'Fechar';
+  closeBtn.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    wrap.style.display = 'none';
+  });
+
+  head.appendChild(title);
+  head.appendChild(closeBtn);
+
+  const info = document.createElement('div');
+  info.id = 'mkInlineInfo';
+
+  const h4 = document.createElement('h4');
+  h4.textContent = 'Redações do aluno';
+  h4.style.marginTop = '10px';
+
+  const essaysUl = document.createElement('ul');
+  essaysUl.className = 'lista';
+  essaysUl.id = 'mkInlineEssays';
+
+  wrap.appendChild(head);
+  wrap.appendChild(info);
+  wrap.appendChild(h4);
+  wrap.appendChild(essaysUl);
+
+  return wrap;
+}
+
+function fillInlinePanel(panel, studentGroup, medias) {
+  if (!panel) return;
+
+  const info = panel.querySelector('#mkInlineInfo');
+  const essaysUl = panel.querySelector('#mkInlineEssays');
+
+  if (info) {
+    info.innerHTML = `
+      <ul class="lista">
+        <li>Média total: <strong>${medias.mTotal ?? '—'}</strong></li>
+        <li>C1 — Domínio da norma culta: <strong>${medias.mC1 ?? '—'}</strong></li>
+        <li>C2 — Compreensão do tema e repertório: <strong>${medias.mC2 ?? '—'}</strong></li>
+        <li>C3 — Argumentação e projeto de texto: <strong>${medias.mC3 ?? '—'}</strong></li>
+        <li>C4 — Coesão e mecanismos linguísticos: <strong>${medias.mC4 ?? '—'}</strong></li>
+        <li>C5 — Proposta de intervenção: <strong>${medias.mC5 ?? '—'}</strong></li>
+      </ul>
+    `;
+  }
+
+  if (!essaysUl) return;
+  essaysUl.innerHTML = '';
+
+  const essays = [...(studentGroup.essays || [])];
+  essays.sort((a, b) => (a.taskTitle || '').localeCompare(b.taskTitle || ''));
+
+  essays.forEach((e) => {
+    const li = document.createElement('li');
+
+    const title = document.createElement('strong');
+    title.textContent = e.taskTitle || 'Tarefa';
+
+    const nota = document.createElement('div');
+    nota.textContent =
+      e.score !== null && e.score !== undefined
+        ? `Nota: ${e.score} (C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${
+            e.c4 ?? '—'
+          } C5 ${e.c5 ?? '—'})`
+        : 'Sem correção';
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Ver redação/feedback';
+    btn.onclick = () => {
+      const tId = e.taskId || e.task?.id || null;
+      if (!tId) {
+        alert('Não encontrei o taskId desta redação no retorno do servidor.');
+        return;
+      }
+      window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
+        tId
+      )}&studentId=${encodeURIComponent(studentGroup.studentId)}`;
+    };
+
+    li.appendChild(title);
+    li.appendChild(document.createElement('br'));
+    li.appendChild(nota);
+    li.appendChild(document.createElement('br'));
+    li.appendChild(btn);
+
+    essaysUl.appendChild(li);
+  });
+}
+
+// ---------------- carregar sala ----------------
+
 async function carregarSala() {
   if (!roomNameEl) return;
   try {
@@ -207,440 +376,334 @@ async function carregarSala() {
   }
 }
 
-// alunos ativos/matriculados
-async function getActiveStudentsSet() {
-  try {
-    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
-    if (!res.ok) throw new Error();
-    const list = await res.json();
-    const arr = Array.isArray(list) ? list : [];
-    const ids = arr
-      .map((s) => String(s?.id || s?.studentId || '').trim())
-      .filter(Boolean);
-    return new Set(ids);
-  } catch {
-    return null;
-  }
-}
+// ---------------- dados e render ----------------
 
-// tarefas por sala
-async function fetchTasksByRoom() {
-  const res = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const tasks = await res.json();
-  return Array.isArray(tasks) ? tasks : [];
-}
+let cachedData = [];
+let cachedActiveSet = null;
 
-// desempenho geral da sala (todas tarefas) via endpoint existente
-async function fetchRoomPerformance() {
-  const res = await fetch(
-    `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return Array.isArray(data) ? data : [];
-}
+function buildTasksFromData(data) {
+  const map = new Map();
 
-// redações de uma tarefa (com studentName/email)
-async function fetchEssaysByTask(taskId) {
-  const res = await fetch(`${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const list = await res.json();
-  return Array.isArray(list) ? list : [];
-}
+  (Array.isArray(data) ? data : []).forEach((e) => {
+    const tId = e.taskId || e.task?.id || null;
+    const title = e.taskTitle || e.task?.title || 'Tarefa';
 
-// ---------- UI: painel inline por aluno ----------
-function closeAllInlinePanels() {
-  if (!studentsList) return;
-  const panels = studentsList.querySelectorAll('.mk-inline-panel');
-  panels.forEach((p) => (p.style.display = 'none'));
-}
+    if (!tId) return;
 
-function buildInlinePanel() {
-  const wrap = document.createElement('div');
-  wrap.className = 'mk-inline-panel';
+    if (!map.has(String(tId))) {
+      map.set(String(tId), {
+        taskId: String(tId),
+        title,
+        count: 0,
+        correctedCount: 0,
+      });
+    }
 
-  const head = document.createElement('div');
-  head.className = 'mk-inline-head';
-
-  const title = document.createElement('strong');
-  title.textContent = 'Desempenho individual';
-
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.textContent = 'Fechar desempenho';
-  closeBtn.addEventListener('click', (ev) => {
-    ev.stopPropagation();
-    wrap.style.display = 'none';
+    const g = map.get(String(tId));
+    g.count += 1;
+    if (e.score !== null && e.score !== undefined) g.correctedCount += 1;
   });
 
-  head.appendChild(title);
-  head.appendChild(closeBtn);
-
-  const avgsUl = document.createElement('ul');
-  avgsUl.className = 'lista';
-  avgsUl.id = 'mkInlineAvgs';
-
-  const h4 = document.createElement('h4');
-  h4.textContent = 'Redação/feedback';
-  h4.style.marginTop = '10px';
-
-  const essaysUl = document.createElement('ul');
-  essaysUl.className = 'lista';
-  essaysUl.id = 'mkInlineEssays';
-
-  wrap.appendChild(head);
-  wrap.appendChild(avgsUl);
-  wrap.appendChild(h4);
-  wrap.appendChild(essaysUl);
-
-  return wrap;
+  const tasks = Array.from(map.values());
+  tasks.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+  return tasks;
 }
 
-function fillInlinePanel(panel, studentGroup, medias, taskIdForLink) {
-  if (!panel) return;
-
-  const avgsUl = panel.querySelector('#mkInlineAvgs');
-  if (avgsUl) {
-    avgsUl.innerHTML = `
-      <li>Média total: <strong>${medias.mTotal ?? '—'}</strong></li>
-      <li>C1 — Domínio da norma culta: <strong>${medias.mC1 ?? '—'}</strong></li>
-      <li>C2 — Compreensão do tema e repertório: <strong>${medias.mC2 ?? '—'}</strong></li>
-      <li>C3 — Argumentação e projeto de texto: <strong>${medias.mC3 ?? '—'}</strong></li>
-      <li>C4 — Coesão e mecanismos linguísticos: <strong>${medias.mC4 ?? '—'}</strong></li>
-      <li>C5 — Proposta de intervenção: <strong>${medias.mC5 ?? '—'}</strong></li>
-    `;
-  }
-
-  const essaysUl = panel.querySelector('#mkInlineEssays');
-  if (!essaysUl) return;
-
-  essaysUl.innerHTML = '';
-
-  // aqui, por tarefa, normalmente há só 1 redação; mas deixamos flexível
-  const essays = [...(studentGroup.essays || [])];
-  essays.forEach((e) => {
-    const li = document.createElement('li');
-
-    const nota = document.createElement('div');
-    nota.textContent = isCorrected(e)
-      ? `Nota: ${e.score} (C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${e.c4 ?? '—'} C5 ${e.c5 ?? '—'})`
-      : 'Sem correção (pendente)';
-
-    const btn = document.createElement('button');
-    btn.textContent = 'Ver redação/feedback';
-    btn.addEventListener('click', () => {
-      // modo novo do feedback-professor: taskId + studentId
-      window.location.href =
-        `feedback-professor.html?taskId=${encodeURIComponent(String(taskIdForLink))}` +
-        `&studentId=${encodeURIComponent(String(studentGroup.studentId))}`;
-    });
-
-    li.appendChild(nota);
-    li.appendChild(document.createElement('br'));
-    li.appendChild(btn);
-
-    essaysUl.appendChild(li);
-  });
-}
-
-// ---------- cálculo e render: médias da sala ----------
-async function carregarMediasDaSala() {
-  // mantém seu conceito: média geral de todas as redações corrigidas (todas tarefas)
-  const activeSet = await getActiveStudentsSet();
-
-  const dataAll = await fetchRoomPerformance();
-  let data = dataAll;
-
-  // filtra removidos
-  if (activeSet && activeSet.size > 0) {
-    data = data.filter((e) => activeSet.has(String(e.studentId)));
-  }
-
-  const corrected = data.filter((e) => isCorrected(e));
-
-  const mTotal = mean(corrected.map((e) => e.score));
-  const mC1 = mean(corrected.map((e) => e.c1));
-  const mC2 = mean(corrected.map((e) => e.c2));
-  const mC3 = mean(corrected.map((e) => e.c3));
-  const mC4 = mean(corrected.map((e) => e.c4));
-  const mC5 = mean(corrected.map((e) => e.c5));
-
-  setText(avgTotal, mTotal);
-  setText(avgC1, mC1);
-  setText(avgC2, mC2);
-  setText(avgC3, mC3);
-  setText(avgC4, mC4);
-  setText(avgC5, mC5);
-
-  // donut sala (centro: média total)
-  renderLegend(roomDonutLegendEl);
-  renderDonut(
-    roomDonutEl,
-    { c1: mC1 || 0, c2: mC2 || 0, c3: mC3 || 0, c4: mC4 || 0, c5: mC5 || 0 },
-    mTotal !== null ? `Média ${mTotal}` : '—'
-  );
-}
-
-// ---------- tarefas + alunos por tarefa ----------
-let tasksCache = [];
-let selectedTaskId = null;
-
-function renderTasksBar(tasks) {
-  if (!tasksBar) return;
-  tasksBar.innerHTML = '';
+function renderTasksList(tasks) {
+  if (!tasksListEl) return;
+  tasksListEl.innerHTML = '';
 
   if (!Array.isArray(tasks) || tasks.length === 0) {
-    tasksBar.innerHTML = '<span class="mk-muted">Nenhuma tarefa criada.</span>';
+    tasksListEl.innerHTML = `<div class="mk-muted">Nenhuma tarefa com redações ainda.</div>`;
     return;
   }
 
   tasks.forEach((t) => {
     const btn = document.createElement('button');
+    btn.className = 'mk-task-btn';
     btn.type = 'button';
-    btn.className = 'mk-taskbtn';
-    btn.textContent = t?.title || 'Tarefa';
-    btn.setAttribute('aria-pressed', String(String(t?.id) === String(selectedTaskId)));
 
-    btn.addEventListener('click', async () => {
-      selectedTaskId = String(t.id);
-      renderTasksBar(tasksCache);
-      await carregarAlunosDaTarefa(selectedTaskId);
-    });
+    btn.innerHTML = `
+      <strong>${t.title}</strong>
+      <small>${t.count} envio(s) • ${t.correctedCount} corrigida(s)</small>
+    `;
 
-    tasksBar.appendChild(btn);
+    btn.addEventListener('click', () => openTaskPanel(t.taskId, t.title));
+    tasksListEl.appendChild(btn);
   });
 }
 
-function groupByStudent(essays) {
+function groupByStudent(data) {
   const byStudent = new Map();
 
-  (Array.isArray(essays) ? essays : []).forEach((e) => {
-    const sid = e?.studentId;
+  (Array.isArray(data) ? data : []).forEach((e) => {
+    const sid = e.studentId;
     if (!sid) return;
 
-    if (!byStudent.has(sid)) {
-      byStudent.set(sid, {
-        studentId: sid,
+    if (!byStudent.has(String(sid))) {
+      byStudent.set(String(sid), {
+        studentId: String(sid),
         studentName: e.studentName || '',
         studentEmail: e.studentEmail || '',
         essays: [],
       });
     }
 
-    const g = byStudent.get(sid);
+    const g = byStudent.get(String(sid));
     if (!g.studentName && e.studentName) g.studentName = e.studentName;
     if (!g.studentEmail && e.studentEmail) g.studentEmail = e.studentEmail;
 
     g.essays.push(e);
   });
 
-  return Array.from(byStudent.values());
+  const students = Array.from(byStudent.values());
+  students.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+  return students;
 }
 
-function calcStudentMedias(studentGroup) {
-  const corrected = (studentGroup.essays || []).filter((e) => isCorrected(e));
+function computeStudentAverages(studentGroup) {
+  const correctedEssays = (studentGroup.essays || []).filter(
+    (e) => e.score !== null && e.score !== undefined
+  );
 
-  return {
-    mTotal: mean(corrected.map((e) => e.score)),
-    mC1: mean(corrected.map((e) => e.c1)),
-    mC2: mean(corrected.map((e) => e.c2)),
-    mC3: mean(corrected.map((e) => e.c3)),
-    mC4: mean(corrected.map((e) => e.c4)),
-    mC5: mean(corrected.map((e) => e.c5)),
-    correctedCount: corrected.length,
-    totalCount: (studentGroup.essays || []).length,
-  };
+  const mTotal = mean(correctedEssays.map((e) => e.score));
+  const mC1 = mean(correctedEssays.map((e) => e.c1));
+  const mC2 = mean(correctedEssays.map((e) => e.c2));
+  const mC3 = mean(correctedEssays.map((e) => e.c3));
+  const mC4 = mean(correctedEssays.map((e) => e.c4));
+  const mC5 = mean(correctedEssays.map((e) => e.c5));
+
+  return { mTotal, mC1, mC2, mC3, mC4, mC5, hasCorrected: correctedEssays.length > 0 };
 }
 
-async function carregarAlunosDaTarefa(taskId) {
-  try {
-    if (!studentsList) return;
+function renderStudentsForTask(taskId, taskTitle) {
+  if (!studentsList) return;
 
-    setStatus('Carregando alunos da tarefa...');
-    studentsList.innerHTML = '<li>Carregando...</li>';
+  closeAllInlinePanels();
+  studentsList.innerHTML = '';
 
-    const activeSet = await getActiveStudentsSet();
+  const filtered = cachedData.filter((e) => String(e.taskId || e.task?.id || '') === String(taskId));
+  const students = groupByStudent(filtered);
 
-    let essays = await fetchEssaysByTask(taskId);
+  if (students.length === 0) {
+    studentsList.innerHTML = '<li>Nenhum envio para esta tarefa.</li>';
+    return;
+  }
 
-    // filtra removidos
-    if (activeSet && activeSet.size > 0) {
-      essays = essays.filter((e) => activeSet.has(String(e.studentId)));
+  students.forEach((s) => {
+    const li = document.createElement('li');
+    li.className = 'mk-student-item';
+    li.style.listStyle = 'none';
+
+    const left = document.createElement('div');
+    left.className = 'mk-student-left';
+
+    const avatar = makeAvatar(s.studentId, 38);
+
+    const info = document.createElement('div');
+    info.className = 'mk-student-info';
+
+    const nome = s.studentName && String(s.studentName).trim() ? s.studentName : 'Aluno';
+    const email = s.studentEmail && String(s.studentEmail).trim() ? s.studentEmail : '';
+
+    const header = document.createElement('div');
+    header.innerHTML = `<strong>${nome}</strong>${email ? `<br><small class="mk-muted">${email}</small>` : ''}`;
+
+    const medias = computeStudentAverages(s);
+
+    const resumo = document.createElement('div');
+    resumo.className = 'mk-muted';
+    resumo.style.marginTop = '6px';
+    resumo.textContent =
+      `Média: ${medias.mTotal ?? '—'} | ` +
+      `C1 ${medias.mC1 ?? '—'} C2 ${medias.mC2 ?? '—'} C3 ${medias.mC3 ?? '—'} C4 ${medias.mC4 ?? '—'} C5 ${medias.mC5 ?? '—'}`;
+
+    info.appendChild(header);
+    info.appendChild(resumo);
+
+    left.appendChild(avatar);
+    left.appendChild(info);
+
+    // ✅ “área em branco” ao lado: gráfico + legenda (estilo imagem)
+    const chartWrap = document.createElement('div');
+    chartWrap.className = 'mk-chart-wrap';
+
+    const donutBox = document.createElement('div');
+    donutBox.className = 'mk-donut';
+
+    const donutData = {
+      c1: medias.mC1 ?? 0,
+      c2: medias.mC2 ?? 0,
+      c3: medias.mC3 ?? 0,
+      c4: medias.mC4 ?? 0,
+      c5: medias.mC5 ?? 0,
+      total: medias.mTotal, // se null, centro vira —
+    };
+
+    const { svg, legend } = createDonutSVG(donutData, 120, 18);
+    svg.classList.add('mk-donut');
+    donutBox.appendChild(svg);
+
+    const legendEl = buildLegendGrid(legend);
+
+    chartWrap.appendChild(donutBox);
+    chartWrap.appendChild(legendEl);
+
+    // ações + painel individual inline
+    const actions = document.createElement('div');
+    actions.className = 'mk-student-actions';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Ver desempenho individual';
+
+    const inlinePanel = buildInlinePanel();
+
+    function toggleInline() {
+      const isOpen = inlinePanel.style.display === 'block';
+      closeAllInlinePanels();
+
+      if (!isOpen) {
+        fillInlinePanel(inlinePanel, s, {
+          mTotal: medias.mTotal,
+          mC1: medias.mC1,
+          mC2: medias.mC2,
+          mC3: medias.mC3,
+          mC4: medias.mC4,
+          mC5: medias.mC5,
+        });
+        inlinePanel.style.display = 'block';
+      }
     }
 
-    if (!Array.isArray(essays) || essays.length === 0) {
-      studentsList.innerHTML = '<li>Nenhum aluno enviou redação nesta tarefa (ou foram removidos).</li>';
-      if (taskInfo) taskInfo.textContent = '';
-      setStatus('');
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      toggleInline();
+    });
+
+    // clique no card também abre/fecha
+    li.style.cursor = 'pointer';
+    li.title = 'Clique para ver o desempenho individual';
+    li.addEventListener('click', (ev) => {
+      if (ev.target && ev.target.tagName === 'BUTTON') return;
+      toggleInline();
+    });
+
+    actions.appendChild(btn);
+
+    // compõe
+    li.appendChild(left);
+    li.appendChild(chartWrap);
+    li.appendChild(actions);
+
+    // painel inline fica “embaixo” (full width)
+    const wrapBelow = document.createElement('div');
+    wrapBelow.style.width = '100%';
+    wrapBelow.style.marginTop = '10px';
+    wrapBelow.appendChild(inlinePanel);
+
+    // coloca abaixo do card
+    const outer = document.createElement('div');
+    outer.style.display = 'flex';
+    outer.style.flexDirection = 'column';
+    outer.style.gap = '8px';
+    outer.appendChild(li);
+    outer.appendChild(wrapBelow);
+
+    const outerLi = document.createElement('li');
+    outerLi.style.listStyle = 'none';
+    outerLi.appendChild(outer);
+
+    studentsList.appendChild(outerLi);
+  });
+}
+
+function openTaskPanel(taskId, title) {
+  if (!taskPanelEl) return;
+
+  // abre painel
+  taskPanelEl.style.display = 'block';
+
+  if (taskPanelTitleEl) taskPanelTitleEl.textContent = title || 'Tarefa';
+  if (taskPanelMetaEl) taskPanelMetaEl.textContent = 'Gráfico em rosca: C1–C5 + margem até 1000.';
+
+  // render alunos que enviaram
+  renderStudentsForTask(taskId, title);
+
+  // scroll até o painel
+  taskPanelEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeTaskPanel() {
+  if (!taskPanelEl) return;
+  taskPanelEl.style.display = 'none';
+  closeAllInlinePanels();
+  if (studentsList) studentsList.innerHTML = '';
+}
+
+// ---------------- carregar dados sala ----------------
+
+async function carregarDados() {
+  try {
+    setStatus('Carregando...');
+
+    cachedActiveSet = await getActiveStudentsSet();
+
+    const res = await fetch(
+      `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`
+    );
+    if (!res.ok) throw new Error();
+
+    let data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      setStatus('Ainda não há redações nesta sala.');
+      setText(avgTotal, null);
+      setText(avgC1, null);
+      setText(avgC2, null);
+      setText(avgC3, null);
+      setText(avgC4, null);
+      setText(avgC5, null);
+
+      renderTasksList([]);
+      closeTaskPanel();
       return;
     }
 
-    const groups = groupByStudent(essays);
-
-    // ordena por nome
-    groups.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
-
-    // info da tarefa
-    const taskObj = tasksCache.find((t) => String(t.id) === String(taskId));
-    if (taskInfo) {
-      const title = taskObj?.title ? String(taskObj.title) : 'Tarefa';
-      taskInfo.textContent = `${title} — ${groups.length} aluno(s) com envio`;
+    // filtra apenas alunos ativos
+    if (cachedActiveSet && cachedActiveSet.size > 0) {
+      data = data.filter((e) => cachedActiveSet.has(String(e.studentId)));
     }
 
-    studentsList.innerHTML = '';
+    cachedData = data;
 
-    groups.forEach((g) => {
-      const li = document.createElement('li');
-      li.style.listStyle = 'none';
-      li.style.marginBottom = '12px';
+    // médias gerais da sala (somente corrigidas)
+    const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
+    setText(avgTotal, mean(corrected.map((e) => e.score)));
+    setText(avgC1, mean(corrected.map((e) => e.c1)));
+    setText(avgC2, mean(corrected.map((e) => e.c2)));
+    setText(avgC3, mean(corrected.map((e) => e.c3)));
+    setText(avgC4, mean(corrected.map((e) => e.c4)));
+    setText(avgC5, mean(corrected.map((e) => e.c5)));
 
-      const card = document.createElement('div');
-      card.className = 'mk-student';
-
-      const top = document.createElement('div');
-      top.className = 'mk-student-top';
-
-      // esquerda: avatar + nome/email
-      const idBox = document.createElement('div');
-      idBox.className = 'mk-student-id';
-
-      const avatar = makeAvatar(g.studentId, 42);
-
-      const nameBox = document.createElement('div');
-      nameBox.className = 'mk-student-name';
-
-      const nome =
-        g.studentName && String(g.studentName).trim() ? String(g.studentName).trim() : 'Aluno';
-      const email =
-        g.studentEmail && String(g.studentEmail).trim() ? String(g.studentEmail).trim() : '';
-
-      nameBox.innerHTML = `<strong>${nome}</strong>${email ? `<small>${email}</small>` : `<small>&nbsp;</small>`}`;
-
-      idBox.appendChild(avatar);
-      idBox.appendChild(nameBox);
-
-      // direita: donut (na “parte em branco” ao lado)
-      const donutWrap = document.createElement('div');
-      donutWrap.className = 'mk-donut-wrap';
-
-      const medias = calcStudentMedias(g);
-
-      const center =
-        medias.mTotal !== null
-          ? String(medias.mTotal)
-          : '—';
-
-      renderDonut(
-        donutWrap,
-        {
-          c1: medias.mC1 || 0,
-          c2: medias.mC2 || 0,
-          c3: medias.mC3 || 0,
-          c4: medias.mC4 || 0,
-          c5: medias.mC5 || 0,
-        },
-        center
-      );
-
-      top.appendChild(idBox);
-      top.appendChild(donutWrap);
-
-      // resumo + botão
-      const resumo = document.createElement('div');
-      resumo.style.marginTop = '10px';
-      resumo.textContent =
-        `Média: ${medias.mTotal ?? '—'} | ` +
-        `C1 ${medias.mC1 ?? '—'} C2 ${medias.mC2 ?? '—'} C3 ${medias.mC3 ?? '—'} C4 ${medias.mC4 ?? '—'} C5 ${medias.mC5 ?? '—'}`;
-
-      const actions = document.createElement('div');
-      actions.className = 'mk-student-actions';
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = 'Ver desempenho individual';
-
-      const inlinePanel = buildInlinePanel();
-
-      const toggleInline = () => {
-        const isOpen = inlinePanel.style.display === 'block';
-        closeAllInlinePanels();
-
-        if (!isOpen) {
-          fillInlinePanel(inlinePanel, g, medias, taskId);
-          inlinePanel.style.display = 'block';
-          // scroll suave para o painel (fica logo ali, mas ajuda no mobile)
-          inlinePanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      };
-
-      btn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        toggleInline();
-      });
-
-      // clicar no card também abre/fecha
-      card.style.cursor = 'pointer';
-      card.title = 'Clique para ver/ocultar o desempenho individual';
-      card.addEventListener('click', (ev) => {
-        if (ev.target && ev.target.tagName === 'BUTTON') return;
-        toggleInline();
-      });
-
-      actions.appendChild(btn);
-
-      card.appendChild(top);
-      card.appendChild(resumo);
-      card.appendChild(actions);
-      card.appendChild(inlinePanel);
-
-      li.appendChild(card);
-      studentsList.appendChild(li);
-    });
+    // tarefas
+    const tasks = buildTasksFromData(data);
+    renderTasksList(tasks);
 
     setStatus('');
   } catch (err) {
     console.error(err);
-    setStatus('Erro ao carregar alunos da tarefa.');
-    if (studentsList) studentsList.innerHTML = '<li>Erro ao carregar.</li>';
+    setStatus('Erro ao carregar dados de desempenho.');
+    renderTasksList([]);
+    closeTaskPanel();
   }
 }
 
-// ---------- init ----------
-async function init() {
-  try {
-    setStatus('Carregando...');
+// ---------------- init ----------------
 
-    await carregarSala();
-
-    // médias gerais (todas tarefas)
-    await carregarMediasDaSala();
-
-    // tarefas
-    tasksCache = await fetchTasksByRoom();
-
-    // seleciona 1ª tarefa (se existir)
-    if (tasksCache.length > 0) {
-      selectedTaskId = String(tasksCache[0].id);
-    } else {
-      selectedTaskId = null;
-    }
-
-    renderTasksBar(tasksCache);
-
-    // carrega alunos da tarefa selecionada
-    if (selectedTaskId) {
-      await carregarAlunosDaTarefa(selectedTaskId);
-    } else {
-      if (studentsList) studentsList.innerHTML = '<li>Nenhuma tarefa criada ainda.</li>';
-      if (taskInfo) taskInfo.textContent = '';
-    }
-
-    setStatus('');
-  } catch (e) {
-    console.error(e);
-    setStatus('Erro ao inicializar a página.');
-  }
+if (closeTaskPanelBtn) {
+  closeTaskPanelBtn.addEventListener('click', () => closeTaskPanel());
 }
 
-init();
+carregarSala();
+carregarDados();
