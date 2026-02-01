@@ -469,8 +469,13 @@ function abrirCorrecao(essay, anchorLi) {
   if (anchorLi) mountCorrectionSectionUnderLi(anchorLi);
   else if (correctionSection) correctionSection.style.display = 'block';
 
-  // ✅ foca no primeiro campo para já digitar
-  try { c1El?.focus(); } catch {}
+ try {
+  // foca no primeiro campo vazio, senão fica no C1
+  const firstEmpty =
+    [c1El, c2El, c3El, c4El, c5El].find((x) => x && String(x.value || '').trim() === '') || c1El;
+  firstEmpty?.focus();
+} catch {}
+
 }
 
 // -------------------- CARREGAR TAREFA (TEMA) --------------------
