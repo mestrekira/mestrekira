@@ -65,12 +65,15 @@
 <p id="feedback" class="box"></p>
 
 <br>
-<button id="backBtn">Voltar</button>
 
+  <div class="actions-row">
+<button id="backBtn">Voltar</button>
+  </div>
+  
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
   initMenuPerfil({
-    loginRedirect: 'login.html',
+    loginRedirect: 'index.html',
     logoutRedirectProfessor: 'login-professor.html',
     logoutRedirectStudent: 'login-aluno.html'
   });
