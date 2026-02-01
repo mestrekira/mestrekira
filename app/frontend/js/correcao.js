@@ -20,7 +20,7 @@ const essayContentEl = document.getElementById('essayContent');
 const studentPhotoImg = document.getElementById('studentPhotoImg');
 
 const taskTitleEl = document.getElementById('taskTitle'); // ✅ tema no topo
-const taskMetaEl = document.getElementById('taskMeta');   // opcional (ex: orientações resumidas)
+const taskMetaEl = document.getElementById('taskMeta');   // opcional
 
 const feedbackEl = document.getElementById('feedback');
 const saveBtn = document.getElementById('saveCorrectionBtn');
@@ -32,6 +32,8 @@ const c3El = document.getElementById('c3');
 const c4El = document.getElementById('c4');
 const c5El = document.getElementById('c5');
 const totalScoreEl = document.getElementById('totalScore');
+
+const closeCorrectionBtn = document.getElementById('closeCorrectionBtn'); // ✅ novo
 
 let currentEssayId = null;
 
@@ -107,6 +109,41 @@ function calcularTotal() {
   if (!el) return;
   el.addEventListener('input', () => calcularTotal());
 });
+
+// ✅ fecha todos os painéis de rubrica (evita sobreposição nos inputs)
+function closeAllRubrics() {
+  document.querySelectorAll('.rubric-panel').forEach((p) => {
+    p.hidden = true;
+  });
+  document.querySelectorAll('.rubric-btn').forEach((b) => {
+    b.setAttribute('aria-expanded', 'false');
+  });
+}
+
+// ✅ “Fechar correção” (recolhe o painel e limpa seleção)
+function closeCorrection() {
+  currentEssayId = null;
+
+  // remove highlight anterior
+  if (currentAnchorLi) {
+    currentAnchorLi.style.outline = '';
+    currentAnchorLi.style.outlineOffset = '';
+  }
+  currentAnchorLi = null;
+
+  closeAllRubrics();
+
+  // desmonta painel
+  detachCorrectionSectionToBody();
+  if (correctionSection) correctionSection.style.display = 'none';
+
+  // limpa status
+  setStatus('');
+}
+
+if (closeCorrectionBtn) {
+  closeCorrectionBtn.addEventListener('click', () => closeCorrection());
+}
 
 // -------------------- RUBRICAS ENEM --------------------
 
@@ -255,7 +292,9 @@ function initRubricsUI() {
       const panel = document.getElementById(`rubric-${compKey}`);
       if (!panel) return;
 
+      // ✅ fecha todas antes de abrir uma (evita overlay)
       const willOpen = panel.hidden === true;
+      closeAllRubrics();
       panel.hidden = !willOpen;
       btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
     });
@@ -264,6 +303,11 @@ function initRubricsUI() {
   const map = { c1: c1El, c2: c2El, c3: c3El, c4: c4El, c5: c5El };
   Object.entries(map).forEach(([k, input]) => {
     if (!input) return;
+
+    // ✅ ao focar/clicar no input, fecha rubricas para garantir click/foco
+    input.addEventListener('focus', () => closeAllRubrics());
+    input.addEventListener('pointerdown', () => closeAllRubrics());
+
     input.addEventListener('input', () => updateRubricHint(k, input.value));
   });
 }
@@ -272,8 +316,6 @@ function initRubricsUI() {
 
 function splitTitleAndBody(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
-
-  // marcador (variações)
   const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
   const m = text.match(re);
   if (m) {
@@ -283,7 +325,6 @@ function splitTitleAndBody(raw) {
     };
   }
 
-  // fallback: primeira linha não vazia como título
   const lines = text.split('\n');
   let firstIdx = -1;
   for (let i = 0; i < lines.length; i++) {
@@ -348,7 +389,7 @@ async function getActiveStudentsSet(roomId) {
       .filter(Boolean);
     return new Set(ids);
   } catch {
-    return null; // se falhar, não filtra
+    return null;
   }
 }
 
@@ -369,17 +410,14 @@ function detachCorrectionSectionToBody() {
 function mountCorrectionSectionUnderLi(li) {
   if (!correctionSection || !li) return;
 
-  // remove highlight anterior
   if (currentAnchorLi) currentAnchorLi.style.outline = '';
   currentAnchorLi = li;
   currentAnchorLi.style.outline = '2px solid rgba(0,0,0,0.08)';
   currentAnchorLi.style.outlineOffset = '6px';
 
-  // anexa o painel logo abaixo do conteúdo do aluno
   li.appendChild(correctionSection);
   correctionSection.style.display = 'block';
 
-  // scroll suave até o painel (bem perto do clique)
   correctionSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -417,7 +455,9 @@ function abrirCorrecao(essay, anchorLi) {
 
   calcularTotal();
 
-  // sugestões rubric
+  // ✅ fecha rubricas ao abrir (evita sobrepor inputs)
+  closeAllRubrics();
+
   updateRubricHint('c1', c1El?.value);
   updateRubricHint('c2', c2El?.value);
   updateRubricHint('c3', c3El?.value);
@@ -426,21 +466,23 @@ function abrirCorrecao(essay, anchorLi) {
 
   setStatus('');
 
-  // ✅ move painel para perto do aluno clicado
   if (anchorLi) mountCorrectionSectionUnderLi(anchorLi);
-  else {
-    // fallback: se não veio anchor, mantém onde estiver
-    if (correctionSection) correctionSection.style.display = 'block';
-  }
+  else if (correctionSection) correctionSection.style.display = 'block';
+
+  // ✅ foca no primeiro campo para já digitar
+  try { c1El?.focus(); } catch {}
 }
 
 // -------------------- CARREGAR TAREFA (TEMA) --------------------
 
 async function carregarTemaDaTarefa() {
   const task = await getTaskInfo(taskId);
-  if (taskTitleEl) taskTitleEl.textContent = task?.title || '—';
 
-  // opcional: meta pequena
+  if (taskTitleEl) {
+    const title = String(task?.title || '').trim();
+    taskTitleEl.textContent = title ? `Tema: ${title}` : 'Tema: —';
+  }
+
   if (taskMetaEl) {
     const guide = (task?.guidelines || '').trim();
     taskMetaEl.textContent = guide ? guide : '';
@@ -449,7 +491,6 @@ async function carregarTemaDaTarefa() {
   cachedRoomId = task?.roomId || task?.room?.id || null;
   if (cachedRoomId) cachedRoomId = String(cachedRoomId);
 
-  // prepara set de alunos ativos (cache)
   if (cachedRoomId) {
     cachedActiveSet = await getActiveStudentsSet(cachedRoomId);
   } else {
@@ -465,8 +506,6 @@ function isCorrected(essay) {
 
 function sortEssaysForList(arr) {
   const essays = Array.isArray(arr) ? [...arr] : [];
-
-  // pendentes primeiro, depois corrigidas; em seguida por nome
   essays.sort((a, b) => {
     const ac = isCorrected(a) ? 1 : 0;
     const bc = isCorrected(b) ? 1 : 0;
@@ -478,7 +517,6 @@ function sortEssaysForList(arr) {
     if (an && !bn) return -1;
     return an.localeCompare(bn);
   });
-
   return essays;
 }
 
@@ -489,13 +527,11 @@ async function carregarRedacoes() {
     setStatus('Carregando redações...');
     essaysList.innerHTML = '<li>Carregando...</li>';
 
-    // ✅ sempre “desmonta” o painel antes de redesenhar lista
     detachCorrectionSectionToBody();
     if (correctionSection) correctionSection.style.display = 'none';
     currentEssayId = null;
     currentAnchorLi = null;
 
-    // pega redações
     const response = await fetch(
       `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`
     );
@@ -503,7 +539,6 @@ async function carregarRedacoes() {
 
     let essays = await response.json();
 
-    // filtra alunos ativos (se conseguiu buscar)
     essays = filterEssaysByActiveStudents(essays, cachedActiveSet);
 
     if (!Array.isArray(essays) || essays.length === 0) {
@@ -516,16 +551,6 @@ async function carregarRedacoes() {
     essays = sortEssaysForList(essays);
 
     essaysList.innerHTML = '';
-
-    // ✅ autoabrir aluno se veio na URL (somente se existir na lista filtrada)
-    let autoOpened = false;
-    if (focusStudentId) {
-      const target = essays.find((e) => String(e.studentId) === String(focusStudentId));
-      if (target && !isCorrected(target)) {
-        // só autoabre se for pendente (para não confundir)
-        autoOpened = true;
-      }
-    }
 
     essays.forEach((essay) => {
       const li = document.createElement('li');
@@ -540,7 +565,6 @@ async function carregarRedacoes() {
       left.style.gap = '10px';
       left.style.flex = '1';
 
-      // avatar
       const avatar = document.createElement('img');
       avatar.width = 36;
       avatar.height = 36;
@@ -559,20 +583,17 @@ async function carregarRedacoes() {
 
       const text = document.createElement('div');
       const corrected = isCorrected(essay);
-
       const statusNota = corrected ? `Nota: ${essay.score}` : 'Pendente (sem correção)';
       text.innerHTML = `<strong>${nome}</strong><br><small>${statusNota}</small>`;
 
       left.appendChild(avatar);
       left.appendChild(text);
 
-      // botão
       const btn = document.createElement('button');
 
       if (corrected) {
         btn.textContent = 'Ver redação/feedback';
         btn.addEventListener('click', () => {
-          // abre feedback do professor (precisa do studentId e taskId)
           window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
             String(taskId)
           )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
@@ -582,7 +603,6 @@ async function carregarRedacoes() {
         btn.addEventListener('click', () => abrirCorrecao(essay, li));
       }
 
-      // clique no item também (pendente abre correção; corrigida vai pro feedback)
       li.style.cursor = 'pointer';
       li.title = corrected
         ? 'Clique para ver redação/feedback'
@@ -603,12 +623,9 @@ async function carregarRedacoes() {
 
       essaysList.appendChild(li);
 
-      // ✅ autoabrir se veio studentId e for pendente
-      if (!autoOpened && focusStudentId && String(essay.studentId) === String(focusStudentId)) {
-        if (!corrected) {
-          autoOpened = true;
-          abrirCorrecao(essay, li);
-        }
+      // autoabrir se veio studentId (apenas pendente)
+      if (focusStudentId && String(essay.studentId) === String(focusStudentId) && !corrected) {
+        abrirCorrecao(essay, li);
       }
     });
 
@@ -666,8 +683,7 @@ if (saveBtn) {
       if (!response.ok) throw new Error();
 
       setStatus('Correção salva com sucesso!');
-
-      // ✅ após salvar, recarrega lista (vai transformar o botão em "Ver redação/feedback")
+      closeCorrection(); // ✅ fecha painel após salvar (evita ficar “aberto”)
       await carregarRedacoes();
     } catch (e) {
       console.error(e);
@@ -679,12 +695,7 @@ if (saveBtn) {
 // -------------------- INIT --------------------
 
 (async () => {
-  // tema + cache alunos ativos
   await carregarTemaDaTarefa();
-
-  // lista redações
   await carregarRedacoes();
-
-  // rubricas
   initRubricsUI();
 })();
