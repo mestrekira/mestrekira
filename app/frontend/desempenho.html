@@ -77,22 +77,29 @@
 <hr>
 
 <section>
-  <h3>Gráfico (Total / ENEM)</h3>
+  <h3>Gráfico (Média geral)</h3>
   <p class="muted">Cada fatia representa uma competência; a parte branca é sua margem de evolução até 1000.</p>
-  <div id="chart" class="box" style="padding:10px;"></div>
+
+  <div class="box" style="padding:12px;">
+    <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
+      <div id="avgDonut" style="min-width:160px; display:flex; justify-content:center;"></div>
+      <div id="avgLegend" style="display:flex; align-items:flex-start;"></div>
+    </div>
+  </div>
 </section>
+
 
 <hr>
 
 <section>
-  <h3>Histórico</h3>
+  <h3>Redações</h3>
   <ul id="historyList" class="lista"></ul>
 </section>
 
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
   initMenuPerfil({
-    loginRedirect: 'login.html',
+    loginRedirect: 'index.html',
     logoutRedirectProfessor: 'login-professor.html',
     logoutRedirectStudent: 'login-aluno.html'
   });
@@ -101,6 +108,7 @@
 <script type="module" src="js/desempenho.js"></script>
 </body>
 </html>
+
 
 
 
