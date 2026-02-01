@@ -20,9 +20,12 @@ const avgC3 = document.getElementById('avgC3');
 const avgC4 = document.getElementById('avgC4');
 const avgC5 = document.getElementById('avgC5');
 
-const chartEl = document.getElementById('chart');
+const avgDonutEl = document.getElementById('avgDonut');
+const avgLegendEl = document.getElementById('avgLegend');
+
 const historyList = document.getElementById('historyList');
 
+// ---------------- util ----------------
 function setText(el, value) {
   if (!el) return;
   el.textContent = value === null || value === undefined ? '—' : String(value);
@@ -43,6 +46,8 @@ function clearResumo() {
   setText(avgC3, null);
   setText(avgC4, null);
   setText(avgC5, null);
+  if (avgDonutEl) avgDonutEl.innerHTML = '';
+  if (avgLegendEl) avgLegendEl.innerHTML = '';
 }
 
 function setStatus(msg) {
@@ -55,259 +60,266 @@ function safeScore(v) {
   return Number.isNaN(n) ? null : n;
 }
 
-// rótulo simples (sem backend extra)
-function makeLabelFromTaskId(taskId, idx) {
-  const short = (taskId || '').slice(0, 6);
-  return taskId ? `Tarefa ${short}…` : `Redação ${idx + 1}`;
+function clamp0to200(n) {
+  const v = Number(n);
+  if (Number.isNaN(v)) return 0;
+  return Math.max(0, Math.min(200, v));
 }
 
-function renderChart(essays) {
-  if (!chartEl) return;
-  chartEl.innerHTML = '';
+// ---------------- Donut (mesmo estilo do projeto) ----------------
+const MAX = 1000;
+const COLORS = {
+  c1: '#4f46e5',
+  c2: '#16a34a',
+  c3: '#f59e0b',
+  c4: '#0ea5e9',
+  c5: '#ef4444',
+  gap: '#ffffff',     // margem (branco)
+  stroke: '#e5e7eb',  // borda
+  text: '#0b1220',
+};
 
-  if (!Array.isArray(essays) || essays.length === 0) {
-    chartEl.textContent = 'Sem redações ainda.';
-    return;
-  }
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180.0;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
 
-  const MAX = 1000;
+function arcPath(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  return [
+    `M ${cx} ${cy}`,
+    `L ${start.x} ${start.y}`,
+    `A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
+    'Z',
+  ].join(' ');
+}
 
-  // cores fixas (depois a gente passa pro CSS se quiser)
-  const COLORS = {
-    c1: '#4f46e5',
-    c2: '#16a34a',
-    c3: '#f59e0b',
-    c4: '#0ea5e9',
-    c5: '#ef4444',
-    gap: '#ffffff',       // margem de evolução (branco)
-    stroke: '#e5e7eb',    // bordas/contorno
-    text: '#0b1220',
-    muted: '#334155',
-  };
+function createDonutSvg(segments, opts = {}) {
+  const size = opts.size ?? 96;
+  const hole = opts.hole ?? 32;
 
-  function clamp0to200(n) {
-    const v = Number(n);
-    if (Number.isNaN(v)) return 0;
-    return Math.max(0, Math.min(200, v));
-  }
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 2;
 
-  function polarToCartesian(cx, cy, r, angleDeg) {
-    const rad = ((angleDeg - 90) * Math.PI) / 180.0;
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-  }
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
 
-  function arcPath(cx, cy, r, startAngle, endAngle) {
-    const start = polarToCartesian(cx, cy, r, endAngle);
-    const end = polarToCartesian(cx, cy, r, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
-    return [
-      `M ${cx} ${cy}`,
-      `L ${start.x} ${start.y}`,
-      `A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
-      'Z',
-    ].join(' ');
-  }
+  // base
+  const base = document.createElementNS(svgNS, 'circle');
+  base.setAttribute('cx', String(cx));
+  base.setAttribute('cy', String(cy));
+  base.setAttribute('r', String(r));
+  base.setAttribute('fill', '#fff');
+  base.setAttribute('stroke', COLORS.stroke);
+  base.setAttribute('stroke-width', '1');
+  svg.appendChild(base);
 
-  function createDonutSvg(segments, opts = {}) {
-    const size = opts.size ?? 72;
-    const hole = opts.hole ?? 24;
+  const total = segments.reduce((a, s) => a + s.value, 0);
+  if (total <= 0) return svg;
 
-    const cx = size / 2;
-    const cy = size / 2;
-    const r = size / 2 - 2;
+  let angle = 0;
+  segments.forEach((seg) => {
+    const portion = seg.value / total;
+    const delta = portion * 360;
+    const start = angle;
+    const end = angle + delta;
 
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('width', String(size));
-    svg.setAttribute('height', String(size));
-    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', arcPath(cx, cy, r, start, end));
+    path.setAttribute('fill', seg.color);
+    path.setAttribute('stroke', COLORS.stroke);
+    path.setAttribute('stroke-width', '1');
+    svg.appendChild(path);
 
-    // base
-    const base = document.createElementNS(svgNS, 'circle');
-    base.setAttribute('cx', String(cx));
-    base.setAttribute('cy', String(cy));
-    base.setAttribute('r', String(r));
-    base.setAttribute('fill', '#fff');
-    base.setAttribute('stroke', COLORS.stroke);
-    base.setAttribute('stroke-width', '1');
-    svg.appendChild(base);
-
-    const total = segments.reduce((a, s) => a + s.value, 0);
-    if (total <= 0) return svg;
-
-    let angle = 0;
-    segments.forEach((seg) => {
-      const portion = seg.value / total;
-      const delta = portion * 360;
-      const start = angle;
-      const end = angle + delta;
-
-      const path = document.createElementNS(svgNS, 'path');
-      path.setAttribute('d', arcPath(cx, cy, r, start, end));
-      path.setAttribute('fill', seg.color);
-      path.setAttribute('stroke', COLORS.stroke);
-      path.setAttribute('stroke-width', '1');
-      svg.appendChild(path);
-
-      angle += delta;
-    });
-
-    // “furo” do donut
-    const holeCircle = document.createElementNS(svgNS, 'circle');
-    holeCircle.setAttribute('cx', String(cx));
-    holeCircle.setAttribute('cy', String(cy));
-    holeCircle.setAttribute('r', String(hole));
-    holeCircle.setAttribute('fill', '#fff');
-    svg.appendChild(holeCircle);
-
-    // texto central (nota)
-    if (typeof opts.centerText === 'string' && opts.centerText) {
-      const t1 = document.createElementNS(svgNS, 'text');
-      t1.setAttribute('x', String(cx));
-      t1.setAttribute('y', String(cy + 4));
-      t1.setAttribute('text-anchor', 'middle');
-      t1.setAttribute('font-size', '12');
-      t1.setAttribute('font-weight', '900');
-      t1.setAttribute('fill', COLORS.text);
-      t1.textContent = opts.centerText;
-      svg.appendChild(t1);
-    }
-
-    return svg;
-  }
-
-  function legendItem(label, color) {
-    const item = document.createElement('div');
-    item.style.display = 'flex';
-    item.style.alignItems = 'center';
-    item.style.gap = '8px';
-    item.style.fontSize = '12px';
-
-    const dot = document.createElement('span');
-    dot.style.display = 'inline-block';
-    dot.style.width = '10px';
-    dot.style.height = '10px';
-    dot.style.borderRadius = '3px';
-    dot.style.background = color;
-    dot.style.border = `1px solid ${COLORS.stroke}`;
-
-    const text = document.createElement('span');
-    text.textContent = label;
-
-    item.appendChild(dot);
-    item.appendChild(text);
-    return item;
-  }
-
-  essays.forEach((e, idx) => {
-    const score = safeScore(e.score);
-
-    const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.alignItems = 'center';
-    row.style.justifyContent = 'space-between';
-    row.style.gap = '14px';
-    row.style.margin = '10px 0';
-    row.style.padding = '12px';
-    row.style.border = '1px solid #e5e7eb';
-    row.style.borderRadius = '16px';
-    row.style.background = '#fff';
-    row.style.boxShadow = '0 8px 18px rgba(2, 6, 23, 0.05)';
-
-    // clicável
-    row.style.cursor = 'pointer';
-    row.title = 'Clique para ver a redação';
-    row.addEventListener('click', () => {
-      window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
-    });
-
-    const left = document.createElement('div');
-    left.style.display = 'flex';
-    left.style.alignItems = 'center';
-    left.style.gap = '14px';
-    left.style.flex = '1';
-
-    const label = document.createElement('div');
-    label.style.minWidth = '140px';
-    label.style.fontSize = '12px';
-    label.style.opacity = '0.9';
-    label.innerHTML = `<strong>${makeLabelFromTaskId(e.taskId, idx)}</strong>`;
-
-    left.appendChild(label);
-
-    const pieWrap = document.createElement('div');
-    pieWrap.style.display = 'flex';
-    pieWrap.style.alignItems = 'center';
-    pieWrap.style.gap = '16px';
-    pieWrap.style.flexWrap = 'wrap';
-
-    if (score === null) {
-      const not = document.createElement('div');
-      not.style.fontSize = '12px';
-      not.style.opacity = '0.8';
-      not.textContent = 'Ainda não corrigida.';
-      pieWrap.appendChild(not);
-    } else {
-      const c1 = clamp0to200(e.c1);
-      const c2 = clamp0to200(e.c2);
-      const c3 = clamp0to200(e.c3);
-      const c4 = clamp0to200(e.c4);
-      const c5 = clamp0to200(e.c5);
-
-      const used = Math.max(0, Math.min(MAX, c1 + c2 + c3 + c4 + c5));
-      const gap = Math.max(0, MAX - used);
-
-      const segments = [
-        { value: c1, color: COLORS.c1 },
-        { value: c2, color: COLORS.c2 },
-        { value: c3, color: COLORS.c3 },
-        { value: c4, color: COLORS.c4 },
-        { value: c5, color: COLORS.c5 },
-        { value: gap, color: COLORS.gap }, // margem
-      ].filter((s) => s.value > 0);
-
-      const donut = createDonutSvg(segments, {
-        size: 78,
-        hole: 26,
-        centerText: String(score),
-      });
-      pieWrap.appendChild(donut);
-
-      const legend = document.createElement('div');
-      legend.style.display = 'grid';
-      legend.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
-      legend.style.columnGap = '16px';
-      legend.style.rowGap = '6px';
-      legend.style.minWidth = '280px';
-
-      legend.appendChild(legendItem(`C1 (${c1})`, COLORS.c1));
-      legend.appendChild(legendItem(`C2 (${c2})`, COLORS.c2));
-      legend.appendChild(legendItem(`C3 (${c3})`, COLORS.c3));
-      legend.appendChild(legendItem(`C4 (${c4})`, COLORS.c4));
-      legend.appendChild(legendItem(`C5 (${c5})`, COLORS.c5));
-      legend.appendChild(legendItem(`Margem de evolução (${gap})`, COLORS.gap));
-
-      pieWrap.appendChild(legend);
-    }
-
-    left.appendChild(pieWrap);
-
-    const right = document.createElement('div');
-    right.style.width = '96px';
-    right.style.textAlign = 'right';
-    right.style.fontSize = '12px';
-    right.innerHTML = score === null ? '—' : `<strong>${score}</strong> / 1000`;
-
-    row.appendChild(left);
-    row.appendChild(right);
-
-    chartEl.appendChild(row);
+    angle += delta;
   });
+
+  // “furo”
+  const holeCircle = document.createElementNS(svgNS, 'circle');
+  holeCircle.setAttribute('cx', String(cx));
+  holeCircle.setAttribute('cy', String(cy));
+  holeCircle.setAttribute('r', String(hole));
+  holeCircle.setAttribute('fill', '#fff');
+  svg.appendChild(holeCircle);
+
+  // texto central
+  if (typeof opts.centerText === 'string' && opts.centerText) {
+    const t1 = document.createElementNS(svgNS, 'text');
+    t1.setAttribute('x', String(cx));
+    t1.setAttribute('y', String(cy + 5));
+    t1.setAttribute('text-anchor', 'middle');
+    t1.setAttribute('font-size', String(opts.fontSize ?? 14));
+    t1.setAttribute('font-weight', '900');
+    t1.setAttribute('fill', COLORS.text);
+    t1.textContent = opts.centerText;
+    svg.appendChild(t1);
+  }
+
+  return svg;
 }
 
+function legendItem(label, color, isGap = false) {
+  const item = document.createElement('div');
+  item.style.display = 'flex';
+  item.style.alignItems = 'center';
+  item.style.gap = '8px';
+  item.style.fontSize = '12px';
 
+  const dot = document.createElement('span');
+  dot.style.display = 'inline-block';
+  dot.style.width = '10px';
+  dot.style.height = '10px';
+  dot.style.borderRadius = '3px';
+  dot.style.background = color;
+  dot.style.border = `1px solid ${isGap ? '#d1d5db' : COLORS.stroke}`;
 
-function renderHistory(essays) {
+  const text = document.createElement('span');
+  text.textContent = label;
+
+  item.appendChild(dot);
+  item.appendChild(text);
+  return item;
+}
+
+function renderDonutWithLegend(targetDonutEl, targetLegendEl, { c1, c2, c3, c4, c5, totalText }) {
+  if (!targetDonutEl || !targetLegendEl) return;
+
+  const used = Math.max(0, Math.min(MAX, c1 + c2 + c3 + c4 + c5));
+  const gap = Math.max(0, MAX - used);
+
+  const segments = [
+    { value: c1, color: COLORS.c1 },
+    { value: c2, color: COLORS.c2 },
+    { value: c3, color: COLORS.c3 },
+    { value: c4, color: COLORS.c4 },
+    { value: c5, color: COLORS.c5 },
+    { value: gap, color: COLORS.gap },
+  ].filter((s) => s.value > 0);
+
+  targetDonutEl.innerHTML = '';
+  targetLegendEl.innerHTML = '';
+
+  const donut = createDonutSvg(segments, {
+    size: 92,
+    hole: 30,
+    centerText: totalText,
+    fontSize: 14,
+  });
+
+  targetDonutEl.appendChild(donut);
+
+  const legend = document.createElement('div');
+  legend.style.display = 'grid';
+  legend.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+  legend.style.columnGap = '16px';
+  legend.style.rowGap = '6px';
+
+  legend.appendChild(legendItem(`C1 (${c1})`, COLORS.c1));
+  legend.appendChild(legendItem(`C2 (${c2})`, COLORS.c2));
+  legend.appendChild(legendItem(`C3 (${c3})`, COLORS.c3));
+  legend.appendChild(legendItem(`C4 (${c4})`, COLORS.c4));
+  legend.appendChild(legendItem(`C5 (${c5})`, COLORS.c5));
+  legend.appendChild(legendItem(`Margem de evolução (${gap})`, COLORS.gap, true));
+
+  targetLegendEl.appendChild(legend);
+}
+
+// ---------------- tarefas: buscar títulos ----------------
+async function fetchTasksMapByRoom(roomId) {
+  try {
+    const res = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
+    if (!res.ok) return new Map();
+    const tasks = await res.json();
+    const map = new Map();
+    (Array.isArray(tasks) ? tasks : []).forEach((t) => {
+      if (t?.id) map.set(String(t.id), String(t.title || 'Tarefa'));
+    });
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+// ---------------- UI: tarefas com abrir/fechar ----------------
+function closeAllTaskPanels() {
+  if (!historyList) return;
+  const panels = historyList.querySelectorAll('.mk-task-panel');
+  panels.forEach((p) => (p.style.display = 'none'));
+}
+
+function buildTaskPanel() {
+  const panel = document.createElement('div');
+  panel.className = 'mk-task-panel';
+  panel.style.display = 'none';
+  panel.style.marginTop = '10px';
+  panel.style.padding = '12px';
+  panel.style.border = '1px solid #e5e7eb';
+  panel.style.borderRadius = '14px';
+  panel.style.background = '#fff';
+
+  // header do painel
+  const head = document.createElement('div');
+  head.style.display = 'flex';
+  head.style.alignItems = 'center';
+  head.style.justifyContent = 'space-between';
+  head.style.gap = '10px';
+
+  const title = document.createElement('strong');
+  title.id = 'mkTaskPanelTitle';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Fechar';
+  closeBtn.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    panel.style.display = 'none';
+  });
+
+  head.appendChild(title);
+  head.appendChild(closeBtn);
+
+  // gráfico
+  const chartWrap = document.createElement('div');
+  chartWrap.style.display = 'flex';
+  chartWrap.style.alignItems = 'center';
+  chartWrap.style.gap = '18px';
+  chartWrap.style.flexWrap = 'wrap';
+  chartWrap.style.marginTop = '10px';
+
+  const donut = document.createElement('div');
+  donut.id = 'mkTaskPanelDonut';
+  donut.style.minWidth = '160px';
+  donut.style.display = 'flex';
+  donut.style.justifyContent = 'center';
+
+  const legend = document.createElement('div');
+  legend.id = 'mkTaskPanelLegend';
+
+  chartWrap.appendChild(donut);
+  chartWrap.appendChild(legend);
+
+  // ações
+  const actions = document.createElement('div');
+  actions.style.marginTop = '12px';
+
+  const viewBtn = document.createElement('button');
+  viewBtn.id = 'mkTaskPanelViewBtn';
+  viewBtn.textContent = 'Ver redação';
+  actions.appendChild(viewBtn);
+
+  panel.appendChild(head);
+  panel.appendChild(chartWrap);
+  panel.appendChild(actions);
+
+  return panel;
+}
+
+function renderTasksHistory(essays, tasksMap) {
   if (!historyList) return;
   historyList.innerHTML = '';
 
@@ -316,50 +328,109 @@ function renderHistory(essays) {
     return;
   }
 
-  // mantém ordem do backend
-  const ordered = [...essays];
+  // agrupa por taskId
+  const byTask = new Map();
+  essays.forEach((e) => {
+    const tId = e?.taskId ? String(e.taskId) : '';
+    if (!tId) return;
+    if (!byTask.has(tId)) byTask.set(tId, []);
+    byTask.get(tId).push(e);
+  });
 
-  ordered.forEach((e, idx) => {
+  // ordena por nome da tarefa
+  const tasks = Array.from(byTask.entries()).map(([taskId, list]) => {
+    const title = tasksMap.get(taskId) || `Tarefa ${taskId.slice(0, 6)}…`;
+    return { taskId, title, list };
+  });
+  tasks.sort((a, b) => a.title.localeCompare(b.title));
+
+  tasks.forEach((t) => {
     const li = document.createElement('li');
+    li.style.padding = '12px';
+    li.style.borderRadius = '14px';
+    li.style.border = '1px solid #e5e7eb';
+    li.style.background = '#fff';
+    li.style.boxShadow = '0 8px 18px rgba(2, 6, 23, 0.05)';
 
     const title = document.createElement('div');
-    title.innerHTML = `<strong>${makeLabelFromTaskId(e.taskId, idx)}</strong>`;
+    title.innerHTML = `<strong>${t.title}</strong>`;
 
-    const nota = document.createElement('div');
-    nota.style.marginTop = '6px';
+    // pega a redação do aluno nessa tarefa (normalmente 1)
+    const essay = t.list[0];
 
-    const score = safeScore(e.score);
-
-    if (score !== null) {
-      nota.textContent =
-        `Nota: ${score} ` +
-        `(C1 ${e.c1 ?? '—'} C2 ${e.c2 ?? '—'} C3 ${e.c3 ?? '—'} C4 ${e.c4 ?? '—'} C5 ${
-          e.c5 ?? '—'
-        })`;
-    } else {
-      nota.textContent = 'Ainda não corrigida.';
-    }
-
-    const actions = document.createElement('div');
-    actions.style.marginTop = '10px';
+    const score = safeScore(essay?.score);
+    const resumo = document.createElement('div');
+    resumo.style.marginTop = '6px';
+    resumo.style.fontSize = '12px';
+    resumo.style.opacity = '0.9';
+    resumo.textContent = score === null ? 'Ainda não corrigida.' : `Nota: ${score} / 1000`;
 
     const btn = document.createElement('button');
-    btn.textContent = 'Ver redação';
-    btn.onclick = () => {
-      window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(e.id)}`;
-    };
+    btn.style.marginTop = '10px';
+    btn.textContent = 'Ver detalhes da tarefa';
 
-    actions.appendChild(btn);
+    const panel = buildTaskPanel();
+
+    function openPanel() {
+      closeAllTaskPanels();
+
+      const panelTitle = panel.querySelector('#mkTaskPanelTitle');
+      if (panelTitle) panelTitle.textContent = t.title;
+
+      const donut = panel.querySelector('#mkTaskPanelDonut');
+      const legend = panel.querySelector('#mkTaskPanelLegend');
+
+      if (score === null) {
+        if (donut) donut.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correção ainda.</div>';
+        if (legend) legend.innerHTML = '';
+      } else {
+        const c1 = clamp0to200(essay?.c1);
+        const c2 = clamp0to200(essay?.c2);
+        const c3 = clamp0to200(essay?.c3);
+        const c4 = clamp0to200(essay?.c4);
+        const c5 = clamp0to200(essay?.c5);
+        renderDonutWithLegend(donut, legend, { c1, c2, c3, c4, c5, totalText: String(score) });
+      }
+
+      const viewBtn = panel.querySelector('#mkTaskPanelViewBtn');
+      if (viewBtn) {
+        viewBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(essay.id)}`;
+        };
+      }
+
+      panel.style.display = 'block';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const isOpen = panel.style.display === 'block';
+      if (isOpen) panel.style.display = 'none';
+      else openPanel();
+    });
+
+    // clicar no card também abre/fecha
+    li.style.cursor = 'pointer';
+    li.title = 'Clique para abrir/fechar os detalhes';
+    li.addEventListener('click', (ev) => {
+      if (ev.target && ev.target.tagName === 'BUTTON') return;
+      const isOpen = panel.style.display === 'block';
+      if (isOpen) panel.style.display = 'none';
+      else openPanel();
+    });
 
     li.appendChild(title);
-    li.appendChild(nota);
-    li.appendChild(actions);
+    li.appendChild(resumo);
+    li.appendChild(btn);
+    li.appendChild(panel);
 
     historyList.appendChild(li);
   });
 }
 
-// ✅ carrega salas do aluno (popular select)
+// ---------------- salas do aluno ----------------
 async function carregarSalasDoAluno() {
   if (!roomSelect) return [];
 
@@ -386,7 +457,7 @@ async function carregarSalasDoAluno() {
       roomSelect.appendChild(opt);
     });
 
-    const exists = rooms.some((r) => r.id === roomIdFromUrl);
+    const exists = rooms.some((r) => String(r.id) === String(roomIdFromUrl));
     roomSelect.value = exists ? roomIdFromUrl : rooms[0].id;
 
     return rooms;
@@ -396,22 +467,21 @@ async function carregarSalasDoAluno() {
   }
 }
 
-// ✅ carrega desempenho do aluno na sala
+// ---------------- desempenho do aluno na sala ----------------
 async function carregarDesempenho(roomId) {
   if (!roomId) {
     setStatus('Selecione uma sala.');
     clearResumo();
-    renderChart([]);
-    renderHistory([]);
+    renderTasksHistory([], new Map());
     return;
   }
 
   setStatus('Carregando...');
   clearResumo();
-  renderChart([]);
-  renderHistory([]);
+  renderTasksHistory([], new Map());
 
   try {
+    // 1) desempenho do aluno
     const res = await fetch(
       `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(
         roomId
@@ -423,28 +493,57 @@ async function carregarDesempenho(roomId) {
 
     if (!Array.isArray(essays) || essays.length === 0) {
       setStatus('Sem redações nesta sala ainda.');
-      renderChart([]);
-      renderHistory([]);
+      renderTasksHistory([], new Map());
       return;
     }
 
+    // 2) títulos das tarefas
+    const tasksMap = await fetchTasksMapByRoom(roomId);
+
+    // 3) resumo (somente corrigidas)
     const corrected = essays.filter((e) => e.score !== null && e.score !== undefined);
 
-    setText(avgTotal, mean(corrected.map((e) => e.score)));
-    setText(avgC1, mean(corrected.map((e) => e.c1)));
-    setText(avgC2, mean(corrected.map((e) => e.c2)));
-    setText(avgC3, mean(corrected.map((e) => e.c3)));
-    setText(avgC4, mean(corrected.map((e) => e.c4)));
-    setText(avgC5, mean(corrected.map((e) => e.c5)));
+    const mTotal = mean(corrected.map((e) => e.score));
+    const mC1 = mean(corrected.map((e) => e.c1));
+    const mC2 = mean(corrected.map((e) => e.c2));
+    const mC3 = mean(corrected.map((e) => e.c3));
+    const mC4 = mean(corrected.map((e) => e.c4));
+    const mC5 = mean(corrected.map((e) => e.c5));
 
-    renderChart(essays);
-    renderHistory(essays);
+    setText(avgTotal, mTotal);
+    setText(avgC1, mC1);
+    setText(avgC2, mC2);
+    setText(avgC3, mC3);
+    setText(avgC4, mC4);
+    setText(avgC5, mC5);
+
+    // ✅ gráfico do resumo (média geral)
+    if (mTotal !== null) {
+      renderDonutWithLegend(
+        avgDonutEl,
+        avgLegendEl,
+        {
+          c1: mC1 ?? 0,
+          c2: mC2 ?? 0,
+          c3: mC3 ?? 0,
+          c4: mC4 ?? 0,
+          c5: mC5 ?? 0,
+          totalText: String(mTotal),
+        }
+      );
+    } else {
+      if (avgDonutEl) avgDonutEl.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
+      if (avgLegendEl) avgLegendEl.innerHTML = '';
+    }
+
+    // 4) histórico por tarefa (com abrir/fechar)
+    renderTasksHistory(essays, tasksMap);
 
     setStatus('');
-  } catch {
+  } catch (e) {
+    console.error(e);
     setStatus('Erro ao carregar desempenho.');
-    renderChart([]);
-    renderHistory([]);
+    renderTasksHistory([], new Map());
   }
 }
 
@@ -468,5 +567,3 @@ async function carregarDesempenho(roomId) {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
-
-
