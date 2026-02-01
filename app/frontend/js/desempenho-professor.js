@@ -19,6 +19,9 @@ const avgC3 = document.getElementById('avgC3');
 const avgC4 = document.getElementById('avgC4');
 const avgC5 = document.getElementById('avgC5');
 
+const roomAvgDonutEl = document.getElementById('roomAvgDonut');
+const roomAvgLegendEl = document.getElementById('roomAvgLegend');
+
 const tasksListEl = document.getElementById('tasksList');
 const taskPanelEl = document.getElementById('taskPanel');
 const taskPanelTitleEl = document.getElementById('taskPanelTitle');
@@ -229,6 +232,33 @@ function buildLegendGrid(values) {
   });
 
   return legend;
+}
+
+function renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal }) {
+  if (!roomAvgDonutEl || !roomAvgLegendEl) return;
+
+  // limpa
+  roomAvgDonutEl.innerHTML = '';
+  roomAvgLegendEl.innerHTML = '';
+
+  const { svg, legend } = createDonutSVG(
+    {
+      c1: mC1 ?? 0,
+      c2: mC2 ?? 0,
+      c3: mC3 ?? 0,
+      c4: mC4 ?? 0,
+      c5: mC5 ?? 0,
+      total: mTotal, // se null, aparece "—" no centro
+    },
+    120,
+    18
+  );
+
+  svg.classList.add('mk-donut');
+  roomAvgDonutEl.appendChild(svg);
+
+  const legendEl = buildLegendGrid(legend);
+  roomAvgLegendEl.appendChild(legendEl);
 }
 
 // ---------------- alunos ativos ----------------
@@ -678,13 +708,24 @@ async function carregarDados() {
     cachedData = data;
 
     // médias gerais da sala (somente corrigidas)
-    const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
-    setText(avgTotal, mean(corrected.map((e) => e.score)));
-    setText(avgC1, mean(corrected.map((e) => e.c1)));
-    setText(avgC2, mean(corrected.map((e) => e.c2)));
-    setText(avgC3, mean(corrected.map((e) => e.c3)));
-    setText(avgC4, mean(corrected.map((e) => e.c4)));
-    setText(avgC5, mean(corrected.map((e) => e.c5)));
+   const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
+
+const mTotal = mean(corrected.map((e) => e.score));
+const mC1 = mean(corrected.map((e) => e.c1));
+const mC2 = mean(corrected.map((e) => e.c2));
+const mC3 = mean(corrected.map((e) => e.c3));
+const mC4 = mean(corrected.map((e) => e.c4));
+const mC5 = mean(corrected.map((e) => e.c5));
+
+setText(avgTotal, mTotal);
+setText(avgC1, mC1);
+setText(avgC2, mC2);
+setText(avgC3, mC3);
+setText(avgC4, mC4);
+setText(avgC5, mC5);
+
+// ✅ desenha o gráfico das médias da sala (todas as tarefas corrigidas)
+renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal });
 
     // tarefas
     const tasks = buildTasksFromData(data);
