@@ -31,16 +31,33 @@ if (performanceBtn) {
   });
 }
 
+// 🔹 Helpers
+function normalizeStudent(s) {
+  // aceita variações do backend
+  const id = String(s?.id || s?.studentId || '').trim();
+  const name = String(s?.name || s?.studentName || '').trim();
+  const email = String(s?.email || s?.studentEmail || '').trim();
+  return { id, name, email };
+}
+
+function normalizeTask(t) {
+  const id = String(t?.id || t?.taskId || '').trim();
+  const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
+  const guidelines = String(t?.guidelines || '').trim();
+  return { id, title, guidelines };
+}
+
 // 🔹 Carregar dados da sala
 async function carregarSala() {
   try {
     const response = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
-    if (!response.ok) throw new Error();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const room = await response.json();
     roomNameEl.textContent = room?.name || 'Sala';
     roomCodeEl.textContent = room?.code || '—';
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert('Erro ao carregar dados da sala.');
   }
 }
@@ -67,10 +84,11 @@ async function removerAluno(studentId, studentName = 'este aluno') {
       { method: 'DELETE' }
     );
 
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     await carregarAlunos();
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert('Erro ao remover aluno da sala.');
   }
 }
@@ -79,25 +97,30 @@ async function removerAluno(studentId, studentName = 'este aluno') {
 async function carregarAlunos() {
   studentsList.innerHTML = '<li>Carregando alunos...</li>';
 
-  // foto do aluno salva localmente pelo menu-perfil.js no navegador do aluno
   const photoKey = (studentId) => `mk_photo_student_${studentId}`;
 
   try {
     const response = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
-    if (!response.ok) throw new Error();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    let students = await response.json();
+    const raw = await response.json();
+    const arr = Array.isArray(raw) ? raw : [];
+
+    const students = arr
+      .map(normalizeStudent)
+      .filter((s) => !!s.id);
+
     studentsList.innerHTML = '';
 
-    if (!Array.isArray(students) || students.length === 0) {
+    if (students.length === 0) {
       studentsList.innerHTML = '<li>Nenhum aluno matriculado ainda.</li>';
       return;
     }
 
     // ✅ ordena por nome (se vier vazio, joga pro fim)
-    students = students.sort((a, b) => {
-      const an = (a?.name || '').trim().toLowerCase();
-      const bn = (b?.name || '').trim().toLowerCase();
+    students.sort((a, b) => {
+      const an = (a.name || '').toLowerCase();
+      const bn = (b.name || '').toLowerCase();
       if (!an && bn) return 1;
       if (an && !bn) return -1;
       return an.localeCompare(bn);
@@ -124,12 +147,10 @@ async function carregarAlunos() {
       img.style.objectFit = 'cover';
       img.style.border = '1px solid #ccc';
 
-      const dataUrl = student?.id ? localStorage.getItem(photoKey(student.id)) : null;
-
+      const dataUrl = localStorage.getItem(photoKey(student.id));
       if (dataUrl) {
         img.src = dataUrl;
       } else {
-        // placeholder
         img.src =
           'data:image/svg+xml;utf8,' +
           encodeURIComponent(
@@ -142,55 +163,31 @@ async function carregarAlunos() {
 
       // texto
       const text = document.createElement('div');
-      const name = (student?.name || '').trim() || 'Aluno';
-      const email = (student?.email || '').trim();
+      const name = student.name || 'Aluno';
+      const email = student.email || '';
 
-      // evita "undefined"
       text.innerHTML = `<strong>${name}</strong>${email ? `<br><small>${email}</small>` : ''}`;
 
       left.appendChild(img);
       left.appendChild(text);
 
-      // botão remover (se tiver student.id)
+      // botão remover
       const right = document.createElement('div');
-
-      if (student?.id) {
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = 'Remover';
-        removeBtn.addEventListener('click', () => removerAluno(student.id, name));
-        right.appendChild(removeBtn);
-      }
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = 'Remover';
+      removeBtn.addEventListener('click', () => removerAluno(student.id, name));
+      right.appendChild(removeBtn);
 
       li.appendChild(left);
       li.appendChild(right);
 
       studentsList.appendChild(li);
     });
-  } catch {
+  } catch (err) {
+    console.error(err);
     studentsList.innerHTML = '<li>Não foi possível carregar alunos agora.</li>';
   }
 }
-
-async function getActiveStudentsSet(roomId) {
-  try {
-    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
-    if (!res.ok) throw new Error();
-    const list = await res.json();
-    const arr = Array.isArray(list) ? list : [];
-    const ids = arr
-      .map((s) => String(s?.id || s?.studentId || '').trim())
-      .filter(Boolean);
-    return new Set(ids);
-  } catch {
-    return null; // se falhar, não filtra
-  }
-}
-
-const activeSet = await getActiveStudentsSet(roomId);
-if (activeSet) {
-  data = data.filter((e) => activeSet.has(String(e.studentId)));
-}
-
 
 // 🔹 Carregar tarefas
 async function carregarTarefas() {
@@ -198,12 +195,18 @@ async function carregarTarefas() {
 
   try {
     const response = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
-    if (!response.ok) throw new Error();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const tasks = await response.json();
+    const raw = await response.json();
+    const arr = Array.isArray(raw) ? raw : [];
+
+    const tasks = arr
+      .map(normalizeTask)
+      .filter((t) => !!t.id);
+
     tasksList.innerHTML = '';
 
-    if (!Array.isArray(tasks) || tasks.length === 0) {
+    if (tasks.length === 0) {
       tasksList.innerHTML = '<li>Nenhuma tarefa criada.</li>';
       return;
     }
@@ -212,7 +215,7 @@ async function carregarTarefas() {
       const li = document.createElement('li');
 
       const title = document.createElement('strong');
-      title.textContent = task?.title || 'Tarefa';
+      title.textContent = task.title || 'Tarefa';
 
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
@@ -223,15 +226,19 @@ async function carregarTarefas() {
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
       delBtn.addEventListener('click', async () => {
-        const ok = confirm(`Excluir a tarefa "${task?.title || 'sem título'}"?`);
+        const ok = confirm(`Excluir a tarefa "${task.title || 'sem título'}"?`);
         if (!ok) return;
 
-        const res = await fetch(`${API_URL}/tasks/${encodeURIComponent(task.id)}`, { method: 'DELETE' });
-        if (!res.ok) {
+        try {
+          const res = await fetch(`${API_URL}/tasks/${encodeURIComponent(task.id)}`, {
+            method: 'DELETE',
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          carregarTarefas();
+        } catch (err) {
+          console.error(err);
           alert('Erro ao excluir tarefa.');
-          return;
         }
-        carregarTarefas();
       });
 
       li.appendChild(title);
@@ -241,7 +248,8 @@ async function carregarTarefas() {
 
       tasksList.appendChild(li);
     });
-  } catch {
+  } catch (err) {
+    console.error(err);
     tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
 }
@@ -266,13 +274,14 @@ createTaskBtn.addEventListener('click', async () => {
       body: JSON.stringify({ roomId, title, guidelines }),
     });
 
-    if (!response.ok) throw new Error();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     if (titleEl) titleEl.value = '';
     if (guidelinesEl) guidelinesEl.value = '';
 
     carregarTarefas();
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert('Erro ao criar tarefa.');
   }
 });
