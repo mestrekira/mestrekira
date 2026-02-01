@@ -78,15 +78,17 @@
 </section>
 
 <br>
+ <div class="actions-row">
 <button id="backBtn">Voltar ao painel</button>
-
+ </div>
+  
 <script type="module" src="js/feedback-aluno.js"></script>
 
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
 
   initMenuPerfil({
-    loginRedirect: 'login.html',
+    loginRedirect: 'index.html',
     logoutRedirectProfessor: 'login-professor.html',
     logoutRedirectStudent: 'login-aluno.html'
   });
@@ -94,6 +96,7 @@
 
 </body>
 </html>
+
 
 
 
