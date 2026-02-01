@@ -182,6 +182,23 @@
 
 <section class="mk-card">
   <h3>Médias da sala (somente redações corrigidas)</h3>
+  
+<!-- ✅ GRÁFICO: médias da sala (donut estilo ENEM) -->
+<div id="roomAvgChart" class="mk-card" style="margin: 10px 0;">
+  <div class="mk-row" style="align-items:center; justify-content: space-between; flex-wrap: wrap;">
+    <div style="min-width:220px;">
+      <strong>Gráfico (Média da sala / ENEM)</strong><br>
+      <small class="mk-muted">
+        Cada fatia representa uma competência; a parte branca é a margem de evolução até 1000.
+      </small>
+    </div>
+
+    <div class="mk-chart-wrap" style="min-width: 360px;">
+      <div id="roomAvgDonut" class="mk-donut"></div>
+      <div id="roomAvgLegend" class="mk-legend"></div>
+    </div>
+  </div>
+</div>
 
   <ul class="lista">
     <li>Média total: <strong id="avgTotal">—</strong></li>
