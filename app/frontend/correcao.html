@@ -35,8 +35,6 @@
 
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
-    <!-- ✅ ID removido para simplificar (como você pediu) -->
-    <!-- <p><strong>ID:</strong> <span id="meId">...</span></p> -->
     <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
     <hr>
@@ -57,7 +55,16 @@
 
 <h2>Correção de Redações</h2>
 
+<!-- ✅ Tema / Tarefa -->
+<p><strong>Tema:</strong> <span id="taskTitle">Carregando...</span></p>
+
+<!-- (opcional) sala -->
+<p style="margin-top:-6px;"><small id="taskMeta"></small></p>
+
+<hr>
+
 <section>
+  <h3>Redações enviadas</h3>
   <ul id="essaysList" class="lista"></ul>
 </section>
 
@@ -181,7 +188,7 @@
   import { initMenuPerfil } from './js/menu-perfil.js';
 
   initMenuPerfil({
-    loginRedirect: 'login.html',
+    loginRedirect: 'index.html',
     logoutRedirectProfessor: 'login-professor.html',
     logoutRedirectStudent: 'login-aluno.html'
   });
