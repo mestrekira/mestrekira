@@ -607,17 +607,21 @@ async function carregarRedacoes() {
       li.title = corrected
         ? 'Clique para ver redação/feedback'
         : 'Clique para corrigir (abre logo abaixo)';
-      li.addEventListener('click', (ev) => {
-        if (ev.target && ev.target.tagName === 'BUTTON') return;
-        if (corrected) {
-          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-            String(taskId)
-          )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
-        } else {
-          abrirCorrecao(essay, li);
-        }
-      });
+     li.addEventListener('click', (ev) => {
+  // ✅ se clicou dentro do painel aberto, não reabrir correção
+  if (correctionSection && correctionSection.contains(ev.target)) return;
 
+  if (ev.target && ev.target.tagName === 'BUTTON') return;
+
+  if (corrected) {
+    window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
+      String(taskId)
+    )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
+  } else {
+    abrirCorrecao(essay, li);
+  }
+});
+      
       li.appendChild(left);
       li.appendChild(btn);
 
@@ -637,6 +641,19 @@ async function carregarRedacoes() {
     if (correctionSection) correctionSection.style.display = 'none';
     currentEssayId = null;
   }
+}
+
+// ✅ impede que cliques no painel disparem o clique do <li> do aluno
+if (correctionSection) {
+  ['click', 'mousedown', 'pointerdown', 'touchstart'].forEach((evt) => {
+    correctionSection.addEventListener(
+      evt,
+      (e) => {
+        e.stopPropagation();
+      },
+      { passive: true }
+    );
+  });
 }
 
 // -------------------- SALVAR CORREÇÃO --------------------
