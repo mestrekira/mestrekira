@@ -2,9 +2,9 @@ import { API_URL } from './config.js';
 
 // 🔹 PARÂMETROS (aceita 2 modos)
 const params = new URLSearchParams(window.location.search);
-const essayId = params.get('essayId');     // modo antigo
-const taskId = params.get('taskId');       // modo novo
-const studentId = params.get('studentId'); // modo novo
+const essayId = params.get('essayId');      // modo antigo
+const taskId = params.get('taskId');        // modo novo
+const studentId = params.get('studentId');  // modo novo
 
 if (!essayId && !(taskId && studentId)) {
   alert('Acesso inválido.');
@@ -94,15 +94,22 @@ function splitTitleAndBody(raw) {
 
 // ---------------- fetch helpers ----------------
 
-async function fetchEssayById(id) {
+async function fetchEssayByIdWithStudent(id) {
   // ✅ endpoint professor (com studentName/email)
   const res = await fetch(`${API_URL}/essays/${encodeURIComponent(id)}/with-student`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
-async function fetchEssayByTaskAndStudent(tId, sId) {
-  // ✅ você já usa esse endpoint no redacao.js
+async function fetchEssaysByTaskWithStudent(tId) {
+  // ✅ este endpoint você já usa no correcao.js
+  const res = await fetch(`${API_URL}/essays/by-task/${encodeURIComponent(tId)}/with-student`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchEssayByTaskAndStudentFallback(tId, sId) {
+  // fallback: pode NÃO trazer studentName/email, depende do backend
   const url =
     `${API_URL}/essays/by-task/${encodeURIComponent(tId)}/by-student` +
     `?studentId=${encodeURIComponent(sId)}`;
@@ -122,9 +129,21 @@ async function fetchTask(tId) {
 // ---------------- render ----------------
 
 function renderEssay(essay) {
-  // aluno
-  setText(studentNameEl, essay?.studentName || essay?.student?.name, 'Aluno');
-  setText(studentEmailEl, essay?.studentEmail || essay?.student?.email, '');
+  // aluno (prioriza campos mais comuns)
+  const name =
+    essay?.studentName ??
+    essay?.student?.name ??
+    essay?.student?.fullName ??
+    essay?.name ??
+    '';
+
+  const email =
+    essay?.studentEmail ??
+    essay?.student?.email ??
+    '';
+
+  setText(studentNameEl, name, 'Aluno');
+  setText(studentEmailEl, email, '');
 
   // redação
   const { title, body } = splitTitleAndBody(essay?.content || '');
@@ -139,11 +158,7 @@ function renderEssay(essay) {
   setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida', '—');
 
   // feedback
-  setMultiline(
-    feedbackEl,
-    essay?.feedback || '',
-    'Aguardando correção do professor.'
-  );
+  setMultiline(feedbackEl, essay?.feedback || '', 'Aguardando correção do professor.');
 
   // competências
   setText(c1El, essay?.c1);
@@ -157,25 +172,52 @@ async function carregar() {
   try {
     let essay = null;
 
-    // ✅ prioridade: modo novo (taskId + studentId)
+    // ✅ MODO NOVO: taskId + studentId
+    // Melhor forma: pegar /with-student e filtrar (garante studentName/email)
     if (taskId && studentId) {
-      essay = await fetchEssayByTaskAndStudent(taskId, studentId);
+      let list = [];
+      try {
+        list = await fetchEssaysByTaskWithStudent(taskId);
+      } catch (e) {
+        // se falhar, segue pro fallback
+        console.warn('[feedback-professor] falhou fetchEssaysByTaskWithStudent:', e);
+      }
 
+      if (Array.isArray(list) && list.length) {
+        essay = list.find((x) => String(x?.studentId) === String(studentId)) || null;
+      }
+
+      // fallback: by-student (pode vir sem nome/email)
       if (!essay) {
-        alert('Não encontrei redação para este aluno nesta tarefa (talvez não tenha enviado).');
-        window.location.href = 'professor-salas.html';
-        return;
+        essay = await fetchEssayByTaskAndStudentFallback(taskId, studentId);
+
+        if (!essay) {
+          alert('Não encontrei redação para este aluno nesta tarefa (talvez não tenha enviado).');
+          window.location.href = 'professor-salas.html';
+          return;
+        }
+
+        // se o fallback trouxe essay.id, tenta enriquecer com /with-student
+        if (essay?.id) {
+          try {
+            const enriched = await fetchEssayByIdWithStudent(essay.id);
+            if (enriched) essay = enriched;
+          } catch (e) {
+            console.warn('[feedback-professor] não consegui enriquecer por id:', e);
+          }
+        }
       }
     } else {
-      // modo antigo
-      essay = await fetchEssayById(essayId);
+      // ✅ MODO ANTIGO: essayId
+      essay = await fetchEssayByIdWithStudent(essayId);
     }
+
+    if (!essay) throw new Error('Redação não encontrada');
 
     renderEssay(essay);
 
     // ✅ tema: tenta por essay.taskId (se existir), senão usa taskId da URL
     const effectiveTaskId = essay?.taskId || taskId;
-
     if (effectiveTaskId) {
       const task = await fetchTask(effectiveTaskId);
       setText(taskTitleEl, task?.title, '—');
