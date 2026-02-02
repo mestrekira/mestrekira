@@ -473,4 +473,47 @@ section button:last-child{ margin-right: 0; }
   .menu-btn{ top: 12px; right: 12px; }
 }
 
+/* =========================================================
+   Ajuste de respiro no final dos cards e itens de lista
+   (evita botão colado na borda inferior)
+   ========================================================= */
+
+/* 1) Cards (sections): mais respiro embaixo */
+section{
+  padding-bottom: 22px; /* antes: 18px -> dá espaço extra para o último conteúdo */
+}
+
+/* 2) Último elemento dentro do card: ganha margem inferior */
+section > :last-child{
+  margin-bottom: 10px;
+}
+
+/* 3) Se o último elemento for botão (ou grupo de botões), dá mais respiro */
+section > button:last-child,
+section > .actions-row:last-child,
+section > .corr-top-actions:last-child{
+  margin-bottom: 12px;
+}
+
+/* 4) Itens de lista (cards pequenos): mais padding embaixo */
+.lista li{
+  padding-bottom: 18px; /* antes: 14px */
+}
+
+/* 5) Último conteúdo dentro do li também respira */
+.lista li > :last-child{
+  margin-bottom: 8px;
+}
+
+/* 6) Botões dentro da lista: separação do fundo */
+.lista li button:last-child{
+  margin-bottom: 6px;
+}
+
+/* 7) Se o item tiver inline panels (ex.: mk-task-panel), também evita encostar */
+.mk-inline-panel,
+.mk-task-panel{
+  margin-bottom: 6px;
+}
+
 
