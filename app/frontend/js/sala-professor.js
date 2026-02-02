@@ -36,30 +36,35 @@ if (performanceBtn) {
 // =======================
 
 function normalizeStudent(s) {
+  // aceita variações do backend
   const id = String(s?.id || s?.studentId || '').trim();
   const name = String(s?.name || s?.studentName || '').trim();
   const email = String(s?.email || s?.studentEmail || '').trim();
   return { id, name, email };
 }
 
-function pickCreatedAt(obj) {
-  // aceita vários formatos comuns
-  return (
-    obj?.createdAt ||
-    obj?.created_at ||
-    obj?.created ||
-    obj?.dateCreated ||
-    obj?.timestamp ||
-    null
-  );
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v) return v;
+  }
+  return null;
 }
 
 function normalizeTask(t) {
   const id = String(t?.id || t?.taskId || '').trim();
   const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
-  const guidelines = String(t?.guidelines || '').trim();
-  const createdAt = pickCreatedAt(t); // pode vir null
-  return { id, title, guidelines, createdAt };
+  const guidelines = String(t?.guidelines || ''); // 👈 não trim: preserva quebras
+  const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+  return { id, title, guidelines, createdAt, _raw: t };
+}
+
+function formatDateBR(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  const t = d.getTime();
+  if (Number.isNaN(t)) return '—';
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
 }
 
 function getLastCreatedTaskKey() {
@@ -83,7 +88,22 @@ function getLastCreatedTaskId() {
   }
 }
 
-// 🔹 Carregar dados da sala
+function placeholderAvatar() {
+  return (
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+        <rect width="100%" height="100%" fill="#eee"/>
+        <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">?</text>
+      </svg>`
+    )
+  );
+}
+
+// =======================
+// Sala
+// =======================
+
 async function carregarSala() {
   try {
     const response = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
@@ -109,7 +129,10 @@ copyCodeBtn.addEventListener('click', () => {
   alert('Código da sala copiado!');
 });
 
-// ✅ Remover aluno da sala
+// =======================
+// Alunos
+// =======================
+
 async function removerAluno(studentId, studentName = 'este aluno') {
   const ok = confirm(`Remover ${studentName} da sala?`);
   if (!ok) return;
@@ -129,7 +152,6 @@ async function removerAluno(studentId, studentName = 'este aluno') {
   }
 }
 
-// 🔹 Carregar alunos (com foto localStorage)
 async function carregarAlunos() {
   studentsList.innerHTML = '<li>Carregando alunos...</li>';
 
@@ -140,9 +162,9 @@ async function carregarAlunos() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const raw = await response.json();
-    console.log('[tasks raw]', raw); // NOVA
-    const arr = Array.isArray(raw) ? raw : [];
+    console.log('[students raw]', raw);
 
+    const arr = Array.isArray(raw) ? raw : [];
     const students = arr.map(normalizeStudent).filter((s) => !!s.id);
 
     studentsList.innerHTML = '';
@@ -152,7 +174,6 @@ async function carregarAlunos() {
       return;
     }
 
-    // ordena por nome
     students.sort((a, b) => {
       const an = (a.name || '').toLowerCase();
       const bn = (b.name || '').toLowerCase();
@@ -173,6 +194,7 @@ async function carregarAlunos() {
       left.style.alignItems = 'center';
       left.style.gap = '10px';
 
+      // foto
       const img = document.createElement('img');
       img.alt = 'Foto do aluno';
       img.width = 36;
@@ -182,19 +204,9 @@ async function carregarAlunos() {
       img.style.border = '1px solid #ccc';
 
       const dataUrl = localStorage.getItem(photoKey(student.id));
-      if (dataUrl) {
-        img.src = dataUrl;
-      } else {
-        img.src =
-          'data:image/svg+xml;utf8,' +
-          encodeURIComponent(
-            `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
-              <rect width="100%" height="100%" fill="#eee"/>
-              <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">?</text>
-            </svg>`
-          );
-      }
+      img.src = dataUrl || placeholderAvatar();
 
+      // texto
       const text = document.createElement('div');
       const name = student.name || 'Aluno';
       const email = student.email || '';
@@ -203,6 +215,7 @@ async function carregarAlunos() {
       left.appendChild(img);
       left.appendChild(text);
 
+      // botão remover
       const right = document.createElement('div');
       const removeBtn = document.createElement('button');
       removeBtn.textContent = 'Remover';
@@ -221,34 +234,30 @@ async function carregarAlunos() {
 }
 
 // =======================
-// Tarefas (orientações + destaque)
-/// =======================
+// Tarefas
+// =======================
 
-function toTime(ts) {
-  // tenta transformar createdAt em timestamp numérico para ordenar
-  if (!ts) return null;
-  const d = new Date(ts);
-  const n = d.getTime();
-  return Number.isNaN(n) ? null : n;
-}
+function computeNewestTaskId(tasks) {
+  if (!Array.isArray(tasks) || tasks.length === 0) return null;
 
-function pickDate(obj, keys) {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v) return v;
-  }
-  return null;
-}
+  // 1) tenta por createdAt válido
+  let newestId = null;
+  let newestTime = -Infinity;
 
-function formatDateBR(value) {
-  if (!value) return '—';
-  const d = new Date(value);
-  const t = d.getTime();
-  if (Number.isNaN(t)) return '—';
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(d);
+  tasks.forEach((t) => {
+    const dt = t?.createdAt ? new Date(t.createdAt).getTime() : NaN;
+    if (!Number.isNaN(dt)) {
+      if (dt > newestTime) {
+        newestTime = dt;
+        newestId = t.id;
+      }
+    }
+  });
+
+  // 2) se ninguém tem data, assume que o backend devolve em ordem
+  if (!newestId) newestId = tasks[tasks.length - 1].id;
+
+  return newestId;
 }
 
 async function carregarTarefas() {
@@ -262,18 +271,7 @@ async function carregarTarefas() {
     console.log('[tasks raw]', raw);
 
     const arr = Array.isArray(raw) ? raw : [];
-
-    // Normaliza + tenta pegar createdAt por variações comuns
-    const tasks = arr
-      .map((t) => {
-        const id = String(t?.id || t?.taskId || '').trim();
-        const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
-        const guidelines = String(t?.guidelines || '').trim();
-
-        const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
-        return { id, title, guidelines, createdAt, _raw: t };
-      })
-      .filter((t) => !!t.id);
+    const tasks = arr.map(normalizeTask).filter((t) => !!t.id);
 
     tasksList.innerHTML = '';
 
@@ -282,34 +280,16 @@ async function carregarTarefas() {
       return;
     }
 
-    // Descobre a tarefa mais recente (pela data; se não tiver data, usa ordem do array)
-    let newestId = tasks[0]?.id || null;
-    let newestTime = -Infinity;
-
-    tasks.forEach((t, idx) => {
-      const dt = t.createdAt ? new Date(t.createdAt).getTime() : NaN;
-      if (!Number.isNaN(dt)) {
-        if (dt > newestTime) {
-          newestTime = dt;
-          newestId = t.id;
-        }
-      } else {
-        // fallback: assume que o backend retorna em ordem (última é a mais recente)
-        // (só aplica se ninguém tiver data válida)
-      }
-    });
-
-    // Se ninguém tem createdAt válido, usa o último como "mais recente"
-    const hasAnyValidDate = tasks.some((t) => !Number.isNaN(new Date(t.createdAt).getTime()));
-    if (!hasAnyValidDate) {
-      newestId = tasks[tasks.length - 1].id;
-    }
+    // ✅ prioridade: se eu acabei de criar uma tarefa agora, destaca ela
+    const lastCreatedId = getLastCreatedTaskId();
+    const newestByDateId = computeNewestTaskId(tasks);
+    const highlightId = lastCreatedId || newestByDateId;
 
     tasks.forEach((task) => {
       const li = document.createElement('li');
 
       // ✅ destaque da tarefa mais recente
-      if (task.id === newestId) {
+      if (task.id === highlightId) {
         li.style.border = '2px solid rgba(109,40,217,.35)';
         li.style.boxShadow = '0 10px 24px rgba(109,40,217,0.12)';
       }
@@ -317,7 +297,7 @@ async function carregarTarefas() {
       const title = document.createElement('strong');
       title.textContent = task.title || 'Tarefa';
 
-      // ✅ data de criação
+      // ✅ data de criação (se backend não mandar, fica “—”)
       const meta = document.createElement('div');
       meta.style.marginTop = '6px';
       meta.style.fontSize = '12px';
@@ -341,6 +321,10 @@ async function carregarTarefas() {
             method: 'DELETE',
           });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+          // se apagou a destacada, limpa
+          if (getLastCreatedTaskId() === task.id) setLastCreatedTaskId('');
+
           carregarTarefas();
         } catch (err) {
           console.error(err);
@@ -362,14 +346,16 @@ async function carregarTarefas() {
   }
 }
 
+// =======================
+// Criar tarefa
+// =======================
 
-// 🔹 Criar nova tarefa
 createTaskBtn.addEventListener('click', async () => {
   const titleEl = document.getElementById('taskTitle');
   const guidelinesEl = document.getElementById('taskGuidelines');
 
   const title = titleEl?.value?.trim() || '';
-  const guidelines = guidelinesEl?.value || ''; // ✅ NÃO trim aqui (mantém linhas em branco no que o professor digitou)
+  const guidelines = guidelinesEl?.value || ''; // ✅ não trim: preserva linhas em branco
 
   if (!title) {
     alert('Informe o tema da redação.');
@@ -385,34 +371,15 @@ createTaskBtn.addEventListener('click', async () => {
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
+    // tenta ler resposta (se backend devolver o objeto criado)
     const created = await response.json().catch(() => null);
-
-    // ✅ salva último taskId criado pra destacar
     const newId = created?.id || created?.taskId || null;
+
+    // ✅ guarda para destacar na lista
     if (newId) setLastCreatedTaskId(newId);
 
     if (titleEl) titleEl.value = '';
     if (guidelinesEl) guidelinesEl.value = '';
-
-    //DATA
-    function pickDate(obj, keys) {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v) return v;
-  }
-  return null;
-}
-
-function formatDateBR(value) {
-  if (!value) return '—';
-  const d = new Date(value);
-  const t = d.getTime();
-  if (Number.isNaN(t)) return '—';
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(d);
-}
 
     carregarTarefas();
   } catch (err) {
@@ -421,7 +388,9 @@ function formatDateBR(value) {
   }
 });
 
-// 🔹 INIT
+// =======================
+// INIT
+// =======================
 carregarSala();
 carregarAlunos();
 carregarTarefas();
