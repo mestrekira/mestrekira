@@ -382,6 +382,26 @@ createTaskBtn.addEventListener('click', async () => {
     if (titleEl) titleEl.value = '';
     if (guidelinesEl) guidelinesEl.value = '';
 
+    //DATA
+    function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v) return v;
+  }
+  return null;
+}
+
+function formatDateBR(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  const t = d.getTime();
+  if (Number.isNaN(t)) return '—';
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(d);
+}
+
     carregarTarefas();
   } catch (err) {
     console.error(err);
