@@ -62,6 +62,19 @@ function unpackContent(raw) {
   return { title: '', body: text };
 }
 
+// ✅ Renderiza texto preservando parágrafos e linhas em branco
+function renderMultiline(el, text, fallback = '') {
+  if (!el) return;
+  const v = text === null || text === undefined ? '' : String(text);
+
+  el.textContent = v.trim() ? v : fallback;
+
+  // 🔥 ESSENCIAL
+  el.style.whiteSpace = 'pre-wrap';   // mantém quebras de linha
+  el.style.lineHeight = '1.6';
+  el.style.textAlign = 'justify';
+}
+
 // ✅ BLOQUEAR COLAR / ARRASTAR (inclui fallback p/ mobile)
 function antiPaste(el, fieldName, options = {}) {
   if (!el) return;
@@ -187,7 +200,12 @@ async function carregarTarefa() {
     taskGuidelinesEl.textContent = task?.guidelines || 'Sem orientações adicionais.';
   } catch {
     taskTitleEl.textContent = 'Tema da Redação';
-    taskGuidelinesEl.textContent = 'Não foi possível carregar as orientações.';
+   renderMultiline(
+  taskGuidelinesEl,
+  task?.guidelines,
+  'Sem orientações adicionais.'
+);
+
   }
 }
 
@@ -379,3 +397,4 @@ sendBtn.addEventListener('click', async () => {
   await carregarRascunho();
   setStatus('');
 })();
+
