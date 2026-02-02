@@ -516,4 +516,41 @@ section > .corr-top-actions:last-child{
   margin-bottom: 6px;
 }
 
+/* ============================
+   Tarefas — orientações + destaque da mais recente
+   ============================ */
+
+/* Caixa que exibe orientações preservando quebras/linhas em branco */
+.guidelines-box{
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(11,18,32,0.12);
+  border-radius: 14px;
+  background: rgba(109,40,217,0.05);
+  white-space: pre-wrap;      /* ✅ mantém parágrafos */
+  line-height: 1.8;
+  color: var(--text);
+}
+
+/* Destaque visual da tarefa mais recente */
+.task-latest{
+  border: 2px solid rgba(109,40,217,0.35) !important;
+  background: linear-gradient(0deg, rgba(109,40,217,0.06), rgba(255,255,255,1));
+}
+
+/* Badge pequena */
+.task-badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--purple);
+  background: rgba(109,40,217,0.10);
+  border: 1px solid rgba(109,40,217,0.25);
+  padding: 6px 10px;
+  border-radius: 999px;
+  margin-left: 10px;
+}
+
 
