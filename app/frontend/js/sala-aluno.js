@@ -26,14 +26,15 @@ if (!roomId) {
 }
 
 const performanceBtn = document.getElementById('performanceBtn');
-
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
     window.location.href = `desempenho.html?roomId=${encodeURIComponent(roomId)}`;
   });
 }
 
-// foto salva localmente (mesma lógica que você usa)
+// =====================
+// Fotos (localStorage)
+// =====================
 function photoKeyStudent(id) {
   return id ? `mk_photo_student_${id}` : null;
 }
@@ -59,14 +60,18 @@ function makeAvatarFromLocalStorage(key, size = 34, alt = 'Foto') {
       encodeURIComponent(
         `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
           <rect width="100%" height="100%" fill="#eee"/>
-          <text x="50%" y="55%" font-size="${Math.round(size * 0.45)}" text-anchor="middle" fill="#888">?</text>
-        </svg>`,
+          <text x="50%" y="55%" font-size="${Math.round(
+            size * 0.45
+          )}" text-anchor="middle" fill="#888">?</text>
+        </svg>`
       );
   }
   return img;
 }
 
-// ✅ SAIR DA SALA
+// =====================
+// Sair da sala
+// =====================
 if (leaveBtn) {
   leaveBtn.addEventListener('click', async () => {
     const ok = confirm('Tem certeza que deseja sair desta sala?');
@@ -89,7 +94,9 @@ if (leaveBtn) {
   });
 }
 
-// ✅ sala + professor + colegas
+// =====================
+// Sala + professor + colegas
+// =====================
 async function carregarOverview() {
   if (teacherInfo) teacherInfo.textContent = 'Carregando...';
   if (classmatesList) classmatesList.innerHTML = '<li>Carregando colegas...</li>';
@@ -113,11 +120,7 @@ async function carregarOverview() {
         wrap.style.alignItems = 'center';
         wrap.style.gap = '10px';
 
-        const avatar = makeAvatarFromLocalStorage(
-          photoKeyProfessor(p.id),
-          38,
-          'Foto do professor',
-        );
+        const avatar = makeAvatarFromLocalStorage(photoKeyProfessor(p.id), 38, 'Foto do professor');
 
         const text = document.createElement('div');
         const name = (p.name || 'Professor').trim();
@@ -132,22 +135,20 @@ async function carregarOverview() {
       }
     }
 
-    // colegas (students)
+    // colegas
     if (classmatesList) {
       classmatesList.innerHTML = '';
 
-      // aceita variações de shape: [{id,...}] ou [{studentId,...}]
       const studentsRaw = Array.isArray(data?.students) ? data.students : [];
       const students = studentsRaw
         .map((s) => ({
-          id: s?.id || s?.studentId || '',
-          name: s?.name || s?.studentName || '',
-          email: s?.email || s?.studentEmail || '',
+          id: String(s?.id || s?.studentId || '').trim(),
+          name: String(s?.name || s?.studentName || '').trim(),
+          email: String(s?.email || s?.studentEmail || '').trim(),
         }))
         .filter((s) => !!s.id);
 
-      // exclui o próprio aluno
-      const classmates = students.filter((s) => s.id !== studentId);
+      const classmates = students.filter((s) => String(s.id) !== String(studentId));
 
       if (classmates.length === 0) {
         classmatesList.innerHTML = '<li>Nenhum colega ainda (só você na sala).</li>';
@@ -162,11 +163,7 @@ async function carregarOverview() {
         li.style.alignItems = 'center';
         li.style.gap = '10px';
 
-        const avatar = makeAvatarFromLocalStorage(
-          photoKeyStudent(s.id),
-          36,
-          'Foto do colega',
-        );
+        const avatar = makeAvatarFromLocalStorage(photoKeyStudent(s.id), 36, 'Foto do colega');
 
         const text = document.createElement('div');
         const name = s.name && s.name.trim() ? s.name : 'Aluno';
@@ -185,12 +182,17 @@ async function carregarOverview() {
   }
 }
 
-// ✅ redação do aluno naquela tarefa (rascunho ou enviada)
+// =====================
+// Essay do aluno na tarefa
+// =====================
 async function getMyEssayByTask(taskId) {
-  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student?studentId=${encodeURIComponent(studentId)}`;
+  const url =
+    `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student` +
+    `?studentId=${encodeURIComponent(studentId)}`;
+
   const res = await fetch(url);
 
-  if (res.status === 404) return null; // não existe
+  if (res.status === 404) return null;
   if (!res.ok) {
     console.warn('[sala-aluno] Falha ao consultar essay da tarefa', taskId, res.status);
     return null;
@@ -200,7 +202,60 @@ async function getMyEssayByTask(taskId) {
   return data || null;
 }
 
-// tarefas (AJUSTADO: mostra Feedback quando enviada)
+// =====================
+// Destaque da tarefa mais recente ("Nova")
+// =====================
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v) return v;
+  }
+  return null;
+}
+
+function computeNewestTaskId(tasks) {
+  if (!Array.isArray(tasks) || tasks.length === 0) return null;
+
+  let newestId = null;
+  let newestTime = -Infinity;
+
+  tasks.forEach((t) => {
+    const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+    const dt = createdAt ? new Date(createdAt).getTime() : NaN;
+    if (!Number.isNaN(dt)) {
+      if (dt > newestTime) {
+        newestTime = dt;
+        newestId = t.id;
+      }
+    }
+  });
+
+  // fallback: última do array
+  if (!newestId) newestId = tasks[tasks.length - 1].id;
+
+  return newestId;
+}
+
+function makeNovaBadge() {
+  const badge = document.createElement('span');
+  badge.textContent = 'Nova';
+  badge.style.display = 'inline-flex';
+  badge.style.alignItems = 'center';
+  badge.style.justifyContent = 'center';
+  badge.style.padding = '3px 8px';
+  badge.style.borderRadius = '999px';
+  badge.style.fontSize = '11px';
+  badge.style.fontWeight = '900';
+  badge.style.marginLeft = '10px';
+  badge.style.background = 'rgba(109,40,217,.12)';
+  badge.style.border = '1px solid rgba(109,40,217,.35)';
+  badge.style.color = '#0b1f4b';
+  return badge;
+}
+
+// =====================
+// Tarefas
+// =====================
 async function carregarTarefas() {
   if (!tasksList) return;
 
@@ -208,23 +263,61 @@ async function carregarTarefas() {
     const response = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
     if (!response.ok) throw new Error();
 
-    const tasks = await response.json();
+    const raw = await response.json();
+    const arr = Array.isArray(raw) ? raw : [];
+
     tasksList.innerHTML = '';
 
-    if (!Array.isArray(tasks) || tasks.length === 0) {
+    if (arr.length === 0) {
       tasksList.innerHTML = '<li>Nenhuma tarefa disponível.</li>';
       if (status) status.textContent = '';
       return;
     }
 
-    // opcional: renderiza primeiro e depois vai atualizando os botões
+    // normaliza pra garantir .id/.title
+    const tasks = arr
+      .map((t) => ({
+        id: String(t?.id || t?.taskId || '').trim(),
+        title: String(t?.title || t?.taskTitle || t?.name || '').trim(),
+        _raw: t,
+      }))
+      .filter((t) => !!t.id);
+
+    if (tasks.length === 0) {
+      tasksList.innerHTML = '<li>Nenhuma tarefa disponível.</li>';
+      if (status) status.textContent = '';
+      return;
+    }
+
+    const newestId = computeNewestTaskId(tasks.map((t) => ({ ...t, ...t._raw })));
+
+    // renderiza e atualiza botões
     for (const task of tasks) {
       const li = document.createElement('li');
+
+      // ✅ destaque da tarefa mais recente
+      if (task.id === newestId) {
+        li.style.border = '2px solid rgba(109,40,217,.35)';
+        li.style.boxShadow = '0 10px 24px rgba(109,40,217,0.12)';
+      }
+
+      // título + badge Nova
+      const titleWrap = document.createElement('div');
+      titleWrap.style.display = 'flex';
+      titleWrap.style.alignItems = 'center';
+      titleWrap.style.flexWrap = 'wrap';
+      titleWrap.style.gap = '6px';
 
       const title = document.createElement('strong');
       title.textContent = task.title || 'Tarefa';
 
-      // wrapper dos botões (lado a lado)
+      titleWrap.appendChild(title);
+
+      if (task.id === newestId) {
+        titleWrap.appendChild(makeNovaBadge());
+      }
+
+      // wrapper botões
       const actions = document.createElement('div');
       actions.style.display = 'flex';
       actions.style.gap = '10px';
@@ -242,22 +335,21 @@ async function carregarTarefas() {
       const btnFeedback = document.createElement('button');
       btnFeedback.textContent = 'Feedback';
       btnFeedback.style.display = 'none';
-      btnFeedback.onclick = () => {}; // vai ser setado quando soubermos o essayId
+      btnFeedback.onclick = () => {};
 
       actions.appendChild(btnWrite);
       actions.appendChild(btnFeedback);
 
-      li.appendChild(title);
+      li.appendChild(titleWrap);
       li.appendChild(document.createElement('br'));
       li.appendChild(actions);
 
       tasksList.appendChild(li);
 
-      // ✅ verifica no servidor se já existe essay e se foi enviada
+      // ✅ checa se já existe essay enviada
       try {
         const essay = await getMyEssayByTask(task.id);
 
-        // enviada → mostra Feedback e esconde Escrever
         if (essay && essay.id && essay.isDraft === false) {
           btnWrite.style.display = 'none';
           btnFeedback.style.display = 'inline-block';
@@ -265,13 +357,11 @@ async function carregarTarefas() {
             window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
           };
         } else {
-          // rascunho ou não existe → mantém escrever
           btnFeedback.style.display = 'none';
           btnWrite.style.display = 'inline-block';
         }
       } catch (e) {
         console.warn('[sala-aluno] Erro ao checar status da redação', task.id, e);
-        // em caso de erro, mantém “Escrever”
         btnFeedback.style.display = 'none';
         btnWrite.style.display = 'inline-block';
       }
@@ -283,27 +373,6 @@ async function carregarTarefas() {
     if (tasksList) tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
 }
-
-//DATA
-function pickDate(obj, keys) {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v) return v;
-  }
-  return null;
-}
-
-function formatDateBR(value) {
-  if (!value) return '—';
-  const d = new Date(value);
-  const t = d.getTime();
-  if (Number.isNaN(t)) return '—';
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(d);
-}
-
 
 // INIT
 carregarOverview();
