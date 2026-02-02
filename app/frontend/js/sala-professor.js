@@ -232,6 +232,25 @@ function toTime(ts) {
   return Number.isNaN(n) ? null : n;
 }
 
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v) return v;
+  }
+  return null;
+}
+
+function formatDateBR(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  const t = d.getTime();
+  if (Number.isNaN(t)) return '—';
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(d);
+}
+
 async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando tarefas...</li>';
 
@@ -240,9 +259,21 @@ async function carregarTarefas() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const raw = await response.json();
+    console.log('[tasks raw]', raw);
+
     const arr = Array.isArray(raw) ? raw : [];
 
-    let tasks = arr.map(normalizeTask).filter((t) => !!t.id);
+    // Normaliza + tenta pegar createdAt por variações comuns
+    const tasks = arr
+      .map((t) => {
+        const id = String(t?.id || t?.taskId || '').trim();
+        const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
+        const guidelines = String(t?.guidelines || '').trim();
+
+        const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+        return { id, title, guidelines, createdAt, _raw: t };
+      })
+      .filter((t) => !!t.id);
 
     tasksList.innerHTML = '';
 
@@ -251,76 +282,56 @@ async function carregarTarefas() {
       return;
     }
 
-    // ✅ define a mais recente
-    const lastCreatedFromLs = getLastCreatedTaskId();
+    // Descobre a tarefa mais recente (pela data; se não tiver data, usa ordem do array)
+    let newestId = tasks[0]?.id || null;
+    let newestTime = -Infinity;
 
-    // se existir createdAt em algum, ordena por createdAt desc e pega a primeira
-    const hasAnyCreatedAt = tasks.some((t) => toTime(t.createdAt) !== null);
-    if (hasAnyCreatedAt) {
-      tasks.sort((a, b) => (toTime(b.createdAt) ?? 0) - (toTime(a.createdAt) ?? 0));
+    tasks.forEach((t, idx) => {
+      const dt = t.createdAt ? new Date(t.createdAt).getTime() : NaN;
+      if (!Number.isNaN(dt)) {
+        if (dt > newestTime) {
+          newestTime = dt;
+          newestId = t.id;
+        }
+      } else {
+        // fallback: assume que o backend retorna em ordem (última é a mais recente)
+        // (só aplica se ninguém tiver data válida)
+      }
+    });
+
+    // Se ninguém tem createdAt válido, usa o último como "mais recente"
+    const hasAnyValidDate = tasks.some((t) => !Number.isNaN(new Date(t.createdAt).getTime()));
+    if (!hasAnyValidDate) {
+      newestId = tasks[tasks.length - 1].id;
     }
-    const latestTaskId = hasAnyCreatedAt
-      ? tasks[0].id
-      : (lastCreatedFromLs || tasks[tasks.length - 1].id); // fallback: última da lista ou LS
-
-    // (se tiver createdAt e ordenamos, a lista já fica por recência)
-    // se NÃO tiver, mantemos ordem do backend (não mexe)
 
     tasks.forEach((task) => {
       const li = document.createElement('li');
 
       // ✅ destaque da tarefa mais recente
-      if (task.id === latestTaskId) {
-        li.classList.add('task-latest');
+      if (task.id === newestId) {
+        li.style.border = '2px solid rgba(109,40,217,.35)';
+        li.style.boxShadow = '0 10px 24px rgba(109,40,217,0.12)';
       }
-
-      // título + badge
-      const titleRow = document.createElement('div');
-      titleRow.style.display = 'flex';
-      titleRow.style.alignItems = 'center';
-      titleRow.style.flexWrap = 'wrap';
-      titleRow.style.gap = '8px';
 
       const title = document.createElement('strong');
       title.textContent = task.title || 'Tarefa';
-      titleRow.appendChild(title);
 
-      if (task.id === latestTaskId) {
-        const badge = document.createElement('span');
-        badge.className = 'task-badge';
-        badge.textContent = 'Mais recente';
-        titleRow.appendChild(badge);
-      }
+      // ✅ data de criação
+      const meta = document.createElement('div');
+      meta.style.marginTop = '6px';
+      meta.style.fontSize = '12px';
+      meta.style.opacity = '0.85';
+      meta.textContent = `Criada em: ${formatDateBR(task.createdAt)}`;
 
-      // botões
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
       btn.addEventListener('click', () => {
         window.location.href = `correcao.html?taskId=${encodeURIComponent(task.id)}`;
       });
 
-      // ✅ botão orientar / toggle
-      const guideBtn = document.createElement('button');
-      guideBtn.textContent = 'Orientações';
-      guideBtn.className = 'secondary';
-
-      const guideBox = document.createElement('div');
-      guideBox.className = 'guidelines-box';
-      guideBox.style.display = 'none';
-      guideBox.textContent = (task.guidelines || '').trim()
-        ? task.guidelines
-        : 'Sem orientações.';
-
-      guideBtn.addEventListener('click', () => {
-        const isOpen = guideBox.style.display === 'block';
-        guideBox.style.display = isOpen ? 'none' : 'block';
-        guideBtn.textContent = isOpen ? 'Orientações' : 'Fechar orientações';
-      });
-
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
-      delBtn.className = 'danger';
-
       delBtn.addEventListener('click', async () => {
         const ok = confirm(`Excluir a tarefa "${task.title || 'sem título'}"?`);
         if (!ok) return;
@@ -337,12 +348,11 @@ async function carregarTarefas() {
         }
       });
 
-      li.appendChild(titleRow);
+      li.appendChild(title);
+      li.appendChild(meta);
       li.appendChild(document.createElement('br'));
       li.appendChild(btn);
-      li.appendChild(guideBtn);
       li.appendChild(delBtn);
-      li.appendChild(guideBox);
 
       tasksList.appendChild(li);
     });
@@ -351,6 +361,7 @@ async function carregarTarefas() {
     tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
 }
+
 
 // 🔹 Criar nova tarefa
 createTaskBtn.addEventListener('click', async () => {
