@@ -31,20 +31,56 @@ if (performanceBtn) {
   });
 }
 
-// 🔹 Helpers
+// =======================
+// Helpers
+// =======================
+
 function normalizeStudent(s) {
-  // aceita variações do backend
   const id = String(s?.id || s?.studentId || '').trim();
   const name = String(s?.name || s?.studentName || '').trim();
   const email = String(s?.email || s?.studentEmail || '').trim();
   return { id, name, email };
 }
 
+function pickCreatedAt(obj) {
+  // aceita vários formatos comuns
+  return (
+    obj?.createdAt ||
+    obj?.created_at ||
+    obj?.created ||
+    obj?.dateCreated ||
+    obj?.timestamp ||
+    null
+  );
+}
+
 function normalizeTask(t) {
   const id = String(t?.id || t?.taskId || '').trim();
   const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
   const guidelines = String(t?.guidelines || '').trim();
-  return { id, title, guidelines };
+  const createdAt = pickCreatedAt(t); // pode vir null
+  return { id, title, guidelines, createdAt };
+}
+
+function getLastCreatedTaskKey() {
+  return `mk_last_created_task_${roomId}`;
+}
+
+function setLastCreatedTaskId(taskId) {
+  try {
+    localStorage.setItem(getLastCreatedTaskKey(), String(taskId || ''));
+  } catch {
+    // ignora
+  }
+}
+
+function getLastCreatedTaskId() {
+  try {
+    const v = localStorage.getItem(getLastCreatedTaskKey());
+    return v ? String(v) : '';
+  } catch {
+    return '';
+  }
 }
 
 // 🔹 Carregar dados da sala
@@ -73,7 +109,7 @@ copyCodeBtn.addEventListener('click', () => {
   alert('Código da sala copiado!');
 });
 
-// ✅ Remover aluno da sala (endpoint DELETE /rooms/:roomId/students/:studentId)
+// ✅ Remover aluno da sala
 async function removerAluno(studentId, studentName = 'este aluno') {
   const ok = confirm(`Remover ${studentName} da sala?`);
   if (!ok) return;
@@ -106,9 +142,7 @@ async function carregarAlunos() {
     const raw = await response.json();
     const arr = Array.isArray(raw) ? raw : [];
 
-    const students = arr
-      .map(normalizeStudent)
-      .filter((s) => !!s.id);
+    const students = arr.map(normalizeStudent).filter((s) => !!s.id);
 
     studentsList.innerHTML = '';
 
@@ -117,7 +151,7 @@ async function carregarAlunos() {
       return;
     }
 
-    // ✅ ordena por nome (se vier vazio, joga pro fim)
+    // ordena por nome
     students.sort((a, b) => {
       const an = (a.name || '').toLowerCase();
       const bn = (b.name || '').toLowerCase();
@@ -138,7 +172,6 @@ async function carregarAlunos() {
       left.style.alignItems = 'center';
       left.style.gap = '10px';
 
-      // foto
       const img = document.createElement('img');
       img.alt = 'Foto do aluno';
       img.width = 36;
@@ -161,17 +194,14 @@ async function carregarAlunos() {
           );
       }
 
-      // texto
       const text = document.createElement('div');
       const name = student.name || 'Aluno';
       const email = student.email || '';
-
       text.innerHTML = `<strong>${name}</strong>${email ? `<br><small>${email}</small>` : ''}`;
 
       left.appendChild(img);
       left.appendChild(text);
 
-      // botão remover
       const right = document.createElement('div');
       const removeBtn = document.createElement('button');
       removeBtn.textContent = 'Remover';
@@ -189,7 +219,18 @@ async function carregarAlunos() {
   }
 }
 
-// 🔹 Carregar tarefas
+// =======================
+// Tarefas (orientações + destaque)
+/// =======================
+
+function toTime(ts) {
+  // tenta transformar createdAt em timestamp numérico para ordenar
+  if (!ts) return null;
+  const d = new Date(ts);
+  const n = d.getTime();
+  return Number.isNaN(n) ? null : n;
+}
+
 async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando tarefas...</li>';
 
@@ -200,9 +241,7 @@ async function carregarTarefas() {
     const raw = await response.json();
     const arr = Array.isArray(raw) ? raw : [];
 
-    const tasks = arr
-      .map(normalizeTask)
-      .filter((t) => !!t.id);
+    let tasks = arr.map(normalizeTask).filter((t) => !!t.id);
 
     tasksList.innerHTML = '';
 
@@ -211,20 +250,76 @@ async function carregarTarefas() {
       return;
     }
 
+    // ✅ define a mais recente
+    const lastCreatedFromLs = getLastCreatedTaskId();
+
+    // se existir createdAt em algum, ordena por createdAt desc e pega a primeira
+    const hasAnyCreatedAt = tasks.some((t) => toTime(t.createdAt) !== null);
+    if (hasAnyCreatedAt) {
+      tasks.sort((a, b) => (toTime(b.createdAt) ?? 0) - (toTime(a.createdAt) ?? 0));
+    }
+    const latestTaskId = hasAnyCreatedAt
+      ? tasks[0].id
+      : (lastCreatedFromLs || tasks[tasks.length - 1].id); // fallback: última da lista ou LS
+
+    // (se tiver createdAt e ordenamos, a lista já fica por recência)
+    // se NÃO tiver, mantemos ordem do backend (não mexe)
+
     tasks.forEach((task) => {
       const li = document.createElement('li');
 
+      // ✅ destaque da tarefa mais recente
+      if (task.id === latestTaskId) {
+        li.classList.add('task-latest');
+      }
+
+      // título + badge
+      const titleRow = document.createElement('div');
+      titleRow.style.display = 'flex';
+      titleRow.style.alignItems = 'center';
+      titleRow.style.flexWrap = 'wrap';
+      titleRow.style.gap = '8px';
+
       const title = document.createElement('strong');
       title.textContent = task.title || 'Tarefa';
+      titleRow.appendChild(title);
 
+      if (task.id === latestTaskId) {
+        const badge = document.createElement('span');
+        badge.className = 'task-badge';
+        badge.textContent = 'Mais recente';
+        titleRow.appendChild(badge);
+      }
+
+      // botões
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
       btn.addEventListener('click', () => {
         window.location.href = `correcao.html?taskId=${encodeURIComponent(task.id)}`;
       });
 
+      // ✅ botão orientar / toggle
+      const guideBtn = document.createElement('button');
+      guideBtn.textContent = 'Orientações';
+      guideBtn.className = 'secondary';
+
+      const guideBox = document.createElement('div');
+      guideBox.className = 'guidelines-box';
+      guideBox.style.display = 'none';
+      guideBox.textContent = (task.guidelines || '').trim()
+        ? task.guidelines
+        : 'Sem orientações.';
+
+      guideBtn.addEventListener('click', () => {
+        const isOpen = guideBox.style.display === 'block';
+        guideBox.style.display = isOpen ? 'none' : 'block';
+        guideBtn.textContent = isOpen ? 'Orientações' : 'Fechar orientações';
+      });
+
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
+      delBtn.className = 'danger';
+
       delBtn.addEventListener('click', async () => {
         const ok = confirm(`Excluir a tarefa "${task.title || 'sem título'}"?`);
         if (!ok) return;
@@ -241,10 +336,12 @@ async function carregarTarefas() {
         }
       });
 
-      li.appendChild(title);
+      li.appendChild(titleRow);
       li.appendChild(document.createElement('br'));
       li.appendChild(btn);
+      li.appendChild(guideBtn);
       li.appendChild(delBtn);
+      li.appendChild(guideBox);
 
       tasksList.appendChild(li);
     });
@@ -260,7 +357,7 @@ createTaskBtn.addEventListener('click', async () => {
   const guidelinesEl = document.getElementById('taskGuidelines');
 
   const title = titleEl?.value?.trim() || '';
-  const guidelines = guidelinesEl?.value?.trim() || '';
+  const guidelines = guidelinesEl?.value || ''; // ✅ NÃO trim aqui (mantém linhas em branco no que o professor digitou)
 
   if (!title) {
     alert('Informe o tema da redação.');
@@ -275,6 +372,12 @@ createTaskBtn.addEventListener('click', async () => {
     });
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const created = await response.json().catch(() => null);
+
+    // ✅ salva último taskId criado pra destacar
+    const newId = created?.id || created?.taskId || null;
+    if (newId) setLastCreatedTaskId(newId);
 
     if (titleEl) titleEl.value = '';
     if (guidelinesEl) guidelinesEl.value = '';
