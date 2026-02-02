@@ -140,6 +140,7 @@ async function carregarAlunos() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const raw = await response.json();
+    console.log('[tasks raw]', raw); // NOVA
     const arr = Array.isArray(raw) ? raw : [];
 
     const students = arr.map(normalizeStudent).filter((s) => !!s.id);
