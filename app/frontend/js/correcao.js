@@ -145,6 +145,42 @@ if (closeCorrectionBtn) {
   closeCorrectionBtn.addEventListener('click', () => closeCorrection());
 }
 
+// -------------------- DATA: Enviada em --------------------
+
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v) return v;
+  }
+  return null;
+}
+
+function formatDateBR(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  const t = d.getTime();
+  if (Number.isNaN(t)) return '—';
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(d);
+}
+
+// “Enviada em” = createdAt da essay (ou variações)
+function getEssaySentAt(essay) {
+  return pickDate(essay, [
+    'createdAt',
+    'created_at',
+    'created',
+    'dateCreated',
+    'submittedAt',
+    'submitted_at',
+    'sentAt',
+    'sent_at',
+    'timestamp',
+  ]);
+}
+
 // -------------------- RUBRICAS ENEM --------------------
 
 const ENEM_RUBRICS = {
@@ -304,10 +340,8 @@ function initRubricsUI() {
   Object.entries(map).forEach(([k, input]) => {
     if (!input) return;
 
-    // ✅ ao focar/clicar no input, fecha rubricas para garantir click/foco
     input.addEventListener('focus', () => closeAllRubrics());
     input.addEventListener('pointerdown', () => closeAllRubrics());
-
     input.addEventListener('input', () => updateRubricHint(k, input.value));
   });
 }
@@ -446,7 +480,6 @@ function abrirCorrecao(essay, anchorLi) {
 
   if (feedbackEl) feedbackEl.value = essay.feedback || '';
 
-  // competências
   if (c1El) c1El.value = essay.c1 ?? '';
   if (c2El) c2El.value = essay.c2 ?? '';
   if (c3El) c3El.value = essay.c3 ?? '';
@@ -455,7 +488,6 @@ function abrirCorrecao(essay, anchorLi) {
 
   calcularTotal();
 
-  // ✅ fecha rubricas ao abrir (evita sobrepor inputs)
   closeAllRubrics();
 
   updateRubricHint('c1', c1El?.value);
@@ -469,13 +501,11 @@ function abrirCorrecao(essay, anchorLi) {
   if (anchorLi) mountCorrectionSectionUnderLi(anchorLi);
   else if (correctionSection) correctionSection.style.display = 'block';
 
- try {
-  // foca no primeiro campo vazio, senão fica no C1
-  const firstEmpty =
-    [c1El, c2El, c3El, c4El, c5El].find((x) => x && String(x.value || '').trim() === '') || c1El;
-  firstEmpty?.focus();
-} catch {}
-
+  try {
+    const firstEmpty =
+      [c1El, c2El, c3El, c4El, c5El].find((x) => x && String(x.value || '').trim() === '') || c1El;
+    firstEmpty?.focus();
+  } catch {}
 }
 
 // -------------------- CARREGAR TAREFA (TEMA) --------------------
@@ -587,9 +617,16 @@ async function carregarRedacoes() {
         dataUrl || placeholderAvatarDataUrl((nome || 'A').trim().slice(0, 1).toUpperCase());
 
       const text = document.createElement('div');
+
       const corrected = isCorrected(essay);
       const statusNota = corrected ? `Nota: ${essay.score}` : 'Pendente (sem correção)';
-      text.innerHTML = `<strong>${nome}</strong><br><small>${statusNota}</small>`;
+      const sentAt = getEssaySentAt(essay);
+
+      // ✅ inclui "Enviada em:"
+      text.innerHTML =
+        `<strong>${nome}</strong>` +
+        `<br><small>${statusNota}</small>` +
+        `<br><small>Enviada em: ${formatDateBR(sentAt)}</small>`;
 
       left.appendChild(avatar);
       left.appendChild(text);
@@ -612,21 +649,20 @@ async function carregarRedacoes() {
       li.title = corrected
         ? 'Clique para ver redação/feedback'
         : 'Clique para corrigir (abre logo abaixo)';
-     li.addEventListener('click', (ev) => {
-  // ✅ se clicou dentro do painel aberto, não reabrir correção
-  if (correctionSection && correctionSection.contains(ev.target)) return;
 
-  if (ev.target && ev.target.tagName === 'BUTTON') return;
+      li.addEventListener('click', (ev) => {
+        if (correctionSection && correctionSection.contains(ev.target)) return;
+        if (ev.target && ev.target.tagName === 'BUTTON') return;
 
-  if (corrected) {
-    window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-      String(taskId)
-    )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
-  } else {
-    abrirCorrecao(essay, li);
-  }
-});
-      
+        if (corrected) {
+          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
+            String(taskId)
+          )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
+        } else {
+          abrirCorrecao(essay, li);
+        }
+      });
+
       li.appendChild(left);
       li.appendChild(btn);
 
@@ -705,33 +741,13 @@ if (saveBtn) {
       if (!response.ok) throw new Error();
 
       setStatus('Correção salva com sucesso!');
-      closeCorrection(); // ✅ fecha painel após salvar (evita ficar “aberto”)
+      closeCorrection(); // ✅ fecha painel após salvar
       await carregarRedacoes();
     } catch (e) {
       console.error(e);
       setStatus('Erro ao salvar correção.');
     }
   });
-}
-
-//DATA
-function pickDate(obj, keys) {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v) return v;
-  }
-  return null;
-}
-
-function formatDateBR(value) {
-  if (!value) return '—';
-  const d = new Date(value);
-  const t = d.getTime();
-  if (Number.isNaN(t)) return '—';
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(d);
 }
 
 // -------------------- INIT --------------------
