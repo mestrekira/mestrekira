@@ -41,10 +41,26 @@ function setText(el, value, fallback = '—') {
   el.textContent = v ? v : fallback;
 }
 
-function setMultiline(el, value, fallback = '') {
+/**
+ * ✅ Preserva parágrafos e linhas em branco.
+ * Funciona tanto para <div>/<p> (textContent) quanto para <textarea>/<input> (value).
+ * Também força CSS com prioridade para não “embaralhar”.
+ */
+function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
-  const v = value === null || value === undefined ? '' : String(value);
-  el.textContent = v.trim() ? v : fallback;
+
+  const raw = value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
+  const finalText = raw.trim() ? raw : fallback;
+
+  if ('value' in el) el.value = finalText;
+  else el.textContent = finalText;
+
+  el.style.setProperty('white-space', 'pre-wrap', 'important');
+  el.style.setProperty('line-height', '1.6', 'important');
+  el.style.setProperty('text-align', 'justify', 'important');
+  el.style.setProperty('overflow-wrap', 'anywhere', 'important');
+  el.style.setProperty('word-break', 'break-word', 'important');
+  el.style.setProperty('display', 'block', 'important');
 }
 
 /**
@@ -90,6 +106,22 @@ function splitTitleAndBody(raw) {
 
   const body = bodyLines.join('\n').trimEnd();
   return { title, body };
+}
+
+/**
+ * ✅ Renderiza a redação:
+ * - título centralizado
+ * - corpo justificado
+ * - preserva quebras/linhas em branco
+ */
+function renderEssayFormatted(titleEl, bodyEl, rawContent) {
+  const { title, body } = splitTitleAndBody(rawContent);
+
+  // título (simples)
+  setText(titleEl, title || '—', '—');
+
+  // corpo (preserva parágrafos)
+  setMultilinePreserve(bodyEl, String(body || '').trimEnd(), '');
 }
 
 // ---------------- fetch helpers ----------------
@@ -145,27 +177,28 @@ function renderEssay(essay) {
   setText(studentNameEl, name, 'Aluno');
   setText(studentEmailEl, email, '');
 
-  // redação
-  const { title, body } = splitTitleAndBody(essay?.content || '');
-  setText(essayTitleEl, title, '—');
-  setMultiline(essayBodyEl, body, '');
+  // redação (preserva parágrafos no corpo)
+  renderEssayFormatted(essayTitleEl, essayBodyEl, essay?.content || '');
 
-  // fallback antigo
-  if (essayContentEl) setMultiline(essayContentEl, essay?.content || '', '');
+  // fallback antigo (se existir)
+  if (essayContentEl) {
+    // mantém o texto “cru” preservando quebras
+    setMultilinePreserve(essayContentEl, essay?.content || '', '');
+  }
 
   // nota
   const hasScore = essay?.score !== null && essay?.score !== undefined;
   setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida', '—');
 
-  // feedback
-  setMultiline(feedbackEl, essay?.feedback || '', 'Aguardando correção do professor.');
+  // feedback (preserva parágrafos/linhas em branco)
+  setMultilinePreserve(feedbackEl, essay?.feedback || '', 'Aguardando correção do professor.');
 
   // competências
-  setText(c1El, essay?.c1);
-  setText(c2El, essay?.c2);
-  setText(c3El, essay?.c3);
-  setText(c4El, essay?.c4);
-  setText(c5El, essay?.c5);
+  setText(c1El, essay?.c1 ?? '—', '—');
+  setText(c2El, essay?.c2 ?? '—', '—');
+  setText(c3El, essay?.c3 ?? '—', '—');
+  setText(c4El, essay?.c4 ?? '—', '—');
+  setText(c5El, essay?.c5 ?? '—', '—');
 }
 
 async function carregar() {
