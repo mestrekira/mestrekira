@@ -32,10 +32,26 @@ function setText(el, value, fallback = '—') {
   el.textContent = v ? v : fallback;
 }
 
-function setMultiline(el, value, fallback = '') {
+/**
+ * ✅ Preserva parágrafos e linhas em branco.
+ * Funciona tanto para <div>/<p> (textContent) quanto para <textarea>/<input> (value).
+ * Também força CSS com prioridade para não “embaralhar”.
+ */
+function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
-  const v = value === null || value === undefined ? '' : String(value);
-  el.textContent = v.trim() ? v : fallback;
+
+  const raw = value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
+  const finalText = raw.trim() ? raw : fallback;
+
+  if ('value' in el) el.value = finalText;
+  else el.textContent = finalText;
+
+  el.style.setProperty('white-space', 'pre-wrap', 'important');
+  el.style.setProperty('line-height', '1.6', 'important');
+  el.style.setProperty('text-align', 'justify', 'important');
+  el.style.setProperty('overflow-wrap', 'anywhere', 'important');
+  el.style.setProperty('word-break', 'break-word', 'important');
+  el.style.setProperty('display', 'block', 'important');
 }
 
 /**
@@ -87,7 +103,7 @@ function splitTitleAndBody(raw) {
  * ✅ Renderiza a redação:
  * - título centralizado
  * - corpo justificado
- * - preserva quebras
+ * - preserva quebras/linhas em branco
  */
 function renderEssayFormatted(containerEl, rawContent) {
   if (!containerEl) return;
@@ -95,9 +111,11 @@ function renderEssayFormatted(containerEl, rawContent) {
   const { title, body } = splitTitleAndBody(rawContent);
 
   containerEl.innerHTML = '';
-  containerEl.style.whiteSpace = 'pre-wrap';
-  containerEl.style.textAlign = 'justify';
-  containerEl.style.lineHeight = '1.6';
+  containerEl.style.setProperty('white-space', 'pre-wrap', 'important');
+  containerEl.style.setProperty('text-align', 'justify', 'important');
+  containerEl.style.setProperty('line-height', '1.6', 'important');
+  containerEl.style.setProperty('overflow-wrap', 'anywhere', 'important');
+  containerEl.style.setProperty('word-break', 'break-word', 'important');
 
   const h = document.createElement('div');
   h.textContent = title || '—';
@@ -107,8 +125,10 @@ function renderEssayFormatted(containerEl, rawContent) {
   containerEl.appendChild(h);
 
   const b = document.createElement('div');
-  b.textContent = body || '';
+  // mantém exatamente as quebras (sem trim agressivo)
+  b.textContent = String(body || '').replace(/\r\n/g, '\n').trimEnd();
   b.style.textAlign = 'justify';
+  b.style.whiteSpace = 'pre-wrap';
   containerEl.appendChild(b);
 }
 
@@ -177,20 +197,15 @@ async function carregarFeedback() {
       }
     }
 
-    // 3) redação formatada
+    // 3) redação formatada (preserva parágrafos)
     renderEssayFormatted(essayContentEl, essay.content || '');
 
     // 4) nota
     const hasScore = essay.score !== null && essay.score !== undefined;
     setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida', '—');
 
-    // 5) feedback
-    if (feedbackEl) {
-      setMultiline(feedbackEl, essay.feedback || '', 'Aguardando correção do professor.');
-      feedbackEl.style.whiteSpace = 'pre-wrap';
-      feedbackEl.style.textAlign = 'justify';
-      feedbackEl.style.lineHeight = '1.6';
-    }
+    // 5) feedback (preserva parágrafos/linhas em branco)
+    setMultilinePreserve(feedbackEl, essay?.feedback || '', 'Aguardando correção do professor.');
 
     // 6) competências
     setText(c1El, essay.c1 ?? '—', '—');
