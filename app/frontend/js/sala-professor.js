@@ -344,6 +344,11 @@ async function carregarTarefas() {
 
     const raw = await response.json();
     console.log('[tasks raw]', raw);
+if (Array.isArray(raw) && raw[0]) {
+  console.log('[task 0 keys]', Object.keys(raw[0]));
+  console.log('[task 0 sample]', raw[0]);
+}
+
 
     const arr = Array.isArray(raw) ? raw : [];
     const tasks = arr.map(normalizeTask).filter((t) => !!t.id);
