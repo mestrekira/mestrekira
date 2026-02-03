@@ -145,7 +145,7 @@ if (closeCorrectionBtn) {
   closeCorrectionBtn.addEventListener('click', () => closeCorrection());
 }
 
-// -------------------- DATA: Enviada em --------------------
+// -------------------- DATA helpers --------------------
 
 function pickDate(obj, keys) {
   for (const k of keys) {
@@ -166,19 +166,14 @@ function formatDateBR(value) {
   }).format(d);
 }
 
-// “Enviada em” = createdAt da essay (ou variações)
-function getEssaySentAt(essay) {
-  return pickDate(essay, [
-    'createdAt',
-    'created_at',
-    'created',
-    'dateCreated',
-    'submittedAt',
-    'submitted_at',
-    'sentAt',
-    'sent_at',
-    'timestamp',
-  ]);
+/**
+ * ✅ Melhor "data de envio" possível SEM mudar backend:
+ * - se no futuro existir submittedAt → usa
+ * - senão createdAt → usa (muitas vezes já resolve)
+ * - senão updatedAt → fallback
+ */
+function getSentAt(essay) {
+  return pickDate(essay, ['submittedAt', 'submitted_at', 'createdAt', 'created_at', 'updatedAt', 'updated_at']);
 }
 
 // -------------------- RUBRICAS ENEM --------------------
@@ -328,7 +323,6 @@ function initRubricsUI() {
       const panel = document.getElementById(`rubric-${compKey}`);
       if (!panel) return;
 
-      // ✅ fecha todas antes de abrir uma (evita overlay)
       const willOpen = panel.hidden === true;
       closeAllRubrics();
       panel.hidden = !willOpen;
@@ -339,7 +333,6 @@ function initRubricsUI() {
   const map = { c1: c1El, c2: c2El, c3: c3El, c4: c4El, c5: c5El };
   Object.entries(map).forEach(([k, input]) => {
     if (!input) return;
-
     input.addEventListener('focus', () => closeAllRubrics());
     input.addEventListener('pointerdown', () => closeAllRubrics());
     input.addEventListener('input', () => updateRubricHint(k, input.value));
@@ -480,6 +473,7 @@ function abrirCorrecao(essay, anchorLi) {
 
   if (feedbackEl) feedbackEl.value = essay.feedback || '';
 
+  // competências
   if (c1El) c1El.value = essay.c1 ?? '';
   if (c2El) c2El.value = essay.c2 ?? '';
   if (c3El) c3El.value = essay.c3 ?? '';
@@ -519,8 +513,8 @@ async function carregarTemaDaTarefa() {
   }
 
   if (taskMetaEl) {
-    const guide = (task?.guidelines || '').trim();
-    taskMetaEl.textContent = guide ? guide : '';
+    const guide = String(task?.guidelines || '');
+    taskMetaEl.textContent = guide.trim() ? guide : '';
   }
 
   cachedRoomId = task?.roomId || task?.room?.id || null;
@@ -574,6 +568,9 @@ async function carregarRedacoes() {
 
     let essays = await response.json();
 
+    // ✅ DEBUG opcional (se quiser conferir se vem createdAt/updatedAt)
+    // console.log('[essays raw]', essays);
+
     essays = filterEssaysByActiveStudents(essays, cachedActiveSet);
 
     if (!Array.isArray(essays) || essays.length === 0) {
@@ -620,13 +617,18 @@ async function carregarRedacoes() {
 
       const corrected = isCorrected(essay);
       const statusNota = corrected ? `Nota: ${essay.score}` : 'Pendente (sem correção)';
-      const sentAt = getEssaySentAt(essay);
 
-      // ✅ inclui "Enviada em:"
+      // ✅ ENVIADA EM (pega createdAt/submittedAt/updatedAt)
+      const sentAt = formatDateBR(getSentAt(essay));
+
+      // ✅ se corrigida, mostra também "Corrigida em" por updatedAt (quando o backend enviar)
+      const correctedAt = corrected ? formatDateBR(pickDate(essay, ['updatedAt', 'updated_at'])) : null;
+
       text.innerHTML =
         `<strong>${nome}</strong>` +
         `<br><small>${statusNota}</small>` +
-        `<br><small>Enviada em: ${formatDateBR(sentAt)}</small>`;
+        `<br><small>Enviada em: ${sentAt}</small>` +
+        (correctedAt && correctedAt !== '—' ? `<br><small>Corrigida em: ${correctedAt}</small>` : '');
 
       left.appendChild(avatar);
       left.appendChild(text);
@@ -741,7 +743,7 @@ if (saveBtn) {
       if (!response.ok) throw new Error();
 
       setStatus('Correção salva com sucesso!');
-      closeCorrection(); // ✅ fecha painel após salvar
+      closeCorrection();
       await carregarRedacoes();
     } catch (e) {
       console.error(e);
