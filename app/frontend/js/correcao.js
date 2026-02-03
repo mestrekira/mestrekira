@@ -20,7 +20,7 @@ const essayContentEl = document.getElementById('essayContent');
 const studentPhotoImg = document.getElementById('studentPhotoImg');
 
 const taskTitleEl = document.getElementById('taskTitle'); // ✅ tema no topo
-const taskMetaEl = document.getElementById('taskMeta');   // opcional
+const taskMetaEl = document.getElementById('taskMeta'); // opcional
 
 const feedbackEl = document.getElementById('feedback');
 const saveBtn = document.getElementById('saveCorrectionBtn');
@@ -88,11 +88,11 @@ function clamp200(n) {
 }
 
 function calcularTotal() {
-  const v1 = clamp200(Number(c1El.value));
-  const v2 = clamp200(Number(c2El.value));
-  const v3 = clamp200(Number(c3El.value));
-  const v4 = clamp200(Number(c4El.value));
-  const v5 = clamp200(Number(c5El.value));
+  const v1 = clamp200(Number(c1El?.value));
+  const v2 = clamp200(Number(c2El?.value));
+  const v3 = clamp200(Number(c3El?.value));
+  const v4 = clamp200(Number(c4El?.value));
+  const v5 = clamp200(Number(c5El?.value));
 
   if ([v1, v2, v3, v4, v5].some((v) => v === null)) {
     if (totalScoreEl) totalScoreEl.textContent = '—';
@@ -145,35 +145,79 @@ if (closeCorrectionBtn) {
   closeCorrectionBtn.addEventListener('click', () => closeCorrection());
 }
 
-// -------------------- DATA helpers --------------------
+// -------------------- DATA helpers (robustos) --------------------
 
 function pickDate(obj, keys) {
   for (const k of keys) {
     const v = obj?.[k];
-    if (v) return v;
+    if (v !== null && v !== undefined && String(v).trim() !== '') return v;
   }
   return null;
 }
 
-function formatDateBR(value) {
-  if (!value) return '—';
-  const d = new Date(value);
+function toDateSafe(value) {
+  if (!value) return null;
+
+  // já é Date
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : value;
+  }
+
+  // número timestamp
+  if (typeof value === 'number') {
+    const d = new Date(value);
+    const t = d.getTime();
+    return Number.isNaN(t) ? null : d;
+  }
+
+  // string ISO / etc
+  const s = String(value).trim();
+  if (!s) return null;
+
+  const d = new Date(s);
   const t = d.getTime();
-  if (Number.isNaN(t)) return '—';
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(d);
+  if (!Number.isNaN(t)) return d;
+
+  // fallback: algumas APIs mandam número como string
+  const asNum = Number(s);
+  if (!Number.isNaN(asNum)) {
+    const d2 = new Date(asNum);
+    const t2 = d2.getTime();
+    return Number.isNaN(t2) ? null : d2;
+  }
+
+  return null;
+}
+
+function formatDateBR(value) {
+  const d = toDateSafe(value);
+  if (!d) return '—';
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(d);
+  } catch {
+    return '—';
+  }
 }
 
 /**
- * ✅ Melhor "data de envio" possível SEM mudar backend:
+ * ✅ Melhor "data de envio" possível:
  * - se no futuro existir submittedAt → usa
- * - senão createdAt → usa (muitas vezes já resolve)
+ * - senão createdAt → usa
  * - senão updatedAt → fallback
  */
 function getSentAt(essay) {
-  return pickDate(essay, ['submittedAt', 'submitted_at', 'createdAt', 'created_at', 'updatedAt', 'updated_at']);
+  return pickDate(essay, [
+    'submittedAt',
+    'submitted_at',
+    'createdAt',
+    'created_at',
+    'updatedAt',
+    'updated_at',
+  ]);
 }
 
 // -------------------- RUBRICAS ENEM --------------------
@@ -185,9 +229,9 @@ const ENEM_RUBRICS = {
       { score: 200, text: 'Excelente domínio da modalidade formal; desvios raros e não reincidentes.' },
       { score: 160, text: 'Bom domínio; poucos desvios gramaticais e de convenções.' },
       { score: 120, text: 'Domínio mediano; alguns desvios gramaticais e de convenções.' },
-      { score: 80,  text: 'Domínio insuficiente; muitos desvios, inclusive de registro e convenções.' },
-      { score: 40,  text: 'Domínio precário e sistemático; desvios frequentes e diversificados.' },
-      { score: 0,   text: 'Desconhecimento da modalidade escrita formal.' },
+      { score: 80, text: 'Domínio insuficiente; muitos desvios, inclusive de registro e convenções.' },
+      { score: 40, text: 'Domínio precário e sistemático; desvios frequentes e diversificados.' },
+      { score: 0, text: 'Desconhecimento da modalidade escrita formal.' },
     ],
   },
   c2: {
@@ -196,9 +240,9 @@ const ENEM_RUBRICS = {
       { score: 200, text: 'Argumentação consistente com repertório produtivo; excelente domínio do texto dissertativo-argumentativo.' },
       { score: 160, text: 'Argumentação consistente; bom domínio (proposição, argumentação e conclusão).' },
       { score: 120, text: 'Argumentação previsível; domínio mediano (proposição, argumentação e conclusão).' },
-      { score: 80,  text: 'Cópia de trechos motivadores ou domínio insuficiente; estrutura não plenamente atendida.' },
-      { score: 40,  text: 'Tangencia o tema ou domínio precário; traços constantes de outros tipos textuais.' },
-      { score: 0,   text: 'Fuga ao tema e/ou não atendimento ao tipo dissertativo-argumentativo.' },
+      { score: 80, text: 'Cópia de trechos motivadores ou domínio insuficiente; estrutura não plenamente atendida.' },
+      { score: 40, text: 'Tangencia o tema ou domínio precário; traços constantes de outros tipos textuais.' },
+      { score: 0, text: 'Fuga ao tema e/ou não atendimento ao tipo dissertativo-argumentativo.' },
     ],
   },
   c3: {
@@ -207,9 +251,9 @@ const ENEM_RUBRICS = {
       { score: 200, text: 'Informações/fatos/opiniões consistentes e organizados; autoria clara; defende ponto de vista.' },
       { score: 160, text: 'Organizado, com indícios de autoria; defende ponto de vista.' },
       { score: 120, text: 'Limitado aos textos motivadores e pouco organizado; ainda defende ponto de vista.' },
-      { score: 80,  text: 'Desorganizado/contraditório e limitado aos motivadores; defende ponto de vista.' },
-      { score: 40,  text: 'Pouco relacionado ao tema ou incoerente; sem defesa de ponto de vista.' },
-      { score: 0,   text: 'Não relacionado ao tema; sem defesa de ponto de vista.' },
+      { score: 80, text: 'Desorganizado/contraditório e limitado aos motivadores; defende ponto de vista.' },
+      { score: 40, text: 'Pouco relacionado ao tema ou incoerente; sem defesa de ponto de vista.' },
+      { score: 0, text: 'Não relacionado ao tema; sem defesa de ponto de vista.' },
     ],
   },
   c4: {
@@ -218,9 +262,9 @@ const ENEM_RUBRICS = {
       { score: 200, text: 'Articula muito bem as partes; repertório diversificado de recursos coesivos.' },
       { score: 160, text: 'Articula bem, com poucas inadequações; repertório diversificado.' },
       { score: 120, text: 'Articulação mediana, com inadequações; repertório pouco diversificado.' },
-      { score: 80,  text: 'Articulação insuficiente, muitas inadequações; repertório limitado.' },
-      { score: 40,  text: 'Articula de forma precária.' },
-      { score: 0,   text: 'Não articula as informações.' },
+      { score: 80, text: 'Articulação insuficiente, muitas inadequações; repertório limitado.' },
+      { score: 40, text: 'Articula de forma precária.' },
+      { score: 0, text: 'Não articula as informações.' },
     ],
   },
   c5: {
@@ -229,9 +273,9 @@ const ENEM_RUBRICS = {
       { score: 200, text: 'Proposta muito bem elaborada, detalhada, relacionada ao tema e articulada à discussão.' },
       { score: 160, text: 'Proposta bem elaborada, relacionada ao tema e articulada à discussão.' },
       { score: 120, text: 'Proposta mediana, relacionada ao tema e articulada à discussão.' },
-      { score: 80,  text: 'Proposta insuficiente; relacionada ao tema, ou não articulada à discussão.' },
-      { score: 40,  text: 'Proposta vaga/precária ou apenas relacionada ao assunto.' },
-      { score: 0,   text: 'Não apresenta proposta ou propõe algo não relacionado ao tema/assunto.' },
+      { score: 80, text: 'Proposta insuficiente; relacionada ao tema, ou não articulada à discussão.' },
+      { score: 40, text: 'Proposta vaga/precária ou apenas relacionada ao assunto.' },
+      { score: 0, text: 'Não apresenta proposta ou propõe algo não relacionado ao tema/assunto.' },
     ],
   },
 };
@@ -246,7 +290,10 @@ function snapToNearestEnemLevel(value) {
   let bestDist = Math.abs(clamped - best);
   for (const lv of levels) {
     const d = Math.abs(clamped - lv);
-    if (d < bestDist) { best = lv; bestDist = d; }
+    if (d < bestDist) {
+      best = lv;
+      bestDist = d;
+    }
   }
   return best;
 }
@@ -355,7 +402,10 @@ function splitTitleAndBody(raw) {
   const lines = text.split('\n');
   let firstIdx = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (String(lines[i] || '').trim()) { firstIdx = i; break; }
+    if (String(lines[i] || '').trim()) {
+      firstIdx = i;
+      break;
+    }
   }
   if (firstIdx === -1) return { title: '—', body: '' };
 
@@ -540,6 +590,11 @@ function sortEssaysForList(arr) {
     const bc = isCorrected(b) ? 1 : 0;
     if (ac !== bc) return ac - bc;
 
+    // ✅ opcional: mais recentes primeiro dentro do grupo
+    const at = toDateSafe(getSentAt(a))?.getTime?.() ?? -Infinity;
+    const bt = toDateSafe(getSentAt(b))?.getTime?.() ?? -Infinity;
+    if (at !== bt) return bt - at;
+
     const an = (a?.studentName || '').trim().toLowerCase();
     const bn = (b?.studentName || '').trim().toLowerCase();
     if (!an && bn) return 1;
@@ -561,15 +616,10 @@ async function carregarRedacoes() {
     currentEssayId = null;
     currentAnchorLi = null;
 
-    const response = await fetch(
-      `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`
-    );
-    if (!response.ok) throw new Error();
+    const response = await fetch(`${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     let essays = await response.json();
-
-    // ✅ DEBUG opcional (se quiser conferir se vem createdAt/updatedAt)
-    // console.log('[essays raw]', essays);
 
     essays = filterEssaysByActiveStudents(essays, cachedActiveSet);
 
@@ -610,19 +660,20 @@ async function carregarRedacoes() {
           : 'Aluno';
 
       const dataUrl = localStorage.getItem(photoKeyStudent(essay.studentId));
-      avatar.src =
-        dataUrl || placeholderAvatarDataUrl((nome || 'A').trim().slice(0, 1).toUpperCase());
+      avatar.src = dataUrl || placeholderAvatarDataUrl((nome || 'A').trim().slice(0, 1).toUpperCase());
 
       const text = document.createElement('div');
 
       const corrected = isCorrected(essay);
       const statusNota = corrected ? `Nota: ${essay.score}` : 'Pendente (sem correção)';
 
-      // ✅ ENVIADA EM (pega createdAt/submittedAt/updatedAt)
-      const sentAt = formatDateBR(getSentAt(essay));
+      // ✅ ENVIADA EM (createdAt/submittedAt/updatedAt)
+      const sentRaw = getSentAt(essay);
+      const sentAt = formatDateBR(sentRaw);
 
-      // ✅ se corrigida, mostra também "Corrigida em" por updatedAt (quando o backend enviar)
-      const correctedAt = corrected ? formatDateBR(pickDate(essay, ['updatedAt', 'updated_at'])) : null;
+      // ✅ CORRIGIDA EM (updatedAt)
+      const correctedRaw = corrected ? pickDate(essay, ['updatedAt', 'updated_at']) : null;
+      const correctedAt = corrected ? formatDateBR(correctedRaw) : null;
 
       text.innerHTML =
         `<strong>${nome}</strong>` +
@@ -638,9 +689,7 @@ async function carregarRedacoes() {
       if (corrected) {
         btn.textContent = 'Ver redação/feedback';
         btn.addEventListener('click', () => {
-          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-            String(taskId)
-          )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
+          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}&studentId=${encodeURIComponent(String(essay.studentId))}`;
         });
       } else {
         btn.textContent = 'Corrigir';
@@ -648,18 +697,14 @@ async function carregarRedacoes() {
       }
 
       li.style.cursor = 'pointer';
-      li.title = corrected
-        ? 'Clique para ver redação/feedback'
-        : 'Clique para corrigir (abre logo abaixo)';
+      li.title = corrected ? 'Clique para ver redação/feedback' : 'Clique para corrigir (abre logo abaixo)';
 
       li.addEventListener('click', (ev) => {
         if (correctionSection && correctionSection.contains(ev.target)) return;
         if (ev.target && ev.target.tagName === 'BUTTON') return;
 
         if (corrected) {
-          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-            String(taskId)
-          )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
+          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}&studentId=${encodeURIComponent(String(essay.studentId))}`;
         } else {
           abrirCorrecao(essay, li);
         }
@@ -724,23 +769,20 @@ if (saveBtn) {
     setStatus('Salvando correção...');
 
     try {
-      const response = await fetch(
-        `${API_URL}/essays/${encodeURIComponent(currentEssayId)}/correct`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            feedback,
-            c1: totalObj.v1,
-            c2: totalObj.v2,
-            c3: totalObj.v3,
-            c4: totalObj.v4,
-            c5: totalObj.v5,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/essays/${encodeURIComponent(currentEssayId)}/correct`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feedback,
+          c1: totalObj.v1,
+          c2: totalObj.v2,
+          c3: totalObj.v3,
+          c4: totalObj.v4,
+          c5: totalObj.v5,
+        }),
+      });
 
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       setStatus('Correção salva com sucesso!');
       closeCorrection();
