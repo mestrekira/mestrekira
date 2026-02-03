@@ -18,6 +18,9 @@ const studentEmailEl = document.getElementById('studentEmail');
 
 const taskTitleEl = document.getElementById('taskTitle');
 
+// ✅ datas (adicione esses IDs no HTML: <div id="essayMeta"></div> OU 2 spans)
+const essayMetaEl = document.getElementById('essayMeta');
+
 const essayTitleEl = document.getElementById('essayTitle');
 const essayBodyEl = document.getElementById('essayBody');
 const essayContentEl = document.getElementById('essayContent'); // fallback antigo (oculto no HTML)
@@ -117,31 +120,82 @@ function splitTitleAndBody(raw) {
 function renderEssayFormatted(titleEl, bodyEl, rawContent) {
   const { title, body } = splitTitleAndBody(rawContent);
 
-  // título (simples)
   setText(titleEl, title || '—', '—');
-
-  // corpo (preserva parágrafos)
   setMultilinePreserve(bodyEl, String(body || '').trimEnd(), '');
+}
+
+// ---------------- datas ----------------
+
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v) return v;
+  }
+  return null;
+}
+
+function formatDateBR(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  const t = d.getTime();
+  if (Number.isNaN(t)) return '—';
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
+}
+
+/**
+ * ✅ Enviado em (melhor possível):
+ * - submittedAt (se existir)
+ * - createdAt
+ * - created_at
+ */
+function getSentAt(essay) {
+  return pickDate(essay, ['submittedAt', 'submitted_at', 'createdAt', 'created_at']);
+}
+
+/**
+ * ✅ Corrigido em:
+ * - correctedAt (se existir)
+ * - updatedAt
+ * - updated_at
+ * Obs: só mostra se tiver nota (score)
+ */
+function getCorrectedAt(essay) {
+  return pickDate(essay, ['correctedAt', 'corrected_at', 'updatedAt', 'updated_at']);
+}
+
+function renderMetaDates(essay) {
+  if (!essayMetaEl) return;
+
+  const sentAt = formatDateBR(getSentAt(essay));
+  const hasScore = essay?.score !== null && essay?.score !== undefined;
+  const correctedAt = hasScore ? formatDateBR(getCorrectedAt(essay)) : '—';
+
+  const parts = [`Enviada em: ${sentAt}`];
+  if (hasScore) parts.push(`Corrigida em: ${correctedAt}`);
+
+  // estilo leve (igual você fez em outras páginas)
+  essayMetaEl.textContent = parts.join('  •  ');
+  essayMetaEl.style.setProperty('margin-top', '6px', 'important');
+  essayMetaEl.style.setProperty('font-size', '12px', 'important');
+  essayMetaEl.style.setProperty('opacity', '0.85', 'important');
+  essayMetaEl.style.setProperty('white-space', 'pre-wrap', 'important');
 }
 
 // ---------------- fetch helpers ----------------
 
 async function fetchEssayByIdWithStudent(id) {
-  // ✅ endpoint professor (com studentName/email)
   const res = await fetch(`${API_URL}/essays/${encodeURIComponent(id)}/with-student`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
 async function fetchEssaysByTaskWithStudent(tId) {
-  // ✅ este endpoint você já usa no correcao.js
   const res = await fetch(`${API_URL}/essays/by-task/${encodeURIComponent(tId)}/with-student`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
 async function fetchEssayByTaskAndStudentFallback(tId, sId) {
-  // fallback: pode NÃO trazer studentName/email, depende do backend
   const url =
     `${API_URL}/essays/by-task/${encodeURIComponent(tId)}/by-student` +
     `?studentId=${encodeURIComponent(sId)}`;
@@ -161,7 +215,6 @@ async function fetchTask(tId) {
 // ---------------- render ----------------
 
 function renderEssay(essay) {
-  // aluno (prioriza campos mais comuns)
   const name =
     essay?.studentName ??
     essay?.student?.name ??
@@ -177,20 +230,24 @@ function renderEssay(essay) {
   setText(studentNameEl, name, 'Aluno');
   setText(studentEmailEl, email, '');
 
-  // redação (preserva parágrafos no corpo)
+  // redação (formatada e sem duplicar marcador)
   renderEssayFormatted(essayTitleEl, essayBodyEl, essay?.content || '');
 
-  // fallback antigo (se existir)
+  // ✅ NÃO duplicar a redação: se existir o fallback antigo no HTML, esconde.
+  // (ele estava mostrando o content cru com _TITLE_)
   if (essayContentEl) {
-    // mantém o texto “cru” preservando quebras
-    setMultilinePreserve(essayContentEl, essay?.content || '', '');
+    essayContentEl.style.display = 'none';
+    essayContentEl.textContent = '';
   }
+
+  // ✅ datas
+  renderMetaDates(essay);
 
   // nota
   const hasScore = essay?.score !== null && essay?.score !== undefined;
   setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida', '—');
 
-  // feedback (preserva parágrafos/linhas em branco)
+  // feedback
   setMultilinePreserve(feedbackEl, essay?.feedback || '', 'Aguardando correção do professor.');
 
   // competências
@@ -206,13 +263,11 @@ async function carregar() {
     let essay = null;
 
     // ✅ MODO NOVO: taskId + studentId
-    // Melhor forma: pegar /with-student e filtrar (garante studentName/email)
     if (taskId && studentId) {
       let list = [];
       try {
         list = await fetchEssaysByTaskWithStudent(taskId);
       } catch (e) {
-        // se falhar, segue pro fallback
         console.warn('[feedback-professor] falhou fetchEssaysByTaskWithStudent:', e);
       }
 
@@ -220,7 +275,7 @@ async function carregar() {
         essay = list.find((x) => String(x?.studentId) === String(studentId)) || null;
       }
 
-      // fallback: by-student (pode vir sem nome/email)
+      // fallback: by-student
       if (!essay) {
         essay = await fetchEssayByTaskAndStudentFallback(taskId, studentId);
 
@@ -230,7 +285,7 @@ async function carregar() {
           return;
         }
 
-        // se o fallback trouxe essay.id, tenta enriquecer com /with-student
+        // tenta enriquecer com /with-student
         if (essay?.id) {
           try {
             const enriched = await fetchEssayByIdWithStudent(essay.id);
@@ -249,7 +304,7 @@ async function carregar() {
 
     renderEssay(essay);
 
-    // ✅ tema: tenta por essay.taskId (se existir), senão usa taskId da URL
+    // tema
     const effectiveTaskId = essay?.taskId || taskId;
     if (effectiveTaskId) {
       const task = await fetchTask(effectiveTaskId);
