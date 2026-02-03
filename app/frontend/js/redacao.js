@@ -62,17 +62,27 @@ function unpackContent(raw) {
   return { title: '', body: text };
 }
 
-// ✅ Renderiza texto preservando parágrafos e linhas em branco
-function renderMultiline(el, text, fallback = '') {
+/**
+ * ✅ Renderiza texto preservando parágrafos e linhas em branco
+ * Funciona tanto para <div>/<p> quanto para <textarea>/<input>.
+ */
+function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
-  const v = text === null || text === undefined ? '' : String(text);
 
-  el.textContent = v.trim() ? v : fallback;
+  const raw = value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
+  const finalText = raw.trim() ? raw : fallback;
 
-  // 🔥 ESSENCIAL
-  el.style.whiteSpace = 'pre-wrap';   // mantém quebras de linha
-  el.style.lineHeight = '1.6';
-  el.style.textAlign = 'justify';
+  // textarea/input => value; demais => textContent
+  if ('value' in el) el.value = finalText;
+  else el.textContent = finalText;
+
+  // força preservação
+  el.style.setProperty('white-space', 'pre-wrap', 'important');
+  el.style.setProperty('line-height', '1.6', 'important');
+  el.style.setProperty('text-align', 'justify', 'important');
+  el.style.setProperty('overflow-wrap', 'anywhere', 'important');
+  el.style.setProperty('word-break', 'break-word', 'important');
+  el.style.setProperty('display', 'block', 'important');
 }
 
 // ✅ BLOQUEAR COLAR / ARRASTAR (inclui fallback p/ mobile)
@@ -145,10 +155,11 @@ const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
 
 // Busca a redação do aluno naquela tarefa (rascunho ou enviada)
 async function getMyEssayByTask() {
-  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student?studentId=${encodeURIComponent(studentId)}`;
+  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student?studentId=${encodeURIComponent(
+    studentId
+  )}`;
   const res = await fetch(url);
 
-  // dependendo do seu Nest, pode retornar 200 null ou 404
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -160,7 +171,7 @@ async function getMyEssayByTask() {
 // Salva rascunho (upsert) no backend: POST /essays/draft
 async function saveDraftServerPacked(packedContent) {
   const res = await fetch(`${API_URL}/essays/draft`, {
-    method: 'POST', // seu controller está @Post('draft')
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       taskId,
@@ -169,18 +180,11 @@ async function saveDraftServerPacked(packedContent) {
     }),
   });
 
-  if (!res.ok) {
-    // se já enviou, o backend retorna ConflictException
-    throw new Error(`HTTP ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
   return res.json().catch(() => null);
 }
 
-// Não há endpoint de DELETE rascunho hoje.
-// Solução simples: "limpar" salvando rascunho vazio NÃO é permitido no backend atual,
-// então aqui nós só deixamos sem remover. Após enviar, não precisa apagar: submit() já marca isDraft=false.
-// Se depois você quiser apagar, eu adiciono DELETE /essays/draft em 10 linhas.
 async function clearDraftUXOnly() {
   titleInput.value = '';
   textarea.value = '';
@@ -196,16 +200,28 @@ async function carregarTarefa() {
     if (!response.ok) throw new Error();
 
     const task = await response.json();
-    taskTitleEl.textContent = task?.title || 'Tema da Redação';
-    taskGuidelinesEl.textContent = task?.guidelines || 'Sem orientações adicionais.';
-  } catch {
-    taskTitleEl.textContent = 'Tema da Redação';
-   renderMultiline(
-  taskGuidelinesEl,
-  task?.guidelines,
-  'Sem orientações adicionais.'
-);
 
+    if (taskTitleEl) taskTitleEl.textContent = task?.title || 'Tema da Redação';
+
+    // ✅ AQUI: preserva parágrafos / linhas em branco
+    setMultilinePreserve(
+      taskGuidelinesEl,
+      task?.guidelines,
+      'Sem orientações adicionais.'
+    );
+
+    // (debug opcional — pode remover depois)
+    // console.log('[guidelines json]', JSON.stringify(task?.guidelines));
+  } catch (err) {
+    console.error('Erro ao carregar tarefa:', err);
+
+    if (taskTitleEl) taskTitleEl.textContent = 'Tema da Redação';
+
+    setMultilinePreserve(
+      taskGuidelinesEl,
+      '',
+      'Não foi possível carregar as orientações.'
+    );
   }
 }
 
@@ -214,13 +230,11 @@ async function carregarRascunho() {
   try {
     const essay = await getMyEssayByTask();
 
-    // não existe nada ainda
     if (!essay) {
       updateCount();
       return;
     }
 
-    // se já foi enviada, redireciona (segurança extra)
     if (essay.isDraft === false && essay.id) {
       setStatus('Você já enviou esta redação. Redirecionando para o feedback...');
       setDisabledAll(true);
@@ -230,7 +244,6 @@ async function carregarRascunho() {
       return;
     }
 
-    // é rascunho: carrega conteúdo
     const { title, body } = unpackContent(essay.content || '');
     titleInput.value = title || '';
     textarea.value = body || '';
@@ -257,19 +270,14 @@ function scheduleAutosave() {
     const title = (titleInput.value || '').trim();
     const text = textarea.value || '';
 
-    // não salva vazio
     if (!title && !text.trim()) return;
-
-    // evita fila de requests
     if (autosaveBusy) return;
     autosaveBusy = true;
 
     try {
       await saveDraftServerPacked(packContent(title, text));
-      // não spammar status
     } catch (err) {
       console.error('Autosave falhou:', err);
-      // opcional: setStatus('Falha no autosave (conexão).');
     } finally {
       autosaveBusy = false;
     }
@@ -291,7 +299,6 @@ saveBtn.addEventListener('click', async () => {
   const text = textarea.value || '';
 
   if (!title && !text.trim()) {
-    // sem endpoint de delete no backend atual: só limpa a UI
     await clearDraftUXOnly();
     setStatus('Nada para salvar.');
     return;
@@ -303,12 +310,11 @@ saveBtn.addEventListener('click', async () => {
     setStatus('Rascunho salvo no servidor.');
   } catch (err) {
     console.error(err);
-    // se já enviou, o backend pode retornar 409
     setStatus('Erro ao salvar rascunho no servidor.');
   }
 });
 
-// ✅ VERIFICAR SE JÁ ENVIOU (sem listar turma inteira)
+// ✅ VERIFICAR SE JÁ ENVIOU
 async function checarJaEnviou() {
   try {
     const mine = await getMyEssayByTask();
@@ -363,7 +369,6 @@ sendBtn.addEventListener('click', async () => {
 
     const essay = await response.json();
 
-    // ✅ não precisa deletar rascunho: submit() marca isDraft=false no mesmo registro
     setDisabledAll(true);
     setStatus('Redação enviada com sucesso!');
 
@@ -397,4 +402,3 @@ sendBtn.addEventListener('click', async () => {
   await carregarRascunho();
   setStatus('');
 })();
-
