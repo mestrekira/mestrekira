@@ -18,6 +18,9 @@ const scoreEl = document.getElementById('score');
 const feedbackEl = document.getElementById('feedback');
 const backBtn = document.getElementById('backBtn');
 
+// ✅ NOVO: meta de datas (adicione no HTML: <div id="essayMeta"></div>)
+const essayMetaEl = document.getElementById('essayMeta');
+
 const c1El = document.getElementById('c1');
 const c2El = document.getElementById('c2');
 const c3El = document.getElementById('c3');
@@ -53,6 +56,100 @@ function setMultilinePreserve(el, value, fallback = '') {
   el.style.setProperty('word-break', 'break-word', 'important');
   el.style.setProperty('display', 'block', 'important');
 }
+
+// ---------------- datas (robusto) ----------------
+
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== null && v !== undefined && String(v).trim() !== '') return v;
+  }
+  return null;
+}
+
+function toDateSafe(value) {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    const d = new Date(value);
+    const t = d.getTime();
+    return Number.isNaN(t) ? null : d;
+  }
+
+  const s = String(value).trim();
+  if (!s) return null;
+
+  const d = new Date(s);
+  const t = d.getTime();
+  if (!Number.isNaN(t)) return d;
+
+  const asNum = Number(s);
+  if (!Number.isNaN(asNum)) {
+    const d2 = new Date(asNum);
+    const t2 = d2.getTime();
+    return Number.isNaN(t2) ? null : d2;
+  }
+
+  return null;
+}
+
+function formatDateBR(value) {
+  const d = toDateSafe(value);
+  if (!d) return '—';
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(d);
+  } catch {
+    return '—';
+  }
+}
+
+// ✅ enviada = createdAt (ou submittedAt se existir no futuro)
+function getSentAt(essay) {
+  return pickDate(essay, ['submittedAt', 'submitted_at', 'createdAt', 'created_at']);
+}
+
+// ✅ corrigida = updatedAt (mas só faz sentido quando já houve correção)
+function getCorrectedAt(essay) {
+  return pickDate(essay, ['correctedAt', 'corrected_at', 'updatedAt', 'updated_at']);
+}
+
+function renderEssayMeta(metaEl, essay) {
+  if (!metaEl) return;
+
+  const sentAtStr = formatDateBR(getSentAt(essay));
+  const correctedAtStr = formatDateBR(getCorrectedAt(essay));
+
+  const hasScore = essay?.score !== null && essay?.score !== undefined;
+  const hasFeedback = String(essay?.feedback || '').trim().length > 0;
+
+  // regra: só exibir “Corrigida em” se houver indício real de correção
+  const showCorrected = hasScore || hasFeedback;
+
+  metaEl.textContent = '';
+  metaEl.style.setProperty('margin-top', '6px', 'important');
+  metaEl.style.setProperty('font-size', '12px', 'important');
+  metaEl.style.setProperty('opacity', '0.85', 'important');
+  metaEl.style.setProperty('white-space', 'pre-wrap', 'important');
+
+  const lines = [];
+  lines.push(`Enviada em: ${sentAtStr}`);
+
+  if (showCorrected) {
+    lines.push(`Corrigida em: ${correctedAtStr}`);
+  }
+
+  metaEl.textContent = lines.join('\n');
+}
+
+// ---------------- redação ----------------
 
 /**
  * ✅ Separa título e corpo, aceitando:
@@ -125,12 +222,13 @@ function renderEssayFormatted(containerEl, rawContent) {
   containerEl.appendChild(h);
 
   const b = document.createElement('div');
-  // mantém exatamente as quebras (sem trim agressivo)
   b.textContent = String(body || '').replace(/\r\n/g, '\n').trimEnd();
   b.style.textAlign = 'justify';
   b.style.whiteSpace = 'pre-wrap';
   containerEl.appendChild(b);
 }
+
+// ---------------- competências ----------------
 
 // nomes das competências (ENEM)
 const COMP_NAMES = {
@@ -182,6 +280,9 @@ async function carregarFeedback() {
       window.location.href = 'painel-aluno.html';
       return;
     }
+
+    // ✅ meta: enviada/corrigida
+    renderEssayMeta(essayMetaEl, essay);
 
     // 2) tema (task)
     setText(taskTitleEl, '—');
