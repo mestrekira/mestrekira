@@ -33,6 +33,62 @@ if (performanceBtn) {
 }
 
 // =====================
+// Datas (helpers robustos)
+// =====================
+
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== null && v !== undefined && String(v).trim() !== '') return v;
+  }
+  return null;
+}
+
+function toDateSafe(value) {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    const d = new Date(value);
+    const t = d.getTime();
+    return Number.isNaN(t) ? null : d;
+  }
+
+  const s = String(value).trim();
+  if (!s) return null;
+
+  const d = new Date(s);
+  const t = d.getTime();
+  if (!Number.isNaN(t)) return d;
+
+  const asNum = Number(s);
+  if (!Number.isNaN(asNum)) {
+    const d2 = new Date(asNum);
+    const t2 = d2.getTime();
+    return Number.isNaN(t2) ? null : d2;
+  }
+
+  return null;
+}
+
+function formatDateBR(value) {
+  const d = toDateSafe(value);
+  if (!d) return '—';
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(d);
+  } catch {
+    return '—';
+  }
+}
+
+// =====================
 // Fotos (localStorage)
 // =====================
 function photoKeyStudent(id) {
@@ -83,7 +139,7 @@ if (leaveBtn) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId, studentId }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       if (leaveStatus) leaveStatus.textContent = 'Você saiu da sala.';
       setTimeout(() => (window.location.href = 'painel-aluno.html'), 600);
@@ -103,7 +159,7 @@ async function carregarOverview() {
 
   try {
     const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`);
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
     // sala
@@ -185,16 +241,16 @@ async function carregarOverview() {
 // =====================
 // Essay do aluno na tarefa
 // =====================
-async function getMyEssayByTask(taskId) {
+async function getMyEssayByTask(taskIdValue) {
   const url =
-    `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student` +
+    `${API_URL}/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student` +
     `?studentId=${encodeURIComponent(studentId)}`;
 
   const res = await fetch(url);
 
   if (res.status === 404) return null;
   if (!res.ok) {
-    console.warn('[sala-aluno] Falha ao consultar essay da tarefa', taskId, res.status);
+    console.warn('[sala-aluno] Falha ao consultar essay da tarefa', taskIdValue, res.status);
     return null;
   }
 
@@ -205,14 +261,6 @@ async function getMyEssayByTask(taskId) {
 // =====================
 // Destaque da tarefa mais recente ("Nova")
 // =====================
-function pickDate(obj, keys) {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v) return v;
-  }
-  return null;
-}
-
 function computeNewestTaskId(tasks) {
   if (!Array.isArray(tasks) || tasks.length === 0) return null;
 
@@ -220,8 +268,15 @@ function computeNewestTaskId(tasks) {
   let newestTime = -Infinity;
 
   tasks.forEach((t) => {
-    const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
-    const dt = createdAt ? new Date(createdAt).getTime() : NaN;
+    const createdAt = pickDate(t, [
+      'createdAt',
+      'created_at',
+      'created',
+      'dateCreated',
+      'timestamp',
+    ]);
+    const dt = toDateSafe(createdAt)?.getTime?.() ?? NaN;
+
     if (!Number.isNaN(dt)) {
       if (dt > newestTime) {
         newestTime = dt;
@@ -231,7 +286,7 @@ function computeNewestTaskId(tasks) {
   });
 
   // fallback: última do array
-  if (!newestId) newestId = tasks[tasks.length - 1].id;
+  if (!newestId) newestId = tasks[tasks.length - 1]?.id || null;
 
   return newestId;
 }
@@ -261,7 +316,7 @@ async function carregarTarefas() {
 
   try {
     const response = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
-    if (!response.ok) throw new Error();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const raw = await response.json();
     const arr = Array.isArray(raw) ? raw : [];
@@ -274,13 +329,22 @@ async function carregarTarefas() {
       return;
     }
 
-    // normaliza pra garantir .id/.title
+    // normaliza pra garantir .id/.title/.createdAt
     const tasks = arr
-      .map((t) => ({
-        id: String(t?.id || t?.taskId || '').trim(),
-        title: String(t?.title || t?.taskTitle || t?.name || '').trim(),
-        _raw: t,
-      }))
+      .map((t) => {
+        const id = String(t?.id || t?.taskId || '').trim();
+        const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
+
+        const createdAt = pickDate(t, [
+          'createdAt',
+          'created_at',
+          'created',
+          'dateCreated',
+          'timestamp',
+        ]);
+
+        return { id, title, createdAt, _raw: t };
+      })
       .filter((t) => !!t.id);
 
     if (tasks.length === 0) {
@@ -289,7 +353,7 @@ async function carregarTarefas() {
       return;
     }
 
-    const newestId = computeNewestTaskId(tasks.map((t) => ({ ...t, ...t._raw })));
+    const newestId = computeNewestTaskId(tasks.map((t) => ({ ...t._raw, id: t.id })));
 
     // renderiza e atualiza botões
     for (const task of tasks) {
@@ -317,6 +381,13 @@ async function carregarTarefas() {
         titleWrap.appendChild(makeNovaBadge());
       }
 
+      // ✅ meta: data de criação
+      const meta = document.createElement('div');
+      meta.style.marginTop = '6px';
+      meta.style.fontSize = '12px';
+      meta.style.opacity = '0.85';
+      meta.textContent = `Criada em: ${formatDateBR(task.createdAt)}`;
+
       // wrapper botões
       const actions = document.createElement('div');
       actions.style.display = 'flex';
@@ -341,7 +412,7 @@ async function carregarTarefas() {
       actions.appendChild(btnFeedback);
 
       li.appendChild(titleWrap);
-      li.appendChild(document.createElement('br'));
+      li.appendChild(meta);
       li.appendChild(actions);
 
       tasksList.appendChild(li);
