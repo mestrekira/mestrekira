@@ -20,7 +20,7 @@ const essayContentEl = document.getElementById('essayContent');
 const studentPhotoImg = document.getElementById('studentPhotoImg');
 
 const taskTitleEl = document.getElementById('taskTitle'); // ✅ tema no topo
-const taskMetaEl = document.getElementById('taskMeta'); // opcional
+const taskMetaEl = document.getElementById('taskMeta'); // ✅ orientações (box)
 
 const feedbackEl = document.getElementById('feedback');
 const saveBtn = document.getElementById('saveCorrectionBtn');
@@ -158,33 +158,26 @@ function pickDate(obj, keys) {
 function toDateSafe(value) {
   if (!value) return null;
 
-  // já é Date
   if (value instanceof Date) {
     const t = value.getTime();
     return Number.isNaN(t) ? null : value;
   }
 
-  // número timestamp
   if (typeof value === 'number') {
     const d = new Date(value);
-    const t = d.getTime();
-    return Number.isNaN(t) ? null : d;
+    return Number.isNaN(d.getTime()) ? null : d;
   }
 
-  // string ISO / etc
   const s = String(value).trim();
   if (!s) return null;
 
   const d = new Date(s);
-  const t = d.getTime();
-  if (!Number.isNaN(t)) return d;
+  if (!Number.isNaN(d.getTime())) return d;
 
-  // fallback: algumas APIs mandam número como string
   const asNum = Number(s);
   if (!Number.isNaN(asNum)) {
     const d2 = new Date(asNum);
-    const t2 = d2.getTime();
-    return Number.isNaN(t2) ? null : d2;
+    return Number.isNaN(d2.getTime()) ? null : d2;
   }
 
   return null;
@@ -194,10 +187,7 @@ function formatDateBR(value) {
   const d = toDateSafe(value);
   if (!d) return '—';
   try {
-    return new Intl.DateTimeFormat('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    }).format(d);
+    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
   } catch {
     return '—';
   }
@@ -205,9 +195,9 @@ function formatDateBR(value) {
 
 /**
  * ✅ Melhor "data de envio" possível:
- * - se no futuro existir submittedAt → usa
- * - senão createdAt → usa
- * - senão updatedAt → fallback
+ * - submittedAt (se existir)
+ * - createdAt
+ * - updatedAt (fallback)
  */
 function getSentAt(essay) {
   return pickDate(essay, [
@@ -218,6 +208,72 @@ function getSentAt(essay) {
     'updatedAt',
     'updated_at',
   ]);
+}
+
+// -------------------- helpers de layout (corrigir “embaralhou” e afastar da borda) --------------------
+
+/**
+ * ✅ Aplica estilo “box” consistente:
+ * - preserva parágrafos
+ * - melhora legibilidade
+ * - adiciona padding interno (título + texto ficam longe da borda)
+ */
+function applyBoxStyle(el) {
+  if (!el) return;
+  el.style.setProperty('white-space', 'pre-wrap', 'important');
+  el.style.setProperty('line-height', '1.7', 'important');
+  el.style.setProperty('text-align', 'justify', 'important');
+  el.style.setProperty('overflow-wrap', 'anywhere', 'important');
+  el.style.setProperty('word-break', 'break-word', 'important');
+
+  // ✅ “mais distante da margem”
+  // (se o .box do CSS já tiver padding, isso só reforça)
+  el.style.setProperty('padding', '14px 16px', 'important');
+}
+
+function setBoxText(el, value, fallback = '') {
+  if (!el) return;
+  const raw = value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
+  const finalText = raw.trim() ? raw : fallback;
+  el.textContent = finalText;
+  applyBoxStyle(el);
+}
+
+/**
+ * ✅ Renderiza orientações/tema dentro da box sem “embaralhar”:
+ * - Mantém quebras
+ * - Não usa innerHTML (evita bagunçar/interpretar tags)
+ * - Adiciona um “título” com margem, mas sempre dentro da box
+ */
+function renderGuidelinesInBox(el, title, guidelines) {
+  if (!el) return;
+
+  const g = String(guidelines ?? '').replace(/\r\n/g, '\n');
+  const hasText = g.trim().length > 0;
+
+  el.innerHTML = '';
+  applyBoxStyle(el);
+
+  // título interno
+  const h = document.createElement('div');
+  h.textContent = String(title || '').trim();
+  h.style.fontWeight = '800';
+  h.style.marginBottom = '10px';
+  h.style.textAlign = 'left'; // título melhor alinhado
+  el.appendChild(h);
+
+  if (!hasText) {
+    const empty = document.createElement('div');
+    empty.textContent = '';
+    el.appendChild(empty);
+    return;
+  }
+
+  const body = document.createElement('div');
+  body.textContent = g.trimEnd();
+  body.style.whiteSpace = 'pre-wrap';
+  body.style.textAlign = 'justify';
+  el.appendChild(body);
 }
 
 // -------------------- RUBRICAS ENEM --------------------
@@ -423,22 +479,21 @@ function renderEssayForProfessor(containerEl, packedContent) {
   const { title, body } = splitTitleAndBody(packedContent);
 
   containerEl.innerHTML = '';
-  containerEl.style.whiteSpace = 'pre-wrap';
-  containerEl.style.textAlign = 'justify';
-  containerEl.style.lineHeight = '1.6';
+  applyBoxStyle(containerEl); // ✅ padding + pre-wrap + justify
 
   if (title && title !== '—') {
     const h = document.createElement('div');
     h.textContent = title;
     h.style.textAlign = 'center';
-    h.style.fontWeight = '700';
-    h.style.marginBottom = '10px';
+    h.style.fontWeight = '800';
+    h.style.marginBottom = '12px';
     containerEl.appendChild(h);
   }
 
   const b = document.createElement('div');
   b.textContent = body || '';
   b.style.textAlign = 'justify';
+  b.style.whiteSpace = 'pre-wrap';
   containerEl.appendChild(b);
 }
 
@@ -461,9 +516,7 @@ async function getActiveStudentsSet(roomId) {
     if (!res.ok) throw new Error();
     const list = await res.json();
     const arr = Array.isArray(list) ? list : [];
-    const ids = arr
-      .map((s) => String(s?.id || s?.studentId || '').trim())
-      .filter(Boolean);
+    const ids = arr.map((s) => String(s?.id || s?.studentId || '').trim()).filter(Boolean);
     return new Set(ids);
   } catch {
     return null;
@@ -552,19 +605,25 @@ function abrirCorrecao(essay, anchorLi) {
   } catch {}
 }
 
-// -------------------- CARREGAR TAREFA (TEMA) --------------------
+// -------------------- CARREGAR TAREFA (TEMA + ORIENTAÇÕES) --------------------
 
 async function carregarTemaDaTarefa() {
   const task = await getTaskInfo(taskId);
 
+  const titleRaw = String(task?.title || '').trim();
+
   if (taskTitleEl) {
-    const title = String(task?.title || '').trim();
-    taskTitleEl.textContent = title ? `Tema: ${title}` : 'Tema: —';
+    taskTitleEl.textContent = titleRaw ? `Tema: ${titleRaw}` : 'Tema: —';
+
+    // ✅ afasta um pouco o título do “container” onde ele fica
+    taskTitleEl.style.setProperty('padding', '0 6px', 'important');
   }
 
+  // ✅ ORIENTAÇÕES: renderiza formatado dentro da BOX, com padding interno
   if (taskMetaEl) {
-    const guide = String(task?.guidelines || '');
-    taskMetaEl.textContent = guide.trim() ? guide : '';
+    const guideRaw = String(task?.guidelines || '');
+    // Se você quiser um título interno (“Orientações”), mantém abaixo:
+    renderGuidelinesInBox(taskMetaEl, 'Orientações', guideRaw);
   }
 
   cachedRoomId = task?.roomId || task?.room?.id || null;
@@ -590,7 +649,7 @@ function sortEssaysForList(arr) {
     const bc = isCorrected(b) ? 1 : 0;
     if (ac !== bc) return ac - bc;
 
-    // ✅ opcional: mais recentes primeiro dentro do grupo
+    // ✅ mais recentes primeiro dentro do grupo
     const at = toDateSafe(getSentAt(a))?.getTime?.() ?? -Infinity;
     const bt = toDateSafe(getSentAt(b))?.getTime?.() ?? -Infinity;
     if (at !== bt) return bt - at;
@@ -616,7 +675,9 @@ async function carregarRedacoes() {
     currentEssayId = null;
     currentAnchorLi = null;
 
-    const response = await fetch(`${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`);
+    const response = await fetch(
+      `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`
+    );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     let essays = await response.json();
@@ -660,7 +721,8 @@ async function carregarRedacoes() {
           : 'Aluno';
 
       const dataUrl = localStorage.getItem(photoKeyStudent(essay.studentId));
-      avatar.src = dataUrl || placeholderAvatarDataUrl((nome || 'A').trim().slice(0, 1).toUpperCase());
+      avatar.src =
+        dataUrl || placeholderAvatarDataUrl((nome || 'A').trim().slice(0, 1).toUpperCase());
 
       const text = document.createElement('div');
 
@@ -668,12 +730,12 @@ async function carregarRedacoes() {
       const statusNota = corrected ? `Nota: ${essay.score}` : 'Pendente (sem correção)';
 
       // ✅ ENVIADA EM (createdAt/submittedAt/updatedAt)
-      const sentRaw = getSentAt(essay);
-      const sentAt = formatDateBR(sentRaw);
+      const sentAt = formatDateBR(getSentAt(essay));
 
       // ✅ CORRIGIDA EM (updatedAt)
-      const correctedRaw = corrected ? pickDate(essay, ['updatedAt', 'updated_at']) : null;
-      const correctedAt = corrected ? formatDateBR(correctedRaw) : null;
+      const correctedAt = corrected
+        ? formatDateBR(pickDate(essay, ['updatedAt', 'updated_at']))
+        : null;
 
       text.innerHTML =
         `<strong>${nome}</strong>` +
@@ -689,7 +751,9 @@ async function carregarRedacoes() {
       if (corrected) {
         btn.textContent = 'Ver redação/feedback';
         btn.addEventListener('click', () => {
-          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}&studentId=${encodeURIComponent(String(essay.studentId))}`;
+          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
+            String(taskId)
+          )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
         });
       } else {
         btn.textContent = 'Corrigir';
@@ -697,14 +761,18 @@ async function carregarRedacoes() {
       }
 
       li.style.cursor = 'pointer';
-      li.title = corrected ? 'Clique para ver redação/feedback' : 'Clique para corrigir (abre logo abaixo)';
+      li.title = corrected
+        ? 'Clique para ver redação/feedback'
+        : 'Clique para corrigir (abre logo abaixo)';
 
       li.addEventListener('click', (ev) => {
         if (correctionSection && correctionSection.contains(ev.target)) return;
         if (ev.target && ev.target.tagName === 'BUTTON') return;
 
         if (corrected) {
-          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}&studentId=${encodeURIComponent(String(essay.studentId))}`;
+          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
+            String(taskId)
+          )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
         } else {
           abrirCorrecao(essay, li);
         }
@@ -769,18 +837,21 @@ if (saveBtn) {
     setStatus('Salvando correção...');
 
     try {
-      const response = await fetch(`${API_URL}/essays/${encodeURIComponent(currentEssayId)}/correct`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          feedback,
-          c1: totalObj.v1,
-          c2: totalObj.v2,
-          c3: totalObj.v3,
-          c4: totalObj.v4,
-          c5: totalObj.v5,
-        }),
-      });
+      const response = await fetch(
+        `${API_URL}/essays/${encodeURIComponent(currentEssayId)}/correct`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            feedback,
+            c1: totalObj.v1,
+            c2: totalObj.v2,
+            c3: totalObj.v3,
+            c4: totalObj.v4,
+            c5: totalObj.v5,
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
