@@ -50,6 +50,55 @@ function setStatus(msg) {
   statusEl.textContent = msg || '';
 }
 
+// ---------------- DATAS (robusto) ----------------
+
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== null && v !== undefined && String(v).trim() !== '') return v;
+  }
+  return null;
+}
+
+function toDateSafe(value) {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  const s = String(value).trim();
+  if (!s) return null;
+
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime())) return d;
+
+  const asNum = Number(s);
+  if (!Number.isNaN(asNum)) {
+    const d2 = new Date(asNum);
+    return Number.isNaN(d2.getTime()) ? null : d2;
+  }
+
+  return null;
+}
+
+function getEssaySentAt(e) {
+  return pickDate(e, [
+    'submittedAt',
+    'submitted_at',
+    'createdAt',
+    'created_at',
+    'updatedAt',
+    'updated_at',
+  ]);
+}
+
 // ---------------- Fotos (localStorage) ----------------
 
 function studentPhotoKey(studentId) {
@@ -74,7 +123,6 @@ function makeAvatar(studentId, size = 38) {
     img.src = dataUrl;
     img.style.display = 'inline-block';
   } else {
-    // placeholder simples
     img.src =
       'data:image/svg+xml;utf8,' +
       encodeURIComponent(
@@ -93,12 +141,12 @@ function makeAvatar(studentId, size = 38) {
 
 // cores fixas para manter padrão
 const DONUT_COLORS = {
-  c1: '#4f46e5',  // roxo/azul
-  c2: '#16a34a',  // verde
-  c3: '#f59e0b',  // laranja
-  c4: '#0ea5e9',  // azul claro
-  c5: '#ef4444',  // vermelho
-  margin: '#ffffff', // branco
+  c1: '#4f46e5',
+  c2: '#16a34a',
+  c3: '#f59e0b',
+  c4: '#0ea5e9',
+  c5: '#ef4444',
+  margin: '#ffffff',
   marginStroke: 'rgba(0,0,0,0.12)',
 };
 
@@ -129,7 +177,7 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
   const cy = size / 2;
   const C = 2 * Math.PI * r;
 
-  let offset = 0; // em unidades de circunferência
+  let offset = 0;
 
   const svgNS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNS, 'svg');
@@ -137,7 +185,6 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
   svg.setAttribute('width', String(size));
   svg.setAttribute('height', String(size));
 
-  // fundo (anel “vazio”)
   const base = document.createElementNS(svgNS, 'circle');
   base.setAttribute('cx', String(cx));
   base.setAttribute('cy', String(cy));
@@ -147,7 +194,6 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
   base.setAttribute('stroke-width', String(thickness));
   svg.appendChild(base);
 
-  // segmentos
   values.forEach((seg) => {
     const frac = seg.value / sum;
     const segLen = Math.max(0, frac * C);
@@ -160,18 +206,12 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
     circle.setAttribute('stroke-width', String(thickness));
     circle.setAttribute('stroke-linecap', 'butt');
 
-    // margem branca precisa de borda leve (igual sua imagem)
     if (seg.isMargin) {
-      circle.setAttribute('stroke', DONUT_COLORS.margin);
       circle.setAttribute('stroke', DONUT_COLORS.margin);
       circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
       circle.setAttribute('stroke-dashoffset', String(-offset));
       circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-      // stroke externo leve para “aparecer” no branco
-      circle.style.filter = 'none';
-      circle.setAttribute('stroke', DONUT_COLORS.margin);
-      circle.setAttribute('stroke-opacity', '1');
-      // desenha borda com outro círculo por cima
+
       const border = document.createElementNS(svgNS, 'circle');
       border.setAttribute('cx', String(cx));
       border.setAttribute('cy', String(cy));
@@ -179,6 +219,7 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
       border.setAttribute('fill', 'none');
       border.setAttribute('stroke', DONUT_COLORS.marginStroke);
       border.setAttribute('stroke-width', '1');
+
       svg.appendChild(circle);
       svg.appendChild(border);
     } else {
@@ -192,7 +233,6 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
     offset += segLen;
   });
 
-  // texto central
   const centerText = document.createElementNS(svgNS, 'text');
   centerText.setAttribute('x', String(cx));
   centerText.setAttribute('y', String(cy + 6));
@@ -218,7 +258,6 @@ function buildLegendGrid(values) {
     dot.className = 'mk-dot';
     dot.style.background = v.color;
 
-    // margem branca com borda pra não “sumir”
     if (v.key === 'margin') {
       dot.style.border = `1px solid ${DONUT_COLORS.marginStroke}`;
     }
@@ -237,19 +276,11 @@ function buildLegendGrid(values) {
 function renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal }) {
   if (!roomAvgDonutEl || !roomAvgLegendEl) return;
 
-  // limpa
   roomAvgDonutEl.innerHTML = '';
   roomAvgLegendEl.innerHTML = '';
 
   const { svg, legend } = createDonutSVG(
-    {
-      c1: mC1 ?? 0,
-      c2: mC2 ?? 0,
-      c3: mC3 ?? 0,
-      c4: mC4 ?? 0,
-      c5: mC5 ?? 0,
-      total: mTotal, // se null, aparece "—" no centro
-    },
+    { c1: mC1 ?? 0, c2: mC2 ?? 0, c3: mC3 ?? 0, c4: mC4 ?? 0, c5: mC5 ?? 0, total: mTotal },
     120,
     18
   );
@@ -257,8 +288,7 @@ function renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal }) {
   svg.classList.add('mk-donut');
   roomAvgDonutEl.appendChild(svg);
 
-  const legendEl = buildLegendGrid(legend);
-  roomAvgLegendEl.appendChild(legendEl);
+  roomAvgLegendEl.appendChild(buildLegendGrid(legend));
 }
 
 // ---------------- alunos ativos ----------------
@@ -411,13 +441,90 @@ async function carregarSala() {
 let cachedData = [];
 let cachedActiveSet = null;
 
+// ✅ cache das tarefas da sala (para saber qual é a mais recente com mais precisão)
+let cachedTasksMeta = [];
+let cachedNewestTaskId = null;
+
+async function fetchTasksByRoom() {
+  try {
+    const res = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
+    if (!res.ok) throw new Error();
+    const raw = await res.json();
+    const arr = Array.isArray(raw) ? raw : [];
+    return arr;
+  } catch {
+    return [];
+  }
+}
+
+function normalizeTasksMeta(rawArr) {
+  const arr = Array.isArray(rawArr) ? rawArr : [];
+  return arr
+    .map((t) => {
+      const id = String(t?.id || t?.taskId || '').trim();
+      const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
+      const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+      const createdTime = toDateSafe(createdAt)?.getTime?.() ?? null;
+      return { id, title, createdTime, _raw: t };
+    })
+    .filter((t) => !!t.id);
+}
+
+function computeNewestTaskIdFromTasksMeta(tasksMeta) {
+  if (!Array.isArray(tasksMeta) || tasksMeta.length === 0) return null;
+
+  let newestId = null;
+  let newestTime = -Infinity;
+
+  tasksMeta.forEach((t) => {
+    if (typeof t.createdTime === 'number' && !Number.isNaN(t.createdTime)) {
+      if (t.createdTime > newestTime) {
+        newestTime = t.createdTime;
+        newestId = t.id;
+      }
+    }
+  });
+
+  return newestId || tasksMeta[tasksMeta.length - 1].id;
+}
+
+/**
+ * Fallback: se não tiver createdAt nas tasks, tenta pelo maior "enviado em" das redações daquela tarefa.
+ */
+function computeNewestTaskIdFromEssays(data) {
+  const mapMax = new Map(); // taskId -> maxTime
+
+  (Array.isArray(data) ? data : []).forEach((e) => {
+    const tId = String(e.taskId || e.task?.id || '').trim();
+    if (!tId) return;
+
+    const d = toDateSafe(getEssaySentAt(e));
+    const time = d ? d.getTime() : null;
+    if (time === null) return;
+
+    const prev = mapMax.get(tId);
+    if (prev === undefined || time > prev) mapMax.set(tId, time);
+  });
+
+  let bestId = null;
+  let bestTime = -Infinity;
+
+  for (const [tId, time] of mapMax.entries()) {
+    if (time > bestTime) {
+      bestTime = time;
+      bestId = tId;
+    }
+  }
+
+  return bestId;
+}
+
 function buildTasksFromData(data) {
   const map = new Map();
 
   (Array.isArray(data) ? data : []).forEach((e) => {
     const tId = e.taskId || e.task?.id || null;
     const title = e.taskTitle || e.task?.title || 'Tarefa';
-
     if (!tId) return;
 
     if (!map.has(String(tId))) {
@@ -439,6 +546,23 @@ function buildTasksFromData(data) {
   return tasks;
 }
 
+function makeNewestBadge() {
+  const badge = document.createElement('span');
+  badge.textContent = 'Mais recente';
+  badge.style.display = 'inline-flex';
+  badge.style.alignItems = 'center';
+  badge.style.justifyContent = 'center';
+  badge.style.padding = '3px 8px';
+  badge.style.borderRadius = '999px';
+  badge.style.fontSize = '11px';
+  badge.style.fontWeight = '900';
+  badge.style.marginLeft = '10px';
+  badge.style.background = 'rgba(109,40,217,.12)';
+  badge.style.border = '1px solid rgba(109,40,217,.35)';
+  badge.style.color = '#0b1f4b';
+  return badge;
+}
+
 function renderTasksList(tasks) {
   if (!tasksListEl) return;
   tasksListEl.innerHTML = '';
@@ -448,15 +572,48 @@ function renderTasksList(tasks) {
     return;
   }
 
-  tasks.forEach((t) => {
+  // coloca a mais recente no topo (e destaca)
+  const newestId = cachedNewestTaskId;
+  const ordered = [...tasks].sort((a, b) => {
+    if (newestId) {
+      const aIs = String(a.taskId) === String(newestId) ? 1 : 0;
+      const bIs = String(b.taskId) === String(newestId) ? 1 : 0;
+      if (aIs !== bIs) return bIs - aIs;
+    }
+    return (a.title || '').localeCompare(b.title || '');
+  });
+
+  ordered.forEach((t) => {
+    const isNewest = newestId && String(t.taskId) === String(newestId);
+
     const btn = document.createElement('button');
     btn.className = 'mk-task-btn';
     btn.type = 'button';
 
-    btn.innerHTML = `
-      <strong>${t.title}</strong>
-      <small>${t.count} envio(s) • ${t.correctedCount} corrigida(s)</small>
-    `;
+    // destaque visual
+    if (isNewest) {
+      btn.style.border = '2px solid rgba(109,40,217,.35)';
+      btn.style.boxShadow = '0 10px 24px rgba(109,40,217,0.12)';
+    }
+
+    const titleWrap = document.createElement('div');
+    titleWrap.style.display = 'flex';
+    titleWrap.style.alignItems = 'center';
+    titleWrap.style.flexWrap = 'wrap';
+    titleWrap.style.gap = '6px';
+
+    const strong = document.createElement('strong');
+    strong.textContent = t.title;
+
+    titleWrap.appendChild(strong);
+    if (isNewest) titleWrap.appendChild(makeNewestBadge());
+
+    const small = document.createElement('small');
+    small.textContent = `${t.count} envio(s) • ${t.correctedCount} corrigida(s)`;
+
+    btn.innerHTML = '';
+    btn.appendChild(titleWrap);
+    btn.appendChild(small);
 
     btn.addEventListener('click', () => openTaskPanel(t.taskId, t.title));
     tasksListEl.appendChild(btn);
@@ -554,7 +711,6 @@ function renderStudentsForTask(taskId, taskTitle) {
     left.appendChild(avatar);
     left.appendChild(info);
 
-    // ✅ “área em branco” ao lado: gráfico + legenda (estilo imagem)
     const chartWrap = document.createElement('div');
     chartWrap.className = 'mk-chart-wrap';
 
@@ -567,7 +723,7 @@ function renderStudentsForTask(taskId, taskTitle) {
       c3: medias.mC3 ?? 0,
       c4: medias.mC4 ?? 0,
       c5: medias.mC5 ?? 0,
-      total: medias.mTotal, // se null, centro vira —
+      total: medias.mTotal,
     };
 
     const { svg, legend } = createDonutSVG(donutData, 120, 18);
@@ -579,7 +735,6 @@ function renderStudentsForTask(taskId, taskTitle) {
     chartWrap.appendChild(donutBox);
     chartWrap.appendChild(legendEl);
 
-    // ações + painel individual inline
     const actions = document.createElement('div');
     actions.className = 'mk-student-actions';
 
@@ -611,7 +766,6 @@ function renderStudentsForTask(taskId, taskTitle) {
       toggleInline();
     });
 
-    // clique no card também abre/fecha
     li.style.cursor = 'pointer';
     li.title = 'Clique para ver o desempenho individual';
     li.addEventListener('click', (ev) => {
@@ -621,18 +775,15 @@ function renderStudentsForTask(taskId, taskTitle) {
 
     actions.appendChild(btn);
 
-    // compõe
     li.appendChild(left);
     li.appendChild(chartWrap);
     li.appendChild(actions);
 
-    // painel inline fica “embaixo” (full width)
     const wrapBelow = document.createElement('div');
     wrapBelow.style.width = '100%';
     wrapBelow.style.marginTop = '10px';
     wrapBelow.appendChild(inlinePanel);
 
-    // coloca abaixo do card
     const outer = document.createElement('div');
     outer.style.display = 'flex';
     outer.style.flexDirection = 'column';
@@ -651,16 +802,13 @@ function renderStudentsForTask(taskId, taskTitle) {
 function openTaskPanel(taskId, title) {
   if (!taskPanelEl) return;
 
-  // abre painel
   taskPanelEl.style.display = 'block';
 
   if (taskPanelTitleEl) taskPanelTitleEl.textContent = title || 'Tarefa';
   if (taskPanelMetaEl) taskPanelMetaEl.textContent = 'Gráfico em rosca: C1–C5 + margem até 1000.';
 
-  // render alunos que enviaram
   renderStudentsForTask(taskId, title);
 
-  // scroll até o painel
   taskPanelEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -678,6 +826,10 @@ async function carregarDados() {
     setStatus('Carregando...');
 
     cachedActiveSet = await getActiveStudentsSet();
+
+    // ✅ tenta carregar tasks para identificar a “mais recente” com createdAt
+    cachedTasksMeta = normalizeTasksMeta(await fetchTasksByRoom());
+    cachedNewestTaskId = computeNewestTaskIdFromTasksMeta(cachedTasksMeta);
 
     const res = await fetch(
       `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`
@@ -707,28 +859,48 @@ async function carregarDados() {
 
     cachedData = data;
 
+    // ✅ se tasks não tinham createdAt, tenta inferir pela data de envio das redações
+    if (!cachedNewestTaskId) {
+      cachedNewestTaskId = computeNewestTaskIdFromEssays(data);
+    }
+
+    // fallback final (nunca fica sem)
+    if (!cachedNewestTaskId) {
+      const anyTask = data.find((e) => e.taskId || e.task?.id);
+      cachedNewestTaskId = anyTask ? String(anyTask.taskId || anyTask.task?.id) : null;
+    }
+
     // médias gerais da sala (somente corrigidas)
-   const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
+    const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
 
-const mTotal = mean(corrected.map((e) => e.score));
-const mC1 = mean(corrected.map((e) => e.c1));
-const mC2 = mean(corrected.map((e) => e.c2));
-const mC3 = mean(corrected.map((e) => e.c3));
-const mC4 = mean(corrected.map((e) => e.c4));
-const mC5 = mean(corrected.map((e) => e.c5));
+    const mTotal = mean(corrected.map((e) => e.score));
+    const mC1 = mean(corrected.map((e) => e.c1));
+    const mC2 = mean(corrected.map((e) => e.c2));
+    const mC3 = mean(corrected.map((e) => e.c3));
+    const mC4 = mean(corrected.map((e) => e.c4));
+    const mC5 = mean(corrected.map((e) => e.c5));
 
-setText(avgTotal, mTotal);
-setText(avgC1, mC1);
-setText(avgC2, mC2);
-setText(avgC3, mC3);
-setText(avgC4, mC4);
-setText(avgC5, mC5);
+    setText(avgTotal, mTotal);
+    setText(avgC1, mC1);
+    setText(avgC2, mC2);
+    setText(avgC3, mC3);
+    setText(avgC4, mC4);
+    setText(avgC5, mC5);
 
-// ✅ desenha o gráfico das médias da sala (todas as tarefas corrigidas)
-renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal });
+    renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal });
 
     // tarefas
     const tasks = buildTasksFromData(data);
+
+    // ✅ se a “mais recente” veio de /tasks/by-room mas ainda não tem redações,
+    // não faz sentido destacar. Ajusta para o mais recente ENTRE as que aparecem na lista.
+    if (cachedNewestTaskId && !tasks.some((t) => String(t.taskId) === String(cachedNewestTaskId))) {
+      cachedNewestTaskId = null;
+    }
+    if (!cachedNewestTaskId && tasks.length) {
+      cachedNewestTaskId = tasks[0].taskId;
+    }
+
     renderTasksList(tasks);
 
     setStatus('');
