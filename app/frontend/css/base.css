@@ -553,4 +553,38 @@ section > .corr-top-actions:last-child{
   margin-left: 10px;
 }
 
+/* Layout padrão para todas as páginas */
+html, body {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  /* isso garante respiro geral */
+  padding-bottom: 24px;
+}
+
+/* Conteúdo principal cresce e empurra o footer pro fim */
+main {
+  flex: 1;
+}
+
+/* Se você não usa <main>, pode aplicar numa wrapper .page */
+.page {
+  flex: 1;
+}
+
+/* Footer padronizado */
+.site-footer {
+  margin-top: auto;              /* “sticky footer”: empurra pro fim */
+  padding: 18px 14px;
+  text-align: center;
+  font-size: 12px;
+  opacity: .85;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
 
