@@ -69,7 +69,7 @@ async function tryFetchMe(role, id) {
 
 export function initMenuPerfil(options = {}) {
   const {
-    loginRedirect = 'login.html',
+    loginRedirect = 'index.html',
     logoutRedirectProfessor = 'login-professor.html',
     logoutRedirectStudent = 'login-aluno.html',
   } = options;
