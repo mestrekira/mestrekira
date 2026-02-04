@@ -6,22 +6,38 @@ function $(id) {
 
 function safeText(el, value, fallback = '—') {
   if (!el) return;
-  const ok =
-    value !== undefined &&
-    value !== null &&
-    String(value).trim() !== '';
+  const ok = value !== undefined && value !== null && String(value).trim() !== '';
   el.textContent = ok ? String(value) : fallback;
 }
 
+/**
+ * ✅ Normaliza o papel vindo do backend/legado
+ * - "PROFESSOR" -> "professor"
+ * - "ALUNO" / "STUDENT" -> "student"
+ * - também aceita "professor"/"student" em qualquer case
+ */
 function normalizeRole(role) {
   if (!role) return null;
   const r = String(role).trim().toUpperCase();
+
   if (r === 'PROFESSOR') return 'professor';
-  if (r === 'STUDENT' || r === 'ALUNO') return 'student';
-  // fallback: se vier "professor" / "student"
-  if (r === 'PROFESSOR'.toUpperCase()) return 'professor';
-  if (r === 'STUDENT'.toUpperCase()) return 'student';
+  if (r === 'ALUNO' || r === 'STUDENT') return 'student';
+
+  // fallback se vier minúsculo/misto
+  if (String(role).trim().toLowerCase() === 'professor') return 'professor';
+  if (String(role).trim().toLowerCase() === 'student') return 'student';
+
   return null;
+}
+
+/**
+ * ✅ Texto exibido no menu (inclusive)
+ * Mantém "professor/student" internamente, mas exibe como você quer.
+ */
+function roleLabel(roleNormalized) {
+  if (roleNormalized === 'professor') return 'Professor(a)';
+  if (roleNormalized === 'student') return 'Estudante';
+  return '';
 }
 
 function getRoleAndId() {
@@ -99,7 +115,7 @@ export function initMenuPerfil(options = {}) {
 
   // ✅ NÃO exibir ID (se existir no HTML)
   const meIdEl = $('meId');
-  if (meIdEl) meIdEl.textContent = ''; // simples, sem fallback
+  if (meIdEl) meIdEl.textContent = '';
 
   // visitante
   if (!role || !id) {
@@ -120,7 +136,8 @@ export function initMenuPerfil(options = {}) {
     return;
   }
 
-  safeText($('meRole'), role === 'professor' ? 'Professor' : 'Aluno');
+  // ✅ EXIBIÇÃO DO PERFIL (ajustado)
+  safeText($('meRole'), roleLabel(role));
   loadPhoto(role, id);
 
   // Foto local
@@ -151,15 +168,18 @@ export function initMenuPerfil(options = {}) {
       safeText($('meName'), me.name);
       safeText($('meEmail'), me.email);
 
-      // se vier role do backend (PROFESSOR/STUDENT)
+      // se vier role do backend (PROFESSOR/STUDENT/ALUNO etc)
       const normalized = normalizeRole(me.role);
       if (normalized) {
-        safeText($('meRole'), normalized === 'professor' ? 'Professor' : 'Aluno');
+        safeText($('meRole'), roleLabel(normalized));
+      } else {
+        // se não vier normalizado, mantém o do localStorage
+        safeText($('meRole'), roleLabel(role));
       }
     } else {
-      // sem backend: mantém algo neutro
       safeText($('meName'), '—', '—');
       safeText($('meEmail'), '—', '—');
+      safeText($('meRole'), roleLabel(role), ''); // ainda exibe algo coerente
     }
   })();
 
@@ -210,8 +230,7 @@ export function initMenuPerfil(options = {}) {
       localStorage.removeItem('studentId');
       menuPanel.classList.remove('open');
 
-      window.location.href =
-        role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
+      window.location.href = role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
     });
   }
 
@@ -230,8 +249,7 @@ export function initMenuPerfil(options = {}) {
         localStorage.removeItem('studentId');
         localStorage.removeItem(photoKey(role, id));
 
-        window.location.href =
-          role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
+        window.location.href = role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
       } catch {
         alert('Erro ao excluir conta.');
       }
