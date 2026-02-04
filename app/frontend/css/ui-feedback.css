@@ -1,0 +1,114 @@
+/* ===== Toast ===== */
+.toast-root{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast{
+  min-width: 260px;
+  max-width: 420px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #111827;
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.10);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.toast.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast .title{
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.toast .msg{
+  font-size: 13px;
+  opacity: .92;
+}
+
+.toast .close{
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  opacity: .75;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.toast.success{ background: #0f5132; }
+.toast.error{ background: #842029; }
+.toast.warn{ background: #664d03; }
+.toast.info{ background: #111827; }
+
+/* ===== Modal confirmação ===== */
+.confirm-overlay[hidden]{ display:none; }
+
+.confirm-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: grid;
+  place-items: center;
+  z-index: 9998;
+  padding: 16px;
+}
+
+.confirm-modal{
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.20);
+}
+
+.confirm-modal h3{
+  margin: 0 0 6px 0;
+}
+
+.confirm-modal p{
+  margin: 0;
+  opacity: .9;
+  line-height: 1.5;
+}
+
+.confirm-actions{
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.confirm-actions button{
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.btn-outline{
+  border: 1px solid #d1d5db;
+  background: #fff;
+}
+
+.btn-danger{
+  border: 0;
+  background: #dc2626;
+  color: #fff;
+}
