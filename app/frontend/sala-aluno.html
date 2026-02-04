@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sala do Aluno</title>
+  <title>Sala -Estudante</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
@@ -51,7 +51,7 @@
   <h2 id="roomName">Sala</h2>
 
   <section>
-    <h3>Professor</h3>
+    <h3>Professor(a)</h3>
     <p id="teacherInfo">Carregando...</p>
   </section>
 
@@ -81,11 +81,12 @@
   <script type="module">
     import { initMenuPerfil } from './js/menu-perfil.js';
     initMenuPerfil({
-      loginRedirect: 'login.html',
+      loginRedirect: 'index.html',
       logoutRedirectProfessor: 'login-professor.html',
       logoutRedirectStudent: 'login-aluno.html'
     });
   </script>
+<script src="js/footer.js"></script>
 
 </body>
 </html>
