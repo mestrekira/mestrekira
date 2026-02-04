@@ -32,7 +32,7 @@ function setText(el, value) {
 }
 
 function mean(nums) {
-  const v = nums
+  const v = (Array.isArray(nums) ? nums : [])
     .map((n) => (n === null || n === undefined ? null : Number(n)))
     .filter((n) => typeof n === 'number' && !Number.isNaN(n));
   if (v.length === 0) return null;
@@ -66,6 +66,54 @@ function clamp0to200(n) {
   return Math.max(0, Math.min(200, v));
 }
 
+// ---------------- DATAS (robusto) ----------------
+function pickDate(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== null && v !== undefined && String(v).trim() !== '') return v;
+  }
+  return null;
+}
+
+function toDateSafe(value) {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  const s = String(value).trim();
+  if (!s) return null;
+
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime())) return d;
+
+  const asNum = Number(s);
+  if (!Number.isNaN(asNum)) {
+    const d2 = new Date(asNum);
+    return Number.isNaN(d2.getTime()) ? null : d2;
+  }
+
+  return null;
+}
+
+function getEssaySentAt(e) {
+  return pickDate(e, [
+    'submittedAt',
+    'submitted_at',
+    'createdAt',
+    'created_at',
+    'updatedAt',
+    'updated_at',
+  ]);
+}
+
 // ---------------- Donut (mesmo estilo do projeto) ----------------
 const MAX = 1000;
 const COLORS = {
@@ -74,8 +122,8 @@ const COLORS = {
   c3: '#f59e0b',
   c4: '#0ea5e9',
   c5: '#ef4444',
-  gap: '#ffffff',     // margem (branco)
-  stroke: '#e5e7eb',  // borda
+  gap: '#ffffff',
+  stroke: '#e5e7eb',
   text: '#0b1220',
 };
 
@@ -110,7 +158,6 @@ function createDonutSvg(segments, opts = {}) {
   svg.setAttribute('height', String(size));
   svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
 
-  // base
   const base = document.createElementNS(svgNS, 'circle');
   base.setAttribute('cx', String(cx));
   base.setAttribute('cy', String(cy));
@@ -140,7 +187,6 @@ function createDonutSvg(segments, opts = {}) {
     angle += delta;
   });
 
-  // “furo”
   const holeCircle = document.createElementNS(svgNS, 'circle');
   holeCircle.setAttribute('cx', String(cx));
   holeCircle.setAttribute('cy', String(cy));
@@ -148,7 +194,6 @@ function createDonutSvg(segments, opts = {}) {
   holeCircle.setAttribute('fill', '#fff');
   svg.appendChild(holeCircle);
 
-  // texto central
   if (typeof opts.centerText === 'string' && opts.centerText) {
     const t1 = document.createElementNS(svgNS, 'text');
     t1.setAttribute('x', String(cx));
@@ -230,20 +275,81 @@ function renderDonutWithLegend(targetDonutEl, targetLegendEl, { c1, c2, c3, c4, 
   targetLegendEl.appendChild(legend);
 }
 
-// ---------------- tarefas: buscar títulos ----------------
-async function fetchTasksMapByRoom(roomId) {
+// ---------------- tarefas: buscar títulos + createdAt ----------------
+async function fetchTasksMetaByRoom(roomId) {
   try {
     const res = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
-    if (!res.ok) return new Map();
+    if (!res.ok) return [];
     const tasks = await res.json();
-    const map = new Map();
-    (Array.isArray(tasks) ? tasks : []).forEach((t) => {
-      if (t?.id) map.set(String(t.id), String(t.title || 'Tarefa'));
-    });
-    return map;
+    return Array.isArray(tasks) ? tasks : [];
   } catch {
-    return new Map();
+    return [];
   }
+}
+
+function buildTasksMap(tasksArr) {
+  const map = new Map();
+  (Array.isArray(tasksArr) ? tasksArr : []).forEach((t) => {
+    if (t?.id) map.set(String(t.id), String(t.title || 'Tarefa'));
+  });
+  return map;
+}
+
+function normalizeTasksMeta(rawArr) {
+  const arr = Array.isArray(rawArr) ? rawArr : [];
+  return arr
+    .map((t) => {
+      const id = String(t?.id || t?.taskId || '').trim();
+      const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
+      const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+      const createdTime = toDateSafe(createdAt)?.getTime?.() ?? null;
+      return { id, title, createdTime, _raw: t };
+    })
+    .filter((t) => !!t.id);
+}
+
+function computeNewestTaskIdFromTasksMeta(tasksMeta) {
+  if (!Array.isArray(tasksMeta) || tasksMeta.length === 0) return null;
+
+  let newestId = null;
+  let newestTime = -Infinity;
+
+  tasksMeta.forEach((t) => {
+    if (typeof t.createdTime === 'number' && !Number.isNaN(t.createdTime)) {
+      if (t.createdTime > newestTime) {
+        newestTime = t.createdTime;
+        newestId = t.id;
+      }
+    }
+  });
+
+  return newestId || tasksMeta[tasksMeta.length - 1].id;
+}
+
+function computeNewestTaskIdFromEssays(essays) {
+  const mapMax = new Map(); // taskId -> maxTime
+
+  (Array.isArray(essays) ? essays : []).forEach((e) => {
+    const tId = String(e?.taskId || '').trim();
+    if (!tId) return;
+
+    const d = toDateSafe(getEssaySentAt(e));
+    const time = d ? d.getTime() : null;
+    if (time === null) return;
+
+    const prev = mapMax.get(tId);
+    if (prev === undefined || time > prev) mapMax.set(tId, time);
+  });
+
+  let bestId = null;
+  let bestTime = -Infinity;
+  for (const [tId, time] of mapMax.entries()) {
+    if (time > bestTime) {
+      bestTime = time;
+      bestId = tId;
+    }
+  }
+  return bestId;
 }
 
 // ---------------- UI: tarefas com abrir/fechar ----------------
@@ -263,7 +369,6 @@ function buildTaskPanel() {
   panel.style.borderRadius = '14px';
   panel.style.background = '#fff';
 
-  // header do painel
   const head = document.createElement('div');
   head.style.display = 'flex';
   head.style.alignItems = 'center';
@@ -283,7 +388,6 @@ function buildTaskPanel() {
   head.appendChild(title);
   head.appendChild(closeBtn);
 
-  // gráfico
   const chartWrap = document.createElement('div');
   chartWrap.style.display = 'flex';
   chartWrap.style.alignItems = 'center';
@@ -303,7 +407,6 @@ function buildTaskPanel() {
   chartWrap.appendChild(donut);
   chartWrap.appendChild(legend);
 
-  // ações
   const actions = document.createElement('div');
   actions.style.marginTop = '12px';
 
@@ -319,7 +422,24 @@ function buildTaskPanel() {
   return panel;
 }
 
-function renderTasksHistory(essays, tasksMap) {
+function makeNewestBadge() {
+  const badge = document.createElement('span');
+  badge.textContent = 'Mais recente';
+  badge.style.display = 'inline-flex';
+  badge.style.alignItems = 'center';
+  badge.style.justifyContent = 'center';
+  badge.style.padding = '3px 8px';
+  badge.style.borderRadius = '999px';
+  badge.style.fontSize = '11px';
+  badge.style.fontWeight = '900';
+  badge.style.marginLeft = '10px';
+  badge.style.background = 'rgba(109,40,217,.12)';
+  badge.style.border = '1px solid rgba(109,40,217,.35)';
+  badge.style.color = '#0b1f4b';
+  return badge;
+}
+
+function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
   if (!historyList) return;
   historyList.innerHTML = '';
 
@@ -328,7 +448,6 @@ function renderTasksHistory(essays, tasksMap) {
     return;
   }
 
-  // agrupa por taskId
   const byTask = new Map();
   essays.forEach((e) => {
     const tId = e?.taskId ? String(e.taskId) : '';
@@ -337,14 +456,24 @@ function renderTasksHistory(essays, tasksMap) {
     byTask.get(tId).push(e);
   });
 
-  // ordena por nome da tarefa
-  const tasks = Array.from(byTask.entries()).map(([taskId, list]) => {
+  let tasks = Array.from(byTask.entries()).map(([taskId, list]) => {
     const title = tasksMap.get(taskId) || `Tarefa ${taskId.slice(0, 6)}…`;
     return { taskId, title, list };
   });
-  tasks.sort((a, b) => a.title.localeCompare(b.title));
+
+  // ✅ mais recente no topo; resto por nome
+  tasks.sort((a, b) => {
+    if (newestTaskId) {
+      const aIs = String(a.taskId) === String(newestTaskId) ? 1 : 0;
+      const bIs = String(b.taskId) === String(newestTaskId) ? 1 : 0;
+      if (aIs !== bIs) return bIs - aIs;
+    }
+    return a.title.localeCompare(b.title);
+  });
 
   tasks.forEach((t) => {
+    const isNewest = newestTaskId && String(t.taskId) === String(newestTaskId);
+
     const li = document.createElement('li');
     li.style.padding = '12px';
     li.style.borderRadius = '14px';
@@ -352,10 +481,24 @@ function renderTasksHistory(essays, tasksMap) {
     li.style.background = '#fff';
     li.style.boxShadow = '0 8px 18px rgba(2, 6, 23, 0.05)';
 
-    const title = document.createElement('div');
-    title.innerHTML = `<strong>${t.title}</strong>`;
+    // ✅ destaque visual no card mais recente
+    if (isNewest) {
+      li.style.border = '2px solid rgba(109,40,217,.35)';
+      li.style.boxShadow = '0 10px 24px rgba(109,40,217,0.12)';
+    }
 
-    // pega a redação do aluno nessa tarefa (normalmente 1)
+    const titleWrap = document.createElement('div');
+    titleWrap.style.display = 'flex';
+    titleWrap.style.alignItems = 'center';
+    titleWrap.style.flexWrap = 'wrap';
+    titleWrap.style.gap = '6px';
+
+    const strong = document.createElement('strong');
+    strong.textContent = t.title;
+
+    titleWrap.appendChild(strong);
+    if (isNewest) titleWrap.appendChild(makeNewestBadge());
+
     const essay = t.list[0];
 
     const score = safeScore(essay?.score);
@@ -411,7 +554,6 @@ function renderTasksHistory(essays, tasksMap) {
       else openPanel();
     });
 
-    // clicar no card também abre/fecha
     li.style.cursor = 'pointer';
     li.title = 'Clique para abrir/fechar os detalhes';
     li.addEventListener('click', (ev) => {
@@ -421,12 +563,15 @@ function renderTasksHistory(essays, tasksMap) {
       else openPanel();
     });
 
-    li.appendChild(title);
+    li.appendChild(titleWrap);
     li.appendChild(resumo);
     li.appendChild(btn);
     li.appendChild(panel);
 
     historyList.appendChild(li);
+
+    // ✅ opcional: você pode autoabrir o mais recente (descomente)
+    // if (isNewest) openPanel();
   });
 }
 
@@ -472,13 +617,13 @@ async function carregarDesempenho(roomId) {
   if (!roomId) {
     setStatus('Selecione uma sala.');
     clearResumo();
-    renderTasksHistory([], new Map());
+    renderTasksHistory([], new Map(), null);
     return;
   }
 
   setStatus('Carregando...');
   clearResumo();
-  renderTasksHistory([], new Map());
+  renderTasksHistory([], new Map(), null);
 
   try {
     // 1) desempenho do aluno
@@ -493,12 +638,26 @@ async function carregarDesempenho(roomId) {
 
     if (!Array.isArray(essays) || essays.length === 0) {
       setStatus('Sem redações nesta sala ainda.');
-      renderTasksHistory([], new Map());
+      renderTasksHistory([], new Map(), null);
       return;
     }
 
-    // 2) títulos das tarefas
-    const tasksMap = await fetchTasksMapByRoom(roomId);
+    // 2) tarefas da sala (títulos + possível createdAt)
+    const tasksRaw = await fetchTasksMetaByRoom(roomId);
+    const tasksMeta = normalizeTasksMeta(tasksRaw);
+    const tasksMap = buildTasksMap(tasksRaw);
+
+    // 3) calcula tarefa mais recente
+    let newestTaskId = computeNewestTaskIdFromTasksMeta(tasksMeta);
+
+    // se não tem createdAt, tenta pelo envio das redações
+    if (!newestTaskId) newestTaskId = computeNewestTaskIdFromEssays(essays);
+
+    // fallback: primeira task presente nas redações
+    if (!newestTaskId) {
+      const first = essays.find((e) => e?.taskId);
+      newestTaskId = first ? String(first.taskId) : null;
+    }
 
     // 3) resumo (somente corrigidas)
     const corrected = essays.filter((e) => e.score !== null && e.score !== undefined);
@@ -519,31 +678,28 @@ async function carregarDesempenho(roomId) {
 
     // ✅ gráfico do resumo (média geral)
     if (mTotal !== null) {
-      renderDonutWithLegend(
-        avgDonutEl,
-        avgLegendEl,
-        {
-          c1: mC1 ?? 0,
-          c2: mC2 ?? 0,
-          c3: mC3 ?? 0,
-          c4: mC4 ?? 0,
-          c5: mC5 ?? 0,
-          totalText: String(mTotal),
-        }
-      );
+      renderDonutWithLegend(avgDonutEl, avgLegendEl, {
+        c1: mC1 ?? 0,
+        c2: mC2 ?? 0,
+        c3: mC3 ?? 0,
+        c4: mC4 ?? 0,
+        c5: mC5 ?? 0,
+        totalText: String(mTotal),
+      });
     } else {
-      if (avgDonutEl) avgDonutEl.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
+      if (avgDonutEl)
+        avgDonutEl.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
       if (avgLegendEl) avgLegendEl.innerHTML = '';
     }
 
-    // 4) histórico por tarefa (com abrir/fechar)
-    renderTasksHistory(essays, tasksMap);
+    // 4) histórico por tarefa (com destaque da mais recente)
+    renderTasksHistory(essays, tasksMap, newestTaskId);
 
     setStatus('');
   } catch (e) {
     console.error(e);
     setStatus('Erro ao carregar desempenho.');
-    renderTasksHistory([], new Map());
+    renderTasksHistory([], new Map(), null);
   }
 }
 
