@@ -1,4 +1,5 @@
 import { API_URL } from './config.js';
+import { toast } from './ui-feedback.js';
 
 // ELEMENTOS
 const titleInput = document.getElementById('essayTitle');
@@ -18,7 +19,7 @@ const taskId = params.get('taskId');
 const studentId = localStorage.getItem('studentId');
 
 if (!taskId || !studentId || studentId === 'undefined' || studentId === 'null') {
-  alert('Acesso inválido.');
+  toast({ title: 'Acesso inválido', message: 'Você precisa acessar por uma tarefa válida.', type: 'error' });
   window.location.href = 'painel-aluno.html';
   throw new Error('Parâmetros ausentes');
 }
@@ -93,7 +94,12 @@ function antiPaste(el, fieldName, options = {}) {
   let lastLen = lastValue.length;
 
   function warn() {
-    alert(`Colar texto não é permitido em ${fieldName}. Digite no sistema.`);
+    toast({
+      title: 'Ação bloqueada',
+      message: `Colar texto não é permitido em ${fieldName}. Digite no sistema.`,
+      type: 'warn',
+      duration: 2600,
+    });
   }
 
   el.addEventListener('paste', (e) => {
@@ -204,24 +210,14 @@ async function carregarTarefa() {
     if (taskTitleEl) taskTitleEl.textContent = task?.title || 'Tema da Redação';
 
     // ✅ AQUI: preserva parágrafos / linhas em branco
-    setMultilinePreserve(
-      taskGuidelinesEl,
-      task?.guidelines,
-      'Sem orientações adicionais.'
-    );
-
-    // (debug opcional — pode remover depois)
-    // console.log('[guidelines json]', JSON.stringify(task?.guidelines));
+    setMultilinePreserve(taskGuidelinesEl, task?.guidelines, 'Sem orientações adicionais.');
   } catch (err) {
     console.error('Erro ao carregar tarefa:', err);
 
     if (taskTitleEl) taskTitleEl.textContent = 'Tema da Redação';
 
-    setMultilinePreserve(
-      taskGuidelinesEl,
-      '',
-      'Não foi possível carregar as orientações.'
-    );
+    setMultilinePreserve(taskGuidelinesEl, '', 'Não foi possível carregar as orientações.');
+    toast({ title: 'Erro', message: 'Erro ao carregar a tarefa.', type: 'error' });
   }
 }
 
@@ -301,6 +297,7 @@ saveBtn.addEventListener('click', async () => {
   if (!title && !text.trim()) {
     await clearDraftUXOnly();
     setStatus('Nada para salvar.');
+    toast({ title: 'Nada a salvar', message: 'O rascunho está vazio.', type: 'info' });
     return;
   }
 
@@ -308,9 +305,11 @@ saveBtn.addEventListener('click', async () => {
     setStatus('Salvando rascunho...');
     await saveDraftServerPacked(packContent(title, text));
     setStatus('Rascunho salvo no servidor.');
+    toast({ title: 'Salvo', message: 'Rascunho salvo no servidor.', type: 'success' });
   } catch (err) {
     console.error(err);
     setStatus('Erro ao salvar rascunho no servidor.');
+    toast({ title: 'Erro', message: 'Erro ao salvar rascunho no servidor.', type: 'error' });
   }
 });
 
@@ -333,12 +332,12 @@ sendBtn.addEventListener('click', async () => {
   const text = textarea.value || '';
 
   if (!title) {
-    alert('Informe o título da redação.');
+    toast({ title: 'Campo obrigatório', message: 'Informe o título da redação.', type: 'warn' });
     return;
   }
 
   if (text.length < 500) {
-    alert('A redação deve ter pelo menos 500 caracteres.');
+    toast({ title: 'Texto muito curto', message: 'A redação deve ter pelo menos 500 caracteres.', type: 'warn' });
     return;
   }
 
@@ -348,6 +347,7 @@ sendBtn.addEventListener('click', async () => {
   if (ja.sent) {
     setStatus('Você já enviou esta redação. Não é permitido reenviar.');
     setDisabledAll(true);
+    toast({ title: 'Já enviada', message: 'Você já enviou esta redação.', type: 'info' });
     window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`;
     return;
   }
@@ -371,6 +371,7 @@ sendBtn.addEventListener('click', async () => {
 
     setDisabledAll(true);
     setStatus('Redação enviada com sucesso!');
+    toast({ title: 'Enviada!', message: 'Redação enviada com sucesso.', type: 'success' });
 
     setTimeout(() => {
       window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
@@ -379,6 +380,7 @@ sendBtn.addEventListener('click', async () => {
     console.error(err);
     sendBtn.disabled = false;
     setStatus('Erro ao enviar redação.');
+    toast({ title: 'Erro', message: 'Erro ao enviar redação.', type: 'error' });
   }
 });
 
