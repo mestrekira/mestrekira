@@ -1,4 +1,5 @@
 import { API_URL } from './config.js';
+import { toast, confirmDialog } from './ui-feedback.js';
 
 function $(id) {
   return document.getElementById(id);
@@ -148,7 +149,7 @@ export function initMenuPerfil(options = {}) {
       if (!file) return;
 
       if (!['image/png', 'image/jpeg'].includes(file.type)) {
-        alert('Formato inválido. Use PNG ou JPG.');
+        toast({ title: 'Formato inválido', message: 'Use PNG ou JPG.', type: 'warn' });
         return;
       }
 
@@ -156,6 +157,7 @@ export function initMenuPerfil(options = {}) {
       reader.onload = () => {
         localStorage.setItem(photoKey(role, id), reader.result);
         loadPhoto(role, id);
+        toast({ title: 'Pronto!', message: 'Foto atualizada.', type: 'success' });
       };
       reader.readAsDataURL(file);
     });
@@ -179,7 +181,7 @@ export function initMenuPerfil(options = {}) {
     } else {
       safeText($('meName'), '—', '—');
       safeText($('meEmail'), '—', '—');
-      safeText($('meRole'), roleLabel(role), ''); // ainda exibe algo coerente
+      safeText($('meRole'), roleLabel(role), '');
     }
   })();
 
@@ -196,11 +198,13 @@ export function initMenuPerfil(options = {}) {
 
       if (!email && !password) {
         if (statusEl) statusEl.textContent = 'Nada para salvar.';
+        toast({ title: 'Nada a fazer', message: 'Preencha e-mail ou senha para atualizar.', type: 'info' });
         return;
       }
 
       if (password && password.length < 8) {
         if (statusEl) statusEl.textContent = 'Senha deve ter no mínimo 8 caracteres.';
+        toast({ title: 'Senha inválida', message: 'A senha deve ter no mínimo 8 caracteres.', type: 'warn' });
         return;
       }
 
@@ -214,10 +218,13 @@ export function initMenuPerfil(options = {}) {
         if (!res.ok) throw new Error();
 
         if (statusEl) statusEl.textContent = 'Dados atualizados.';
+        toast({ title: 'Atualizado', message: 'Seus dados foram atualizados.', type: 'success' });
+
         if (newEmail) newEmail.value = '';
         if (newPass) newPass.value = '';
       } catch {
         if (statusEl) statusEl.textContent = 'Erro ao atualizar dados.';
+        toast({ title: 'Erro', message: 'Erro ao atualizar dados.', type: 'error' });
       }
     });
   }
@@ -230,6 +237,8 @@ export function initMenuPerfil(options = {}) {
       localStorage.removeItem('studentId');
       menuPanel.classList.remove('open');
 
+      toast({ title: 'Saindo...', message: 'Você foi desconectado.', type: 'info', duration: 1200 });
+
       window.location.href = role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
     });
   }
@@ -238,7 +247,12 @@ export function initMenuPerfil(options = {}) {
   const deleteBtn = $('deleteAccountBtn');
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
-      const ok = confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.');
+      const ok = await confirmDialog({
+        title: 'Excluir conta',
+        message: 'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
+        okText: 'Sim, excluir',
+        cancelText: 'Cancelar',
+      });
       if (!ok) return;
 
       try {
@@ -249,9 +263,11 @@ export function initMenuPerfil(options = {}) {
         localStorage.removeItem('studentId');
         localStorage.removeItem(photoKey(role, id));
 
+        toast({ title: 'Conta excluída', message: 'Sua conta foi removida com sucesso.', type: 'success' });
+
         window.location.href = role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
       } catch {
-        alert('Erro ao excluir conta.');
+        toast({ title: 'Erro', message: 'Erro ao excluir conta.', type: 'error' });
       }
     });
   }
