@@ -1,9 +1,5 @@
 import { API_URL } from './config.js';
 
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
 function setError(msg) {
   const el = document.getElementById('error');
   if (el) el.textContent = msg || '';
@@ -16,6 +12,10 @@ function disable(btn, value) {
 function show(el, value) {
   if (!el) return;
   el.style.display = value ? 'inline-block' : 'none';
+}
+
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
 }
 
 function getEmail() {
@@ -40,6 +40,7 @@ async function fazerLogin() {
   }
 
   disable(loginBtn, true);
+  setError('Entrando...');
 
   try {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -52,7 +53,7 @@ async function fazerLogin() {
 
     // ❌ erro (inclui "email não verificado")
     if (!res.ok || !data?.ok || !data?.token || !data?.user) {
-      const msg = data?.error || 'Login inválido.';
+      const msg = data?.error || 'Usuário ou senha inválidos.';
 
       if (data?.emailVerified === false) {
         show(resendVerifyBtn, true);
@@ -65,45 +66,45 @@ async function fazerLogin() {
 
     const role = normRole(data.user.role);
 
-    // ✅ garante que é estudante
-    if (role !== 'STUDENT') {
-      setError('Este acesso é apenas para estudantes.');
-      disable(loginBtn, false);
-      return;
-    }
-
     // evita conflito de papéis
     localStorage.removeItem('professorId');
     localStorage.removeItem('studentId');
 
-    // ✅ novo padrão (token + user)
+    // ✅ padrão novo (token + user)
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
 
-    // ✅ mantém compatibilidade com seu sistema antigo
+    // ✅ compatibilidade com seu padrão antigo
     localStorage.setItem('studentId', data.user.id);
+
+    // ✅ se por algum motivo for professor, manda para painel de professor
+    if (role === 'PROFESSOR') {
+      localStorage.setItem('professorId', data.user.id);
+      window.location.replace('professor-salas.html');
+      return;
+    }
 
     window.location.replace('painel-aluno.html');
   } catch {
     setError('Erro ao fazer login. Tente novamente.');
+  } finally {
     disable(loginBtn, false);
   }
 }
 
-// -------------------------
-// ✅ REENVIAR VERIFICAÇÃO
-// -------------------------
 async function reenviarVerificacao() {
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
   const email = getEmail();
 
+  setError('');
+
   if (!email) {
-    setError('Digite seu e-mail no campo de login para reenviar o link.');
+    setError('Digite seu e-mail para reenviar o link.');
     return;
   }
 
-  setError('Reenviando link de verificação...');
   disable(resendVerifyBtn, true);
+  setError('Reenviando link de verificação...');
 
   try {
     const res = await fetch(`${API_URL}/auth/request-verify`, {
@@ -122,9 +123,9 @@ async function reenviarVerificacao() {
 
     setError('Pronto! Enviamos um novo link. Verifique a caixa de entrada e o Spam.');
     show(resendVerifyBtn, false);
-    disable(resendVerifyBtn, false);
   } catch {
     setError('Erro ao reenviar o link. Tente novamente.');
+  } finally {
     disable(resendVerifyBtn, false);
   }
 }
@@ -134,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const pass = document.getElementById('password');
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
 
-  // ✅ Se já estiver logado com token e for estudante, vai direto
+  // ✅ Se já estiver logado com token e for STUDENT, vai direto
   const token = localStorage.getItem('token');
   const userJson = localStorage.getItem('user');
   try {
@@ -149,13 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btn) btn.addEventListener('click', fazerLogin);
 
-  if (resendVerifyBtn) {
-    resendVerifyBtn.addEventListener('click', reenviarVerificacao);
-  }
-
   if (pass) {
     pass.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') fazerLogin();
     });
+  }
+
+  if (resendVerifyBtn) {
+    resendVerifyBtn.addEventListener('click', reenviarVerificacao);
   }
 });
