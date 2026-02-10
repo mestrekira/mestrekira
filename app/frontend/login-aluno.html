@@ -16,6 +16,11 @@
   <input type="password" id="password" placeholder="Senha" autocomplete="current-password" />
   <button id="loginBtn">Entrar</button>
 
+  <!-- ✅ aparece só quando login falhar por e-mail não verificado -->
+  <div style="margin-top: 10px;">
+    <button id="resendVerifyBtn" style="display:none;">Reenviar link de verificação</button>
+  </div>
+
   <p id="error"></p>
 </section>
 
@@ -33,9 +38,6 @@
 
 <script type="module" src="js/login-aluno.js"></script>
 <script src="js/footer.js"></script>
-  
+
 </body>
 </html>
-
-
-
