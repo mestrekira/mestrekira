@@ -5,6 +5,10 @@ function setStatus(msg) {
   if (el) el.textContent = msg || '';
 }
 
+function disable(btn, value) {
+  if (btn) btn.disabled = !!value;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const nameEl = document.getElementById('name');
   const emailEl = document.getElementById('email');
@@ -14,8 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!btn) return;
 
   btn.addEventListener('click', async () => {
-    const name = nameEl?.value?.trim() || '';
-    const email = emailEl?.value?.trim() || '';
+    const name = (nameEl?.value || '').trim();
+    const email = (emailEl?.value || '').trim().toLowerCase();
     const password = passEl?.value || '';
 
     setStatus('');
@@ -30,10 +34,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    btn.disabled = true;
+    disable(btn, true);
     setStatus('Criando conta...');
 
     try {
+      // ✅ mantém seu endpoint atual
+      // (ele deve chamar AuthService.registerStudent por trás e enviar o e-mail)
       const res = await fetch(`${API_URL}/users/student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,17 +48,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await res.json().catch(() => null);
 
-      if (!res.ok) {
-        setStatus(data?.message || 'Erro ao criar conta.');
-        btn.disabled = false;
+      if (!res.ok || !data?.ok) {
+        setStatus(data?.message || data?.error || 'Erro ao criar conta.');
+        disable(btn, false);
         return;
       }
 
-      setStatus('Conta criada! Redirecionando para login...');
-      setTimeout(() => window.location.replace('login-aluno.html'), 600);
+      // ✅ NÃO redireciona automaticamente (precisa verificar e-mail antes)
+      setStatus(
+        'Conta criada! Enviamos um link de verificação para seu e-mail. Confirme a conta para poder entrar.',
+      );
+
+      // limpeza de campos
+      if (nameEl) nameEl.value = '';
+      if (emailEl) emailEl.value = '';
+      if (passEl) passEl.value = '';
+
+      disable(btn, false);
+
+      // opcional: se você quiser ainda levar para login depois de alguns segundos, deixe isso comentado:
+      // setTimeout(() => window.location.replace('login-aluno.html'), 2500);
     } catch {
       setStatus('Erro ao criar conta. Tente novamente.');
-      btn.disabled = false;
+      disable(btn, false);
     }
   });
 });
