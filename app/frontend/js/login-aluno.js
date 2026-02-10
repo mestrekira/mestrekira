@@ -77,12 +77,17 @@ async function fazerLogin() {
     // ✅ compatibilidade com seu padrão antigo
     localStorage.setItem('studentId', data.user.id);
 
-    // ✅ se por algum motivo for professor, manda para painel de professor
-    if (role === 'PROFESSOR') {
-      localStorage.setItem('professorId', data.user.id);
-      window.location.replace('professor-salas.html');
-      return;
-    }
+    if (role !== 'STUDENT') {
+  // NÃO loga e NÃO redireciona
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('professorId');
+  localStorage.removeItem('studentId');
+
+  setError('Este acesso é apenas para estudantes.');
+  disable(loginBtn, false);
+  return;
+}
 
     window.location.replace('painel-aluno.html');
   } catch {
@@ -160,3 +165,4 @@ document.addEventListener('DOMContentLoaded', () => {
     resendVerifyBtn.addEventListener('click', reenviarVerificacao);
   }
 });
+
