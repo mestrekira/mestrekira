@@ -4,6 +4,7 @@ const status = document.getElementById('status');
 
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
+const resendVerifyBtn = document.getElementById('resendVerifyBtn');
 
 const emailLoginEl = document.getElementById('emailLogin');
 const passLoginEl = document.getElementById('passwordLogin');
@@ -12,13 +13,20 @@ const nameRegEl = document.getElementById('nameRegister');
 const emailRegEl = document.getElementById('emailRegister');
 const passRegEl = document.getElementById('passwordRegister');
 
-// ✅ Se já estiver logado (e o valor for válido), vai direto
-const professorId = localStorage.getItem('professorId');
-if (professorId && professorId !== 'undefined' && professorId !== 'null') {
-  window.location.replace('professor-salas.html');
+// ✅ Se já estiver logado com token, vai direto
+const token = localStorage.getItem('token');
+const userJson = localStorage.getItem('user');
+
+try {
+  const user = userJson ? JSON.parse(userJson) : null;
+  if (token && user?.role && String(user.role).toUpperCase() === 'PROFESSOR') {
+    window.location.replace('professor-salas.html');
+  }
+} catch {
+  // ignora
 }
 
-// helper
+// helpers
 function setStatus(msg) {
   if (status) status.textContent = msg || '';
 }
@@ -27,15 +35,28 @@ function disable(btn, value) {
   if (btn) btn.disabled = !!value;
 }
 
-function normalizeRole(role) {
-  return String(role || '').trim().toUpperCase(); // PROFESSSOR / STUDENT
+function show(el, value) {
+  if (!el) return;
+  el.style.display = value ? 'inline-block' : 'none';
 }
 
-// ✅ LOGIN
+function normalizeRole(role) {
+  return String(role || '').trim().toUpperCase(); // PROFESSOR / STUDENT
+}
+
+function getLoginEmail() {
+  return (emailLoginEl?.value || '').trim().toLowerCase();
+}
+
+// -------------------------
+// ✅ LOGIN (Auth)
+// -------------------------
 if (loginBtn) {
   loginBtn.addEventListener('click', async () => {
-    const email = (emailLoginEl?.value || '').trim();
+    const email = getLoginEmail();
     const password = passLoginEl?.value || '';
+
+    show(resendVerifyBtn, false);
 
     if (!email || !password) {
       setStatus('Preencha e-mail e senha.');
@@ -46,7 +67,7 @@ if (loginBtn) {
     disable(loginBtn, true);
 
     try {
-      const response = await fetch(`${API_URL}/users/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -54,14 +75,21 @@ if (loginBtn) {
 
       const data = await response.json().catch(() => null);
 
-      // se backend retornar erro em JSON, mostra mensagem amigável
-      if (!response.ok || !data?.id) {
-        setStatus(data?.error || 'Login inválido.');
+      // ❌ erro (inclui "email não verificado")
+      if (!response.ok || !data?.ok || !data?.token || !data?.user) {
+        const msg = data?.error || 'Login inválido.';
+
+        // se veio flag de não verificado, libera botão de reenvio
+        if (data?.emailVerified === false) {
+          show(resendVerifyBtn, true);
+        }
+
+        setStatus(msg);
         disable(loginBtn, false);
         return;
       }
 
-      const role = normalizeRole(data.role);
+      const role = normalizeRole(data.user.role);
 
       // ✅ garante que é professor
       if (role !== 'PROFESSOR') {
@@ -73,9 +101,14 @@ if (loginBtn) {
       // ✅ limpa possíveis restos de login de aluno
       localStorage.removeItem('studentId');
 
-      localStorage.setItem('professorId', data.id);
-      window.location.replace('professor-salas.html');
+      // ✅ novo padrão (token + user)
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
+      // ✅ mantém compatibilidade com seu sistema antigo (se ainda usar professorId)
+      localStorage.setItem('professorId', data.user.id);
+
+      window.location.replace('professor-salas.html');
     } catch {
       setStatus('Erro ao fazer login. Verifique seus dados.');
       disable(loginBtn, false);
@@ -83,12 +116,55 @@ if (loginBtn) {
   });
 }
 
-// ✅ CADASTRO
+// -------------------------
+// ✅ REENVIAR VERIFICAÇÃO
+// -------------------------
+if (resendVerifyBtn) {
+  resendVerifyBtn.addEventListener('click', async () => {
+    const email = getLoginEmail();
+    if (!email) {
+      setStatus('Digite seu e-mail no campo de login para reenviar o link.');
+      return;
+    }
+
+    setStatus('Reenviando link de verificação...');
+    disable(resendVerifyBtn, true);
+
+    try {
+      const response = await fetch(`${API_URL}/auth/request-verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.ok) {
+        setStatus(data?.message || data?.error || 'Não foi possível reenviar agora.');
+        disable(resendVerifyBtn, false);
+        return;
+      }
+
+      setStatus('Pronto! Enviamos um novo link. Verifique a caixa de entrada e o Spam.');
+      show(resendVerifyBtn, false);
+      disable(resendVerifyBtn, false);
+    } catch {
+      setStatus('Erro ao reenviar o link. Tente novamente.');
+      disable(resendVerifyBtn, false);
+    }
+  });
+}
+
+// -------------------------
+// ✅ CADASTRO (Users -> Auth dispara e-mail)
+// -------------------------
 if (registerBtn) {
   registerBtn.addEventListener('click', async () => {
     const name = (nameRegEl?.value || '').trim();
-    const email = (emailRegEl?.value || '').trim();
+    const email = (emailRegEl?.value || '').trim().toLowerCase();
     const password = passRegEl?.value || '';
+
+    show(resendVerifyBtn, false);
 
     if (!name || !email || !password) {
       setStatus('Preencha nome, e-mail e senha.');
@@ -104,52 +180,36 @@ if (registerBtn) {
     disable(registerBtn, true);
 
     try {
+      // ✅ mantém seu endpoint atual (/users/professor)
+      // (ele chama AuthService.registerProfessor por trás, que envia o e-mail)
       const response = await fetch(`${API_URL}/users/professor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
 
-      if (!response.ok) {
-        // tenta ler mensagem do backend
-        const data = await response.json().catch(() => null);
-        setStatus(data?.message || 'Erro ao cadastrar professor. Tente outro e-mail.');
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.ok) {
+        setStatus(data?.message || data?.error || 'Erro ao cadastrar professor. Tente outro e-mail.');
         disable(registerBtn, false);
         return;
       }
 
-      // ✅ login automático após cadastro
-      const loginRes = await fetch(`${API_URL}/users/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      // ✅ NÃO loga automaticamente: precisa verificar e-mail
+      setStatus(
+        'Cadastro criado! Enviamos um link de verificação para seu e-mail. Confirme a conta para poder entrar.',
+      );
 
-      const loginData = await loginRes.json().catch(() => null);
+      // pré-preenche login (ajuda)
+      if (emailLoginEl) emailLoginEl.value = email;
 
-      if (!loginRes.ok || !loginData?.id) {
-        setStatus('Cadastro realizado. Agora faça login.');
-        disable(registerBtn, false);
-        return;
-      }
-
-      const role = normalizeRole(loginData.role);
-      if (role !== 'PROFESSOR') {
-        setStatus('Cadastro realizado, mas o login não retornou professor. Faça login manualmente.');
-        disable(registerBtn, false);
-        return;
-      }
-
-      localStorage.removeItem('studentId');
-      localStorage.setItem('professorId', loginData.id);
-
-      // limpa campos
+      // limpa campos de cadastro
       if (nameRegEl) nameRegEl.value = '';
       if (emailRegEl) emailRegEl.value = '';
       if (passRegEl) passRegEl.value = '';
 
-      window.location.replace('professor-salas.html');
-
+      disable(registerBtn, false);
     } catch {
       setStatus('Erro ao cadastrar professor. Tente outro e-mail.');
       disable(registerBtn, false);
