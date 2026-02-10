@@ -67,13 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       setStatus('Senha redefinida com sucesso! Você já pode fazer login.');
 
-      // limpa campos
       if (passEl) passEl.value = '';
       if (confirmEl) confirmEl.value = '';
 
-      // redireciona depois de um tempinho (opcional)
+      // ✅ manda para um login (você escolhe qual usar como "principal")
       setTimeout(() => window.location.replace('login-aluno.html'), 1200);
-
     } catch {
       setStatus('Erro ao redefinir senha. Tente novamente.');
       disable(btn, false);
