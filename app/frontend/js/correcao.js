@@ -1,14 +1,11 @@
+// correcao.js
 import { API_URL } from './config.js';
+import { toast } from './ui-feedback.js';
 
 // 🔹 PARÂMETROS
 const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
 const focusStudentId = params.get('studentId'); // ✅ opcional: abrir direto um aluno
-
-if (!taskId) {
-  alert('Tarefa inválida.');
-  throw new Error('taskId ausente');
-}
 
 // 🔹 ELEMENTOS
 const essaysList = document.getElementById('essaysList');
@@ -44,11 +41,72 @@ let cachedActiveSet = null;
 // ✅ onde o painel está ancorado atualmente
 let currentAnchorLi = null;
 
-// -------------------- utilidades --------------------
+// -------------------- toast helpers --------------------
+
+function notify(type, title, message, duration) {
+  toast({
+    type,
+    title,
+    message,
+    duration:
+      duration ??
+      (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+  });
+}
 
 function setStatus(msg) {
   if (statusEl) statusEl.textContent = msg || '';
 }
+
+// -------------------- Auth fetch (token) --------------------
+
+function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
+function clearAuth() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('professorId');
+  localStorage.removeItem('studentId');
+}
+
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  const headers = { ...(options.headers || {}) };
+
+  if (!headers['Content-Type'] && options.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  // ✅ injeta Bearer
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401 || res.status === 403) {
+    notify(
+      'warn',
+      'Sessão expirada',
+      'Faça login novamente para continuar.',
+      3200,
+    );
+    clearAuth();
+    setTimeout(() => window.location.replace('login-professor.html'), 600);
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  return res;
+}
+
+// -------------------- Guard inicial --------------------
+
+if (!taskId) {
+  notify('error', 'Tarefa inválida', 'Acesse a correção por uma tarefa válida.');
+  throw new Error('taskId ausente');
+}
+
+// -------------------- utilidades --------------------
 
 function photoKeyStudent(studentId) {
   return `mk_photo_student_${studentId}`;
@@ -61,7 +119,7 @@ function placeholderAvatarDataUrl(letter = '?') {
       `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
         <rect width="100%" height="100%" fill="#eee"/>
         <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">${letter}</text>
-      </svg>`
+      </svg>`,
     )
   );
 }
@@ -210,14 +268,8 @@ function getSentAt(essay) {
   ]);
 }
 
-// -------------------- helpers de layout (corrigir “embaralhou” e afastar da borda) --------------------
+// -------------------- helpers de layout --------------------
 
-/**
- * ✅ Aplica estilo “box” consistente:
- * - preserva parágrafos
- * - melhora legibilidade
- * - adiciona padding interno (título + texto ficam longe da borda)
- */
 function applyBoxStyle(el) {
   if (!el) return;
   el.style.setProperty('white-space', 'pre-wrap', 'important');
@@ -226,25 +278,10 @@ function applyBoxStyle(el) {
   el.style.setProperty('overflow-wrap', 'anywhere', 'important');
   el.style.setProperty('word-break', 'break-word', 'important');
 
-  // ✅ “mais distante da margem”
-  // (se o .box do CSS já tiver padding, isso só reforça)
+  // padding “longe da borda”
   el.style.setProperty('padding', '14px 16px', 'important');
 }
 
-function setBoxText(el, value, fallback = '') {
-  if (!el) return;
-  const raw = value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
-  const finalText = raw.trim() ? raw : fallback;
-  el.textContent = finalText;
-  applyBoxStyle(el);
-}
-
-/**
- * ✅ Renderiza orientações/tema dentro da box sem “embaralhar”:
- * - Mantém quebras
- * - Não usa innerHTML (evita bagunçar/interpretar tags)
- * - Adiciona um “título” com margem, mas sempre dentro da box
- */
 function renderGuidelinesInBox(el, title, guidelines) {
   if (!el) return;
 
@@ -254,12 +291,11 @@ function renderGuidelinesInBox(el, title, guidelines) {
   el.innerHTML = '';
   applyBoxStyle(el);
 
-  // título interno
   const h = document.createElement('div');
   h.textContent = String(title || '').trim();
   h.style.fontWeight = '800';
   h.style.marginBottom = '10px';
-  h.style.textAlign = 'left'; // título melhor alinhado
+  h.style.textAlign = 'left';
   el.appendChild(h);
 
   if (!hasText) {
@@ -442,7 +478,7 @@ function initRubricsUI() {
   });
 }
 
-// -------------------- TÍTULO DA REDAÇÃO (limpar marcador) --------------------
+// -------------------- TÍTULO DA REDAÇÃO (compatível com __TITLE__) --------------------
 
 function splitTitleAndBody(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
@@ -479,7 +515,7 @@ function renderEssayForProfessor(containerEl, packedContent) {
   const { title, body } = splitTitleAndBody(packedContent);
 
   containerEl.innerHTML = '';
-  applyBoxStyle(containerEl); // ✅ padding + pre-wrap + justify
+  applyBoxStyle(containerEl);
 
   if (title && title !== '—') {
     const h = document.createElement('div');
@@ -501,9 +537,9 @@ function renderEssayForProfessor(containerEl, packedContent) {
 
 async function getTaskInfo(taskIdValue) {
   try {
-    const res = await fetch(`${API_URL}/tasks/${encodeURIComponent(taskIdValue)}`);
+    const res = await authFetch(`${API_URL}/tasks/${encodeURIComponent(taskIdValue)}`);
     if (!res.ok) throw new Error();
-    const task = await res.json();
+    const task = await res.json().catch(() => null);
     return task || null;
   } catch {
     return null;
@@ -512,9 +548,9 @@ async function getTaskInfo(taskIdValue) {
 
 async function getActiveStudentsSet(roomId) {
   try {
-    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
+    const res = await authFetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
     if (!res.ok) throw new Error();
-    const list = await res.json();
+    const list = await res.json().catch(() => null);
     const arr = Array.isArray(list) ? list : [];
     const ids = arr.map((s) => String(s?.id || s?.studentId || '').trim()).filter(Boolean);
     return new Set(ids);
@@ -526,7 +562,7 @@ async function getActiveStudentsSet(roomId) {
 function filterEssaysByActiveStudents(essays, activeSet) {
   if (!activeSet) return essays;
   return (Array.isArray(essays) ? essays : []).filter((e) =>
-    activeSet.has(String(e?.studentId || ''))
+    activeSet.has(String(e?.studentId || '')),
   );
 }
 
@@ -614,15 +650,11 @@ async function carregarTemaDaTarefa() {
 
   if (taskTitleEl) {
     taskTitleEl.textContent = titleRaw ? `Tema: ${titleRaw}` : 'Tema: —';
-
-    // ✅ afasta um pouco o título do “container” onde ele fica
     taskTitleEl.style.setProperty('padding', '0 6px', 'important');
   }
 
-  // ✅ ORIENTAÇÕES: renderiza formatado dentro da BOX, com padding interno
   if (taskMetaEl) {
     const guideRaw = String(task?.guidelines || '');
-    // Se você quiser um título interno (“Orientações”), mantém abaixo:
     renderGuidelinesInBox(taskMetaEl, 'Orientações', guideRaw);
   }
 
@@ -649,7 +681,6 @@ function sortEssaysForList(arr) {
     const bc = isCorrected(b) ? 1 : 0;
     if (ac !== bc) return ac - bc;
 
-    // ✅ mais recentes primeiro dentro do grupo
     const at = toDateSafe(getSentAt(a))?.getTime?.() ?? -Infinity;
     const bt = toDateSafe(getSentAt(b))?.getTime?.() ?? -Infinity;
     if (at !== bt) return bt - at;
@@ -675,12 +706,12 @@ async function carregarRedacoes() {
     currentEssayId = null;
     currentAnchorLi = null;
 
-    const response = await fetch(
-      `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`
+    const response = await authFetch(
+      `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`,
     );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    let essays = await response.json();
+    let essays = await response.json().catch(() => null);
 
     essays = filterEssaysByActiveStudents(essays, cachedActiveSet);
 
@@ -729,10 +760,8 @@ async function carregarRedacoes() {
       const corrected = isCorrected(essay);
       const statusNota = corrected ? `Nota: ${essay.score}` : 'Pendente (sem correção)';
 
-      // ✅ ENVIADA EM (createdAt/submittedAt/updatedAt)
       const sentAt = formatDateBR(getSentAt(essay));
 
-      // ✅ CORRIGIDA EM (updatedAt)
       const correctedAt = corrected
         ? formatDateBR(pickDate(essay, ['updatedAt', 'updated_at']))
         : null;
@@ -752,7 +781,7 @@ async function carregarRedacoes() {
         btn.textContent = 'Ver redação/feedback';
         btn.addEventListener('click', () => {
           window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-            String(taskId)
+            String(taskId),
           )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
         });
       } else {
@@ -771,7 +800,7 @@ async function carregarRedacoes() {
 
         if (corrected) {
           window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-            String(taskId)
+            String(taskId),
           )}&studentId=${encodeURIComponent(String(essay.studentId))}`;
         } else {
           abrirCorrecao(essay, li);
@@ -783,7 +812,6 @@ async function carregarRedacoes() {
 
       essaysList.appendChild(li);
 
-      // autoabrir se veio studentId (apenas pendente)
       if (focusStudentId && String(essay.studentId) === String(focusStudentId) && !corrected) {
         abrirCorrecao(essay, li);
       }
@@ -807,7 +835,7 @@ if (correctionSection) {
       (e) => {
         e.stopPropagation();
       },
-      { passive: true }
+      { passive: true },
     );
   });
 }
@@ -817,6 +845,7 @@ if (correctionSection) {
 if (saveBtn) {
   saveBtn.addEventListener('click', async () => {
     if (!currentEssayId) {
+      notify('warn', 'Seleção necessária', 'Selecione uma redação primeiro.');
       setStatus('Selecione uma redação primeiro.');
       return;
     }
@@ -825,11 +854,13 @@ if (saveBtn) {
     const totalObj = calcularTotal();
 
     if (!feedback) {
+      notify('warn', 'Campo obrigatório', 'Escreva o feedback.');
       setStatus('Escreva o feedback.');
       return;
     }
 
     if (!totalObj) {
+      notify('warn', 'Campos obrigatórios', 'Preencha todas as competências (0 a 200).');
       setStatus('Preencha todas as competências (0 a 200).');
       return;
     }
@@ -837,11 +868,10 @@ if (saveBtn) {
     setStatus('Salvando correção...');
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${API_URL}/essays/${encodeURIComponent(currentEssayId)}/correct`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             feedback,
             c1: totalObj.v1,
@@ -850,16 +880,18 @@ if (saveBtn) {
             c4: totalObj.v4,
             c5: totalObj.v5,
           }),
-        }
+        },
       );
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
+      notify('success', 'Correção salva', 'A correção foi salva com sucesso.');
       setStatus('Correção salva com sucesso!');
       closeCorrection();
       await carregarRedacoes();
     } catch (e) {
       console.error(e);
+      notify('error', 'Erro', 'Erro ao salvar correção.');
       setStatus('Erro ao salvar correção.');
     }
   });
@@ -868,7 +900,11 @@ if (saveBtn) {
 // -------------------- INIT --------------------
 
 (async () => {
-  await carregarTemaDaTarefa();
-  await carregarRedacoes();
-  initRubricsUI();
+  try {
+    await carregarTemaDaTarefa();
+    await carregarRedacoes();
+    initRubricsUI();
+  } catch (e) {
+    console.error(e);
+  }
 })();
