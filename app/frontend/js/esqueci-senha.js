@@ -1,54 +1,88 @@
+// esqueci-senha.js  (ou recuperar-senha.js / request-password-reset.js)
+// Página que envia o link de redefinição
 import { API_URL } from './config.js';
-
-function setStatus(msg) {
-  const el = document.getElementById('status');
-  if (el) el.textContent = msg || '';
-}
+import { toast } from './ui-feedback.js';
 
 function disable(btn, value) {
   if (btn) btn.disabled = !!value;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const emailEl = document.getElementById('email');
+function notify(type, title, message, duration) {
+  toast({
+    type,
+    title,
+    message,
+    duration:
+      duration ??
+      (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+  });
+}
+
+function getEmail() {
+  const el = document.getElementById('email');
+  return (el?.value || '').trim().toLowerCase();
+}
+
+function getRoleFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const role = (params.get('role') || '').trim().toLowerCase();
+  return role === 'professor' || role === 'student' ? role : undefined;
+}
+
+async function enviarLink() {
   const btn = document.getElementById('sendBtn');
+  const email = getEmail();
+  const role = getRoleFromUrl();
 
-  if (!btn) return;
+  if (!email) {
+    notify('warn', 'Digite seu e-mail', 'Informe o e-mail para receber o link.');
+    return;
+  }
 
-  btn.addEventListener('click', async () => {
-    const email = (emailEl?.value || '').trim().toLowerCase();
-    setStatus('');
+  disable(btn, true);
+  notify('info', 'Enviando...', 'Gerando seu link de redefinição...', 1800);
 
-    if (!email || !email.includes('@')) {
-      setStatus('Digite um e-mail válido.');
+  try {
+    const res = await fetch(`${API_URL}/auth/request-password-reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, role }),
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data?.ok) {
+      notify(
+        'error',
+        'Não foi possível enviar',
+        data?.message || data?.error || 'Tente novamente em instantes.',
+      );
       return;
     }
 
-    disable(btn, true);
-    setStatus('Enviando link...');
+    // ✅ mensagem segura (não revela se existe)
+    notify(
+      'success',
+      'Se o e-mail existir…',
+      'Enviamos um link. Verifique a caixa de entrada e o Spam.',
+      4200,
+    );
+  } catch {
+    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+  } finally {
+    disable(btn, false);
+  }
+}
 
-    try {
-      const res = await fetch(`${API_URL}/auth/request-password-reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('sendBtn');
+  const email = document.getElementById('email');
 
-      const data = await res.json().catch(() => null);
+  if (btn) btn.addEventListener('click', enviarLink);
 
-      if (!res.ok || !data?.ok) {
-        setStatus(data?.message || data?.error || 'Não foi possível enviar agora.');
-        disable(btn, false);
-        return;
-      }
-
-      // ✅ segurança: backend responde ok mesmo se e-mail não existir
-      setStatus('Se o e-mail existir, enviaremos um link. Verifique a caixa de entrada e o Spam.');
-
-      disable(btn, false);
-    } catch {
-      setStatus('Erro ao enviar link. Tente novamente.');
-      disable(btn, false);
-    }
-  });
+  if (email) {
+    email.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') enviarLink();
+    });
+  }
 });
