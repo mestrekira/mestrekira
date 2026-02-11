@@ -1,3 +1,4 @@
+// sala-professor.js
 import { API_URL } from './config.js';
 import { toast, confirmDialog } from './ui-feedback.js';
 
@@ -20,7 +21,14 @@ const copyCodeBtn = document.getElementById('copyCodeBtn');
 const createTaskBtn = document.getElementById('createTaskBtn');
 const performanceBtn = document.getElementById('performanceBtn');
 
-if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn || !createTaskBtn) {
+if (
+  !roomNameEl ||
+  !roomCodeEl ||
+  !studentsList ||
+  !tasksList ||
+  !copyCodeBtn ||
+  !createTaskBtn
+) {
   console.error('Elementos da sala do professor não encontrados.');
   throw new Error('HTML incompleto');
 }
@@ -28,7 +36,9 @@ if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn ||
 // ✅ Botão de desempenho
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
-    window.location.href = `desempenho-professor.html?roomId=${encodeURIComponent(roomId)}`;
+    window.location.href = `desempenho-professor.html?roomId=${encodeURIComponent(
+      roomId
+    )}`;
   });
 }
 
@@ -56,25 +66,41 @@ function normalizeTask(t) {
   const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
   const guidelines = String(t?.guidelines || '');
   const createdAt = pickDate(t, [
-    'createdAt','created_at','created','dateCreated','timestamp','createdOn',
+    'createdAt',
+    'created_at',
+    'created',
+    'dateCreated',
+    'timestamp',
+    'createdOn',
   ]);
   return { id, title, guidelines, createdAt, _raw: t };
 }
 
 function normalizeDateInput(value) {
   if (value === null || value === undefined) return null;
+
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : value;
+  }
+
   if (typeof value === 'number') {
+    // aceita epoch em segundos ou ms
     const ms = value < 1e12 ? value * 1000 : value;
     const d = new Date(ms);
     return Number.isNaN(d.getTime()) ? null : d;
   }
+
   const s = String(value).trim();
   if (!s) return null;
+
+  // "YYYY-MM-DD HH:mm(:ss)" -> vira "YYYY-MM-DDTHH:mm(:ss)"
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
     const isoLike = s.replace(' ', 'T');
     const d = new Date(isoLike);
     return Number.isNaN(d.getTime()) ? null : d;
   }
+
   const d = new Date(s);
   return Number.isNaN(d.getTime()) ? null : d;
 }
@@ -82,22 +108,79 @@ function normalizeDateInput(value) {
 function formatDateBR(value) {
   const d = normalizeDateInput(value);
   if (!d) return '—';
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(d);
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(d);
+  } catch {
+    return '—';
+  }
 }
+
+// ----- destaque “mais recente” (igual ao aluno, com badge diferente)
 
 function getLastCreatedTaskKey() {
   return `mk_last_created_task_${roomId}`;
 }
-
 function setLastCreatedTaskId(taskId) {
-  try { localStorage.setItem(getLastCreatedTaskKey(), String(taskId || '')); } catch {}
+  try {
+    localStorage.setItem(getLastCreatedTaskKey(), String(taskId || ''));
+  } catch {}
+}
+function getLastCreatedTaskId() {
+  try {
+    return localStorage.getItem(getLastCreatedTaskKey()) || '';
+  } catch {
+    return '';
+  }
 }
 
-function getLastCreatedTaskId() {
-  try { return localStorage.getItem(getLastCreatedTaskKey()) || ''; } catch { return ''; }
+function computeNewestTaskId(tasksNormalized) {
+  if (!Array.isArray(tasksNormalized) || tasksNormalized.length === 0)
+    return null;
+
+  // ✅ prioridade 1: a última criada via UI (quando criamos agora)
+  const lastCreated = getLastCreatedTaskId();
+  if (lastCreated && tasksNormalized.some((t) => String(t.id) === String(lastCreated))) {
+    return lastCreated;
+  }
+
+  // ✅ prioridade 2: maior createdAt válido
+  let newestId = null;
+  let newestTime = -Infinity;
+
+  tasksNormalized.forEach((t) => {
+    const dt = normalizeDateInput(t.createdAt)?.getTime?.() ?? NaN;
+    if (!Number.isNaN(dt)) {
+      if (dt > newestTime) {
+        newestTime = dt;
+        newestId = t.id;
+      }
+    }
+  });
+
+  // ✅ fallback: última do array (se backend não manda createdAt)
+  if (!newestId) newestId = tasksNormalized[tasksNormalized.length - 1]?.id || null;
+
+  return newestId;
+}
+
+function makeMaisRecenteBadge() {
+  const badge = document.createElement('span');
+  badge.textContent = 'Mais recente';
+  badge.style.display = 'inline-flex';
+  badge.style.alignItems = 'center';
+  badge.style.justifyContent = 'center';
+  badge.style.padding = '3px 10px';
+  badge.style.borderRadius = '999px';
+  badge.style.fontSize = '11px';
+  badge.style.fontWeight = '900';
+  badge.style.marginLeft = '10px';
+  badge.style.background = 'rgba(16,185,129,.12)'; // verde suave
+  badge.style.border = '1px solid rgba(16,185,129,.35)';
+  badge.style.color = '#0b1f4b';
+  return badge;
 }
 
 function placeholderAvatar(size = 36) {
@@ -106,7 +189,9 @@ function placeholderAvatar(size = 36) {
     encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
         <rect width="100%" height="100%" fill="#eee"/>
-        <text x="50%" y="55%" font-size="${Math.round(size * 0.45)}" text-anchor="middle" fill="#888">?</text>
+        <text x="50%" y="55%" font-size="${Math.round(
+          size * 0.45
+        )}" text-anchor="middle" fill="#888">?</text>
       </svg>`
     )
   );
@@ -135,7 +220,11 @@ async function carregarSala() {
     roomCodeEl.textContent = room?.code || '—';
   } catch (err) {
     console.error(err);
-    toast({ title: 'Erro', message: 'Erro ao carregar dados da sala.', type: 'error' });
+    toast({
+      title: 'Erro',
+      message: 'Erro ao carregar dados da sala.',
+      type: 'error',
+    });
   }
 }
 
@@ -143,15 +232,27 @@ async function carregarSala() {
 copyCodeBtn.addEventListener('click', async () => {
   const code = (roomCodeEl.textContent || '').trim();
   if (!code || code === '—') {
-    toast({ title: 'Atenção', message: 'Código da sala indisponível.', type: 'warn' });
+    toast({
+      title: 'Atenção',
+      message: 'Código da sala indisponível.',
+      type: 'warn',
+    });
     return;
   }
 
   try {
     await navigator.clipboard.writeText(code);
-    toast({ title: 'Tudo certo!', message: 'Código da sala copiado.', type: 'success' });
+    toast({
+      title: 'Tudo certo!',
+      message: 'Código da sala copiado.',
+      type: 'success',
+    });
   } catch {
-    toast({ title: 'Não foi possível', message: 'Selecione e copie manualmente.', type: 'error' });
+    toast({
+      title: 'Não foi possível',
+      message: 'Selecione e copie manualmente.',
+      type: 'error',
+    });
   }
 });
 
@@ -170,14 +271,20 @@ async function removerAluno(studentId, studentName = 'este aluno') {
 
   try {
     const res = await fetch(
-      `${API_URL}/rooms/${encodeURIComponent(roomId)}/students/${encodeURIComponent(studentId)}`,
+      `${API_URL}/rooms/${encodeURIComponent(roomId)}/students/${encodeURIComponent(
+        studentId
+      )}`,
       { method: 'DELETE' }
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     await carregarAlunos();
   } catch (err) {
     console.error(err);
-    toast({ title: 'Erro', message: 'Erro ao remover aluno da sala.', type: 'error' });
+    toast({
+      title: 'Erro',
+      message: 'Erro ao remover aluno da sala.',
+      type: 'error',
+    });
   }
 }
 
@@ -186,7 +293,9 @@ async function carregarAlunos() {
   const photoKey = (studentId) => `mk_photo_student_${studentId}`;
 
   try {
-    const response = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
+    const response = await fetch(
+      `${API_URL}/rooms/${encodeURIComponent(roomId)}/students`
+    );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const raw = await response.json();
@@ -224,7 +333,9 @@ async function carregarAlunos() {
       const text = document.createElement('div');
       const name = student.name || 'Aluno';
       const email = student.email || '';
-      text.innerHTML = `<strong>${name}</strong>${email ? `<br><small>${email}</small>` : ''}`;
+      text.innerHTML = `<strong>${name}</strong>${
+        email ? `<br><small>${email}</small>` : ''
+      }`;
 
       const removeBtn = document.createElement('button');
       removeBtn.textContent = 'Remover';
@@ -253,11 +364,15 @@ async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando tarefas...</li>';
 
   try {
-    const response = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
+    const response = await fetch(
+      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`
+    );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const raw = await response.json();
-    const tasks = (Array.isArray(raw) ? raw : []).map(normalizeTask).filter((t) => !!t.id);
+    const tasks = (Array.isArray(raw) ? raw : [])
+      .map(normalizeTask)
+      .filter((t) => !!t.id);
 
     tasksList.innerHTML = '';
     if (tasks.length === 0) {
@@ -265,10 +380,38 @@ async function carregarTarefas() {
       return;
     }
 
+    const newestId = computeNewestTaskId(tasks);
+
     tasks.forEach((task) => {
       const li = document.createElement('li');
+
+      // ✅ destaque visual da mais recente
+      if (task.id === newestId) {
+        li.style.border = '2px solid rgba(16,185,129,.35)';
+        li.style.boxShadow = '0 10px 24px rgba(16,185,129,0.12)';
+      }
+
+      // título + badge
+      const titleWrap = document.createElement('div');
+      titleWrap.style.display = 'flex';
+      titleWrap.style.alignItems = 'center';
+      titleWrap.style.flexWrap = 'wrap';
+      titleWrap.style.gap = '6px';
+
       const title = document.createElement('strong');
       title.textContent = task.title || 'Tarefa';
+      titleWrap.appendChild(title);
+
+      if (task.id === newestId) {
+        titleWrap.appendChild(makeMaisRecenteBadge());
+      }
+
+      // meta data
+      const meta = document.createElement('div');
+      meta.style.marginTop = '6px';
+      meta.style.fontSize = '12px';
+      meta.style.opacity = '0.85';
+      meta.textContent = `Criada em: ${formatDateBR(task.createdAt)}`;
 
       const btn = document.createElement('button');
       btn.textContent = 'Ver redações';
@@ -289,8 +432,16 @@ async function carregarTarefas() {
         if (!ok) return;
 
         try {
-          const res = await fetch(`${API_URL}/tasks/${encodeURIComponent(task.id)}`, { method: 'DELETE' });
+          const res = await fetch(`${API_URL}/tasks/${encodeURIComponent(task.id)}`, {
+            method: 'DELETE',
+          });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+          // se apagou a “última criada”, limpa o marcador
+          if (String(getLastCreatedTaskId()) === String(task.id)) {
+            setLastCreatedTaskId('');
+          }
+
           carregarTarefas();
         } catch (err) {
           console.error(err);
@@ -298,7 +449,8 @@ async function carregarTarefas() {
         }
       });
 
-      li.appendChild(title);
+      li.appendChild(titleWrap);
+      li.appendChild(meta);
       li.appendChild(document.createElement('br'));
       li.appendChild(btn);
       li.appendChild(delBtn);
@@ -335,10 +487,17 @@ createTaskBtn.addEventListener('click', async () => {
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
+    const created = await response.json().catch(() => null);
+
+    // ✅ tenta salvar o ID da tarefa recém-criada para destacar
+    const createdId = String(created?.id || created?.taskId || '').trim();
+    if (createdId) setLastCreatedTaskId(createdId);
+
     toast({ title: 'Criada!', message: 'Tarefa criada com sucesso.', type: 'success' });
 
     if (titleEl) titleEl.value = '';
     if (guidelinesEl) guidelinesEl.value = '';
+
     carregarTarefas();
   } catch (err) {
     console.error(err);
