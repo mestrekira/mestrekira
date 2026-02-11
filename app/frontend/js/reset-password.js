@@ -14,6 +14,19 @@ function getTokenFromUrl() {
   return (params.get('token') || '').trim();
 }
 
+function getRoleFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const role = (params.get('role') || '').trim().toLowerCase();
+  return role === 'professor' || role === 'student' ? role : '';
+}
+
+function getRedirectTarget() {
+  const role = getRoleFromUrl();
+  if (role === 'professor') return 'login-professor.html';
+  if (role === 'student') return 'login-aluno.html';
+  return 'index.html'; // fallback seguro
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const token = getTokenFromUrl();
 
@@ -70,8 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (passEl) passEl.value = '';
       if (confirmEl) confirmEl.value = '';
 
-      // ✅ manda para um login (você escolhe qual usar como "principal")
-      setTimeout(() => window.location.replace('login-aluno.html'), 1200);
+      const target = getRedirectTarget();
+      setTimeout(() => window.location.replace(target), 1200);
     } catch {
       setStatus('Erro ao redefinir senha. Tente novamente.');
       disable(btn, false);
