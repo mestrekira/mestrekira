@@ -1,3 +1,4 @@
+// login-professor.js
 import { API_URL } from './config.js';
 
 const status = document.getElementById('status');
@@ -12,19 +13,6 @@ const passLoginEl = document.getElementById('passwordLogin');
 const nameRegEl = document.getElementById('nameRegister');
 const emailRegEl = document.getElementById('emailRegister');
 const passRegEl = document.getElementById('passwordRegister');
-
-// ✅ Se já estiver logado com token, vai direto
-const token = localStorage.getItem('token');
-const userJson = localStorage.getItem('user');
-
-try {
-  const user = userJson ? JSON.parse(userJson) : null;
-  if (token && user?.role && String(user.role).toUpperCase() === 'PROFESSOR') {
-    window.location.replace('professor-salas.html');
-  }
-} catch {
-  // ignora
-}
 
 // helpers
 function setStatus(msg) {
@@ -47,6 +35,41 @@ function normalizeRole(role) {
 function getLoginEmail() {
   return (emailLoginEl?.value || '').trim().toLowerCase();
 }
+
+function justLoggedOutGuard() {
+  // ✅ evita loop quando acabou de fazer logout e caiu no login
+  if (sessionStorage.getItem('mk_just_logged_out') === '1') {
+    sessionStorage.removeItem('mk_just_logged_out');
+
+    // limpa TUDO que pode causar auto-redirect
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('professorId');
+    localStorage.removeItem('studentId');
+
+    return true;
+  }
+  return false;
+}
+
+// ✅ Se já estiver logado com token, vai direto (MAS não após logout)
+(function autoRedirectIfLogged() {
+  if (justLoggedOutGuard()) return;
+
+  const token = localStorage.getItem('token');
+  const userJson = localStorage.getItem('user');
+
+  try {
+    const user = userJson ? JSON.parse(userJson) : null;
+    const role = normalizeRole(user?.role);
+
+    if (token && role === 'PROFESSOR') {
+      window.location.replace('professor-salas.html');
+    }
+  } catch {
+    // ignora
+  }
+})();
 
 // -------------------------
 // ✅ LOGIN (Auth)
@@ -85,7 +108,6 @@ if (loginBtn) {
         }
 
         setStatus(msg);
-        disable(loginBtn, false);
         return;
       }
 
@@ -93,8 +115,13 @@ if (loginBtn) {
 
       // ✅ garante que é professor
       if (role !== 'PROFESSOR') {
+        // limpa pra não ficar “logado” errado
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('professorId');
+        localStorage.removeItem('studentId');
+
         setStatus('Este acesso é apenas para professores.');
-        disable(loginBtn, false);
         return;
       }
 
@@ -105,12 +132,13 @@ if (loginBtn) {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // ✅ mantém compatibilidade com seu sistema antigo (se ainda usar professorId)
+      // ✅ compatibilidade com seu sistema antigo
       localStorage.setItem('professorId', data.user.id);
 
       window.location.replace('professor-salas.html');
     } catch {
       setStatus('Erro ao fazer login. Verifique seus dados.');
+    } finally {
       disable(loginBtn, false);
     }
   });
@@ -140,16 +168,19 @@ if (resendVerifyBtn) {
       const data = await response.json().catch(() => null);
 
       if (!response.ok || !data?.ok) {
-        setStatus(data?.message || data?.error || 'Não foi possível reenviar agora.');
-        disable(resendVerifyBtn, false);
+        setStatus(
+          data?.message || data?.error || 'Não foi possível reenviar agora.',
+        );
         return;
       }
 
-      setStatus('Pronto! Enviamos um novo link. Verifique a caixa de entrada e o Spam.');
+      setStatus(
+        'Pronto! Enviamos um novo link. Verifique a caixa de entrada e o Spam.',
+      );
       show(resendVerifyBtn, false);
-      disable(resendVerifyBtn, false);
     } catch {
       setStatus('Erro ao reenviar o link. Tente novamente.');
+    } finally {
       disable(resendVerifyBtn, false);
     }
   });
@@ -180,8 +211,6 @@ if (registerBtn) {
     disable(registerBtn, true);
 
     try {
-      // ✅ mantém seu endpoint atual (/users/professor)
-      // (ele chama AuthService.registerProfessor por trás, que envia o e-mail)
       const response = await fetch(`${API_URL}/users/professor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -191,8 +220,11 @@ if (registerBtn) {
       const data = await response.json().catch(() => null);
 
       if (!response.ok || !data?.ok) {
-        setStatus(data?.message || data?.error || 'Erro ao cadastrar professor. Tente outro e-mail.');
-        disable(registerBtn, false);
+        setStatus(
+          data?.message ||
+            data?.error ||
+            'Erro ao cadastrar professor. Tente outro e-mail.',
+        );
         return;
       }
 
@@ -208,10 +240,9 @@ if (registerBtn) {
       if (nameRegEl) nameRegEl.value = '';
       if (emailRegEl) emailRegEl.value = '';
       if (passRegEl) passRegEl.value = '';
-
-      disable(registerBtn, false);
     } catch {
       setStatus('Erro ao cadastrar professor. Tente outro e-mail.');
+    } finally {
       disable(registerBtn, false);
     }
   });
