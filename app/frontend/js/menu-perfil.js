@@ -257,7 +257,14 @@ if (logoutBtn) {
       menuPanel.classList.remove('open');
 
       toast({ title: 'Saindo...', message: 'Você foi desconectado.', type: 'info', duration: 1200 });
+// marca que acabou de sair (evita auto-redirect no login)
+sessionStorage.setItem('mk_just_logged_out', '1');
 
+// limpa tudo que for sessão/auth
+localStorage.removeItem('token');
+localStorage.removeItem('user');
+localStorage.removeItem('professorId');
+localStorage.removeItem('studentId');
       window.location.href = role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
     });
   }
