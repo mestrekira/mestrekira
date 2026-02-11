@@ -125,12 +125,31 @@ export function initMenuPerfil(options = {}) {
     safeText($('meRole'), '', '');
     loadPhoto(null, null);
 
-    const logoutBtn = $('logoutMenuBtn');
-    if (logoutBtn) logoutBtn.addEventListener('click', () => (window.location.href = loginRedirect));
+    // logout (menu)
+const logoutBtn = $('logoutMenuBtn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', () => {
+    // ✅ limpa sessão nova (auth)
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    // ✅ limpa compatibilidade antiga
+    localStorage.removeItem('professorId');
+    localStorage.removeItem('studentId');
+
+    menuPanel.classList.remove('open');
+
+    toast({ title: 'Saindo...', message: 'Você foi desconectado.', type: 'info', duration: 1200 });
+
+    window.location.href = role === 'professor' ? logoutRedirectProfessor : logoutRedirectStudent;
+  });
+}
 
     const delBtn = $('deleteAccountBtn');
     if (delBtn) delBtn.addEventListener('click', () => (window.location.href = loginRedirect));
-
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  
     const saveBtn = $('saveProfileBtn');
     if (saveBtn) saveBtn.addEventListener('click', () => (window.location.href = loginRedirect));
 
