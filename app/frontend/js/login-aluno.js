@@ -1,10 +1,6 @@
 // login-aluno.js
 import { API_URL } from './config.js';
-
-function setError(msg) {
-  const el = document.getElementById('error');
-  if (el) el.textContent = msg || '';
-}
+import { toast } from './ui-feedback.js';
 
 function disable(btn, value) {
   if (btn) btn.disabled = !!value;
@@ -22,6 +18,17 @@ function normRole(role) {
 function getEmail() {
   const emailEl = document.getElementById('email');
   return (emailEl?.value || '').trim().toLowerCase();
+}
+
+function notify(type, title, message, duration) {
+  toast({
+    type,
+    title,
+    message,
+    duration:
+      duration ??
+      (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+  });
 }
 
 function justLoggedOutGuard() {
@@ -48,16 +55,15 @@ async function fazerLogin() {
   const email = getEmail();
   const password = passEl?.value || '';
 
-  setError('');
   show(resendVerifyBtn, false);
 
   if (!email || !password) {
-    setError('Preencha e-mail e senha.');
+    notify('warn', 'Campos obrigatórios', 'Preencha e-mail e senha.');
     return;
   }
 
   disable(loginBtn, true);
-  setError('Entrando...');
+  notify('info', 'Entrando...', 'Verificando seus dados...', 1800);
 
   try {
     const res = await fetch(`${API_URL}/auth/login`, {
@@ -74,23 +80,27 @@ async function fazerLogin() {
 
       if (data?.emailVerified === false) {
         show(resendVerifyBtn, true);
+        notify(
+          'warn',
+          'E-mail não confirmado',
+          'Confirme seu e-mail para acessar. Se precisar, clique em “Reenviar verificação”.',
+        );
+      } else {
+        notify('error', 'Não foi possível entrar', msg);
       }
-
-      setError(msg);
       return;
     }
 
     const role = normRole(data.user.role);
 
-    // ✅ bloqueia se não for STUDENT (aluno)
+    // ✅ bloqueia se não for STUDENT/ALUNO
     if (role !== 'STUDENT' && role !== 'ALUNO') {
-      // NÃO loga e NÃO redireciona
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('professorId');
       localStorage.removeItem('studentId');
 
-      setError('Este acesso é apenas para estudantes.');
+      notify('error', 'Acesso negado', 'Este acesso é apenas para estudantes.');
       return;
     }
 
@@ -101,12 +111,13 @@ async function fazerLogin() {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
 
-    // ✅ compatibilidade com seu padrão antigo
+    // ✅ compatibilidade
     localStorage.setItem('studentId', data.user.id);
 
+    notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1200);
     window.location.replace('painel-aluno.html');
   } catch {
-    setError('Erro ao fazer login. Tente novamente.');
+    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
   } finally {
     disable(loginBtn, false);
   }
@@ -116,15 +127,13 @@ async function reenviarVerificacao() {
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
   const email = getEmail();
 
-  setError('');
-
   if (!email) {
-    setError('Digite seu e-mail para reenviar o link.');
+    notify('warn', 'Digite seu e-mail', 'Informe seu e-mail para reenviar o link.');
     return;
   }
 
   disable(resendVerifyBtn, true);
-  setError('Reenviando link de verificação...');
+  notify('info', 'Reenviando...', 'Enviando novo link de verificação...', 1800);
 
   try {
     const res = await fetch(`${API_URL}/auth/request-verify`, {
@@ -136,18 +145,22 @@ async function reenviarVerificacao() {
     const data = await res.json().catch(() => null);
 
     if (!res.ok || !data?.ok) {
-      setError(
-        data?.message || data?.error || 'Não foi possível reenviar agora.',
+      notify(
+        'error',
+        'Não foi possível reenviar',
+        data?.message || data?.error || 'Tente novamente em instantes.',
       );
       return;
     }
 
-    setError(
-      'Pronto! Enviamos um novo link. Verifique a caixa de entrada e o Spam.',
+    notify(
+      'success',
+      'Link enviado',
+      'Verifique a caixa de entrada e o Spam.',
     );
     show(resendVerifyBtn, false);
   } catch {
-    setError('Erro ao reenviar o link. Tente novamente.');
+    notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
   } finally {
     disable(resendVerifyBtn, false);
   }
@@ -159,12 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
 
   // ✅ evita looping pós-logout
-  if (justLoggedOutGuard()) {
-    // não faz auto-redirect; deixa a tela parada no login
-    return;
-  }
+  if (justLoggedOutGuard()) return;
 
-  // ✅ Se já estiver logado com token e for STUDENT, vai direto
+  // ✅ Se já estiver logado com token e for STUDENT/ALUNO, vai direto
   const token = localStorage.getItem('token');
   const userJson = localStorage.getItem('user');
   try {
