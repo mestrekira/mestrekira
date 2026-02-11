@@ -1,3 +1,4 @@
+// login-aluno.js
 import { API_URL } from './config.js';
 
 function setError(msg) {
@@ -21,6 +22,22 @@ function normRole(role) {
 function getEmail() {
   const emailEl = document.getElementById('email');
   return (emailEl?.value || '').trim().toLowerCase();
+}
+
+function justLoggedOutGuard() {
+  // ✅ evita loop quando acabou de fazer logout e caiu no login
+  if (sessionStorage.getItem('mk_just_logged_out') === '1') {
+    sessionStorage.removeItem('mk_just_logged_out');
+
+    // limpa TUDO que pode causar auto-redirect
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('professorId');
+    localStorage.removeItem('studentId');
+
+    return true;
+  }
+  return false;
 }
 
 async function fazerLogin() {
@@ -60,15 +77,25 @@ async function fazerLogin() {
       }
 
       setError(msg);
-      disable(loginBtn, false);
       return;
     }
 
     const role = normRole(data.user.role);
 
+    // ✅ bloqueia se não for STUDENT (aluno)
+    if (role !== 'STUDENT' && role !== 'ALUNO') {
+      // NÃO loga e NÃO redireciona
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('professorId');
+      localStorage.removeItem('studentId');
+
+      setError('Este acesso é apenas para estudantes.');
+      return;
+    }
+
     // evita conflito de papéis
     localStorage.removeItem('professorId');
-    localStorage.removeItem('studentId');
 
     // ✅ padrão novo (token + user)
     localStorage.setItem('token', data.token);
@@ -76,18 +103,6 @@ async function fazerLogin() {
 
     // ✅ compatibilidade com seu padrão antigo
     localStorage.setItem('studentId', data.user.id);
-
-    if (role !== 'STUDENT') {
-  // NÃO loga e NÃO redireciona
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  localStorage.removeItem('professorId');
-  localStorage.removeItem('studentId');
-
-  setError('Este acesso é apenas para estudantes.');
-  disable(loginBtn, false);
-  return;
-}
 
     window.location.replace('painel-aluno.html');
   } catch {
@@ -121,12 +136,15 @@ async function reenviarVerificacao() {
     const data = await res.json().catch(() => null);
 
     if (!res.ok || !data?.ok) {
-      setError(data?.message || data?.error || 'Não foi possível reenviar agora.');
-      disable(resendVerifyBtn, false);
+      setError(
+        data?.message || data?.error || 'Não foi possível reenviar agora.',
+      );
       return;
     }
 
-    setError('Pronto! Enviamos um novo link. Verifique a caixa de entrada e o Spam.');
+    setError(
+      'Pronto! Enviamos um novo link. Verifique a caixa de entrada e o Spam.',
+    );
     show(resendVerifyBtn, false);
   } catch {
     setError('Erro ao reenviar o link. Tente novamente.');
@@ -140,12 +158,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const pass = document.getElementById('password');
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
 
+  // ✅ evita looping pós-logout
+  if (justLoggedOutGuard()) {
+    // não faz auto-redirect; deixa a tela parada no login
+    return;
+  }
+
   // ✅ Se já estiver logado com token e for STUDENT, vai direto
   const token = localStorage.getItem('token');
   const userJson = localStorage.getItem('user');
   try {
     const user = userJson ? JSON.parse(userJson) : null;
-    if (token && normRole(user?.role) === 'STUDENT') {
+    const role = normRole(user?.role);
+
+    if (token && (role === 'STUDENT' || role === 'ALUNO')) {
       window.location.replace('painel-aluno.html');
       return;
     }
@@ -165,4 +191,3 @@ document.addEventListener('DOMContentLoaded', () => {
     resendVerifyBtn.addEventListener('click', reenviarVerificacao);
   }
 });
-
