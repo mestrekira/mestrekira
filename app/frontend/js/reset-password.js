@@ -1,12 +1,21 @@
+// reset-password.js
+// Página que define a nova senha (via token no link)
 import { API_URL } from './config.js';
-
-function setStatus(msg) {
-  const el = document.getElementById('status');
-  if (el) el.textContent = msg || '';
-}
+import { toast } from './ui-feedback.js';
 
 function disable(btn, value) {
   if (btn) btn.disabled = !!value;
+}
+
+function notify(type, title, message, duration) {
+  toast({
+    type,
+    title,
+    message,
+    duration:
+      duration ??
+      (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+  });
 }
 
 function getTokenFromUrl() {
@@ -24,13 +33,12 @@ function getRedirectTarget() {
   const role = getRoleFromUrl();
   if (role === 'professor') return 'login-professor.html';
   if (role === 'student') return 'login-aluno.html';
-  return 'index.html'; // fallback seguro
+  return 'index.html'; // fallback
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const token = getTokenFromUrl();
 
-  const hintEl = document.getElementById('hint');
   const passEl = document.getElementById('newPassword');
   const confirmEl = document.getElementById('confirmPassword');
   const btn = document.getElementById('resetBtn');
@@ -38,9 +46,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!btn) return;
 
   if (!token) {
-    setStatus('Token ausente. Use o link enviado ao seu e-mail.');
-    if (hintEl) hintEl.textContent = 'Token ausente. Volte e solicite um novo link.';
     disable(btn, true);
+    notify(
+      'error',
+      'Link inválido',
+      'Token ausente. Use o link enviado ao seu e-mail e solicite um novo se necessário.',
+      5200,
+    );
     return;
   }
 
@@ -48,20 +60,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const newPassword = passEl?.value || '';
     const confirm = confirmEl?.value || '';
 
-    setStatus('');
-
     if (!newPassword || newPassword.length < 8) {
-      setStatus('A senha deve ter no mínimo 8 caracteres.');
+      notify('warn', 'Senha fraca', 'A senha deve ter no mínimo 8 caracteres.');
       return;
     }
 
     if (newPassword !== confirm) {
-      setStatus('As senhas não coincidem.');
+      notify('warn', 'Senhas diferentes', 'As senhas não coincidem.');
       return;
     }
 
     disable(btn, true);
-    setStatus('Salvando nova senha...');
+    notify('info', 'Salvando...', 'Aplicando sua nova senha...', 1800);
 
     try {
       const res = await fetch(`${API_URL}/auth/reset-password`, {
@@ -73,12 +83,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.ok) {
-        setStatus(data?.message || data?.error || 'Não foi possível redefinir a senha.');
+        notify(
+          'error',
+          'Não foi possível redefinir',
+          data?.message || data?.error || 'Tente novamente.',
+        );
         disable(btn, false);
         return;
       }
 
-      setStatus('Senha redefinida com sucesso! Você já pode fazer login.');
+      notify('success', 'Pronto!', 'Senha redefinida com sucesso. Faça login.', 2200);
 
       if (passEl) passEl.value = '';
       if (confirmEl) confirmEl.value = '';
@@ -86,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = getRedirectTarget();
       setTimeout(() => window.location.replace(target), 1200);
     } catch {
-      setStatus('Erro ao redefinir senha. Tente novamente.');
+      notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
       disable(btn, false);
     }
   });
