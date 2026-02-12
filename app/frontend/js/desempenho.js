@@ -703,6 +703,52 @@ async function carregarDesempenho(roomId) {
   }
 }
 
+const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+
+async function baixarPdf(roomId) {
+  if (!roomId) {
+    alert('Selecione uma sala primeiro.');
+    return;
+  }
+
+  const url =
+    `${API_URL}/pdf/performance/student` +
+    `?roomId=${encodeURIComponent(roomId)}` +
+    `&studentId=${encodeURIComponent(studentId)}`;
+
+  try {
+    downloadPdfBtn && (downloadPdfBtn.disabled = true);
+    if (statusEl) statusEl.textContent = 'Gerando PDF...';
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const blob = await res.blob();
+
+    const a = document.createElement('a');
+    const blobUrl = URL.createObjectURL(blob);
+    a.href = blobUrl;
+    a.download = `desempenho-${roomId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+
+    if (statusEl) statusEl.textContent = '';
+  } catch (e) {
+    console.error(e);
+    if (statusEl) statusEl.textContent = 'Erro ao gerar PDF.';
+  } finally {
+    downloadPdfBtn && (downloadPdfBtn.disabled = false);
+  }
+}
+
+if (downloadPdfBtn) {
+  downloadPdfBtn.addEventListener('click', () => {
+    const roomId = roomSelect?.value || '';
+    baixarPdf(roomId);
+  });
+}
 // INIT
 (async () => {
   const rooms = await carregarSalasDoAluno();
@@ -723,3 +769,4 @@ async function carregarDesempenho(roomId) {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
+
