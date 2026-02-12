@@ -23,6 +23,7 @@ const avgC5 = document.getElementById('avgC5');
 
 const avgDonutEl = document.getElementById('avgDonut');
 const avgLegendEl = document.getElementById('avgLegend');
+const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 
 const historyList = document.getElementById('historyList');
 
@@ -856,3 +857,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btn) btn.style.display = 'none';
   }
 });
+
