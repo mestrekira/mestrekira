@@ -1,4 +1,5 @@
 import { API_URL } from './config.js';
+import { toast } from './ui-feedback.js';
 
 // ✅ aluno logado
 const studentId = localStorage.getItem('studentId');
@@ -24,6 +25,18 @@ const avgDonutEl = document.getElementById('avgDonut');
 const avgLegendEl = document.getElementById('avgLegend');
 
 const historyList = document.getElementById('historyList');
+
+// ---------------- Toast helper ----------------
+function notify(type, title, message, duration) {
+  toast({
+    type,
+    title,
+    message,
+    duration:
+      duration ??
+      (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
+  });
+}
 
 // ---------------- util ----------------
 function setText(el, value) {
@@ -275,6 +288,128 @@ function renderDonutWithLegend(targetDonutEl, targetLegendEl, { c1, c2, c3, c4, 
   targetLegendEl.appendChild(legend);
 }
 
+// ---------------- PDF DOWNLOAD (profissional) ----------------
+
+function ensureResumoPdfButton() {
+  // tenta ancorar dentro do “resumo” (onde estão as médias)
+  // 1) preferível: se existir um container específico no HTML
+  let host =
+    document.getElementById('resumoBox') ||
+    document.getElementById('resumo') ||
+    document.getElementById('avgBox') ||
+    (avgTotal ? avgTotal.closest('.card') : null) ||
+    (avgDonutEl ? avgDonutEl.parentElement : null);
+
+  if (!host) return null;
+
+  let wrap = host.querySelector('#mkPdfBtnWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'mkPdfBtnWrap';
+    wrap.style.display = 'flex';
+    wrap.style.justifyContent = 'flex-end';
+    wrap.style.marginTop = '10px';
+    host.appendChild(wrap);
+  }
+
+  let btn = wrap.querySelector('#downloadPdfBtn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'downloadPdfBtn';
+    btn.type = 'button';
+    btn.textContent = 'Baixar PDF do desempenho';
+    btn.style.padding = '10px 14px';
+    btn.style.borderRadius = '12px';
+    btn.style.border = '1px solid #e5e7eb';
+    btn.style.background = '#fff';
+    btn.style.cursor = 'pointer';
+    btn.style.fontWeight = '800';
+    btn.style.boxShadow = '0 8px 18px rgba(2, 6, 23, 0.05)';
+    wrap.appendChild(btn);
+  }
+
+  return btn;
+}
+
+function setPdfBtnLoading(btn, loading) {
+  if (!btn) return;
+  btn.disabled = !!loading;
+  btn.style.opacity = loading ? '0.7' : '1';
+  btn.textContent = loading ? 'Gerando PDF...' : 'Baixar PDF do desempenho';
+}
+
+async function downloadStudentPerformancePdf(roomId) {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    notify('warn', 'Sessão expirada', 'Faça login novamente para baixar o PDF.');
+    window.location.replace('login-aluno.html');
+    return;
+  }
+
+  const url =
+    `${API_URL}/pdf/student-performance?roomId=${encodeURIComponent(roomId)}` +
+    `&studentId=${encodeURIComponent(studentId)}`;
+
+  const btn = document.getElementById('downloadPdfBtn');
+  setPdfBtnLoading(btn, true);
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      let msg = `Erro ao gerar PDF (HTTP ${res.status}).`;
+      try {
+        const data = await res.json();
+        msg = data?.message || data?.error || msg;
+      } catch {
+        // ignora
+      }
+
+      if (res.status === 401 || res.status === 403) {
+        notify('error', 'Acesso negado', 'Faça login novamente para baixar o PDF.');
+        window.location.replace('login-aluno.html');
+        return;
+      }
+
+      notify('error', 'Não foi possível gerar o PDF', msg);
+      return;
+    }
+
+    const blob = await res.blob();
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('pdf')) {
+      notify('error', 'Resposta inválida', 'O servidor não retornou um PDF.');
+      return;
+    }
+
+    const nameFromHeader = res.headers.get('content-disposition') || '';
+    let filename = `desempenho-${studentId}.pdf`;
+    const m = /filename="([^"]+)"/i.exec(nameFromHeader);
+    if (m && m[1]) filename = m[1];
+
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(blobUrl);
+
+    notify('success', 'PDF baixado', 'Seu desempenho foi gerado com sucesso.');
+  } catch (e) {
+    console.error(e);
+    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+  } finally {
+    setPdfBtnLoading(btn, false);
+  }
+}
+
 // ---------------- tarefas: buscar títulos + createdAt ----------------
 async function fetchTasksMetaByRoom(roomId) {
   try {
@@ -461,7 +596,6 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
     return { taskId, title, list };
   });
 
-  // ✅ mais recente no topo; resto por nome
   tasks.sort((a, b) => {
     if (newestTaskId) {
       const aIs = String(a.taskId) === String(newestTaskId) ? 1 : 0;
@@ -481,7 +615,6 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
     li.style.background = '#fff';
     li.style.boxShadow = '0 8px 18px rgba(2, 6, 23, 0.05)';
 
-    // ✅ destaque visual no card mais recente
     if (isNewest) {
       li.style.border = '2px solid rgba(109,40,217,.35)';
       li.style.boxShadow = '0 10px 24px rgba(109,40,217,0.12)';
@@ -569,9 +702,6 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
     li.appendChild(panel);
 
     historyList.appendChild(li);
-
-    // ✅ opcional: você pode autoabrir o mais recente (descomente)
-    // if (isNewest) openPanel();
   });
 }
 
@@ -618,6 +748,9 @@ async function carregarDesempenho(roomId) {
     setStatus('Selecione uma sala.');
     clearResumo();
     renderTasksHistory([], new Map(), null);
+
+    const btn = ensureResumoPdfButton();
+    if (btn) btn.style.display = 'none';
     return;
   }
 
@@ -625,8 +758,14 @@ async function carregarDesempenho(roomId) {
   clearResumo();
   renderTasksHistory([], new Map(), null);
 
+  // ✅ garante botão dentro do resumo e liga o clique
+  const pdfBtn = ensureResumoPdfButton();
+  if (pdfBtn) {
+    pdfBtn.style.display = 'inline-flex';
+    pdfBtn.onclick = () => downloadStudentPerformancePdf(roomId);
+  }
+
   try {
-    // 1) desempenho do aluno
     const res = await fetch(
       `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(
         roomId
@@ -642,24 +781,17 @@ async function carregarDesempenho(roomId) {
       return;
     }
 
-    // 2) tarefas da sala (títulos + possível createdAt)
     const tasksRaw = await fetchTasksMetaByRoom(roomId);
     const tasksMeta = normalizeTasksMeta(tasksRaw);
     const tasksMap = buildTasksMap(tasksRaw);
 
-    // 3) calcula tarefa mais recente
     let newestTaskId = computeNewestTaskIdFromTasksMeta(tasksMeta);
-
-    // se não tem createdAt, tenta pelo envio das redações
     if (!newestTaskId) newestTaskId = computeNewestTaskIdFromEssays(essays);
-
-    // fallback: primeira task presente nas redações
     if (!newestTaskId) {
       const first = essays.find((e) => e?.taskId);
       newestTaskId = first ? String(first.taskId) : null;
     }
 
-    // 3) resumo (somente corrigidas)
     const corrected = essays.filter((e) => e.score !== null && e.score !== undefined);
 
     const mTotal = mean(corrected.map((e) => e.score));
@@ -676,7 +808,6 @@ async function carregarDesempenho(roomId) {
     setText(avgC4, mC4);
     setText(avgC5, mC5);
 
-    // ✅ gráfico do resumo (média geral)
     if (mTotal !== null) {
       renderDonutWithLegend(avgDonutEl, avgLegendEl, {
         c1: mC1 ?? 0,
@@ -692,7 +823,6 @@ async function carregarDesempenho(roomId) {
       if (avgLegendEl) avgLegendEl.innerHTML = '';
     }
 
-    // 4) histórico por tarefa (com destaque da mais recente)
     renderTasksHistory(essays, tasksMap, newestTaskId);
 
     setStatus('');
@@ -700,115 +830,12 @@ async function carregarDesempenho(roomId) {
     console.error(e);
     setStatus('Erro ao carregar desempenho.');
     renderTasksHistory([], new Map(), null);
+    notify('error', 'Erro', 'Não foi possível carregar seu desempenho agora.');
   }
 }
 
-const downloadPdfBtn = document.getElementById('downloadPdfBtn');
-
-async function baixarPdf(roomId) {
-  if (!roomId) {
-    alert('Selecione uma sala primeiro.');
-    return;
-  }
-
-  const url =
-    `${API_URL}/pdf/performance/student` +
-    `?roomId=${encodeURIComponent(roomId)}` +
-    `&studentId=${encodeURIComponent(studentId)}`;
-
-  try {
-    downloadPdfBtn && (downloadPdfBtn.disabled = true);
-    if (statusEl) statusEl.textContent = 'Gerando PDF...';
-
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const blob = await res.blob();
-
-    const a = document.createElement('a');
-    const blobUrl = URL.createObjectURL(blob);
-    a.href = blobUrl;
-    a.download = `desempenho-${roomId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(blobUrl);
-
-    if (statusEl) statusEl.textContent = '';
-  } catch (e) {
-    console.error(e);
-    if (statusEl) statusEl.textContent = 'Erro ao gerar PDF.';
-  } finally {
-    downloadPdfBtn && (downloadPdfBtn.disabled = false);
-  }
-}
-
-if (downloadPdfBtn) {
-  downloadPdfBtn.addEventListener('click', () => {
-    const roomId = roomSelect?.value || '';
-    baixarPdf(roomId);
-  });
-}
-
-async function downloadPdfForRoom(roomId) {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    alert('Você precisa estar logado novamente.');
-    return;
-  }
-
-  const url = `${API_URL}/pdf/student-performance?roomId=${encodeURIComponent(
-    roomId
-  )}&studentId=${encodeURIComponent(studentId)}`;
-
-  try {
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`HTTP ${res.status} ${text}`);
-    }
-
-    const blob = await res.blob();
-
-    const a = document.createElement('a');
-    const objectUrl = URL.createObjectURL(blob);
-    a.href = objectUrl;
-
-    // nome do arquivo com data
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    a.download = `desempenho-${roomId}-${y}${m}${day}.pdf`;
-
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(objectUrl);
-  } catch (e) {
-    console.error(e);
-    alert('Não foi possível gerar o PDF agora.');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const downloadBtn = document.getElementById('downloadPdfBtn');
-  if (downloadBtn) {
-    downloadBtn.addEventListener('click', () => {
-      const roomId = roomSelect?.value || '';
-      if (!roomId) return;
-      downloadPdfForRoom(roomId);
-    });
-  }
-});
 // INIT
-(async () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const rooms = await carregarSalasDoAluno();
 
   if (roomSelect) {
@@ -825,7 +852,7 @@ document.addEventListener('DOMContentLoaded', () => {
     carregarDesempenho(roomSelect.value);
   } else {
     setStatus('Você não está matriculado em nenhuma sala.');
+    const btn = ensureResumoPdfButton();
+    if (btn) btn.style.display = 'none';
   }
-})();
-
-
+});
