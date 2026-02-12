@@ -749,6 +749,64 @@ if (downloadPdfBtn) {
     baixarPdf(roomId);
   });
 }
+
+async function downloadPdfForRoom(roomId) {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Você precisa estar logado novamente.');
+    return;
+  }
+
+  const url = `${API_URL}/pdf/student-performance?roomId=${encodeURIComponent(
+    roomId
+  )}&studentId=${encodeURIComponent(studentId)}`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} ${text}`);
+    }
+
+    const blob = await res.blob();
+
+    const a = document.createElement('a');
+    const objectUrl = URL.createObjectURL(blob);
+    a.href = objectUrl;
+
+    // nome do arquivo com data
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    a.download = `desempenho-${roomId}-${y}${m}${day}.pdf`;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch (e) {
+    console.error(e);
+    alert('Não foi possível gerar o PDF agora.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const downloadBtn = document.getElementById('downloadPdfBtn');
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      const roomId = roomSelect?.value || '';
+      if (!roomId) return;
+      downloadPdfForRoom(roomId);
+    });
+  }
+});
 // INIT
 (async () => {
   const rooms = await carregarSalasDoAluno();
@@ -769,4 +827,5 @@ if (downloadPdfBtn) {
     setStatus('Você não está matriculado em nenhuma sala.');
   }
 })();
+
 
