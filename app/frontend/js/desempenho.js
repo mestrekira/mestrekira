@@ -23,9 +23,11 @@ const avgC5 = document.getElementById('avgC5');
 
 const avgDonutEl = document.getElementById('avgDonut');
 const avgLegendEl = document.getElementById('avgLegend');
-const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 
 const historyList = document.getElementById('historyList');
+
+// ✅ botão que já existe no seu HTML
+const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 
 // ---------------- Toast helper ----------------
 function notify(type, title, message, duration) {
@@ -37,6 +39,15 @@ function notify(type, title, message, duration) {
       duration ??
       (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
   });
+}
+
+function setPdfBtnLoading(loading) {
+  if (!downloadPdfBtn) return;
+  downloadPdfBtn.disabled = !!loading;
+  downloadPdfBtn.style.opacity = loading ? '0.7' : '1';
+  downloadPdfBtn.textContent = loading
+    ? 'Gerando PDF...'
+    : 'Baixar desempenho (PDF)';
 }
 
 // ---------------- util ----------------
@@ -289,56 +300,7 @@ function renderDonutWithLegend(targetDonutEl, targetLegendEl, { c1, c2, c3, c4, 
   targetLegendEl.appendChild(legend);
 }
 
-// ---------------- PDF DOWNLOAD (profissional) ----------------
-
-function ensureResumoPdfButton() {
-  // tenta ancorar dentro do “resumo” (onde estão as médias)
-  // 1) preferível: se existir um container específico no HTML
-  let host =
-    document.getElementById('resumoBox') ||
-    document.getElementById('resumo') ||
-    document.getElementById('avgBox') ||
-    (avgTotal ? avgTotal.closest('.card') : null) ||
-    (avgDonutEl ? avgDonutEl.parentElement : null);
-
-  if (!host) return null;
-
-  let wrap = host.querySelector('#mkPdfBtnWrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'mkPdfBtnWrap';
-    wrap.style.display = 'flex';
-    wrap.style.justifyContent = 'flex-end';
-    wrap.style.marginTop = '10px';
-    host.appendChild(wrap);
-  }
-
-  let btn = wrap.querySelector('#downloadPdfBtn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'downloadPdfBtn';
-    btn.type = 'button';
-    btn.textContent = 'Baixar PDF do desempenho';
-    btn.style.padding = '10px 14px';
-    btn.style.borderRadius = '12px';
-    btn.style.border = '1px solid #e5e7eb';
-    btn.style.background = '#fff';
-    btn.style.cursor = 'pointer';
-    btn.style.fontWeight = '800';
-    btn.style.boxShadow = '0 8px 18px rgba(2, 6, 23, 0.05)';
-    wrap.appendChild(btn);
-  }
-
-  return btn;
-}
-
-function setPdfBtnLoading(btn, loading) {
-  if (!btn) return;
-  btn.disabled = !!loading;
-  btn.style.opacity = loading ? '0.7' : '1';
-  btn.textContent = loading ? 'Gerando PDF...' : 'Baixar PDF do desempenho';
-}
-
+// ---------------- PDF DOWNLOAD (Bearer) ----------------
 async function downloadStudentPerformancePdf(roomId) {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -351,8 +313,7 @@ async function downloadStudentPerformancePdf(roomId) {
     `${API_URL}/pdf/student-performance?roomId=${encodeURIComponent(roomId)}` +
     `&studentId=${encodeURIComponent(studentId)}`;
 
-  const btn = document.getElementById('downloadPdfBtn');
-  setPdfBtnLoading(btn, true);
+  setPdfBtnLoading(true);
 
   try {
     const res = await fetch(url, {
@@ -368,7 +329,7 @@ async function downloadStudentPerformancePdf(roomId) {
         const data = await res.json();
         msg = data?.message || data?.error || msg;
       } catch {
-        // ignora
+        // pode não ser JSON
       }
 
       if (res.status === 401 || res.status === 403) {
@@ -388,9 +349,10 @@ async function downloadStudentPerformancePdf(roomId) {
       return;
     }
 
-    const nameFromHeader = res.headers.get('content-disposition') || '';
+    // tenta pegar filename do header; se não, usa fallback
+    const cd = res.headers.get('content-disposition') || '';
     let filename = `desempenho-${studentId}.pdf`;
-    const m = /filename="([^"]+)"/i.exec(nameFromHeader);
+    const m = /filename="([^"]+)"/i.exec(cd);
     if (m && m[1]) filename = m[1];
 
     const blobUrl = window.URL.createObjectURL(blob);
@@ -402,12 +364,12 @@ async function downloadStudentPerformancePdf(roomId) {
     a.remove();
     window.URL.revokeObjectURL(blobUrl);
 
-    notify('success', 'PDF baixado', 'Seu desempenho foi gerado com sucesso.');
+    notify('success', 'PDF pronto', 'Download iniciado.');
   } catch (e) {
     console.error(e);
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
   } finally {
-    setPdfBtnLoading(btn, false);
+    setPdfBtnLoading(false);
   }
 }
 
@@ -634,8 +596,8 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
     if (isNewest) titleWrap.appendChild(makeNewestBadge());
 
     const essay = t.list[0];
-
     const score = safeScore(essay?.score);
+
     const resumo = document.createElement('div');
     resumo.style.marginTop = '6px';
     resumo.style.fontSize = '12px';
@@ -745,26 +707,22 @@ async function carregarSalasDoAluno() {
 
 // ---------------- desempenho do aluno na sala ----------------
 async function carregarDesempenho(roomId) {
+  // ✅ liga/desliga botão conforme sala
+  if (downloadPdfBtn) {
+    downloadPdfBtn.style.display = roomId ? 'inline-block' : 'none';
+    downloadPdfBtn.onclick = roomId ? () => downloadStudentPerformancePdf(roomId) : null;
+  }
+
   if (!roomId) {
     setStatus('Selecione uma sala.');
     clearResumo();
     renderTasksHistory([], new Map(), null);
-
-    const btn = ensureResumoPdfButton();
-    if (btn) btn.style.display = 'none';
     return;
   }
 
   setStatus('Carregando...');
   clearResumo();
   renderTasksHistory([], new Map(), null);
-
-  // ✅ garante botão dentro do resumo e liga o clique
-  const pdfBtn = ensureResumoPdfButton();
-  if (pdfBtn) {
-    pdfBtn.style.display = 'inline-flex';
-    pdfBtn.onclick = () => downloadStudentPerformancePdf(roomId);
-  }
 
   try {
     const res = await fetch(
@@ -837,6 +795,9 @@ async function carregarDesempenho(roomId) {
 
 // INIT
 document.addEventListener('DOMContentLoaded', async () => {
+  // botão começa oculto até ter sala
+  if (downloadPdfBtn) downloadPdfBtn.style.display = 'none';
+
   const rooms = await carregarSalasDoAluno();
 
   if (roomSelect) {
@@ -853,8 +814,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     carregarDesempenho(roomSelect.value);
   } else {
     setStatus('Você não está matriculado em nenhuma sala.');
-    const btn = ensureResumoPdfButton();
-    if (btn) btn.style.display = 'none';
+    if (downloadPdfBtn) downloadPdfBtn.style.display = 'none';
   }
 });
-
