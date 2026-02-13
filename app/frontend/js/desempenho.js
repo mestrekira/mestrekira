@@ -323,31 +323,52 @@ async function downloadStudentPerformancePdf(roomId) {
       },
     });
 
+    // 401/403: sessão/permite
+    if (res.status === 401 || res.status === 403) {
+      notify('error', 'Acesso negado', 'Faça login novamente para baixar o PDF.');
+      window.location.replace('login-aluno.html');
+      return;
+    }
+
+    // Se não ok, tenta extrair msg útil (json ou texto)
     if (!res.ok) {
       let msg = `Erro ao gerar PDF (HTTP ${res.status}).`;
+
       try {
         const data = await res.json();
-        msg = data?.message || data?.error || msg;
+        const m = data?.message ?? data?.error;
+        if (Array.isArray(m)) msg = m.join(' | ');
+        else if (typeof m === 'string') msg = m;
       } catch {
-        // pode não ser JSON
-      }
-
-      if (res.status === 401 || res.status === 403) {
-        notify('error', 'Acesso negado', 'Faça login novamente para baixar o PDF.');
-        window.location.replace('login-aluno.html');
-        return;
+        try {
+          const t = await res.text();
+          if (t) msg = t.slice(0, 300);
+        } catch {
+          // ignora
+        }
       }
 
       notify('error', 'Não foi possível gerar o PDF', msg);
       return;
     }
 
-    const blob = await res.blob();
+    // ✅ checa content-type antes de baixar
     const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('pdf')) {
-      notify('error', 'Resposta inválida', 'O servidor não retornou um PDF.');
+    if (!contentType.toLowerCase().includes('application/pdf') && !contentType.toLowerCase().includes('pdf')) {
+      let msg = 'O servidor não retornou um PDF.';
+      try {
+        const data = await res.json();
+        const m = data?.message ?? data?.error;
+        if (Array.isArray(m)) msg = m.join(' | ');
+        else if (typeof m === 'string') msg = m;
+      } catch {
+        // pode não ser JSON
+      }
+      notify('error', 'Resposta inválida', msg);
       return;
     }
+
+    const blob = await res.blob();
 
     // tenta pegar filename do header; se não, usa fallback
     const cd = res.headers.get('content-disposition') || '';
@@ -817,3 +838,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (downloadPdfBtn) downloadPdfBtn.style.display = 'none';
   }
 });
+
