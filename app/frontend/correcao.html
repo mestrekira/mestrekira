@@ -10,32 +10,31 @@
 </head>
 <body>
 
-<!-- ✅ IMPORTANTE (checklist aplicado):
-     - Só existe 1 #menuBtn e 1 #menuPanel nesta página
-     - Apenas 1 initMenuPerfil() no final
--->
-
-<!-- 🔹 Botão do menu (canto superior) -->
 <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
-<!-- 🔹 Painel oculto -->
 <aside id="menuPanel" class="menu-panel">
   <div class="menu-header">
     <strong>Meu perfil</strong>
     <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
   </div>
 
-  <div class="menu-body">
-    <div class="menu-photo">
-      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <label class="menu-photo-label">
-        Alterar foto
-        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-      </label>
-    </div>
-    
-<a href="suporte.html" class="menu-item">Suporte</a>
-    
+ <div class="menu-photo">
+  <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+
+  <div class="menu-photo-actions">
+    <label class="menu-photo-label">
+      Alterar foto
+      <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+    </label>
+
+    <a href="suporte.html"
+       class="menu-photo-support"
+       title="Abrir página de suporte">
+      Suporte
+    </a>
+  </div>
+</div>
+  
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
     <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
@@ -58,7 +57,6 @@
 
 <h2>Correção de Redações</h2>
 
-<!-- ✅ tema da tarefa -->
 <section class="task-header">
   <h3 id="taskTitle" style="margin:0;">Tema: —</h3>
   <p id="taskMeta" class="muted" style="margin:6px 0 0;"></p>
@@ -91,7 +89,6 @@
   <h4>Correção</h4>
   <p><strong>Competências (0 a 200 cada)</strong></p>
   
-<!-- ✅ Fichas de critérios (ENEM) -->
 <div id="rubricTools" class="rubric-tools">
   <p class="rubric-tools-title"><strong>Ficha de critérios (ENEM)</strong></p>
  <p class="rubric-tools-sub">
@@ -102,7 +99,6 @@
 
 </div>
 
-  <!-- C1 -->
 <div class="comp-wrap">
   <div class="comp-head">
     <label for="c1"><strong>Competência 1:</strong> Domínio da norma culta</label>
@@ -117,7 +113,6 @@
   <div class="rubric-panel" id="rubric-c1" hidden></div>
 </div>
 
-<!-- C2 -->
 <div class="comp-wrap">
   <div class="comp-head">
     <label for="c2"><strong>Competência 2:</strong> Compreensão do tema e repertório</label>
@@ -132,7 +127,6 @@
   <div class="rubric-panel" id="rubric-c2" hidden></div>
 </div>
 
-<!-- C3 -->
 <div class="comp-wrap">
   <div class="comp-head">
     <label for="c3"><strong>Competência 3:</strong> Argumentação</label>
@@ -147,7 +141,6 @@
   <div class="rubric-panel" id="rubric-c3" hidden></div>
 </div>
 
-<!-- C4 -->
 <div class="comp-wrap">
   <div class="comp-head">
     <label for="c4"><strong>Competência 4:</strong> Coesão e coerência</label>
@@ -162,7 +155,6 @@
   <div class="rubric-panel" id="rubric-c4" hidden></div>
 </div>
 
-<!-- C5 -->
 <div class="comp-wrap">
   <div class="comp-head">
     <label for="c5"><strong>Competência 5:</strong> Proposta de intervenção</label>
