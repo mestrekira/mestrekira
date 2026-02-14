@@ -8,9 +8,7 @@
    <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="icon" href="logo1.png" type="image/png">
 
-  <!-- ✅ Ajustes locais só desta página (botão voltar menor + meta de datas) -->
   <style>
-    /* Metadados (Enviada em / Corrigida em) */
     #essayMeta {
       margin-top: 6px;
       font-size: 12px;
@@ -48,16 +46,22 @@
     <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
   </div>
 
-  <div class="menu-body">
-    <div class="menu-photo">
-      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <label class="menu-photo-label">
-        Alterar foto
-        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-      </label>
-    </div>
+<div class="menu-photo">
+  <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
 
-    <a href="suporte.html" class="menu-item">Suporte</a>
+  <div class="menu-photo-actions">
+    <label class="menu-photo-label">
+      Alterar foto
+      <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+    </label>
+
+    <a href="suporte.html"
+       class="menu-photo-support"
+       title="Abrir página de suporte">
+      Suporte
+    </a>
+  </div>
+</div>
 
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
@@ -68,7 +72,6 @@
     <h4>Atualizar dados</h4>
     <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
     <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
-    <!-- (Opcional, mas recomendado): envolver em form evita o aviso do Chrome -->
     <button id="saveProfileBtn">Salvar</button>
 
     <p id="menuStatus"></p>
@@ -86,7 +89,6 @@
   <h3>Tema</h3>
   <p id="taskTitle"></p>
 
-  <!-- ✅ NOVO: datas de envio/correção (usado pelo feedback-aluno.js) -->
   <div id="essayMeta"></div>
 </section>
 
@@ -117,7 +119,6 @@
 <br>
 
 <div class="actions-row">
-  <!-- ✅ botão menor -->
   <button id="backBtn" class="btn-small">Voltar ao painel</button>
 </div>
 
@@ -135,6 +136,7 @@
 <script src="js/footer.js"></script>
 </body>
 </html>
+
 
 
 
