@@ -11,51 +11,53 @@
 <body>
 
  
-  <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+ <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
- 
-  <aside id="menuPanel" class="menu-panel">
-    <div class="menu-header">
-      <strong>Meu perfil</strong>
-      <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
-    </div>
-
-    <div class="menu-photo">
-  <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-
-  <div class="menu-photo-actions">
-    <label class="menu-photo-label">
-      Alterar foto
-      <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-    </label>
-
-    <a href="suporte.html"
-       class="menu-photo-support"
-       title="Abrir página de suporte">
-      Suporte
-    </a>
+<aside id="menuPanel" class="menu-panel">
+  <div class="menu-header">
+    <strong>Meu perfil</strong>
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
   </div>
-</div>
-      
-      <p><strong>Nome:</strong> <span id="meName">...</span></p>
-      <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
-      <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
-      <hr>
+  <div class="menu-body">
+    <div class="menu-photo">
+      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
 
-      <h4>Atualizar dados</h4>
-      <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
-      <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
-      <button id="saveProfileBtn">Salvar</button>
+      <div class="menu-photo-actions">
+        <label class="menu-photo-label" title="Alterar foto do perfil">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
 
-      <p id="menuStatus"></p>
-
-      <hr>
-
-      <button id="logoutMenuBtn">Sair</button>
-      <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+        <a
+          href="suporte.html"
+          class="menu-photo-support"
+          title="Abrir página de suporte"
+        >
+          Suporte
+        </a>
+      </div>
     </div>
-  </aside>
+
+    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+
+    <hr>
+
+    <h4>Atualizar dados</h4>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+    <button id="saveProfileBtn">Salvar</button>
+
+    <p id="menuStatus"></p>
+
+    <hr>
+
+    <button id="logoutMenuBtn">Sair</button>
+    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+  </div>
+</aside>
 
   <header class="topbar">
     <h2>Minhas Salas</h2>
