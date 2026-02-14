@@ -17,16 +17,22 @@
     <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
   </div>
 
-  <div class="menu-body">
-    <div class="menu-photo">
-      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <label class="menu-photo-label">
-        Alterar foto
-        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-      </label>
-    </div>
+<div class="menu-photo">
+  <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
 
-    <a href="suporte.html" class="menu-item">Suporte</a>
+  <div class="menu-photo-actions">
+    <label class="menu-photo-label">
+      Alterar foto
+      <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+    </label>
+
+    <a href="suporte.html"
+       class="menu-photo-support"
+       title="Abrir página de suporte">
+      Suporte
+    </a>
+  </div>
+</div>
     
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
@@ -68,18 +74,16 @@
 <section>
   <h3>Redação</h3>
 
-  <!-- ✅ título separado -->
   <div class="box" style="padding:12px;">
     <div id="essayTitle" style="font-weight:700; text-align:center; margin-bottom:10px;">—</div>
 
-    <!-- ✅ corpo preserva quebras e permite justificar -->
+    
     <div
       id="essayBody"
       style="white-space:pre-wrap; text-align:justify; line-height:1.6;"
     ></div>
   </div>
 
-  <!-- fallback (se quiser manter compatibilidade, opcional) -->
   <p id="essayContent" class="box" style="display:none;"></p>
 </section>
 
