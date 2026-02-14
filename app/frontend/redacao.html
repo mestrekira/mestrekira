@@ -20,16 +20,22 @@
     <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
   </div>
 
-  <div class="menu-body">
-    <div class="menu-photo">
-      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <label class="menu-photo-label">
-        Alterar foto
-        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-      </label>
-    </div>
+  <div class="menu-photo">
+  <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
 
-    <a href="suporte.html" class="menu-item">Suporte</a>
+  <div class="menu-photo-actions">
+    <label class="menu-photo-label">
+      Alterar foto
+      <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+    </label>
+
+    <a href="suporte.html"
+       class="menu-photo-support"
+       title="Abrir página de suporte">
+      Suporte
+    </a>
+  </div>
+</div>
     
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
@@ -64,7 +70,6 @@
 <section>
   <h3>Escreva sua redação</h3>
 
-  <!-- ✅ TÍTULO separado -->
   <input
     id="essayTitle"
     class="essay-title-input"
@@ -93,7 +98,7 @@
   import { initMenuPerfil } from './js/menu-perfil.js';
 
   initMenuPerfil({
-    loginRedirect: 'login.html',
+    loginRedirect: 'index.html',
     logoutRedirectProfessor: 'login-professor.html',
     logoutRedirectStudent: 'login-aluno.html'
   });
@@ -102,6 +107,7 @@
 
 </body>
 </html>
+
 
 
 
