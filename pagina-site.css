@@ -676,9 +676,16 @@ header, footer {
   border-radius: 14px;
   padding: 22px 32px;
   cursor: pointer;
-  text-align: left;
+
+  /* CENTRALIZAÇÃO DO CONTEÚDO */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
   max-width: 420px;
   width: 100%;
+
   box-shadow: 0 12px 30px rgba(14, 74, 111, 0.35);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
@@ -707,15 +714,9 @@ header, footer {
   opacity: 0.9;
 }
 
-
-@media (max-width: 480px) {
-  #btnPlataformaRedacao {
-    text-align: center;
-  }
-}
-
 .cta-botao {
   display: inline-block;
   text-decoration: none;
   cursor: pointer;
 }
+
