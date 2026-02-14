@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suporte</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/suporte.css">
+  <link rel="icon" href="logo1.png" type="image/png">
+</head>
+<body>
+
+
+<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+
+<aside id="menuPanel" class="menu-panel">
+  <div class="menu-header">
+    <strong>Meu perfil</strong>
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+  </div>
+
+  <div class="menu-body">
+    <div class="menu-photo">
+      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+      <div class="menu-photo-actions">
+        <label class="menu-photo-label">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
+
+        <a class="menu-photo-support" href="suporte.html" title="Abrir suporte">
+          Suporte
+        </a>
+      </div>
+    </div>
+
+    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+
+    <hr>
+
+    <h4>Atualizar dados</h4>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+    <button id="saveProfileBtn">Salvar</button>
+
+    <p id="menuStatus"></p>
+
+    <hr>
+
+    <button id="logoutMenuBtn">Sair</button>
+    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+  </div>
+</aside>
+
+<h2>Suporte</h2>
+
+<section class="support-wrap">
+  <h3>Perguntas frequentes</h3>
+  <p class="muted">Clique em uma pergunta para abrir a resposta.</p>
+
+  <div class="support-faq">
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Como funciona a Plataforma de Redação Mestre Kira?
+        <span class="faq-icon">⌄</span>
+      </summary>
+      <div class="faq-a">
+        A plataforma organiza o processo de produção textual por <strong>salas</strong> e <strong>tarefas</strong>.
+        O estudante escreve no editor, salva rascunhos, envia e acompanha correção/nota por competências (C1 a C5),
+        gráficos de desempenho e relatório em PDF.
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        O que são as competências C1, C2, C3, C4 e C5?
+        <span class="faq-icon">⌄</span>
+      </summary>
+      <div class="faq-a">
+        São os critérios oficiais de avaliação do ENEM. Cada competência vale até <strong>200</strong> pontos,
+        totalizando <strong>1000</strong>. Você consegue ver suas médias por competência na área de desempenho.
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Posso salvar rascunho e enviar depois?
+        <span class="faq-icon">⌄</span>
+      </summary>
+      <div class="faq-a">
+        Sim. Você pode salvar rascunho para continuar depois. Quando você enviar, o registro passa a ser considerado
+        como redação enviada (dependendo das regras da tarefa).
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Como baixar o relatório em PDF?
+        <span class="faq-icon">⌄</span>
+      </summary>
+      <div class="faq-a">
+        Na página de desempenho, clique em <strong>“Baixar desempenho (PDF)”</strong>.
+        Se aparecer erro de acesso, faça login novamente.
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<hr>
+
+<section class="support-wrap">
+  <h3>Apresentação da plataforma</h3>
+  <p class="muted">Uma visão geral para compreender o funcionamento e os objetivos pedagógicos.</p>
+
+  <article class="mk-support-content">
+
+    <h4>O que é a Plataforma de Redação Mestre Kira?</h4>
+
+    <p>
+      A <strong>Plataforma de Redação Mestre Kira</strong> é um ambiente digital educacional desenvolvido para o ensino,
+      prática e aperfeiçoamento da escrita argumentativa, com foco especial no modelo de avaliação do ENEM.
+    </p>
+
+    <p>
+      Trata-se de um sistema completo que organiza o processo de produção textual em todas as suas etapas: proposta, escrita,
+      envio, correção, feedback, análise de desempenho e acompanhamento da evolução do <strong>estudante</strong>.
+    </p>
+
+    <p>
+      A plataforma integra tecnologia, metodologia pedagógica e acompanhamento formativo, promovendo aprendizagem ativa,
+      autoria e desenvolvimento progressivo das competências de escrita.
+    </p>
+
+    <h4>Para quem a plataforma foi desenvolvida?</h4>
+
+    <ul class="mk-list">
+      <li>Professores de Língua Portuguesa</li>
+      <li>Professores preparadores para ENEM e vestibulares</li>
+      <li>Estudantes do Ensino Fundamental II e Ensino Médio</li>
+      <li>Estudantes em preparação para o ENEM</li>
+      <li>Escolas e cursos que desejam organizar o processo de produção textual</li>
+    </ul>
+
+    <p>Ela pode ser utilizada tanto em contextos escolares formais quanto em estudos autônomos.</p>
+
+    <h4>Como a plataforma funciona?</h4>
+
+    <p>A organização ocorre por meio de <strong>salas virtuais</strong> criadas por professores. Cada sala reúne:</p>
+
+    <ul class="mk-list">
+      <li>Propostas de redação</li>
+      <li>Textos produzidos pelos estudantes</li>
+      <li>Correções detalhadas</li>
+      <li>Notas simuladas no padrão ENEM</li>
+      <li>Gráficos de desempenho</li>
+      <li>Relatórios em PDF</li>
+    </ul>
+
+    <p>
+      Tudo fica centralizado em um único ambiente, evitando dispersão de informações e facilitando o acompanhamento pedagógico.
+    </p>
+
+    <h4>Funcionalidades principais</h4>
+
+    <div class="mk-cards">
+      <div class="mk-card">
+        <h5>✔️ Editor autoral de redação</h5>
+        <p>O estudante escreve diretamente na plataforma. O sistema bloqueia a colagem de texto, incentivando a escrita própria e consciente.</p>
+      </div>
+
+      <div class="mk-card">
+        <h5>✔️ Envio organizado de redações</h5>
+        <p>Cada proposta gera um registro individual de envio, permitindo acompanhamento histórico.</p>
+      </div>
+
+      <div class="mk-card">
+        <h5>✔️ Correção no padrão ENEM</h5>
+        <ul class="mk-list">
+          <li>Inserir feedback textual detalhado</li>
+          <li>Atribuir notas por competência (C1 a C5)</li>
+          <li>Gerar nota total (0 a 1000)</li>
+        </ul>
+      </div>
+
+      <div class="mk-card">
+        <h5>✔️ Gráficos de desempenho</h5>
+        <ul class="mk-list">
+          <li>Média geral</li>
+          <li>Médias por competência</li>
+          <li>Evolução ao longo das atividades</li>
+        </ul>
+      </div>
+
+      <div class="mk-card">
+        <h5>✔️ Download de relatório em PDF</h5>
+        <ul class="mk-list">
+          <li>Capa personalizada</li>
+          <li>Resumo com médias</li>
+          <li>Gráfico por competência</li>
+          <li>Histórico de tarefas</li>
+          <li>Redações produzidas</li>
+        </ul>
+      </div>
+
+      <div class="mk-card">
+        <h5>✔️ Página de suporte integrada</h5>
+        <p>Área acessível pelo menu de perfil, oferecendo orientação e esclarecimento de dúvidas.</p>
+      </div>
+    </div>
+
+    <h4>Como usar — Professor</h4>
+
+    <ol class="mk-steps">
+      <li><strong>Cadastro e acesso</strong><br>Após confirmar o e-mail, tem acesso ao painel administrativo.</li>
+      <li><strong>Criação de salas</strong><br>Cria salas virtuais com código único para matrícula.</li>
+      <li><strong>Criação de tarefas</strong><br>Cria propostas com orientações e diretrizes.</li>
+      <li><strong>Correção das redações</strong><br>Avalia por competências, insere comentários e acompanha a turma.</li>
+    </ol>
+
+    <h4>Como usar — Estudante</h4>
+
+    <ol class="mk-steps">
+      <li><strong>Cadastro e matrícula</strong><br>Cria a conta e entra na sala com o código.</li>
+      <li><strong>Produção da redação</strong><br>Escrita no editor, com foco em autonomia e organização.</li>
+      <li><strong>Acompanhamento do feedback</strong><br>Visualiza nota total, C1–C5, feedback e gráficos.</li>
+      <li><strong>Análise de desempenho</strong><br>Visualiza médias, gera PDF e acompanha evolução.</li>
+    </ol>
+
+    <h4>Segurança e organização</h4>
+    <ul class="mk-list">
+      <li>Autenticação segura por token (JWT)</li>
+      <li>Verificação de e-mail</li>
+      <li>Controle de acesso por perfil (professor/estudante)</li>
+      <li>Histórico organizado por sala e tarefa</li>
+      <li>Relatórios personalizados</li>
+    </ul>
+
+   <div class="support-contact">
+  <a
+    class="btn-contact"
+    href="mailto:contato@mestrekira.com.br?subject=Suporte%20-%20Mestre%20Kira&body=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%3A%0A%0A%5Bdescreva%20aqui%5D%0A%0A---%0A%0ASe%20poss%C3%ADvel%2C%20informe%3A%0A-%20Seu%20nome%3A%0A-%20E-mail%20da%20conta%3A%0A-%20Tipo%20de%20perfil%20(Professor%2FEstudante)%3A%0A-%20P%C3%A1gina%20onde%20ocorreu%3A%0A-%20Mensagem%20de%20erro%20(se%20houver)%3A%0A"
+    title="Enviar e-mail para contato@mestrekira.com.br"
+  >
+    <span class="btn-contact__icon" aria-hidden="true">✉</span>
+    <span class="btn-contact__text">
+      <span class="btn-contact__title">Entrar em contato</span>
+      <span class="btn-contact__subtitle">contato@mestrekira.com.br</span>
+    </span>
+  </a>
+</div>
+
+    <p class="mk-final">
+      <em>Escrever é um processo. Evoluir é uma construção.<br>
+      A plataforma existe para tornar essa evolução visível.</em>
+    </p>
+
+  </article>
+</section>
+
+<script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+  initMenuPerfil({
+    loginRedirect: 'index.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html'
+  });
+</script>
+
+<script src="js/footer.js"></script>
+</body>
+</html>
