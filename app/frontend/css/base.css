@@ -1,23 +1,19 @@
-/* =========================================================
-   Mestre Kira — base.css (paleta azul-marinho/roxo/creme/preto)
-   ========================================================= */
 
-/* --------- Paleta / Tokens --------- */
 :root{
   /* base */
-  --bg: #f6f3ea;                 /* creme */
-  --card: #ffffff;               /* branco */
-  --text: #0b1220;               /* preto profundo */
-  --muted: #334155;              /* cinza azulado */
+  --bg: #f6f3ea;                 
+  --card: #ffffff;              
+  --text: #0b1220;              
+  --muted: #334155;            
   --border: rgba(11, 18, 32, 0.12);
 
-  /* destaque */
-  --navy: #0b1f4b;               /* azul-marinho */
-  --purple: #6d28d9;             /* roxo */
+  
+  --navy: #0b1f4b;              
+  --purple: #6d28d9;            
   --purple-2: #7c3aed;
   --accent: linear-gradient(90deg, #0b1f4b, #6d28d9);
 
-  /* botões */
+  
   --primary: #0b1f4b;
   --primary-600: #0a1a3d;
   --primary-700: #081432;
@@ -25,7 +21,7 @@
   --danger: #dc2626;
   --danger-700: #b91c1c;
 
-  /* layout */
+  
   --radius: 16px;
   --radius-sm: 12px;
 
@@ -40,11 +36,11 @@
   --space-4: 18px;
   --space-5: 26px;
 
-  /* ✅ cards mais largos */
+
   --maxw: 1120px;
 }
 
-/* --------- Reset --------- */
+
 *{ box-sizing: border-box; }
 html, body{ height: 100%; }
 body{
@@ -58,42 +54,42 @@ body{
     var(--bg);
   line-height: 1.5;
 
-  /* ✅ Centralização robusta (funciona mesmo com wrappers) */
+  
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* ✅ tudo centralizado com largura controlada, exceto o menu fixo */
+
 body > *:not(.menu-btn):not(.menu-panel){
   width: min(100%, var(--maxw));
   margin-left: auto;
   margin-right: auto;
 }
 
-/* --------- Tipografia --------- */
+
 h1, h2, h3, h4{ margin: 0 0 var(--space-3); letter-spacing: -0.02em; }
 p{ margin: 0 0 var(--space-3); color: var(--muted); }
 strong{ color: var(--text); }
 
-/* ✅ títulos da página (se quiser: class="page-title") */
+
 h2, .page-title{
   font-size: 26px;
   font-weight: 900;
   color: var(--navy);
 }
 
-/* ✅ títulos de seção/card (se quiser: class="card-title") */
+
 section h3, .card-title{
   font-size: 18px;
   font-weight: 900;
   color: var(--purple);
 }
 
-/* pequenos */
+
 small{ color: var(--muted); }
 
-/* --------- Divisores --------- */
+
 hr{
   border: 0;
   height: 1px;
@@ -102,7 +98,7 @@ hr{
   width: min(100%, var(--maxw));
 }
 
-/* --------- Cards (sections) --------- */
+
 section{
   background: var(--card);
   border: 1px solid rgba(11, 18, 32, 0.10);
@@ -112,7 +108,6 @@ section{
   margin: 18px 0;
 }
 
-/* --------- Forms --------- */
 label{
   display: block;
   margin: var(--space-2) 0 var(--space-1);
@@ -145,7 +140,6 @@ textarea{
 
 ::placeholder{ color: rgba(51, 65, 85, 0.75); }
 
-/* --------- Buttons --------- */
 button{
   display: inline-flex;
   align-items: center;
@@ -165,7 +159,7 @@ button:hover{ background: var(--primary-600); }
 button:active{ transform: translateY(1px); }
 button:disabled{ opacity: .55; cursor: not-allowed; box-shadow: none; }
 
-/* ✅ botão secundário (voltar/sair/ações não primárias) */
+
 button.secondary{
   background: #fff;
   color: var(--navy);
@@ -173,7 +167,6 @@ button.secondary{
 }
 button.secondary:hover{ background: rgba(11,18,32,0.04); }
 
-/* Danger */
 button.danger{
   background: #fff;
   color: var(--danger);
@@ -182,7 +175,6 @@ button.danger{
 }
 button.danger:hover{ background: rgba(220, 38, 38, 0.08); }
 
-/* --------- Lists --------- */
 ul{ margin: 0; padding: 0; list-style: none; }
 
 .lista li{
@@ -194,7 +186,7 @@ ul{ margin: 0; padding: 0; list-style: none; }
   box-shadow: 0 8px 18px rgba(2, 6, 23, 0.05);
 }
 
-/* --------- Box (áreas de leitura) --------- */
+
 .box{
   background: #fff;
   border: 1px solid rgba(11,18,32,0.12);
@@ -203,29 +195,27 @@ ul{ margin: 0; padding: 0; list-style: none; }
   box-shadow: 0 10px 22px rgba(2, 6, 23, 0.06);
   color: var(--text);
 
-  /* ✅ ESSENCIAL: impede “estouro” do texto */
+
   width: 100%;
   max-width: 100%;
   overflow-wrap: anywhere;
   word-break: break-word;
-  white-space: pre-wrap; /* mantém parágrafos */
+  white-space: pre-wrap; 
 }
 
-/* melhora para texto longo dentro da box */
+
 .box *{ max-width: 100%; }
 
-/* --------- Texto “muted” --------- */
+
 .muted{ color: var(--muted); }
 
-/* --------- Chart bar --------- */
+
 .bar{
   background: var(--accent);
   border-radius: 999px;
 }
 
-/* =========================================================
-   Menu de Perfil (com paleta)
-   ========================================================= */
+
 .menu-btn{
   position: fixed;
   top: 16px;
@@ -292,47 +282,46 @@ ul{ margin: 0; padding: 0; list-style: none; }
   overflow-y: auto;
 }
 
-.menu-photo{
+
+.menu-photo {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
 }
-.menu-photo-img{
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 1px solid rgba(11,18,32,0.14);
-  object-fit: cover;
-  background: rgba(11,18,32,0.05);
-}
-.menu-photo-label{
-  display: inline-flex;
+
+
+.menu-photo-actions {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 10px 12px;
-  border: 1px solid rgba(11,18,32,0.14);
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 900;
-  color: var(--navy);
-  background: #fff;
+  justify-content: space-between;
+  width: 100%;
 }
-.menu-photo-label:hover{ background: rgba(11,18,32,0.04); }
-.menu-photo-label input{ display:none; }
+
+
+.menu-photo-support {
+  margin-left: auto; 
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.05);
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.menu-photo-support:hover {
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+}
 
 .menu-body input{ width: 100%; margin: 8px 0; }
-/* Botões do menu lateral continuam full */
+
 .menu-body button{
   width: 100%;
   margin-top: 10px;
 }
 
-
-/* =========================================================
-   Redação — classes que você já usa
-   ========================================================= */
 .essay-title-input{
   width: 100%;
   padding: 12px 12px;
@@ -352,7 +341,6 @@ ul{ margin: 0; padding: 0; list-style: none; }
   resize: vertical;
 }
 
-/* ✅ para quando seu JS injeta título + corpo dentro da própria box */
 .essay-box{
   padding: 14px;
   border: 1px solid rgba(11,18,32,0.12);
@@ -379,15 +367,13 @@ ul{ margin: 0; padding: 0; list-style: none; }
   color: var(--text);
 }
 
-/* =========================================================
-   Ajustes pequenos de layout
-   ========================================================= */
 
-/* botões em sequência: respira melhor */
+
+
 section button{ margin-right: 10px; margin-top: 10px; }
 section button:last-child{ margin-right: 0; }
 
-/* --- Rubricas ENEM (mínimo) --- */
+
 .comp-wrap { margin-bottom: 14px; }
 .comp-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .rubric-btn { padding: 6px 10px; cursor:pointer; }
@@ -398,9 +384,7 @@ section button:last-child{ margin-right: 0; }
 .rubric-level { width:72px; font-weight:700; }
 .rubric-active { background: rgba(0,0,0,0.04); }
 
-/* =========================================================
-   Botões de AÇÃO das páginas (ex: sala-aluno)
-   ========================================================= */
+
 .actions-row{
   display: flex;
   flex-wrap: wrap;
@@ -409,12 +393,12 @@ section button:last-child{ margin-right: 0; }
 }
 
 .actions-row button{
-  width: auto;          /* 🔥 impede de virar botão gigante */
-  min-width: 160px;     /* tamanho agradável */
+  width: auto;          
+  min-width: 160px;     
   flex: 0 0 auto;
 }
 
-/* ========= Responsivo (mobile) ========= */
+
 
 .task-header {
   padding: 10px 0;
@@ -432,7 +416,7 @@ section button:last-child{ margin-right: 0; }
   margin-bottom: 10px;
 }
 
-/* Botões e inputs em telas pequenas */
+
 @media (max-width: 640px) {
   body {
     padding: 12px;
@@ -463,9 +447,7 @@ section button:last-child{ margin-right: 0; }
   }
 }
 
-/* =========================================================
-   Responsivo
-   ========================================================= */
+
 @media (max-width: 820px){
   body{ padding: 16px 14px; }
   section{ padding: 14px; }
@@ -473,72 +455,53 @@ section button:last-child{ margin-right: 0; }
   .menu-btn{ top: 12px; right: 12px; }
 }
 
-/* =========================================================
-   Ajuste de respiro no final dos cards e itens de lista
-   (evita botão colado na borda inferior)
-   ========================================================= */
-
-/* 1) Cards (sections): mais respiro embaixo */
 section{
-  padding-bottom: 22px; /* antes: 18px -> dá espaço extra para o último conteúdo */
+  padding-bottom: 22px; 
 }
 
-/* 2) Último elemento dentro do card: ganha margem inferior */
 section > :last-child{
   margin-bottom: 10px;
 }
 
-/* 3) Se o último elemento for botão (ou grupo de botões), dá mais respiro */
 section > button:last-child,
 section > .actions-row:last-child,
 section > .corr-top-actions:last-child{
   margin-bottom: 12px;
 }
 
-/* 4) Itens de lista (cards pequenos): mais padding embaixo */
 .lista li{
-  padding-bottom: 18px; /* antes: 14px */
+  padding-bottom: 18px; 
 }
 
-/* 5) Último conteúdo dentro do li também respira */
 .lista li > :last-child{
   margin-bottom: 8px;
 }
 
-/* 6) Botões dentro da lista: separação do fundo */
 .lista li button:last-child{
   margin-bottom: 6px;
 }
 
-/* 7) Se o item tiver inline panels (ex.: mk-task-panel), também evita encostar */
 .mk-inline-panel,
 .mk-task-panel{
   margin-bottom: 6px;
 }
 
-/* ============================
-   Tarefas — orientações + destaque da mais recente
-   ============================ */
-
-/* Caixa que exibe orientações preservando quebras/linhas em branco */
 .guidelines-box{
   margin-top: 10px;
   padding: 12px;
   border: 1px solid rgba(11,18,32,0.12);
   border-radius: 14px;
   background: rgba(109,40,217,0.05);
-  white-space: pre-wrap;      /* ✅ mantém parágrafos */
+  white-space: pre-wrap;      
   line-height: 1.8;
   color: var(--text);
 }
 
-/* Destaque visual da tarefa mais recente */
 .task-latest{
   border: 2px solid rgba(109,40,217,0.35) !important;
   background: linear-gradient(0deg, rgba(109,40,217,0.06), rgba(255,255,255,1));
 }
 
-/* Badge pequena */
 .task-badge{
   display: inline-flex;
   align-items: center;
@@ -553,7 +516,6 @@ section > .corr-top-actions:last-child{
   margin-left: 10px;
 }
 
-/* Layout padrão para todas as páginas */
 html, body {
   height: 100%;
 }
@@ -563,28 +525,25 @@ body {
   display: flex;
   flex-direction: column;
 
-  /* isso garante respiro geral */
   padding-bottom: 24px;
 }
 
-/* Conteúdo principal cresce e empurra o footer pro fim */
 main {
   flex: 1;
 }
 
-/* Se você não usa <main>, pode aplicar numa wrapper .page */
 .page {
   flex: 1;
 }
 
-/* Footer padronizado */
 .site-footer {
-  margin-top: auto;              /* “sticky footer”: empurra pro fim */
+  margin-top: auto;             
   padding: 18px 14px;
   text-align: center;
   font-size: 12px;
   opacity: .85;
   border-top: 1px solid rgba(0,0,0,0.08);
 }
+
 
 
