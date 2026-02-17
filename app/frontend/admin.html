@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin • Mestre Kira</title>
+  <title>Painel Admin • Mestre Kira</title>
 
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/ui-feedback.css">
@@ -13,6 +13,7 @@
 </head>
 <body>
 
+<!-- MENU PERFIL (ADMIN) -->
 <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
 <aside id="menuPanel" class="menu-panel">
@@ -22,59 +23,38 @@
   </div>
 
   <div class="menu-body">
+
     <div class="menu-photo">
       <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <label class="menu-photo-label">
-        Alterar foto
-        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-      </label>
+      <div class="menu-photo-actions">
+        <label class="menu-photo-label">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
+      </div>
     </div>
 
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
-    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">Administrador(a)</span></p>
 
     <hr>
 
-    <button id="logoutMenuBtn">Sair</button>
+    <h4>Atualizar dados</h4>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+    <button id="saveProfileBtn">Salvar</button>
+    <p id="menuStatus"></p>
+
+    <hr>
+
+    <button id="logoutMenuBtn" class="danger">Sair</button>
   </div>
 </aside>
 
 <h2>Painel do Administrador</h2>
 
 <section class="admin-wrap">
-
-  <div class="box admin-auth">
-    <h3>Acesso restrito</h3>
-    <p class="muted">
-      Esta página controla o sistema inteiro. Use uma chave forte e um e-mail autorizado.
-      Se possível, não deixe esta página divulgada publicamente.
-    </p>
-
-    <div class="admin-auth-grid">
-      <label>
-        E-mail de administrador
-        <input id="adminEmail" type="email" placeholder="admin@..." autocomplete="email">
-      </label>
-
-      <label>
-        Chave ADMIN (X-Admin-Key)
-        <input id="adminKey" type="password" placeholder="cole a chave" autocomplete="off">
-      </label>
-
-      <label>
-        PIN local (opcional)
-        <input id="adminPin" type="password" placeholder="ex.: 6 dígitos" autocomplete="off">
-      </label>
-
-      <div class="admin-auth-actions">
-        <button id="saveAdminCredsBtn">Salvar no navegador</button>
-        <button id="clearAdminCredsBtn" class="danger">Limpar</button>
-      </div>
-    </div>
-
-    <p id="adminAuthStatus" class="muted"></p>
-  </div>
 
   <div class="admin-grid">
     <section class="box">
@@ -95,9 +75,9 @@
 
     <section class="box">
       <div class="admin-row">
-        <h3>Exclusão por inatividade</h3>
+        <h3>Inatividade (83/90)</h3>
         <div class="admin-row-actions">
-          <button id="refreshPreviewBtn">Atualizar preview</button>
+          <button id="refreshPreviewBtn">Atualizar</button>
         </div>
       </div>
 
@@ -124,16 +104,12 @@
 
       <hr>
 
-      <h4>Dia 83 (Aviso) — candidatos</h4>
-      <p class="muted">Selecione usuários para enviar aviso manualmente.</p>
-
+      <h4>Dia 83 — enviar aviso</h4>
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
             <tr>
-              <th style="width:38px;">
-                <input id="checkAllWarn" type="checkbox" title="Selecionar todos">
-              </th>
+              <th style="width:38px;"><input id="checkAllWarn" type="checkbox"></th>
               <th>E-mail</th>
               <th>Nome</th>
               <th>Perfil</th>
@@ -151,16 +127,12 @@
 
       <hr>
 
-      <h4>Dia 90 (Exclusão) — candidatos</h4>
-      <p class="muted">Selecione usuários para excluir manualmente (ação irreversível).</p>
-
+      <h4>Dia 90 — excluir</h4>
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
             <tr>
-              <th style="width:38px;">
-                <input id="checkAllDelete" type="checkbox" title="Selecionar todos">
-              </th>
+              <th style="width:38px;"><input id="checkAllDelete" type="checkbox"></th>
               <th>E-mail</th>
               <th>Nome</th>
               <th>Perfil</th>
@@ -179,19 +151,11 @@
       <p id="adminResult" class="muted"></p>
     </section>
   </div>
+
 </section>
 
-<script type="module">
-  import { initMenuPerfil } from './js/menu-perfil.js';
-  initMenuPerfil({
-    loginRedirect: 'index.html',
-    logoutRedirectProfessor: 'login-professor.html',
-    logoutRedirectStudent: 'login-aluno.html'
-  });
-</script>
-
 <script type="module" src="js/admin.js"></script>
+<script type="module" src="js/admin-menu.js"></script>
 <script src="js/footer.js"></script>
-
 </body>
 </html>
