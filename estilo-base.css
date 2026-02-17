@@ -1,5 +1,4 @@
 :root {
-  
   --navy: #151a2e;
   --navy-2: #222a46;
   --cream: #f6f2e8;
@@ -12,7 +11,6 @@
   --border: rgba(15, 23, 42, 0.12);
 
   --radius: 14px;
-  --radius-sm: 12px;
   --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.08);
   --shadow-md: 0 14px 34px rgba(15, 23, 42, 0.12);
   --transition: 220ms ease;
@@ -22,27 +20,28 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
-
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.6;
-  color: var(--text);
   background: var(--bg);
+  color: var(--text);
 }
-
 
 a {
   color: var(--purple);
   text-decoration: none;
 }
-a:hover { text-decoration: underline; }
+
+a:hover {
+  text-decoration: underline;
+}
+
 a:focus-visible {
   outline: 3px solid rgba(129, 19, 235, 0.35);
   outline-offset: 3px;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 header {
@@ -53,7 +52,6 @@ header {
   box-shadow: var(--shadow-sm);
 }
 
-/* Topo: logo + título */
 .logo-container {
   max-width: var(--container);
   margin: 0 auto;
@@ -66,14 +64,18 @@ header {
 .logo {
   height: 64px;
   width: auto;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 .titulo {
   margin: 0;
   font-size: 28px;
   font-weight: 800;
+  color: white;
   letter-spacing: 0.2px;
-  color: #fff;
 }
 
 .menu-fixo {
@@ -101,25 +103,24 @@ header {
   position: relative;
 }
 
-.menu-fixo ul li a {
+.menu-fixo ul li > a {
   display: block;
   padding: 10px 14px;
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.92);
   font-weight: 650;
-  letter-spacing: 0.2px;
   transition: background var(--transition), transform var(--transition);
 }
 
-.menu-fixo ul li:hover > a {
-  background: rgba(255, 255, 255, 0.14);
+.menu-fixo ul li > a:hover {
+  background: rgba(255, 255, 255, 0.15);
   text-decoration: none;
 }
 
-.menu-fixo ul li a:active {
-  transform: translateY(1px);
+.menu-fixo ul li > a.active {
+  background: var(--purple);
+  color: white;
 }
-
 
 .menu-fixo ul li ul {
   display: none;
@@ -144,17 +145,24 @@ header {
 }
 
 .menu-fixo ul li ul li a {
+  display: block;
   border-radius: 12px;
   padding: 10px 12px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.92);
+  transition: background var(--transition), color var(--transition);
 }
 
 .menu-fixo ul li ul li a:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--purple);
+  color: white;
   text-decoration: none;
 }
 
+.menu-fixo ul li ul li a.active {
+  background: var(--purple);
+  color: white;
+}
 
 main {
   max-width: var(--container);
@@ -164,7 +172,6 @@ main {
   display: flex;
   gap: 18px;
 }
-
 
 .barra-lateral {
   width: 280px;
@@ -179,7 +186,6 @@ main {
 .barra-lateral h3 {
   margin: 0 0 10px;
   color: var(--navy);
-  letter-spacing: 0.2px;
 }
 
 .barra-lateral ul {
@@ -193,14 +199,13 @@ main {
   padding: 10px 10px;
   border-radius: 12px;
   color: var(--text);
-  transition: background var(--transition), color var(--transition);
+  transition: background var(--transition);
 }
 
 .barra-lateral ul li a:hover {
   background: rgba(21, 26, 46, 0.06);
   text-decoration: none;
 }
-
 
 .conteudo-principal {
   flex: 1;
@@ -212,26 +217,16 @@ main {
   padding: 22px;
 }
 
-
 .conteudo-principal h1,
 .conteudo-principal h2,
 .conteudo-principal h3 {
   color: var(--navy);
-  margin-top: 0.6em;
-  margin-bottom: 0.35em;
 }
-
-.conteudo-principal p {
-  color: var(--text);
-  margin-top: 0.6em;
-}
-
 
 .curriculo {
   color: var(--purple);
   font-weight: 800;
 }
-
 
 footer {
   margin-top: 34px;
@@ -243,15 +238,19 @@ footer {
 
 
 @media (max-width: 900px) {
-  .titulo { font-size: 24px; }
-  .logo { height: 56px; }
-  main { flex-direction: column; }
-  .barra-lateral { width: 100%; }
-  .menu-fixo ul { border-radius: 18px; }
-}
+  main {
+    flex-direction: column;
+  }
 
-@media (max-width: 520px) {
-  .logo-container { padding: 12px 16px 8px; }
-  .menu-fixo { padding: 0 16px 12px; }
-  main { padding: 0 16px; }
+  .barra-lateral {
+    width: 100%;
+  }
+
+  .titulo {
+    font-size: 24px;
+  }
+
+  .logo {
+    height: 56px;
+  }
 }
