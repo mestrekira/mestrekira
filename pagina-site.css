@@ -1,3 +1,18 @@
+:root{ --navy: var(--navy, #151a2e); 
+--navy-2: var(--navy-2, #222a46); 
+--cream: var(--cream, #f6f2e8); 
+--purple: var(--purple, #8113eb);
+--bg: var(--bg, #f4f6fb); 
+--surface: var(--surface, #ffffff); 
+--text: var(--text, #0f172a); 
+--muted: var(--muted, #475569); 
+--border: var(--border, rgba(15, 23, 42, 0.12)); 
+--radius: var(--radius, 14px); 
+--shadow-sm: var(--shadow-sm, 0 4px 14px rgba(15, 23, 42, 0.08)); 
+--shadow-md: var(--shadow-md, 0 14px 34px rgba(15, 23, 42, 0.12)); 
+--transition: var(--transition, 220ms ease); 
+}
+
 section { margin-bottom: 26px; }
 
 .conteudo-principal > *:first-child { margin-top: 0; }
