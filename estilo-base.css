@@ -94,9 +94,11 @@ header {
   gap: 6px;
 
   border-radius: 999px;
-  background: rgba(246, 242, 232, 0.12);
+
+  background: var(--navy-2);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
+
+  backdrop-filter: none;
 }
 
 .menu-fixo ul li {
@@ -235,7 +237,6 @@ footer {
   color: rgba(255, 255, 255, 0.92);
   background: linear-gradient(90deg, var(--navy), var(--navy-2));
 }
-
 
 @media (max-width: 900px) {
   main {
