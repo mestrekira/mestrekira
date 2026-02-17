@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin • Mestre Kira</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="stylesheet" href="css/admin.css">
+
+  <link rel="icon" href="logo1.png" type="image/png">
+</head>
+<body>
+
+<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+
+<aside id="menuPanel" class="menu-panel">
+  <div class="menu-header">
+    <strong>Meu perfil</strong>
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+  </div>
+
+  <div class="menu-body">
+    <div class="menu-photo">
+      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+      <label class="menu-photo-label">
+        Alterar foto
+        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+      </label>
+    </div>
+
+    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+
+    <hr>
+
+    <button id="logoutMenuBtn">Sair</button>
+  </div>
+</aside>
+
+<h2>Painel do Administrador</h2>
+
+<section class="admin-wrap">
+
+  <div class="box admin-auth">
+    <h3>Acesso restrito</h3>
+    <p class="muted">
+      Esta página controla o sistema inteiro. Use uma chave forte e um e-mail autorizado.
+      Se possível, não deixe esta página divulgada publicamente.
+    </p>
+
+    <div class="admin-auth-grid">
+      <label>
+        E-mail de administrador
+        <input id="adminEmail" type="email" placeholder="admin@..." autocomplete="email">
+      </label>
+
+      <label>
+        Chave ADMIN (X-Admin-Key)
+        <input id="adminKey" type="password" placeholder="cole a chave" autocomplete="off">
+      </label>
+
+      <label>
+        PIN local (opcional)
+        <input id="adminPin" type="password" placeholder="ex.: 6 dígitos" autocomplete="off">
+      </label>
+
+      <div class="admin-auth-actions">
+        <button id="saveAdminCredsBtn">Salvar no navegador</button>
+        <button id="clearAdminCredsBtn" class="danger">Limpar</button>
+      </div>
+    </div>
+
+    <p id="adminAuthStatus" class="muted"></p>
+  </div>
+
+  <div class="admin-grid">
+    <section class="box">
+      <div class="admin-row">
+        <h3>Diagnóstico</h3>
+        <div class="admin-row-actions">
+          <button id="refreshDiagBtn">Atualizar</button>
+        </div>
+      </div>
+
+      <div class="admin-cards" id="diagCards"></div>
+
+      <div class="admin-mini">
+        <div class="muted">Hora do servidor:</div>
+        <div id="diagNow">—</div>
+      </div>
+    </section>
+
+    <section class="box">
+      <div class="admin-row">
+        <h3>Exclusão por inatividade</h3>
+        <div class="admin-row-actions">
+          <button id="refreshPreviewBtn">Atualizar preview</button>
+        </div>
+      </div>
+
+      <div class="admin-form-inline">
+        <label>
+          Dias até excluir
+          <input id="cfgDays" type="number" min="30" value="90">
+        </label>
+        <label>
+          Dias de aviso
+          <input id="cfgWarnDays" type="number" min="1" value="7">
+        </label>
+      </div>
+
+      <div class="admin-filters">
+        <input id="searchEmail" type="text" placeholder="Buscar por e-mail...">
+        <select id="filterRole">
+          <option value="">Todos</option>
+          <option value="student">Estudante</option>
+          <option value="professor">Professor</option>
+        </select>
+        <button id="selectNoneBtn" class="ghost">Desmarcar</button>
+      </div>
+
+      <hr>
+
+      <h4>Dia 83 (Aviso) — candidatos</h4>
+      <p class="muted">Selecione usuários para enviar aviso manualmente.</p>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:38px;">
+                <input id="checkAllWarn" type="checkbox" title="Selecionar todos">
+              </th>
+              <th>E-mail</th>
+              <th>Nome</th>
+              <th>Perfil</th>
+              <th>Últ. atividade</th>
+              <th>Exclusão (prev.)</th>
+            </tr>
+          </thead>
+          <tbody id="warnTbody"></tbody>
+        </table>
+      </div>
+
+      <div class="admin-actions">
+        <button id="sendWarningsBtn">Enviar aviso (selecionados)</button>
+      </div>
+
+      <hr>
+
+      <h4>Dia 90 (Exclusão) — candidatos</h4>
+      <p class="muted">Selecione usuários para excluir manualmente (ação irreversível).</p>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:38px;">
+                <input id="checkAllDelete" type="checkbox" title="Selecionar todos">
+              </th>
+              <th>E-mail</th>
+              <th>Nome</th>
+              <th>Perfil</th>
+              <th>Últ. atividade</th>
+              <th>Exclusão (agendada)</th>
+            </tr>
+          </thead>
+          <tbody id="deleteTbody"></tbody>
+        </table>
+      </div>
+
+      <div class="admin-actions">
+        <button id="deleteUsersBtn" class="danger">Excluir (selecionados)</button>
+      </div>
+
+      <p id="adminResult" class="muted"></p>
+    </section>
+  </div>
+</section>
+
+<script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+  initMenuPerfil({
+    loginRedirect: 'index.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html'
+  });
+</script>
+
+<script type="module" src="js/admin.js"></script>
+<script src="js/footer.js"></script>
+
+</body>
+</html>
