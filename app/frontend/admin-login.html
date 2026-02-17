@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Admin • Mestre Kira</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="stylesheet" href="css/admin.css">
+
+  <link rel="icon" href="logo1.png" type="image/png">
+</head>
+<body>
+
+<h2>Administração</h2>
+
+<section class="admin-wrap">
+  <div class="box">
+    <h3>Login do Administrador(a)</h3>
+    <p class="muted">
+      Acesso restrito. Use sua conta administrativa (separada de professor/estudante).
+    </p>
+
+    <div class="admin-login-grid">
+      <label>
+        E-mail
+        <input id="adminEmail" type="email" placeholder="admin@..." autocomplete="email">
+      </label>
+
+      <label>
+        Senha
+        <input id="adminPass" type="password" placeholder="••••••••" autocomplete="current-password">
+      </label>
+    </div>
+
+    <div class="admin-actions">
+      <button id="adminLoginBtn">Entrar</button>
+      <button id="adminClearBtn" class="ghost">Limpar</button>
+    </div>
+
+    <p id="adminStatus" class="muted"></p>
+  </div>
+</section>
+
+<script type="module" src="js/admin-auth.js"></script>
+<script src="js/footer.js"></script>
+</body>
+</html>
