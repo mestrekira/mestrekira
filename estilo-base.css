@@ -255,3 +255,29 @@ footer {
     height: 56px;
   }
 }
+
+
+.menu-fixo ul{
+  background: var(--navy-2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.menu-fixo ul li a:hover{
+  background: rgba(255, 255, 255, 0.15) !important;
+  text-decoration: none !important;
+}
+
+
+.menu-fixo ul li ul{
+  background: rgba(21, 26, 46, 0.96) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.menu-fixo ul li ul li a:hover{
+  background: var(--purple) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
