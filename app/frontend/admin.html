@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Admin • Mestre Kira</title>
+  <title>Administração</title>
 
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/ui-feedback.css">
@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<!-- MENU PERFIL (ADMIN) -->
+<!-- MENU PERFIL (admin) -->
 <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
 <aside id="menuPanel" class="menu-panel">
@@ -23,139 +23,183 @@
   </div>
 
   <div class="menu-body">
-
     <div class="menu-photo">
       <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <div class="menu-photo-actions">
-        <label class="menu-photo-label">
-          Alterar foto
-          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-        </label>
-      </div>
+      <label class="menu-photo-label">
+        Alterar foto
+        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+      </label>
     </div>
 
-    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>Nome:</strong> <span id="meName">Administrador(a)</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
     <p><strong>Perfil:</strong> <span id="meRole">Administrador(a)</span></p>
 
     <hr>
 
     <h4>Atualizar dados</h4>
-    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
-    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
-    <button id="saveProfileBtn">Salvar</button>
-    <p id="menuStatus"></p>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (ENV no Render)" autocomplete="email" disabled />
+    <input id="newPass" type="password" placeholder="Nova senha (ENV no Render)" autocomplete="new-password" disabled />
+    <button id="saveProfileBtn" disabled>Salvar</button>
+
+    <p class="muted" style="margin-top:8px;">
+      O admin é controlado por variáveis no Render (segurança).
+    </p>
 
     <hr>
 
-    <button id="logoutMenuBtn" class="danger">Sair</button>
+    <button id="logoutMenuBtn">Sair</button>
   </div>
 </aside>
 
-<h2>Painel do Administrador</h2>
-
-<section class="admin-wrap">
-
-  <div class="admin-grid">
-    <section class="box">
-      <div class="admin-row">
-        <h3>Diagnóstico</h3>
-        <div class="admin-row-actions">
-          <button id="refreshDiagBtn">Atualizar</button>
-        </div>
-      </div>
-
-      <div class="admin-cards" id="diagCards"></div>
-
-      <div class="admin-mini">
-        <div class="muted">Hora do servidor:</div>
-        <div id="diagNow">—</div>
-      </div>
-    </section>
-
-    <section class="box">
-      <div class="admin-row">
-        <h3>Inatividade (83/90)</h3>
-        <div class="admin-row-actions">
-          <button id="refreshPreviewBtn">Atualizar</button>
-        </div>
-      </div>
-
-      <div class="admin-form-inline">
-        <label>
-          Dias até excluir
-          <input id="cfgDays" type="number" min="30" value="90">
-        </label>
-        <label>
-          Dias de aviso
-          <input id="cfgWarnDays" type="number" min="1" value="7">
-        </label>
-      </div>
-
-      <div class="admin-filters">
-        <input id="searchEmail" type="text" placeholder="Buscar por e-mail...">
-        <select id="filterRole">
-          <option value="">Todos</option>
-          <option value="student">Estudante</option>
-          <option value="professor">Professor</option>
-        </select>
-        <button id="selectNoneBtn" class="ghost">Desmarcar</button>
-      </div>
-
-      <hr>
-
-      <h4>Dia 83 — enviar aviso</h4>
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th style="width:38px;"><input id="checkAllWarn" type="checkbox"></th>
-              <th>E-mail</th>
-              <th>Nome</th>
-              <th>Perfil</th>
-              <th>Últ. atividade</th>
-              <th>Exclusão (prev.)</th>
-            </tr>
-          </thead>
-          <tbody id="warnTbody"></tbody>
-        </table>
-      </div>
-
-      <div class="admin-actions">
-        <button id="sendWarningsBtn">Enviar aviso (selecionados)</button>
-      </div>
-
-      <hr>
-
-      <h4>Dia 90 — excluir</h4>
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th style="width:38px;"><input id="checkAllDelete" type="checkbox"></th>
-              <th>E-mail</th>
-              <th>Nome</th>
-              <th>Perfil</th>
-              <th>Últ. atividade</th>
-              <th>Exclusão (agendada)</th>
-            </tr>
-          </thead>
-          <tbody id="deleteTbody"></tbody>
-        </table>
-      </div>
-
-      <div class="admin-actions">
-        <button id="deleteUsersBtn" class="danger">Excluir (selecionados)</button>
-      </div>
-
-      <p id="adminResult" class="muted"></p>
-    </section>
+<header class="admin-top">
+  <div class="admin-top__title">
+    <h2>Administração</h2>
+    <p class="muted">Diagnóstico do sistema e controle manual de inatividade (dia 83 / dia 90).</p>
   </div>
 
-</section>
+  <div class="admin-top__actions">
+    <button id="btnRefresh" class="btn-ghost" title="Atualizar dados">↻ Atualizar</button>
+    <button id="btnLogout" class="btn-danger" title="Sair do admin">Sair</button>
+  </div>
+</header>
+
+<main class="admin-wrap">
+  <section class="admin-grid">
+    <div class="admin-card">
+      <div class="card-head">
+        <h3>Diagnóstico</h3>
+        <span id="diagStatus" class="chip chip-muted">—</span>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi__label">Usuários</div>
+          <div id="kpiUsers" class="kpi__value">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Salas</div>
+          <div id="kpiRooms" class="kpi__value">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Tarefas</div>
+          <div id="kpiTasks" class="kpi__value">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi__label">Redações</div>
+          <div id="kpiEssays" class="kpi__value">—</div>
+        </div>
+      </div>
+
+      <div class="mini-grid">
+        <div class="mini">
+          <div class="mini__label">Avisados (inactivityWarnedAt)</div>
+          <div id="kpiWarned" class="mini__value">—</div>
+        </div>
+        <div class="mini">
+          <div class="mini__label">Agendados (scheduledDeletionAt)</div>
+          <div id="kpiScheduled" class="mini__value">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="card-head">
+        <h3>Inatividade</h3>
+        <span class="chip chip-info">Manual</span>
+      </div>
+
+      <div class="form-row">
+        <label class="field">
+          <span>Dias totais</span>
+          <input id="daysInput" type="number" min="30" max="3650" value="90" />
+        </label>
+
+        <label class="field">
+          <span>Dias de aviso</span>
+          <input id="warnDaysInput" type="number" min="1" max="89" value="7" />
+        </label>
+
+        <button id="btnPreview" class="btn-primary">Gerar prévia</button>
+      </div>
+
+      <p id="previewInfo" class="muted" style="margin:8px 0 0;">—</p>
+    </div>
+  </section>
+
+  <section class="admin-card">
+    <div class="card-head">
+      <h3>Candidatos a aviso (dia 83)</h3>
+      <div class="card-actions">
+        <button id="btnSelectAllWarn" class="btn-ghost">Selecionar tudo</button>
+        <button id="btnClearWarn" class="btn-ghost">Limpar</button>
+        <button id="btnSendWarnings" class="btn-primary">Enviar avisos</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:46px;"></th>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Perfil</th>
+            <th>Última atividade</th>
+            <th>Excluir em</th>
+          </tr>
+        </thead>
+        <tbody id="warnTableBody">
+          <tr><td colspan="6" class="tbl-empty">Gere a prévia para listar usuários.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="admin-card">
+    <div class="card-head">
+      <h3>Candidatos a exclusão (dia 90)</h3>
+      <div class="card-actions">
+        <button id="btnSelectAllDelete" class="btn-ghost">Selecionar tudo</button>
+        <button id="btnClearDelete" class="btn-ghost">Limpar</button>
+        <button id="btnDeleteUsers" class="btn-danger">Excluir selecionados</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:46px;"></th>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Perfil</th>
+            <th>Última atividade</th>
+            <th>Agendado</th>
+          </tr>
+        </thead>
+        <tbody id="deleteTableBody">
+          <tr><td colspan="6" class="tbl-empty">Gere a prévia para listar usuários.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="muted" style="margin-top:10px;">
+      Atenção: excluir remove também dados vinculados (salas/tarefas/redações), conforme sua regra no backend.
+    </p>
+  </section>
+</main>
+
+<script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+  initMenuPerfil({
+    loginRedirect: 'admin-login.html', // sua página fora do sitemap
+    logoutRedirectProfessor: 'admin-login.html',
+    logoutRedirectStudent: 'admin-login.html'
+  });
+</script>
 
 <script type="module" src="js/admin.js"></script>
-<script type="module" src="js/admin-menu.js"></script>
 <script src="js/footer.js"></script>
 </body>
 </html>
