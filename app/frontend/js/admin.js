@@ -29,11 +29,19 @@ const btnSelectAllDelete = $('btnSelectAllDelete');
 const btnClearDelete = $('btnClearDelete');
 const btnDeleteUsers = $('btnDeleteUsers');
 
+const ADMIN_TOKEN_KEY = 'mk_admin_token';
+
 function getAdminToken() {
-  return localStorage.getItem('adminToken') || '';
+  return localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+}
+
+function clearAdminTokenAndGoLogin() {
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+  window.location.href = 'admin-login.html';
 }
 
 function setStatusChip(el, text, kind = 'muted') {
+  if (!el) return;
   el.textContent = text;
   el.className = `chip chip-${kind}`;
 }
@@ -41,28 +49,44 @@ function setStatusChip(el, text, kind = 'muted') {
 function fmtDate(iso) {
   if (!iso) return '—';
   try {
-    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-      .format(new Date(iso));
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date(iso));
   } catch {
     return '—';
   }
 }
 
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 async function api(path, { method = 'GET', body } = {}) {
   const token = getAdminToken();
-  const headers = { 'Content-Type': 'application/json' };
+  if (!token) {
+    clearAdminTokenAndGoLogin();
+    return null;
+  }
+
+  const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
 
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   if (res.status === 401) {
     // token inválido/expirado
-    localStorage.removeItem('adminToken');
-    window.location.href = 'admin-login.html';
+    clearAdminTokenAndGoLogin();
     return null;
   }
 
@@ -74,30 +98,44 @@ async function api(path, { method = 'GET', body } = {}) {
   return data;
 }
 
-let lastPreview = { warnList: [], deleteList: [] };
+async function validateTokenOrRedirect() {
+  // chama /admin/me pra garantir que token é válido
+  try {
+    const me = await api('/admin/me');
+    if (!me) return false;
+    return true;
+  } catch {
+    clearAdminTokenAndGoLogin();
+    return false;
+  }
+}
 
 function rowTemplate(u, type) {
   // type: 'warn' | 'delete'
-  const id = String(u.id || '');
-  const name = String(u.name || '');
-  const email = String(u.email || '');
-  const role = String(u.role || '').toLowerCase();
+  const id = String(u?.id || '');
+  const name = String(u?.name || '');
+  const email = String(u?.email || '');
+  const role = String(u?.role || '').toLowerCase();
 
-  const lastActivity = u.lastActivityISO || u.lastActivity || u.last_activity || null;
+  const lastActivity =
+    u?.lastActivityISO || u?.lastActivity || u?.last_activity || null;
+
   const deleteAt =
     type === 'warn'
-      ? (u.deleteAtISO || u.computedDeleteAt || null)
-      : (u.scheduledDeletionAtISO || u.scheduledDeletionAt || u.deleteAtISO || null);
+      ? (u?.deleteAtISO || u?.computedDeleteAt || null)
+      : (u?.scheduledDeletionAtISO || u?.scheduledDeletionAt || u?.deleteAtISO || null);
 
   const badge =
-    role === 'professor' ? `<span class="pill pill-prof">Professor</span>`
-    : role === 'student' ? `<span class="pill pill-stud">Estudante</span>`
-    : `<span class="pill">Outro</span>`;
+    role === 'professor'
+      ? `<span class="pill pill-prof">Professor</span>`
+      : role === 'student'
+      ? `<span class="pill pill-stud">Estudante</span>`
+      : `<span class="pill">Outro</span>`;
 
   return `
     <tr>
       <td class="chk">
-        <input type="checkbox" data-id="${id}" />
+        <input type="checkbox" data-id="${escapeHtml(id)}" />
       </td>
       <td class="cell-strong">${escapeHtml(name)}</td>
       <td class="cell-mono">${escapeHtml(email)}</td>
@@ -108,14 +146,7 @@ function rowTemplate(u, type) {
   `;
 }
 
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+let lastPreview = { warnList: [], deleteList: [] };
 
 function renderTables(preview) {
   const warnList = Array.isArray(preview?.warnList) ? preview.warnList : [];
@@ -141,8 +172,9 @@ function getCheckedIds(tbodyEl) {
 }
 
 function setAllCheckboxes(tbodyEl, checked) {
-  Array.from(tbodyEl.querySelectorAll('input[type="checkbox"]'))
-    .forEach((el) => { el.checked = checked; });
+  Array.from(tbodyEl.querySelectorAll('input[type="checkbox"]')).forEach((el) => {
+    el.checked = checked;
+  });
 }
 
 async function loadDiagnostics() {
@@ -204,6 +236,8 @@ async function sendWarnings() {
     alert('Ação concluída. Atualize a prévia.');
     await loadDiagnostics();
     await runPreview();
+  } catch (e) {
+    alert(e?.message || 'Falha ao enviar avisos.');
   } finally {
     btnSendWarnings.disabled = false;
     btnSendWarnings.textContent = 'Enviar avisos';
@@ -231,6 +265,8 @@ async function deleteUsers() {
     alert('Exclusão concluída. Atualize a prévia.');
     await loadDiagnostics();
     await runPreview();
+  } catch (e) {
+    alert(e?.message || 'Falha ao excluir usuários.');
   } finally {
     btnDeleteUsers.disabled = false;
     btnDeleteUsers.textContent = 'Excluir selecionados';
@@ -238,14 +274,12 @@ async function deleteUsers() {
 }
 
 function logoutAdmin() {
-  localStorage.removeItem('adminToken');
-  window.location.href = 'admin-login.html';
+  clearAdminTokenAndGoLogin();
 }
 
 // eventos
 btnRefresh?.addEventListener('click', async () => {
   await loadDiagnostics();
-  // não força preview, só se já tiver listado
 });
 
 btnLogout?.addEventListener('click', logoutAdmin);
@@ -264,10 +298,7 @@ btnDeleteUsers?.addEventListener('click', deleteUsers);
 
 // init
 (async function init() {
-  const token = getAdminToken();
-  if (!token) {
-    window.location.href = 'admin-login.html';
-    return;
-  }
+  const ok = await validateTokenOrRedirect();
+  if (!ok) return;
   await loadDiagnostics();
 })();
