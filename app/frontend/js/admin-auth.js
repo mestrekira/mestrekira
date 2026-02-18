@@ -18,6 +18,36 @@ function setLoading(on) {
   btnEl.textContent = on ? 'Entrando...' : 'Entrar';
 }
 
+function getToken() {
+  return localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+}
+
+function setToken(token) {
+  if (!token) localStorage.removeItem(ADMIN_TOKEN_KEY);
+  else localStorage.setItem(ADMIN_TOKEN_KEY, token);
+}
+
+async function validateExistingToken() {
+  const token = getToken();
+  if (!token) return false;
+
+  try {
+    const res = await fetch(`${API_URL}/admin/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      setToken('');
+      return false;
+    }
+
+    return true;
+  } catch {
+    // se API estiver fora, não redireciona (evita loop)
+    return false;
+  }
+}
+
 async function login() {
   const email = String(emailEl.value || '').trim().toLowerCase();
   const password = String(passEl.value || '');
@@ -44,9 +74,9 @@ async function login() {
       return;
     }
 
-    localStorage.setItem(ADMIN_TOKEN_KEY, data?.token || '');
+    setToken(data?.token || '');
     window.location.href = 'admin.html';
-  } catch (err) {
+  } catch {
     setStatus('Erro de conexão. Verifique a API/Render.');
   } finally {
     setLoading(false);
@@ -67,7 +97,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !btnEl.disabled) login();
 });
 
-// Se já tiver token, manda pro painel
-if (localStorage.getItem(ADMIN_TOKEN_KEY)) {
-  window.location.href = 'admin.html';
-}
+// ✅ Evita loop: só vai pro painel se o token for válido
+(async () => {
+  const ok = await validateExistingToken();
+  if (ok) window.location.href = 'admin.html';
+})();
