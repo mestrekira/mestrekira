@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<!-- MENU PERFIL (admin) -->
+<!-- MENU PERFIL (ADMIN) -->
 <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
 <aside id="menuPanel" class="menu-panel">
@@ -25,10 +25,20 @@
   <div class="menu-body">
     <div class="menu-photo">
       <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
-      <label class="menu-photo-label">
-        Alterar foto
-        <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
-      </label>
+
+      <div class="menu-photo-actions">
+        <label class="menu-photo-label">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
+
+        <!-- opcional -->
+        <a href="suporte.html"
+           class="menu-photo-support"
+           title="Abrir página de suporte">
+          Suporte
+        </a>
+      </div>
     </div>
 
     <p><strong>Nome:</strong> <span id="meName">Administrador(a)</span></p>
@@ -190,12 +200,11 @@
   </section>
 </main>
 
+<!-- ✅ MENU PERFIL ADMIN (correto) -->
 <script type="module">
-  import { initMenuPerfil } from './js/menu-perfil.js';
-  initMenuPerfil({
-    loginRedirect: 'admin-login.html', // sua página fora do sitemap
-    logoutRedirectProfessor: 'admin-login.html',
-    logoutRedirectStudent: 'admin-login.html'
+  import { initMenuPerfilAdmin } from './js/menu-perfil-admin.js';
+  initMenuPerfilAdmin({
+    loginRedirect: 'admin-login.html'
   });
 </script>
 
