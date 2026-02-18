@@ -286,3 +286,58 @@
   background: rgba(22,163,74,0.12);
   border-color: rgba(22,163,74,0.22);
 }
+
+/* ===== Admin Login ===== */
+
+.admin-login-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+@media (min-width: 720px){
+  .admin-login-grid{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-login-grid label{
+  display: grid;
+  gap: 6px;
+  font-weight: 800;
+}
+
+.admin-login-grid input{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.14);
+  background: rgba(255,255,255,0.04);
+  outline: none;
+}
+
+.admin-actions{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.admin-actions .ghost{
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(0,0,0,0.14);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-actions button{
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.14);
+}
