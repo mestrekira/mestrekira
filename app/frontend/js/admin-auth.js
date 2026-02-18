@@ -8,7 +8,15 @@ const statusEl = document.getElementById('adminStatus');
 
 const ADMIN_TOKEN_KEY = 'mk_admin_token';
 
-function setStatus(t){ statusEl.textContent = t || ''; }
+function setStatus(t) {
+  statusEl.textContent = t || '';
+}
+
+function setLoading(on) {
+  btnEl.disabled = !!on;
+  clearEl.disabled = !!on;
+  btnEl.textContent = on ? 'Entrando...' : 'Entrar';
+}
 
 async function login() {
   const email = String(emailEl.value || '').trim().toLowerCase();
@@ -19,36 +27,44 @@ async function login() {
     return;
   }
 
-  setStatus('Entrando...');
+  setLoading(true);
+  setStatus('Autenticando...');
 
-  const res = await fetch(`${API_URL}/admin/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify({ email, password })
-  });
+  try {
+    const res = await fetch(`${API_URL}/admin/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-  const data = await res.json().catch(() => null);
+    const data = await res.json().catch(() => null);
 
-  if (!res.ok) {
-    setStatus(data?.message || 'Falha no login.');
-    return;
+    if (!res.ok) {
+      setStatus(data?.message || 'Falha no login.');
+      return;
+    }
+
+    localStorage.setItem(ADMIN_TOKEN_KEY, data?.token || '');
+    window.location.href = 'admin.html';
+  } catch (err) {
+    setStatus('Erro de conexão. Verifique a API/Render.');
+  } finally {
+    setLoading(false);
   }
-
-  localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
-  window.location.href = 'admin.html';
 }
 
 function clear() {
   emailEl.value = '';
   passEl.value = '';
   setStatus('');
+  emailEl.focus();
 }
 
 btnEl?.addEventListener('click', login);
 clearEl?.addEventListener('click', clear);
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') login();
+  if (e.key === 'Enter' && !btnEl.disabled) login();
 });
 
 // Se já tiver token, manda pro painel
