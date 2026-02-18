@@ -34,15 +34,17 @@ a {
   text-decoration: none;
 }
 
-a:hover {
-  text-decoration: underline;
-}
+a:hover { text-decoration: underline; }
 
 a:focus-visible {
   outline: 3px solid rgba(129, 19, 235, 0.35);
   outline-offset: 3px;
   border-radius: 6px;
 }
+
+/* =========================
+   HEADER
+   ========================= */
 
 header {
   position: sticky;
@@ -78,6 +80,10 @@ header {
   letter-spacing: 0.2px;
 }
 
+/* =========================
+   MENU (DESKTOP/TABLET)
+   ========================= */
+
 .menu-fixo {
   padding: 0 20px 14px;
 }
@@ -94,10 +100,8 @@ header {
   gap: 6px;
 
   border-radius: 999px;
-
   background: var(--navy-2);
   border: 1px solid rgba(255, 255, 255, 0.12);
-
   backdrop-filter: none;
 }
 
@@ -124,6 +128,7 @@ header {
   color: white;
 }
 
+/* Submenu desktop */
 .menu-fixo ul li ul {
   display: none;
   position: absolute;
@@ -166,11 +171,14 @@ header {
   color: white;
 }
 
+/* =========================
+   LAYOUT
+   ========================= */
+
 main {
   max-width: var(--container);
   margin: 26px auto 0;
   padding: 0 20px;
-
   display: flex;
   gap: 18px;
 }
@@ -238,24 +246,85 @@ footer {
   background: linear-gradient(90deg, var(--navy), var(--navy-2));
 }
 
+/* =========================================================
+   RESPONSIVO — LAYOUT
+   ========================================================= */
+
 @media (max-width: 900px) {
-  main {
-    flex-direction: column;
+  main { flex-direction: column; }
+  .barra-lateral { width: 100%; }
+  .titulo { font-size: 24px; }
+  .logo { height: 56px; }
+}
+
+/* =========================================================
+   RESPONSIVO — MENU MOBILE (CORREÇÃO PRINCIPAL)
+   - Remove formato circular
+   - Submenus entram no fluxo (não sobrepõem)
+   - Itens ficam em “grade” e cabem melhor
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .menu-fixo { padding: 0 12px 12px; }
+
+  /* barra deixa de ser cápsula */
+  .menu-fixo ul{
+    border-radius: 16px;
+    padding: 10px;
+    justify-content: flex-start;
+    gap: 8px;
   }
 
-  .barra-lateral {
+  /* itens em grid para caber mais */
+  .menu-fixo ul li{
+    flex: 1 1 calc(50% - 8px); /* 2 colunas */
+    min-width: 140px;
+  }
+
+  .menu-fixo ul li > a{
     width: 100%;
+    text-align: center;
+    border-radius: 12px;        /* não circular */
+    padding: 12px 10px;
   }
 
-  .titulo {
-    font-size: 24px;
+  /* Submenu vira “accordion” simples, sem sobrepor */
+  .menu-fixo ul li ul{
+    position: static;
+    min-width: 0;
+    margin-top: 8px;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: none; /* no mobile fica mais limpo */
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
   }
 
-  .logo {
-    height: 56px;
+  .menu-fixo ul li ul li a{
+    border-radius: 10px;
+    padding: 10px 10px;
+    text-align: left;
   }
 }
 
+/* 1 coluna em telas muito pequenas */
+@media (max-width: 420px) {
+  .logo-container{
+    padding: 12px 14px 8px;
+    gap: 12px;
+  }
+
+  .titulo{ font-size: 20px; }
+
+  .menu-fixo ul li{
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+
+/* =========================================================
+   HOTFIX (anti-sobrescrita por outros CSS)
+   ========================================================= */
 
 .menu-fixo ul{
   background: var(--navy-2) !important;
@@ -269,11 +338,19 @@ footer {
   text-decoration: none !important;
 }
 
-
 .menu-fixo ul li ul{
   background: rgba(21, 26, 46, 0.96) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+@media (max-width: 720px){
+  /* no mobile o submenu fica “no fluxo” e mais claro */
+  .menu-fixo ul li ul{
+    position: static !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: none !important;
+  }
 }
 
 .menu-fixo ul li ul li a:hover{
