@@ -442,3 +442,52 @@ function escapeHtml(str) {
 function toggleMenu(){
   document.querySelector('.menu-fixo').classList.toggle('active');
 }
+
+  function mkToggleMenu() {
+    const menu = document.getElementById('mkMenu');
+    const overlay = document.querySelector('.menu-overlay');
+    menu.classList.toggle('active');
+    overlay.classList.toggle('active');
+    document.body.style.overflow = menu.classList.contains('active') ? 'hidden' : '';
+  }
+
+  function mkCloseMenu() {
+    const menu = document.getElementById('mkMenu');
+    const overlay = document.querySelector('.menu-overlay');
+    menu.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Acordeão: abre/fecha subseções no mobile
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('.menu-fixo li > a');
+    if (!link) return;
+
+    const li = link.parentElement;
+    const submenu = li.querySelector(':scope > ul');
+
+    // Se tem submenu, no mobile vira acordeão (não navega ao clicar no pai)
+    if (submenu && window.matchMedia('(max-width: 900px)').matches) {
+      e.preventDefault();
+
+      li.classList.toggle('open');
+
+      // Fecha os outros abertos (opcional; deixa mais organizado)
+      const siblings = li.parentElement.querySelectorAll(':scope > li.has-submenu.open');
+      siblings.forEach(sib => { if (sib !== li) sib.classList.remove('open'); });
+    }
+  });
+
+  // Marca automaticamente quem tem submenu (pra seta aparecer)
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.menu-fixo li').forEach(li => {
+      const submenu = li.querySelector(':scope > ul');
+      if (submenu) li.classList.add('has-submenu');
+    });
+  });
+
+  // Fecha menu com ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') mkCloseMenu();
+  });
