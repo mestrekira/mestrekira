@@ -20,6 +20,10 @@ section { margin-bottom: 26px; }
   margin: 20px 0;
 }
 
+.referencias {
+  text-indent: 0;
+}
+
 .imagem-conceitual{
   width: 80%;
   max-width: 500px;
