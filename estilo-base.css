@@ -29,18 +29,8 @@ body {
   color: var(--text);
 }
 
-a {
-  color: var(--purple);
-  text-decoration: none;
-}
-
+a { color: var(--purple); text-decoration: none; }
 a:hover { text-decoration: underline; }
-
-a:focus-visible {
-  outline: 3px solid rgba(129, 19, 235, 0.35);
-  outline-offset: 3px;
-  border-radius: 6px;
-}
 
 /* =========================
    HEADER
@@ -60,16 +50,20 @@ header {
   padding: 14px 20px 10px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: space-between;
+}
+
+.logo-wrapper{
+  display:flex;
+  align-items:center;
+  gap:14px;
 }
 
 .logo {
   height: 64px;
-  width: auto;
   padding: 6px 10px;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 .titulo {
@@ -77,11 +71,23 @@ header {
   font-size: 28px;
   font-weight: 800;
   color: white;
-  letter-spacing: 0.2px;
 }
 
 /* =========================
-   MENU (DESKTOP/TABLET)
+   HAMBURGER BUTTON
+   ========================= */
+
+.menu-toggle{
+  display:none;
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-size:28px;
+  color:white;
+}
+
+/* =========================
+   MENU DESKTOP
    ========================= */
 
 .menu-fixo {
@@ -95,80 +101,64 @@ header {
   list-style: none;
 
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
 
   border-radius: 999px;
   background: var(--navy-2);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: none;
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
-.menu-fixo ul li {
-  position: relative;
-}
+.menu-fixo ul li { position: relative; }
 
 .menu-fixo ul li > a {
   display: block;
   padding: 10px 14px;
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255,255,255,0.92);
   font-weight: 650;
-  transition: background var(--transition), transform var(--transition);
+  transition: background 0.2s;
 }
 
 .menu-fixo ul li > a:hover {
-  background: rgba(255, 255, 255, 0.15);
-  text-decoration: none;
+  background: rgba(255,255,255,0.15);
 }
 
-.menu-fixo ul li > a.active {
-  background: var(--purple);
-  color: white;
-}
+/* ===== Submenu com delay ===== */
 
-/* Submenu desktop */
 .menu-fixo ul li ul {
-  display: none;
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+  transition-delay:0.2s; /* 👈 Delay real */
+  
+  position:absolute;
+  top:calc(100% + 10px);
+  left:0;
 
-  min-width: 220px;
-  padding: 8px;
-  margin: 0;
-  list-style: none;
-
-  border-radius: 14px;
-  background: rgba(21, 26, 46, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: var(--shadow-md);
+  min-width:220px;
+  padding:8px;
+  border-radius:14px;
+  background:rgba(21,26,46,0.96);
+  box-shadow:var(--shadow-md);
 }
 
-.menu-fixo ul li:hover > ul,
-.menu-fixo ul li:focus-within > ul {
-  display: block;
+.menu-fixo ul li:hover > ul {
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
 }
 
-.menu-fixo ul li ul li a {
-  display: block;
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
-  transition: background var(--transition), color var(--transition);
+.menu-fixo ul li ul li a{
+  display:block;
+  padding:10px 12px;
+  border-radius:12px;
+  color:white;
 }
 
-.menu-fixo ul li ul li a:hover {
-  background: var(--purple);
-  color: white;
-  text-decoration: none;
-}
-
-.menu-fixo ul li ul li a.active {
-  background: var(--purple);
-  color: white;
+.menu-fixo ul li ul li a:hover{
+  background:var(--purple);
 }
 
 /* =========================
@@ -188,173 +178,75 @@ main {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   padding: 18px;
-}
-
-.barra-lateral h2,
-.barra-lateral h3 {
-  margin: 0 0 10px;
-  color: var(--navy);
-}
-
-.barra-lateral ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.barra-lateral ul li a {
-  display: block;
-  padding: 10px 10px;
-  border-radius: 12px;
-  color: var(--text);
-  transition: background var(--transition);
-}
-
-.barra-lateral ul li a:hover {
-  background: rgba(21, 26, 46, 0.06);
-  text-decoration: none;
 }
 
 .conteudo-principal {
   flex: 1;
-  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   padding: 22px;
-}
-
-.conteudo-principal h1,
-.conteudo-principal h2,
-.conteudo-principal h3 {
-  color: var(--navy);
-}
-
-.curriculo {
-  color: var(--purple);
-  font-weight: 800;
 }
 
 footer {
   margin-top: 34px;
   padding: 18px 20px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.92);
+  color: white;
   background: linear-gradient(90deg, var(--navy), var(--navy-2));
 }
 
 /* =========================================================
-   RESPONSIVO — LAYOUT
+   OFF-CANVAS MOBILE
    ========================================================= */
 
-@media (max-width: 900px) {
-  main { flex-direction: column; }
-  .barra-lateral { width: 100%; }
-  .titulo { font-size: 24px; }
-  .logo { height: 56px; }
-}
+@media (max-width: 900px){
 
-/* =========================================================
-   RESPONSIVO — MENU MOBILE (CORREÇÃO PRINCIPAL)
-   - Remove formato circular
-   - Submenus entram no fluxo (não sobrepõem)
-   - Itens ficam em “grade” e cabem melhor
-   ========================================================= */
+  .menu-toggle{ display:block; }
 
-@media (max-width: 720px) {
-  .menu-fixo { padding: 0 12px 12px; }
-
-  /* barra deixa de ser cápsula */
-  .menu-fixo ul{
-    border-radius: 16px;
-    padding: 10px;
-    justify-content: flex-start;
-    gap: 8px;
+  .menu-fixo{
+    position:fixed;
+    top:0;
+    left:-280px;
+    width:260px;
+    height:100vh;
+    background:var(--navy);
+    padding:20px;
+    transition:left 0.3s ease;
+    z-index:2000;
   }
 
-  /* itens em grid para caber mais */
+  .menu-fixo.active{
+    left:0;
+  }
+
+  .menu-fixo ul{
+    flex-direction:column;
+    border-radius:0;
+    background:none;
+    border:none;
+    padding:0;
+  }
+
   .menu-fixo ul li{
-    flex: 1 1 calc(50% - 8px); /* 2 colunas */
-    min-width: 140px;
+    width:100%;
   }
 
   .menu-fixo ul li > a{
-    width: 100%;
-    text-align: center;
-    border-radius: 12px;        /* não circular */
-    padding: 12px 10px;
+    border-radius:10px;
+    padding:12px;
   }
 
-  /* Submenu vira “accordion” simples, sem sobrepor */
   .menu-fixo ul li ul{
-    position: static;
-    min-width: 0;
-    margin-top: 8px;
-    border-radius: 12px;
-    padding: 8px;
-    box-shadow: none; /* no mobile fica mais limpo */
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    position:static;
+    opacity:1;
+    visibility:visible;
+    transform:none;
+    transition:none;
+    margin-left:12px;
+    background:none;
+    box-shadow:none;
   }
 
-  .menu-fixo ul li ul li a{
-    border-radius: 10px;
-    padding: 10px 10px;
-    text-align: left;
-  }
-}
-
-/* 1 coluna em telas muito pequenas */
-@media (max-width: 420px) {
-  .logo-container{
-    padding: 12px 14px 8px;
-    gap: 12px;
-  }
-
-  .titulo{ font-size: 20px; }
-
-  .menu-fixo ul li{
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-}
-
-/* =========================================================
-   HOTFIX (anti-sobrescrita por outros CSS)
-   ========================================================= */
-
-.menu-fixo ul{
-  background: var(--navy-2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-.menu-fixo ul li a:hover{
-  background: rgba(255, 255, 255, 0.15) !important;
-  text-decoration: none !important;
-}
-
-.menu-fixo ul li ul{
-  background: rgba(21, 26, 46, 0.96) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-@media (max-width: 720px){
-  /* no mobile o submenu fica “no fluxo” e mais claro */
-  .menu-fixo ul li ul{
-    position: static !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    box-shadow: none !important;
-  }
-}
-
-.menu-fixo ul li ul li a:hover{
-  background: var(--purple) !important;
-  color: #fff !important;
-  text-decoration: none !important;
 }
