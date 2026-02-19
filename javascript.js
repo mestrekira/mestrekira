@@ -124,9 +124,6 @@ function inicializarPaginacao() {
   mostrarPagina(paginaAtual);
 }
 
-/* =========================
-   Player de áudio (com guards)
-========================= */
 function inicializarPlayerAudio() {
   const audio = document.getElementById("playerAudio");
   const speedSelect = document.getElementById("speedSelect");
@@ -206,9 +203,6 @@ function inicializarPlayerAudio() {
   });
 }
 
-/* =========================
-   FAQ (guard)
-========================= */
 function inicializarFAQ() {
   const perguntas = document.querySelectorAll(".faq-pergunta");
   if (!perguntas.length) return;
@@ -396,7 +390,7 @@ function configurarBusca(input, sugestoes) {
     render(encontrados, queryRaw);
   }
 
-  // Eventos
+  
   input.addEventListener("input", () => buscar(input.value));
 
   input.addEventListener("focus", () => {
@@ -436,7 +430,6 @@ function configurarBusca(input, sugestoes) {
   });
 }
 
-// evita injeção HTML no texto do usuário
 function escapeHtml(str) {
   return (str || "").toString()
     .replaceAll("&", "&amp;")
@@ -444,4 +437,8 @@ function escapeHtml(str) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function toggleMenu(){
+  document.querySelector('.menu-fixo').classList.toggle('active');
 }
