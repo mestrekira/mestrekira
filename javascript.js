@@ -439,10 +439,6 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-function toggleMenu(){
-  document.querySelector('.menu-fixo').classList.toggle('active');
-}
-
   function mkToggleMenu() {
     const menu = document.getElementById('mkMenu');
     const overlay = document.querySelector('.menu-overlay');
