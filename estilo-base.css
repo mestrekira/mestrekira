@@ -16,6 +16,9 @@
   --transition: 220ms ease;
 
   --container: 1200px;
+
+  /* Mobile menu */
+  --drawer-w: 300px;
 }
 
 * { box-sizing: border-box; }
@@ -32,6 +35,12 @@ body {
 a { color: var(--purple); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+a:focus-visible {
+  outline: 3px solid rgba(129, 19, 235, 0.35);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 /* =========================
    HEADER
    ========================= */
@@ -39,7 +48,7 @@ a:hover { text-decoration: underline; }
 header {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 1500;
   background: linear-gradient(90deg, var(--navy), var(--navy-2));
   box-shadow: var(--shadow-sm);
 }
@@ -51,19 +60,23 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 14px;
 }
 
-.logo-wrapper{
-  display:flex;
-  align-items:center;
-  gap:14px;
+.logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 
 .logo {
   height: 64px;
+  width: auto;
   padding: 6px 10px;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 .titulo {
@@ -71,23 +84,57 @@ header {
   font-size: 28px;
   font-weight: 800;
   color: white;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* =========================
-   HAMBURGER BUTTON
+   BOTÃO HAMBURGER (só mobile)
    ========================= */
 
-.menu-toggle{
-  display:none;
-  background:none;
-  border:none;
-  cursor:pointer;
-  font-size:28px;
-  color:white;
+.menu-toggle {
+  display: none;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+  transition: transform var(--transition), background var(--transition);
 }
 
+.menu-toggle:hover { background: rgba(255,255,255,0.12); }
+.menu-toggle:active { transform: translateY(1px); }
+
+.menu-toggle .bars{
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  position: relative;
+}
+
+.menu-toggle .bars::before,
+.menu-toggle .bars::after,
+.menu-toggle .bars span{
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #fff;
+  border-radius: 999px;
+}
+
+.menu-toggle .bars::before{ top: 0; }
+.menu-toggle .bars span{ top: 5px; }
+.menu-toggle .bars::after{ bottom: 0; }
+
 /* =========================
-   MENU DESKTOP
+   MENU DESKTOP/TABLET
    ========================= */
 
 .menu-fixo {
@@ -101,12 +148,14 @@ header {
   list-style: none;
 
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
 
   border-radius: 999px;
   background: var(--navy-2);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: none;
 }
 
 .menu-fixo ul li { position: relative; }
@@ -115,50 +164,94 @@ header {
   display: block;
   padding: 10px 14px;
   border-radius: 999px;
-  color: rgba(255,255,255,0.92);
+  color: rgba(255, 255, 255, 0.92);
   font-weight: 650;
-  transition: background 0.2s;
+  transition: background var(--transition), transform var(--transition);
 }
 
 .menu-fixo ul li > a:hover {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
+  text-decoration: none;
 }
 
-/* ===== Submenu com delay ===== */
+.menu-fixo ul li > a.active {
+  background: var(--purple);
+  color: white;
+}
 
+/* ===== Submenu desktop (mais fácil clicar) =====
+   - animação suave
+   - não “some” tão rápido visualmente
+*/
 .menu-fixo ul li ul {
-  opacity:0;
-  visibility:hidden;
-  transform:translateY(10px);
-  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
-  transition-delay:0.2s; /* 👈 Delay real */
-  
-  position:absolute;
-  top:calc(100% + 10px);
-  left:0;
+  display: block;               /* mantemos no layout mas escondemos por visibilidade */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 0ms linear 180ms; /* visibility muda depois (ajuda a não fechar “nervoso”) */
 
-  min-width:220px;
-  padding:8px;
-  border-radius:14px;
-  background:rgba(21,26,46,0.96);
-  box-shadow:var(--shadow-md);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+
+  min-width: 240px;
+  padding: 8px;
+  margin: 0;
+  list-style: none;
+
+  border-radius: 14px;
+  background: rgba(21, 26, 46, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--shadow-md);
 }
 
-.menu-fixo ul li:hover > ul {
-  opacity:1;
-  visibility:visible;
-  transform:translateY(0);
+/* mantém aberto enquanto o mouse está no LI (inclui submenu) */
+.menu-fixo ul li:hover > ul,
+.menu-fixo ul li:focus-within > ul {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 0ms;
 }
 
-.menu-fixo ul li ul li a{
-  display:block;
-  padding:10px 12px;
-  border-radius:12px;
-  color:white;
+/* “área de tolerância” invisível para não fechar ao mover o mouse (desktop) */
+@media (hover: hover) and (pointer: fine) {
+  .menu-fixo ul li ul::before{
+    content:"";
+    position:absolute;
+    left:0;
+    right:0;
+    top:-14px;
+    height:14px;
+  }
 }
 
-.menu-fixo ul li ul li a:hover{
-  background:var(--purple);
+.menu-fixo ul li ul li a {
+  display: block;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  transition: background var(--transition), color var(--transition);
+}
+
+.menu-fixo ul li ul li a:hover {
+  background: var(--purple);
+  color: white;
+  text-decoration: none;
+}
+
+.menu-fixo ul li ul li a.active {
+  background: var(--purple);
+  color: white;
 }
 
 /* =========================
@@ -178,75 +271,269 @@ main {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
   padding: 18px;
+}
+
+.barra-lateral h2,
+.barra-lateral h3 {
+  margin: 0 0 10px;
+  color: var(--navy);
+}
+
+.barra-lateral ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.barra-lateral ul li a {
+  display: block;
+  padding: 10px 10px;
+  border-radius: 12px;
+  color: var(--text);
+  transition: background var(--transition);
+}
+
+.barra-lateral ul li a:hover {
+  background: rgba(21, 26, 46, 0.06);
+  text-decoration: none;
 }
 
 .conteudo-principal {
   flex: 1;
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
   padding: 22px;
+}
+
+.conteudo-principal h1,
+.conteudo-principal h2,
+.conteudo-principal h3 {
+  color: var(--navy);
+}
+
+.curriculo {
+  color: var(--purple);
+  font-weight: 800;
 }
 
 footer {
   margin-top: 34px;
   padding: 18px 20px;
   text-align: center;
-  color: white;
+  color: rgba(255, 255, 255, 0.92);
   background: linear-gradient(90deg, var(--navy), var(--navy-2));
 }
 
 /* =========================================================
-   OFF-CANVAS MOBILE
+   RESPONSIVO — LAYOUT
    ========================================================= */
 
-@media (max-width: 900px){
+@media (max-width: 900px) {
+  main { flex-direction: column; }
+  .barra-lateral { width: 100%; }
+  .titulo { font-size: 22px; }
+  .logo { height: 56px; }
+}
 
-  .menu-toggle{ display:block; }
+/* =========================================================
+   OFF-CANVAS MOBILE (Hambúrguer + acordeão)
+   - menu vira drawer lateral rolável
+   - submenu abre/fecha (acordeão)
+   ========================================================= */
 
+.menu-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition), visibility var(--transition);
+  z-index: 1800;
+}
+
+.menu-overlay.active{
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 900px) {
+  /* mostra hambúrguer */
+  .menu-toggle{ display: inline-flex; align-items:center; justify-content:center; }
+
+  /* menu desktop some */
   .menu-fixo{
-    position:fixed;
-    top:0;
-    left:-280px;
-    width:260px;
-    height:100vh;
-    background:var(--navy);
-    padding:20px;
-    transition:left 0.3s ease;
-    z-index:2000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--drawer-w);
+    max-width: 86vw;
+
+    padding: 18px 14px 14px;
+    background: linear-gradient(180deg, var(--navy), #0f1330);
+    border-right: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 18px 0 50px rgba(0,0,0,0.35);
+
+    transform: translateX(calc(-1 * var(--drawer-w)));
+    transition: transform 280ms ease;
+    z-index: 1900;
+
+    /* rolagem interna */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .menu-fixo.active{
-    left:0;
+    transform: translateX(0);
+  }
+
+  /* cabeçalho do drawer */
+  .menu-drawer-header{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 6px 6px;
+  }
+
+  .menu-drawer-title{
+    color: rgba(255,255,255,0.92);
+    font-weight: 900;
+    letter-spacing: 0.2px;
+    margin: 0;
+    font-size: 14px;
+    text-transform: uppercase;
+  }
+
+  .menu-close{
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+
+  /* área rolável (lista) */
+  .menu-fixo nav{
+    overflow: auto;
+    padding-right: 4px; /* espaço pro scroll */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* scrollbar (opcional, fica discreto) */
+  .menu-fixo nav::-webkit-scrollbar{ width: 10px; }
+  .menu-fixo nav::-webkit-scrollbar-thumb{
+    background: rgba(255,255,255,0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(21,26,46,0.0);
   }
 
   .menu-fixo ul{
-    flex-direction:column;
-    border-radius:0;
-    background:none;
-    border:none;
-    padding:0;
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
   }
 
   .menu-fixo ul li{
-    width:100%;
+    width: 100%;
+    margin-bottom: 8px;
   }
 
+  /* item principal vira “cabeçalho” */
   .menu-fixo ul li > a{
-    border-radius:10px;
-    padding:12px;
+    width: 100%;
+    border-radius: 14px;
+    padding: 12px 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
   }
 
+  .menu-fixo ul li > a:hover{
+    background: rgba(255,255,255,0.10);
+  }
+
+  /* seta do acordeão (apenas quando há submenu) */
+  .menu-fixo ul li.has-submenu > a{
+    position: relative;
+    padding-right: 42px;
+  }
+
+  .menu-fixo ul li.has-submenu > a::after{
+    content: "▾";
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    opacity: 0.9;
+    transition: transform var(--transition);
+  }
+
+  /* quando aberto, gira seta */
+  .menu-fixo ul li.has-submenu.open > a::after{
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  /* SUBMENU: acordeão colapsável */
   .menu-fixo ul li ul{
-    position:static;
-    opacity:1;
-    visibility:visible;
-    transform:none;
-    transition:none;
-    margin-left:12px;
-    background:none;
-    box-shadow:none;
+    position: static;
+    min-width: 0;
+    margin: 8px 0 0;
+    padding: 0 0 0 10px;
+
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+
+    /* colapsável */
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 280ms ease;
   }
 
+  /* aberto */
+  .menu-fixo ul li.open > ul{
+    max-height: 520px; /* suficiente para várias subseções; é rolável no drawer */
+  }
+
+  .menu-fixo ul li ul li a{
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+
+  .menu-fixo ul li ul li a:hover{
+    background: var(--purple);
+    border-color: rgba(255,255,255,0.0);
+  }
+}
+
+/* =========================================================
+   HOTFIX (anti-sobrescrita)
+   ========================================================= */
+.menu-fixo ul{
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
