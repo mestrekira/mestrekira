@@ -212,6 +212,111 @@ section { margin-bottom: 26px; }
   transform: translateY(-1px);
 }
 
+.tabela{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 18px 0;
+  background: var(--surface);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.98rem;
+}
+
+/* Cabeçalho */
+.tabela thead{
+  background: linear-gradient(135deg, var(--navy), var(--navy-2));
+  color: #fff;
+}
+
+.tabela thead th{
+  padding: 12px 12px;
+  text-align: left;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  white-space: nowrap;
+}
+
+/* Células */
+.tabela td,
+.tabela th{
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  vertical-align: top;
+}
+
+/* Corpo */
+.tabela tbody td{
+  color: var(--text);
+}
+
+/* Zebra */
+.tabela tbody tr:nth-child(even){
+  background: rgba(21, 26, 46, 0.02);
+}
+
+/* Hover linha */
+.tabela tbody tr:hover{
+  background: rgba(129, 19, 235, 0.06);
+}
+
+/* Primeira coluna em destaque (opcional e bonito para “tópico/termo”) */
+.tabela tbody td:first-child{
+  font-weight: 900;
+  color: var(--navy);
+  background: rgba(21, 26, 46, 0.03);
+}
+
+/* Links dentro da tabela */
+.tabela a{
+  color: var(--purple);
+  font-weight: 700;
+  text-decoration: none;
+}
+.tabela a:hover{
+  text-decoration: underline;
+}
+
+/* Numeração / colunas numéricas (se você aplicar class="num") */
+.tabela td.num,
+.tabela th.num{
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Badges simples (se quiser marcar status com <span class="tag">) */
+.tabela .tag{
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(129, 19, 235, 0.10);
+  border: 1px solid rgba(129, 19, 235, 0.20);
+  color: var(--navy);
+}
+
+@media (max-width: 720px){
+
+  .tabela{
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.92rem;
+    table-layout: auto;
+  }
+
+  .tabela thead,
+  .tabela tbody,
+  .tabela tr{
+    width: max-content;
+  }
+
+}
 .explorar {
   margin-top: 3rem;
   background-color: #f9f9f9;
