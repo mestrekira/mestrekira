@@ -580,6 +580,33 @@ footer {
 
 }
 
+/* =========================
+   FIX DESKTOP
+   ========================= */
+
+/* 1) No desktop, esconder cabeçalho do drawer e botão fechar */
+@media (min-width: 901px){
+  .menu-drawer-header,
+  .menu-close,
+  .menu-overlay{
+    display: none !important;
+  }
+}
+
+/* 2) Barra de seções mais curta/compacta no desktop */
+@media (min-width: 901px){
+  .menu-fixo ul{
+    /* reduz a largura aparente e evita “barra gigante” */
+    max-width: 980px;                 /* ajuste fino: 920–1040 */
+    padding: 6px 10px;
+    gap: 4px;
+  }
+
+  .menu-fixo ul li > a{
+    padding: 9px 12px;
+    font-weight: 650;
+  }
+}
 /* =========================================================
    MOBILE — ROLAGEM COMPLETA DO MENU LATERAL
    ========================================================= */
