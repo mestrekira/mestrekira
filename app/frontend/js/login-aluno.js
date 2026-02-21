@@ -2,6 +2,13 @@
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
+const LS = {
+  token: 'token',
+  user: 'user',
+  studentId: 'studentId',
+  professorId: 'professorId',
+};
+
 function disable(btn, value) {
   if (btn) btn.disabled = !!value;
 }
@@ -31,20 +38,38 @@ function notify(type, title, message, duration) {
   });
 }
 
+function safeJsonParse(s) {
+  try {
+    return s ? JSON.parse(s) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearAuthStorage() {
+  // limpa tudo que pode gerar conflitos/loops
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.studentId);
+  localStorage.removeItem(LS.professorId);
+}
+
 function justLoggedOutGuard() {
-  // ✅ evita loop quando acabou de fazer logout e caiu no login
+  // evita loop quando acabou de fazer logout e caiu no login
   if (sessionStorage.getItem('mk_just_logged_out') === '1') {
     sessionStorage.removeItem('mk_just_logged_out');
-
-    // limpa TUDO que pode causar auto-redirect
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('professorId');
-    localStorage.removeItem('studentId');
-
+    clearAuthStorage();
     return true;
   }
   return false;
+}
+
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 async function fazerLogin() {
@@ -69,15 +94,26 @@ async function fazerLogin() {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      // evita enviar espaços sem querer
+      body: JSON.stringify({ email: email.trim(), password }),
     });
 
-    const data = await res.json().catch(() => null);
+    const data = await readJsonSafe(res);
 
-    // ❌ erro (inclui "email não verificado")
+    // Se API caiu/retornou HTML/sem JSON, cai aqui
+    if (!data) {
+      notify('error', 'Erro', 'Resposta inválida do servidor. Tente novamente.');
+      return;
+    }
+
+    // erro (inclui "email não verificado")
     if (!res.ok || !data?.ok || !data?.token || !data?.user) {
-      const msg = data?.error || 'Usuário ou senha inválidos.';
+      const msg =
+        data?.message ||
+        data?.error ||
+        'Usuário ou senha inválidos.';
 
+      // padrão específico (seu backend pode mandar emailVerified=false)
       if (data?.emailVerified === false) {
         show(resendVerifyBtn, true);
         notify(
@@ -93,28 +129,22 @@ async function fazerLogin() {
 
     const role = normRole(data.user.role);
 
-    // ✅ bloqueia se não for STUDENT/ALUNO
+    // bloqueia se não for STUDENT/ALUNO
     if (role !== 'STUDENT' && role !== 'ALUNO') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('professorId');
-      localStorage.removeItem('studentId');
-
+      clearAuthStorage();
       notify('error', 'Acesso negado', 'Este acesso é apenas para estudantes.');
       return;
     }
 
     // evita conflito de papéis
-    localStorage.removeItem('professorId');
+    localStorage.removeItem(LS.professorId);
 
-    // ✅ padrão novo (token + user)
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    // grava auth (padrão novo)
+    localStorage.setItem(LS.token, String(data.token));
+    localStorage.setItem(LS.user, JSON.stringify(data.user));
+    localStorage.setItem(LS.studentId, String(data.user.id));
 
-    // ✅ compatibilidade
-    localStorage.setItem('studentId', data.user.id);
-
-    notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1200);
+    notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
     window.location.replace('painel-aluno.html');
   } catch {
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
@@ -142,7 +172,7 @@ async function reenviarVerificacao() {
       body: JSON.stringify({ email }),
     });
 
-    const data = await res.json().catch(() => null);
+    const data = await readJsonSafe(res);
 
     if (!res.ok || !data?.ok) {
       notify(
@@ -153,11 +183,7 @@ async function reenviarVerificacao() {
       return;
     }
 
-    notify(
-      'success',
-      'Link enviado',
-      'Verifique a caixa de entrada e o Spam.',
-    );
+    notify('success', 'Link enviado', 'Verifique a caixa de entrada e o Spam.');
     show(resendVerifyBtn, false);
   } catch {
     notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
@@ -171,22 +197,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const pass = document.getElementById('password');
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
 
-  // ✅ evita looping pós-logout
+  // evita looping pós-logout
   if (justLoggedOutGuard()) return;
 
-  // ✅ Se já estiver logado com token e for STUDENT/ALUNO, vai direto
-  const token = localStorage.getItem('token');
-  const userJson = localStorage.getItem('user');
-  try {
-    const user = userJson ? JSON.parse(userJson) : null;
-    const role = normRole(user?.role);
+  // Se já estiver logado com token e for STUDENT/ALUNO, vai direto.
+  // Obs.: aqui é só atalho UX. Se token expirou, o painel deve lidar.
+  const token = localStorage.getItem(LS.token);
+  const user = safeJsonParse(localStorage.getItem(LS.user));
+  const role = normRole(user?.role);
 
-    if (token && (role === 'STUDENT' || role === 'ALUNO')) {
-      window.location.replace('painel-aluno.html');
-      return;
-    }
-  } catch {
-    // ignora
+  if (token && (role === 'STUDENT' || role === 'ALUNO')) {
+    window.location.replace('painel-aluno.html');
+    return;
   }
 
   if (btn) btn.addEventListener('click', fazerLogin);
@@ -199,5 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (resendVerifyBtn) {
     resendVerifyBtn.addEventListener('click', reenviarVerificacao);
+    // começa oculto por padrão
+    show(resendVerifyBtn, false);
   }
 });
