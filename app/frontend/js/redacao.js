@@ -1,7 +1,99 @@
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
+// =====================
+// Toast helper (não quebra se toast não existir)
+// =====================
+function notify(type, title, message, duration) {
+  try {
+    toast({
+      type,
+      title,
+      message,
+      duration:
+        duration ??
+        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    });
+  } catch {
+    if (type === 'error') console.error(title, message);
+  }
+}
+
+// =====================
+// Sessão / Auth helpers
+// =====================
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
+}
+
+function clearAuth() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('professorId');
+  localStorage.removeItem('studentId');
+}
+
+function getStudentIdCompat() {
+  const id = localStorage.getItem('studentId');
+  if (!id || id === 'undefined' || id === 'null') return '';
+  return String(id);
+}
+
+function isStudentSession() {
+  const token = localStorage.getItem('token') || '';
+  const userJson = localStorage.getItem('user');
+
+  // mantém compatibilidade: se ainda não migrou para token/user,
+  // ao menos exige studentId (mas o ideal é token + user)
+  if (!token || !userJson) {
+    return !!getStudentIdCompat();
+  }
+
+  try {
+    const user = JSON.parse(userJson);
+    const role = normRole(user?.role);
+    if (role !== 'STUDENT' && role !== 'ALUNO') return false;
+
+    // garante studentId compatível com páginas antigas
+    if (user?.id && !getStudentIdCompat()) {
+      localStorage.setItem('studentId', String(user.id));
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  const headers = { ...(options.headers || {}) };
+
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401 || res.status === 403) {
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    clearAuth();
+    setTimeout(() => window.location.replace('login-aluno.html'), 600);
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  return res;
+}
+
+// =====================
 // ELEMENTOS
+// =====================
 const titleInput = document.getElementById('essayTitle');
 const textarea = document.getElementById('essayText');
 const charCount = document.getElementById('charCount');
@@ -13,15 +105,19 @@ const sendBtn = document.getElementById('sendBtn');
 const taskTitleEl = document.getElementById('taskTitle');
 const taskGuidelinesEl = document.getElementById('taskGuidelines');
 
+// =====================
 // PARÂMETROS
+// =====================
 const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
-const studentId = localStorage.getItem('studentId');
 
-if (!taskId || !studentId || studentId === 'undefined' || studentId === 'null') {
-  toast({ title: 'Acesso inválido', message: 'Você precisa acessar por uma tarefa válida.', type: 'error' });
-  window.location.href = 'painel-aluno.html';
-  throw new Error('Parâmetros ausentes');
+// compat: studentId antigo, mas preferimos token/user
+const studentId = getStudentIdCompat();
+
+if (!taskId || !isStudentSession() || !studentId) {
+  notify('error', 'Acesso inválido', 'Você precisa acessar por uma tarefa válida.');
+  window.location.replace('painel-aluno.html');
+  throw new Error('Parâmetros/sessão ausentes');
 }
 
 if (!titleInput || !textarea || !charCount || !status || !sendBtn || !saveBtn) {
@@ -29,55 +125,60 @@ if (!titleInput || !textarea || !charCount || !status || !sendBtn || !saveBtn) {
   throw new Error('Elementos não encontrados');
 }
 
+// =====================
+// UI helpers
+// =====================
 function setStatus(msg) {
   status.textContent = msg || '';
 }
 
 function setDisabledAll(disabled) {
-  titleInput.disabled = disabled;
-  textarea.disabled = disabled;
-  saveBtn.disabled = disabled;
-  sendBtn.disabled = disabled;
+  titleInput.disabled = !!disabled;
+  textarea.disabled = !!disabled;
+  saveBtn.disabled = !!disabled;
+  sendBtn.disabled = !!disabled;
 }
 
 function updateCount() {
   charCount.textContent = String((textarea.value || '').length);
 }
 
-// ✅ Empacota título + corpo no content (compatível com seu backend)
+// =====================
+// Pack / Unpack (título + corpo no content)
+// =====================
 function packContent(title, body) {
   const t = String(title || '').trim();
   const b = String(body || '');
   return `__TITLE__:${t}\n\n${b}`;
 }
 
-// ✅ Desempacota (compatível com redações antigas)
 function unpackContent(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
-  const re = /^__TITLE__\s*:\s*(.*)\n\n([\s\S]*)$/i;
+
+  // aceita variações (compat com seu ecossistema)
+  const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
   const m = text.match(re);
+
   if (m) {
     return { title: String(m[1] || '').trim(), body: String(m[2] || '') };
   }
-  // fallback: sem marcador
+
   return { title: '', body: text };
 }
 
 /**
- * ✅ Renderiza texto preservando parágrafos e linhas em branco
- * Funciona tanto para <div>/<p> quanto para <textarea>/<input>.
+ * ✅ Preserva parágrafos e linhas em branco.
  */
 function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
 
-  const raw = value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
+  const raw =
+    value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
   const finalText = raw.trim() ? raw : fallback;
 
-  // textarea/input => value; demais => textContent
   if ('value' in el) el.value = finalText;
   else el.textContent = finalText;
 
-  // força preservação
   el.style.setProperty('white-space', 'pre-wrap', 'important');
   el.style.setProperty('line-height', '1.6', 'important');
   el.style.setProperty('text-align', 'justify', 'important');
@@ -86,20 +187,23 @@ function setMultilinePreserve(el, value, fallback = '') {
   el.style.setProperty('display', 'block', 'important');
 }
 
-// ✅ BLOQUEAR COLAR / ARRASTAR (inclui fallback p/ mobile)
+// =====================
+// Anti-paste / anti-drop (com fallback mobile)
+// =====================
 function antiPaste(el, fieldName, options = {}) {
-  if (!el) return;
+  if (!el) return null;
+
   const maxJump = Number(options.maxJump ?? 25);
   let lastValue = el.value || '';
   let lastLen = lastValue.length;
 
   function warn() {
-    toast({
-      title: 'Ação bloqueada',
-      message: `Colar texto não é permitido em ${fieldName}. Digite no sistema.`,
-      type: 'warn',
-      duration: 2600,
-    });
+    notify(
+      'warn',
+      'Ação bloqueada',
+      `Colar texto não é permitido em ${fieldName}. Digite no sistema.`,
+      2600,
+    );
   }
 
   el.addEventListener('paste', (e) => {
@@ -127,12 +231,13 @@ function antiPaste(el, fieldName, options = {}) {
     }
   });
 
-  // fallback universal (mobile): salto grande de caracteres = cola
+  // fallback universal (mobile): salto grande de caracteres = provável cola
   el.addEventListener('input', () => {
     const cur = el.value || '';
     const curLen = cur.length;
     const diff = curLen - lastLen;
 
+    // só bloqueia saltos POSITIVOS grandes (evita falsos positivos em delete)
     if (diff > maxJump) {
       el.value = lastValue;
       try {
@@ -157,28 +262,29 @@ function antiPaste(el, fieldName, options = {}) {
 const antiTitle = antiPaste(titleInput, 'Título', { maxJump: 15 });
 const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
 
-// ===== BACKEND (ESSAYS COMO RASCUNHO) =====
+// =====================
+// BACKEND (ESSAYS como rascunho)
+// =====================
 
 // Busca a redação do aluno naquela tarefa (rascunho ou enviada)
 async function getMyEssayByTask() {
-  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student?studentId=${encodeURIComponent(
-    studentId
-  )}`;
-  const res = await fetch(url);
+  const url =
+    `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student` +
+    `?studentId=${encodeURIComponent(studentId)}`;
+
+  const res = await authFetch(url);
 
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-  const data = await res.json();
-  if (!data) return null;
-  return data;
+  const data = await res.json().catch(() => null);
+  return data || null;
 }
 
 // Salva rascunho (upsert) no backend: POST /essays/draft
 async function saveDraftServerPacked(packedContent) {
-  const res = await fetch(`${API_URL}/essays/draft`, {
+  const res = await authFetch(`${API_URL}/essays/draft`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       taskId,
       studentId,
@@ -186,7 +292,11 @@ async function saveDraftServerPacked(packedContent) {
     }),
   });
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    const msg = data?.message || data?.error || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
 
   return res.json().catch(() => null);
 }
@@ -199,29 +309,33 @@ async function clearDraftUXOnly() {
   antiEssay?.sync?.();
 }
 
-// 🔹 CARREGAR TAREFA (TEMA + ORIENTAÇÕES)
+// =====================
+// CARREGAR TAREFA (tema + orientações)
+// =====================
 async function carregarTarefa() {
   try {
-    const response = await fetch(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
-    if (!response.ok) throw new Error();
+    const response = await authFetch(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const task = await response.json();
+    const task = await response.json().catch(() => null);
 
     if (taskTitleEl) taskTitleEl.textContent = task?.title || 'Tema da Redação';
 
-    // ✅ AQUI: preserva parágrafos / linhas em branco
+    // preserva parágrafos / linhas em branco
     setMultilinePreserve(taskGuidelinesEl, task?.guidelines, 'Sem orientações adicionais.');
   } catch (err) {
     console.error('Erro ao carregar tarefa:', err);
 
     if (taskTitleEl) taskTitleEl.textContent = 'Tema da Redação';
-
     setMultilinePreserve(taskGuidelinesEl, '', 'Não foi possível carregar as orientações.');
-    toast({ title: 'Erro', message: 'Erro ao carregar a tarefa.', type: 'error' });
+
+    notify('error', 'Erro', 'Erro ao carregar a tarefa.');
   }
 }
 
-// ✅ CARREGAR RASCUNHO (BACKEND via essays)
+// =====================
+// CARREGAR RASCUNHO (via essays)
+// =====================
 async function carregarRascunho() {
   try {
     const essay = await getMyEssayByTask();
@@ -231,16 +345,20 @@ async function carregarRascunho() {
       return;
     }
 
+    // já enviada -> redireciona
     if (essay.isDraft === false && essay.id) {
       setStatus('Você já enviou esta redação. Redirecionando para o feedback...');
       setDisabledAll(true);
+
       setTimeout(() => {
-        window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
+        window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`);
       }, 350);
+
       return;
     }
 
     const { title, body } = unpackContent(essay.content || '');
+
     titleInput.value = title || '';
     textarea.value = body || '';
     updateCount();
@@ -255,7 +373,9 @@ async function carregarRascunho() {
   }
 }
 
-// AUTOSAVE (BACKEND) com debounce
+// =====================
+// AUTOSAVE (debounce + proteção)
+// =====================
 let autosaveTimer = null;
 let autosaveBusy = false;
 
@@ -266,13 +386,17 @@ function scheduleAutosave() {
     const title = (titleInput.value || '').trim();
     const text = textarea.value || '';
 
+    // não salva “vazio”
     if (!title && !text.trim()) return;
+
+    // evita concorrência
     if (autosaveBusy) return;
     autosaveBusy = true;
 
     try {
       await saveDraftServerPacked(packContent(title, text));
     } catch (err) {
+      // silencioso (não polui UX)
       console.error('Autosave falhou:', err);
     } finally {
       autosaveBusy = false;
@@ -289,7 +413,9 @@ textarea.addEventListener('input', () => {
   scheduleAutosave();
 });
 
-// ✅ SALVAR RASCUNHO (BACKEND)
+// =====================
+// SALVAR RASCUNHO (manual)
+// =====================
 saveBtn.addEventListener('click', async () => {
   const title = (titleInput.value || '').trim();
   const text = textarea.value || '';
@@ -297,23 +423,30 @@ saveBtn.addEventListener('click', async () => {
   if (!title && !text.trim()) {
     await clearDraftUXOnly();
     setStatus('Nada para salvar.');
-    toast({ title: 'Nada a salvar', message: 'O rascunho está vazio.', type: 'info' });
+    notify('info', 'Nada a salvar', 'O rascunho está vazio.');
     return;
   }
+
+  // evita spam de clique
+  saveBtn.disabled = true;
 
   try {
     setStatus('Salvando rascunho...');
     await saveDraftServerPacked(packContent(title, text));
     setStatus('Rascunho salvo no servidor.');
-    toast({ title: 'Salvo', message: 'Rascunho salvo no servidor.', type: 'success' });
+    notify('success', 'Salvo', 'Rascunho salvo no servidor.');
   } catch (err) {
     console.error(err);
     setStatus('Erro ao salvar rascunho no servidor.');
-    toast({ title: 'Erro', message: 'Erro ao salvar rascunho no servidor.', type: 'error' });
+    notify('error', 'Erro', 'Erro ao salvar rascunho no servidor.');
+  } finally {
+    saveBtn.disabled = false;
   }
 });
 
-// ✅ VERIFICAR SE JÁ ENVIOU
+// =====================
+// VERIFICAR SE JÁ ENVIOU
+// =====================
 async function checarJaEnviou() {
   try {
     const mine = await getMyEssayByTask();
@@ -326,38 +459,57 @@ async function checarJaEnviou() {
   }
 }
 
-// ✅ ENVIAR REDAÇÃO (BACKEND)
+// =====================
+// ENVIAR REDAÇÃO (envio final)
+// =====================
+let sending = false;
+
 sendBtn.addEventListener('click', async () => {
+  if (sending) return;
+  sending = true;
+
   const title = (titleInput.value || '').trim();
   const text = textarea.value || '';
 
   if (!title) {
-    toast({ title: 'Campo obrigatório', message: 'Informe o título da redação.', type: 'warn' });
+    notify('warn', 'Campo obrigatório', 'Informe o título da redação.');
+    sending = false;
     return;
   }
 
   if (text.length < 500) {
-    toast({ title: 'Texto muito curto', message: 'A redação deve ter pelo menos 500 caracteres.', type: 'warn' });
+    notify('warn', 'Texto muito curto', 'A redação deve ter pelo menos 500 caracteres.');
+    sending = false;
     return;
   }
 
-  sendBtn.disabled = true;
-
-  const ja = await checarJaEnviou();
-  if (ja.sent) {
-    setStatus('Você já enviou esta redação. Não é permitido reenviar.');
-    setDisabledAll(true);
-    toast({ title: 'Já enviada', message: 'Você já enviou esta redação.', type: 'info' });
-    window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`;
-    return;
-  }
-
-  setStatus('Enviando redação...');
+  // trava UI
+  setDisabledAll(true);
+  setStatus('Verificando envio...');
 
   try {
-    const response = await fetch(`${API_URL}/essays`, {
+    // revalida no servidor (evita reenviar por múltiplas abas)
+    const ja = await checarJaEnviou();
+    if (ja.sent) {
+      setStatus('Você já enviou esta redação. Não é permitido reenviar.');
+      notify('info', 'Já enviada', 'Você já enviou esta redação.');
+      window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`);
+      return;
+    }
+
+    // opcional: garante que o último estado foi salvo como rascunho antes de enviar
+    // (reduz chance de perder texto se a rede falhar no POST final)
+    try {
+      await saveDraftServerPacked(packContent(title, text));
+    } catch (e) {
+      console.warn('[redacao] Falha ao salvar rascunho antes do envio:', e);
+      // segue mesmo assim, porque o envio final é o que importa
+    }
+
+    setStatus('Enviando redação...');
+
+    const response = await authFetch(`${API_URL}/essays`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         taskId,
         studentId,
@@ -365,42 +517,98 @@ sendBtn.addEventListener('click', async () => {
       }),
     });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      const msg = data?.message || data?.error || `HTTP ${response.status}`;
+      throw new Error(msg);
+    }
 
-    const essay = await response.json();
+    const essay = await response.json().catch(() => null);
 
-    setDisabledAll(true);
     setStatus('Redação enviada com sucesso!');
-    toast({ title: 'Enviada!', message: 'Redação enviada com sucesso.', type: 'success' });
+    notify('success', 'Enviada!', 'Redação enviada com sucesso.');
+
+    const essayId = essay?.id ? String(essay.id) : '';
+    if (!essayId) {
+      // se backend não devolveu id, ainda assim não deixa o aluno reenviar
+      // (mas precisa do id para abrir feedback)
+      notify(
+        'warn',
+        'Enviada',
+        'Redação enviada, mas não consegui obter o ID para abrir o feedback automaticamente.',
+        4200,
+      );
+      return;
+    }
 
     setTimeout(() => {
-      window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`;
+      window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(essayId)}`);
     }, 600);
   } catch (err) {
     console.error(err);
-    sendBtn.disabled = false;
+    sending = false;
+
+    // destrava UI
+    setDisabledAll(false);
+
     setStatus('Erro ao enviar redação.');
-    toast({ title: 'Erro', message: 'Erro ao enviar redação.', type: 'error' });
+    notify('error', 'Erro', 'Erro ao enviar redação.');
   }
 });
 
-// INIT
-(async () => {
-  await carregarTarefa();
+// =====================
+// FLUSH de autosave ao sair da página
+// (evita perder texto quando o usuário fecha a aba)
+// =====================
+async function flushAutosave() {
+  try {
+    const title = (titleInput.value || '').trim();
+    const text = textarea.value || '';
 
-  setStatus('Verificando envio...');
-  const ja = await checarJaEnviou();
+    if (!title && !text.trim()) return;
+    if (autosaveBusy) return;
 
-  if (ja.sent) {
-    setStatus('Você já enviou esta redação. Redirecionando para o feedback...');
-    setDisabledAll(true);
-    setTimeout(() => {
-      window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`;
-    }, 400);
-    return;
+    autosaveBusy = true;
+    await saveDraftServerPacked(packContent(title, text));
+  } catch {
+    // silencioso
+  } finally {
+    autosaveBusy = false;
   }
+}
 
-  setStatus('Carregando rascunho...');
-  await carregarRascunho();
-  setStatus('');
+window.addEventListener('pagehide', () => {
+  // não dá para "await" aqui — mas dispara tentativa final
+  flushAutosave();
+});
+
+// =====================
+// INIT
+// =====================
+(async () => {
+  try {
+    await carregarTarefa();
+
+    setStatus('Verificando envio...');
+    const ja = await checarJaEnviou();
+
+    if (ja.sent) {
+      setStatus('Você já enviou esta redação. Redirecionando para o feedback...');
+      setDisabledAll(true);
+
+      setTimeout(() => {
+        window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`);
+      }, 400);
+
+      return;
+    }
+
+    setStatus('Carregando rascunho...');
+    await carregarRascunho();
+    setStatus('');
+    updateCount();
+  } catch (e) {
+    console.error(e);
+    setStatus('Erro ao inicializar a página.');
+  }
 })();
