@@ -1,4 +1,6 @@
+// feedback-aluno.js
 import { API_URL } from './config.js';
+import { toast } from './ui-feedback.js';
 
 // 🔹 PARÂMETROS
 const params = new URLSearchParams(window.location.search);
@@ -6,7 +8,12 @@ const essayId = params.get('essayId');
 const studentId = localStorage.getItem('studentId');
 
 if (!essayId || !studentId || studentId === 'undefined' || studentId === 'null') {
-  alert('Acesso inválido.');
+  toast?.({
+    title: 'Acesso inválido',
+    message: 'Você precisa acessar por uma redação válida.',
+    type: 'error',
+    duration: 3200,
+  });
   window.location.href = 'painel-aluno.html';
   throw new Error('Parâmetros ausentes');
 }
@@ -26,6 +33,79 @@ const c2El = document.getElementById('c2');
 const c3El = document.getElementById('c3');
 const c4El = document.getElementById('c4');
 const c5El = document.getElementById('c5');
+
+// ---------------- toast/status helpers ----------------
+
+function notify(type, title, message, duration) {
+  if (typeof toast === 'function') {
+    toast({
+      type,
+      title,
+      message,
+      duration: duration ?? (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
+    });
+  } else {
+    // fallback (caso ui-feedback.js não esteja carregando por algum motivo)
+    if (type === 'error') alert(`${title}\n\n${message}`);
+  }
+}
+
+// ---------------- Auth fetch (token) ----------------
+
+function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
+function clearAuth() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('professorId');
+  localStorage.removeItem('studentId');
+}
+
+async function errorMessageFromResponse(res) {
+  try {
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    if (ct.includes('application/json')) {
+      const data = await res.json().catch(() => null);
+      const m = data?.message ?? data?.error;
+      if (Array.isArray(m)) return m.join(' | ');
+      if (typeof m === 'string' && m.trim()) return m;
+    }
+    const t = await res.text().catch(() => '');
+    if (t && t.trim()) return t.slice(0, 300);
+  } catch {
+    // ignora
+  }
+  return `Erro (HTTP ${res.status}).`;
+}
+
+async function jsonSafe(res) {
+  return res.json().catch(() => null);
+}
+
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  const headers = { ...(options.headers || {}) };
+
+  // só define JSON se houver body e o header ainda não foi definido
+  if (!headers['Content-Type'] && options.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401 || res.status === 403) {
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    clearAuth();
+    setTimeout(() => window.location.replace('login-aluno.html'), 600);
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  return res;
+}
 
 // ---------------- util ----------------
 
@@ -102,10 +182,7 @@ function formatDateBR(value) {
   const d = toDateSafe(value);
   if (!d) return '—';
   try {
-    return new Intl.DateTimeFormat('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    }).format(d);
+    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
   } catch {
     return '—';
   }
@@ -141,10 +218,7 @@ function renderEssayMeta(metaEl, essay) {
 
   const lines = [];
   lines.push(`Enviada em: ${sentAtStr}`);
-
-  if (showCorrected) {
-    lines.push(`Corrigida em: ${correctedAtStr}`);
-  }
+  if (showCorrected) lines.push(`Corrigida em: ${correctedAtStr}`);
 
   metaEl.textContent = lines.join('\n');
 }
@@ -265,16 +339,40 @@ function patchCompetencyLabels() {
   });
 }
 
+// ---------------- fetch helpers ----------------
+
+async function fetchEssayById(id) {
+  const res = await authFetch(`${API_URL}/essays/${encodeURIComponent(id)}`);
+  if (!res.ok) {
+    const msg = await errorMessageFromResponse(res);
+    throw new Error(msg);
+  }
+  return jsonSafe(res);
+}
+
+async function fetchTaskTitle(taskId) {
+  if (!taskId) return null;
+
+  try {
+    const res = await authFetch(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
+    if (!res.ok) return null;
+    const task = await jsonSafe(res);
+    return task?.title ? String(task.title) : null;
+  } catch (e) {
+    if (!String(e?.message || '').startsWith('AUTH_')) console.warn(e);
+    return null;
+  }
+}
+
 // 🔹 CARREGAR FEEDBACK
 async function carregarFeedback() {
   try {
     // 1) redação
-    const resEssay = await fetch(`${API_URL}/essays/${encodeURIComponent(essayId)}`);
-    if (!resEssay.ok) throw new Error(`HTTP ${resEssay.status}`);
+    const essay = await fetchEssayById(essayId);
 
-    const essay = await resEssay.json();
+    if (!essay) throw new Error('Redação não encontrada');
 
-    // 🔐 checagem
+    // 🔐 checagem (front)
     if (String(essay.studentId) !== String(studentId)) {
       alert('Você não tem permissão para ver esta redação.');
       window.location.href = 'painel-aluno.html';
@@ -288,11 +386,8 @@ async function carregarFeedback() {
     setText(taskTitleEl, '—');
     if (essay.taskId) {
       try {
-        const resTask = await fetch(`${API_URL}/tasks/${encodeURIComponent(essay.taskId)}`);
-        if (resTask.ok) {
-          const task = await resTask.json();
-          setText(taskTitleEl, task?.title || '—');
-        }
+        const task = await fetchTaskById(essay.taskId);
+        if (task) setText(taskTitleEl, task?.title || '—');
       } catch {
         // ignora
       }
@@ -306,7 +401,11 @@ async function carregarFeedback() {
     setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida', '—');
 
     // 5) feedback (preserva parágrafos/linhas em branco)
-    setMultilinePreserve(feedbackEl, essay?.feedback || '', 'Aguardando correção do professor.');
+    setMultilinePreserve(
+      feedbackEl,
+      essay?.feedback || '',
+      'Aguardando correção do professor.',
+    );
 
     // 6) competências
     setText(c1El, essay.c1 ?? '—', '—');
@@ -331,4 +430,6 @@ if (backBtn) {
   });
 }
 
+// INIT
 carregarFeedback();
+
