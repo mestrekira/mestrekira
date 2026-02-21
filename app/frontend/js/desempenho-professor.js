@@ -1,13 +1,16 @@
 import { API_URL } from './config.js';
+import { toast } from './ui-feedback.js';
 
 const params = new URLSearchParams(window.location.search);
 const roomId = params.get('roomId');
 
 if (!roomId) {
-  alert('Sala inválida.');
-  window.location.href = 'professor-salas.html';
+  toast?.({ title: 'Sala inválida', message: 'roomId ausente.', type: 'error' });
+  window.location.replace('professor-salas.html');
   throw new Error('roomId ausente');
 }
+
+// ---------------- Elementos ----------------
 
 const roomNameEl = document.getElementById('roomName');
 const statusEl = document.getElementById('status');
@@ -30,7 +33,126 @@ const closeTaskPanelBtn = document.getElementById('closeTaskPanelBtn');
 
 const studentsList = document.getElementById('studentsList');
 
-// ---------------- utils ----------------
+// ---------------- Toast helpers ----------------
+
+function notify(type, title, message, duration) {
+  if (typeof toast === 'function') {
+    toast({
+      type,
+      title,
+      message,
+      duration:
+        duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    });
+  } else {
+    if (type === 'error') alert(`${title}\n\n${message}`);
+    else console.log(title, message);
+  }
+}
+
+function setStatus(msg) {
+  if (!statusEl) return;
+  statusEl.textContent = msg || '';
+}
+
+function setText(el, value) {
+  if (!el) return;
+  el.textContent = value === null || value === undefined ? '—' : String(value);
+}
+
+// ---------------- Sessão (professor) + authFetch ----------------
+
+const LS = {
+  token: 'token',
+  user: 'user',
+  professorId: 'professorId',
+  studentId: 'studentId',
+};
+
+function safeJsonParse(s) {
+  try {
+    return s ? JSON.parse(s) : null;
+  } catch {
+    return null;
+  }
+}
+
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
+}
+
+function clearAuth() {
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.studentId);
+}
+
+function requireProfessorSession() {
+  const token = localStorage.getItem(LS.token);
+  const user = safeJsonParse(localStorage.getItem(LS.user));
+  const role = normRole(user?.role);
+
+  if (!token || role !== 'PROFESSOR') {
+    clearAuth();
+    window.location.replace('login-professor.html');
+    throw new Error('Sessão de professor ausente/inválida');
+  }
+
+  return { token, user };
+}
+
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function unwrapResult(data) {
+  // suporta: array puro, objeto puro, {ok,result}, {data}
+  if (Array.isArray(data)) return data;
+
+  if (data && typeof data === 'object') {
+    if (Array.isArray(data.result)) return data.result;
+    if (data.result && typeof data.result === 'object') return data.result;
+    if (Array.isArray(data.data)) return data.data;
+    if (data.data && typeof data.data === 'object') return data.data;
+  }
+
+  return data;
+}
+
+async function authFetch(path, { token, method = 'GET', body } = {}) {
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (body) headers['Content-Type'] = 'application/json';
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    clearAuth();
+    setTimeout(() => window.location.replace('login-professor.html'), 600);
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  const data = await readJsonSafe(res);
+
+  if (!res.ok) {
+    const msg = data?.message || data?.error || `Erro HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+// ---------------- utils (médias/datas) ----------------
 
 function mean(nums) {
   const v = (Array.isArray(nums) ? nums : [])
@@ -39,18 +161,6 @@ function mean(nums) {
   if (v.length === 0) return null;
   return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
 }
-
-function setText(el, value) {
-  if (!el) return;
-  el.textContent = value === null || value === undefined ? '—' : String(value);
-}
-
-function setStatus(msg) {
-  if (!statusEl) return;
-  statusEl.textContent = msg || '';
-}
-
-// ---------------- DATAS (robusto) ----------------
 
 function pickDate(obj, keys) {
   for (const k of keys) {
@@ -61,7 +171,7 @@ function pickDate(obj, keys) {
 }
 
 function toDateSafe(value) {
-  if (!value) return null;
+  if (value === null || value === undefined) return null;
 
   if (value instanceof Date) {
     const t = value.getTime();
@@ -69,19 +179,23 @@ function toDateSafe(value) {
   }
 
   if (typeof value === 'number') {
-    const d = new Date(value);
+    const ms = value < 1e12 ? value * 1000 : value; // epoch s ou ms
+    const d = new Date(ms);
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
   const s = String(value).trim();
   if (!s) return null;
 
+  // tenta parse direto
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) return d;
 
+  // tenta número em string
   const asNum = Number(s);
   if (!Number.isNaN(asNum)) {
-    const d2 = new Date(asNum);
+    const ms = asNum < 1e12 ? asNum * 1000 : asNum;
+    const d2 = new Date(ms);
     return Number.isNaN(d2.getTime()) ? null : d2;
   }
 
@@ -104,10 +218,12 @@ function getEssaySentAt(e) {
 function studentPhotoKey(studentId) {
   return studentId ? `mk_photo_student_${studentId}` : null;
 }
+
 function getStudentPhotoDataUrl(studentId) {
   const key = studentPhotoKey(studentId);
   return key ? localStorage.getItem(key) : null;
 }
+
 function makeAvatar(studentId, size = 38) {
   const img = document.createElement('img');
   img.alt = 'Foto do aluno';
@@ -116,23 +232,22 @@ function makeAvatar(studentId, size = 38) {
   img.style.borderRadius = '50%';
   img.style.objectFit = 'cover';
   img.style.border = '1px solid #ccc';
-  img.style.display = 'none';
+  img.style.display = 'inline-block';
 
   const dataUrl = getStudentPhotoDataUrl(studentId);
   if (dataUrl) {
     img.src = dataUrl;
-    img.style.display = 'inline-block';
-  } else {
-    img.src =
-      'data:image/svg+xml;utf8,' +
-      encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-          <rect width="100%" height="100%" fill="#eee"/>
-          <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">?</text>
-        </svg>`
-      );
-    img.style.display = 'inline-block';
+    return img;
   }
+
+  img.src =
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+        <rect width="100%" height="100%" fill="#eee"/>
+        <text x="50%" y="55%" font-size="14" text-anchor="middle" fill="#888">?</text>
+      </svg>`,
+    );
 
   return img;
 }
@@ -206,12 +321,14 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
     circle.setAttribute('stroke-width', String(thickness));
     circle.setAttribute('stroke-linecap', 'butt');
 
-    if (seg.isMargin) {
-      circle.setAttribute('stroke', DONUT_COLORS.margin);
-      circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
-      circle.setAttribute('stroke-dashoffset', String(-offset));
-      circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+    circle.setAttribute('stroke', seg.isMargin ? DONUT_COLORS.margin : seg.color);
+    circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
+    circle.setAttribute('stroke-dashoffset', String(-offset));
+    circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
 
+    svg.appendChild(circle);
+
+    if (seg.isMargin) {
       const border = document.createElementNS(svgNS, 'circle');
       border.setAttribute('cx', String(cx));
       border.setAttribute('cy', String(cy));
@@ -219,15 +336,7 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
       border.setAttribute('fill', 'none');
       border.setAttribute('stroke', DONUT_COLORS.marginStroke);
       border.setAttribute('stroke-width', '1');
-
-      svg.appendChild(circle);
       svg.appendChild(border);
-    } else {
-      circle.setAttribute('stroke', seg.color);
-      circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
-      circle.setAttribute('stroke-dashoffset', String(-offset));
-      circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-      svg.appendChild(circle);
     }
 
     offset += segLen;
@@ -250,7 +359,7 @@ function buildLegendGrid(values) {
   const legend = document.createElement('div');
   legend.className = 'mk-legend';
 
-  values.forEach((v) => {
+  (Array.isArray(values) ? values : []).forEach((v) => {
     const item = document.createElement('div');
     item.className = 'mk-legend-item';
 
@@ -282,23 +391,22 @@ function renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal }) {
   const { svg, legend } = createDonutSVG(
     { c1: mC1 ?? 0, c2: mC2 ?? 0, c3: mC3 ?? 0, c4: mC4 ?? 0, c5: mC5 ?? 0, total: mTotal },
     120,
-    18
+    18,
   );
 
   svg.classList.add('mk-donut');
   roomAvgDonutEl.appendChild(svg);
-
   roomAvgLegendEl.appendChild(buildLegendGrid(legend));
 }
 
 // ---------------- alunos ativos ----------------
 
-async function getActiveStudentsSet() {
+async function getActiveStudentsSetAuth(session) {
   try {
-    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
-    if (!res.ok) throw new Error();
-
-    const list = await res.json();
+    const data = await authFetch(`/rooms/${encodeURIComponent(roomId)}/students`, {
+      token: session.token,
+    });
+    const list = unwrapResult(data);
     const arr = Array.isArray(list) ? list : [];
 
     const ids = arr
@@ -342,15 +450,14 @@ function buildInlinePanel() {
   head.appendChild(closeBtn);
 
   const info = document.createElement('div');
-  info.id = 'mkInlineInfo';
+  info.className = 'mk-inline-info';
 
   const h4 = document.createElement('h4');
   h4.textContent = 'Redações do aluno';
   h4.style.marginTop = '10px';
 
   const essaysUl = document.createElement('ul');
-  essaysUl.className = 'lista';
-  essaysUl.id = 'mkInlineEssays';
+  essaysUl.className = 'lista mk-inline-essays';
 
   wrap.appendChild(head);
   wrap.appendChild(info);
@@ -363,8 +470,8 @@ function buildInlinePanel() {
 function fillInlinePanel(panel, studentGroup, medias) {
   if (!panel) return;
 
-  const info = panel.querySelector('#mkInlineInfo');
-  const essaysUl = panel.querySelector('#mkInlineEssays');
+  const info = panel.querySelector('.mk-inline-info');
+  const essaysUl = panel.querySelector('.mk-inline-essays');
 
   if (info) {
     info.innerHTML = `
@@ -383,13 +490,24 @@ function fillInlinePanel(panel, studentGroup, medias) {
   essaysUl.innerHTML = '';
 
   const essays = [...(studentGroup.essays || [])];
-  essays.sort((a, b) => (a.taskTitle || '').localeCompare(b.taskTitle || ''));
+
+  // ordena por título da tarefa e, em empate, por data de envio
+  essays.sort((a, b) => {
+    const at = String(a.taskTitle || a.task?.title || '').localeCompare(
+      String(b.taskTitle || b.task?.title || ''),
+    );
+    if (at !== 0) return at;
+
+    const da = toDateSafe(getEssaySentAt(a))?.getTime?.() ?? -Infinity;
+    const db = toDateSafe(getEssaySentAt(b))?.getTime?.() ?? -Infinity;
+    return db - da;
+  });
 
   essays.forEach((e) => {
     const li = document.createElement('li');
 
     const title = document.createElement('strong');
-    title.textContent = e.taskTitle || 'Tarefa';
+    title.textContent = e.taskTitle || e.task?.title || 'Tarefa';
 
     const nota = document.createElement('div');
     nota.textContent =
@@ -400,16 +518,17 @@ function fillInlinePanel(panel, studentGroup, medias) {
         : 'Sem correção';
 
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.textContent = 'Ver redação/feedback';
     btn.onclick = () => {
       const tId = e.taskId || e.task?.id || null;
       if (!tId) {
-        alert('Não encontrei o taskId desta redação no retorno do servidor.');
+        notify('error', 'Erro', 'Não encontrei o taskId desta redação no retorno do servidor.');
         return;
       }
       window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-        tId
-      )}&studentId=${encodeURIComponent(studentGroup.studentId)}`;
+        String(tId),
+      )}&studentId=${encodeURIComponent(String(studentGroup.studentId))}`;
     };
 
     li.appendChild(title);
@@ -424,12 +543,13 @@ function fillInlinePanel(panel, studentGroup, medias) {
 
 // ---------------- carregar sala ----------------
 
-async function carregarSala() {
+async function carregarSala(session) {
   if (!roomNameEl) return;
   try {
-    const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
-    if (!res.ok) throw new Error();
-    const room = await res.json();
+    const data = await authFetch(`/rooms/${encodeURIComponent(roomId)}`, {
+      token: session.token,
+    });
+    const room = unwrapResult(data);
     roomNameEl.textContent = room?.name || 'Sala';
   } catch {
     roomNameEl.textContent = 'Sala';
@@ -441,17 +561,17 @@ async function carregarSala() {
 let cachedData = [];
 let cachedActiveSet = null;
 
-// ✅ cache das tarefas da sala (para saber qual é a mais recente com mais precisão)
+// cache de tasks da sala p/ “mais recente”
 let cachedTasksMeta = [];
 let cachedNewestTaskId = null;
 
-async function fetchTasksByRoom() {
+async function fetchTasksByRoomAuth(session) {
   try {
-    const res = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
-    if (!res.ok) throw new Error();
-    const raw = await res.json();
-    const arr = Array.isArray(raw) ? raw : [];
-    return arr;
+    const data = await authFetch(`/tasks/by-room?roomId=${encodeURIComponent(roomId)}`, {
+      token: session.token,
+    });
+    const raw = unwrapResult(data);
+    return Array.isArray(raw) ? raw : [];
   } catch {
     return [];
   }
@@ -488,9 +608,7 @@ function computeNewestTaskIdFromTasksMeta(tasksMeta) {
   return newestId || tasksMeta[tasksMeta.length - 1].id;
 }
 
-/**
- * Fallback: se não tiver createdAt nas tasks, tenta pelo maior "enviado em" das redações daquela tarefa.
- */
+// fallback: se tasks não tiverem createdAt, usa maior “enviado em” nas redações
 function computeNewestTaskIdFromEssays(data) {
   const mapMax = new Map(); // taskId -> maxTime
 
@@ -527,16 +645,18 @@ function buildTasksFromData(data) {
     const title = e.taskTitle || e.task?.title || 'Tarefa';
     if (!tId) return;
 
-    if (!map.has(String(tId))) {
-      map.set(String(tId), {
-        taskId: String(tId),
+    const key = String(tId);
+
+    if (!map.has(key)) {
+      map.set(key, {
+        taskId: key,
         title,
         count: 0,
         correctedCount: 0,
       });
     }
 
-    const g = map.get(String(tId));
+    const g = map.get(key);
     g.count += 1;
     if (e.score !== null && e.score !== undefined) g.correctedCount += 1;
   });
@@ -572,8 +692,9 @@ function renderTasksList(tasks) {
     return;
   }
 
-  // coloca a mais recente no topo (e destaca)
   const newestId = cachedNewestTaskId;
+
+  // ordena colocando a mais recente no topo
   const ordered = [...tasks].sort((a, b) => {
     if (newestId) {
       const aIs = String(a.taskId) === String(newestId) ? 1 : 0;
@@ -590,7 +711,6 @@ function renderTasksList(tasks) {
     btn.className = 'mk-task-btn';
     btn.type = 'button';
 
-    // destaque visual
     if (isNewest) {
       btn.style.border = '2px solid rgba(109,40,217,.35)';
       btn.style.boxShadow = '0 10px 24px rgba(109,40,217,0.12)';
@@ -627,16 +747,18 @@ function groupByStudent(data) {
     const sid = e.studentId;
     if (!sid) return;
 
-    if (!byStudent.has(String(sid))) {
-      byStudent.set(String(sid), {
-        studentId: String(sid),
+    const key = String(sid);
+
+    if (!byStudent.has(key)) {
+      byStudent.set(key, {
+        studentId: key,
         studentName: e.studentName || '',
         studentEmail: e.studentEmail || '',
         essays: [],
       });
     }
 
-    const g = byStudent.get(String(sid));
+    const g = byStudent.get(key);
     if (!g.studentName && e.studentName) g.studentName = e.studentName;
     if (!g.studentEmail && e.studentEmail) g.studentEmail = e.studentEmail;
 
@@ -650,7 +772,7 @@ function groupByStudent(data) {
 
 function computeStudentAverages(studentGroup) {
   const correctedEssays = (studentGroup.essays || []).filter(
-    (e) => e.score !== null && e.score !== undefined
+    (e) => e.score !== null && e.score !== undefined,
   );
 
   const mTotal = mean(correctedEssays.map((e) => e.score));
@@ -669,7 +791,9 @@ function renderStudentsForTask(taskId, taskTitle) {
   closeAllInlinePanels();
   studentsList.innerHTML = '';
 
-  const filtered = cachedData.filter((e) => String(e.taskId || e.task?.id || '') === String(taskId));
+  const filtered = cachedData.filter(
+    (e) => String(e.taskId || e.task?.id || '') === String(taskId),
+  );
   const students = groupByStudent(filtered);
 
   if (students.length === 0) {
@@ -694,7 +818,9 @@ function renderStudentsForTask(taskId, taskTitle) {
     const email = s.studentEmail && String(s.studentEmail).trim() ? s.studentEmail : '';
 
     const header = document.createElement('div');
-    header.innerHTML = `<strong>${nome}</strong>${email ? `<br><small class="mk-muted">${email}</small>` : ''}`;
+    header.innerHTML = `<strong>${nome}</strong>${
+      email ? `<br><small class="mk-muted">${email}</small>` : ''
+    }`;
 
     const medias = computeStudentAverages(s);
 
@@ -703,7 +829,9 @@ function renderStudentsForTask(taskId, taskTitle) {
     resumo.style.marginTop = '6px';
     resumo.textContent =
       `Média: ${medias.mTotal ?? '—'} | ` +
-      `C1 ${medias.mC1 ?? '—'} C2 ${medias.mC2 ?? '—'} C3 ${medias.mC3 ?? '—'} C4 ${medias.mC4 ?? '—'} C5 ${medias.mC5 ?? '—'}`;
+      `C1 ${medias.mC1 ?? '—'} C2 ${medias.mC2 ?? '—'} C3 ${medias.mC3 ?? '—'} C4 ${
+        medias.mC4 ?? '—'
+      } C5 ${medias.mC5 ?? '—'}`;
 
     info.appendChild(header);
     info.appendChild(resumo);
@@ -821,22 +949,23 @@ function closeTaskPanel() {
 
 // ---------------- carregar dados sala ----------------
 
-async function carregarDados() {
+async function carregarDados(session) {
   try {
     setStatus('Carregando...');
 
-    cachedActiveSet = await getActiveStudentsSet();
+    cachedActiveSet = await getActiveStudentsSetAuth(session);
 
-    // ✅ tenta carregar tasks para identificar a “mais recente” com createdAt
-    cachedTasksMeta = normalizeTasksMeta(await fetchTasksByRoom());
+    // tenta carregar tasks para identificar “mais recente” com createdAt
+    cachedTasksMeta = normalizeTasksMeta(await fetchTasksByRoomAuth(session));
     cachedNewestTaskId = computeNewestTaskIdFromTasksMeta(cachedTasksMeta);
 
-    const res = await fetch(
-      `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`
+    const dataRaw = await authFetch(
+      `/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`,
+      { token: session.token },
     );
-    if (!res.ok) throw new Error();
 
-    let data = await res.json();
+    let data = unwrapResult(dataRaw);
+    if (!Array.isArray(data)) data = [];
 
     if (!Array.isArray(data) || data.length === 0) {
       setStatus('Ainda não há redações nesta sala.');
@@ -847,6 +976,7 @@ async function carregarDados() {
       setText(avgC4, null);
       setText(avgC5, null);
 
+      renderRoomAverageDonut({ mC1: null, mC2: null, mC3: null, mC4: null, mC5: null, mTotal: null });
       renderTasksList([]);
       closeTaskPanel();
       return;
@@ -859,12 +989,12 @@ async function carregarDados() {
 
     cachedData = data;
 
-    // ✅ se tasks não tinham createdAt, tenta inferir pela data de envio das redações
+    // se tasks não tinham createdAt, tenta inferir pela data de envio das redações
     if (!cachedNewestTaskId) {
       cachedNewestTaskId = computeNewestTaskIdFromEssays(data);
     }
 
-    // fallback final (nunca fica sem)
+    // fallback final
     if (!cachedNewestTaskId) {
       const anyTask = data.find((e) => e.taskId || e.task?.id);
       cachedNewestTaskId = anyTask ? String(anyTask.taskId || anyTask.task?.id) : null;
@@ -892,11 +1022,11 @@ async function carregarDados() {
     // tarefas
     const tasks = buildTasksFromData(data);
 
-    // ✅ se a “mais recente” veio de /tasks/by-room mas ainda não tem redações,
-    // não faz sentido destacar. Ajusta para o mais recente ENTRE as que aparecem na lista.
+    // se a “mais recente” veio de /tasks/by-room mas não tem redações, não destaca
     if (cachedNewestTaskId && !tasks.some((t) => String(t.taskId) === String(cachedNewestTaskId))) {
       cachedNewestTaskId = null;
     }
+
     if (!cachedNewestTaskId && tasks.length) {
       cachedNewestTaskId = tasks[0].taskId;
     }
@@ -918,5 +1048,8 @@ if (closeTaskPanelBtn) {
   closeTaskPanelBtn.addEventListener('click', () => closeTaskPanel());
 }
 
-carregarSala();
-carregarDados();
+(function init() {
+  const session = requireProfessorSession();
+  carregarSala(session);
+  carregarDados(session);
+})();
