@@ -35,9 +35,7 @@ function notify(type, title, message, duration) {
     type,
     title,
     message,
-    duration:
-      duration ??
-      (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
+    duration: duration ?? (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
   });
 }
 
@@ -45,9 +43,71 @@ function setPdfBtnLoading(loading) {
   if (!downloadPdfBtn) return;
   downloadPdfBtn.disabled = !!loading;
   downloadPdfBtn.style.opacity = loading ? '0.7' : '1';
-  downloadPdfBtn.textContent = loading
-    ? 'Gerando PDF...'
-    : 'Baixar desempenho (PDF)';
+  downloadPdfBtn.textContent = loading ? 'Gerando PDF...' : 'Baixar desempenho (PDF)';
+}
+
+// ---------------- AUTH FETCH (PADRÃO) ----------------
+function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
+function clearAuth() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('professorId');
+  localStorage.removeItem('studentId');
+}
+
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  const headers = { ...(options.headers || {}) };
+
+  // só seta content-type quando houver body
+  if (!headers['Content-Type'] && options.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401 || res.status === 403) {
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    clearAuth();
+    setTimeout(() => window.location.replace('login-aluno.html'), 600);
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  return res;
+}
+
+async function jsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function errorMessageFromResponse(res) {
+  // tenta json -> texto
+  try {
+    const data = await res.json();
+    const m = data?.message ?? data?.error;
+    if (Array.isArray(m)) return m.join(' | ');
+    if (typeof m === 'string' && m.trim()) return m;
+  } catch {
+    // ignora
+  }
+
+  try {
+    const t = await res.text();
+    if (t && t.trim()) return t.slice(0, 300);
+  } catch {
+    // ignora
+  }
+
+  return `Erro (HTTP ${res.status}).`;
 }
 
 // ---------------- util ----------------
@@ -300,15 +360,8 @@ function renderDonutWithLegend(targetDonutEl, targetLegendEl, { c1, c2, c3, c4, 
   targetLegendEl.appendChild(legend);
 }
 
-// ---------------- PDF DOWNLOAD (Bearer) ----------------
+// ---------------- PDF DOWNLOAD (authFetch) ----------------
 async function downloadStudentPerformancePdf(roomId) {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente para baixar o PDF.');
-    window.location.replace('login-aluno.html');
-    return;
-  }
-
   const url =
     `${API_URL}/pdf/student-performance?roomId=${encodeURIComponent(roomId)}` +
     `&studentId=${encodeURIComponent(studentId)}`;
@@ -316,61 +369,29 @@ async function downloadStudentPerformancePdf(roomId) {
   setPdfBtnLoading(true);
 
   try {
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await authFetch(url, { method: 'GET' });
 
-    // 401/403: sessão/permite
-    if (res.status === 401 || res.status === 403) {
-      notify('error', 'Acesso negado', 'Faça login novamente para baixar o PDF.');
-      window.location.replace('login-aluno.html');
-      return;
-    }
-
-    // Se não ok, tenta extrair msg útil (json ou texto)
     if (!res.ok) {
-      let msg = `Erro ao gerar PDF (HTTP ${res.status}).`;
-
-      try {
-        const data = await res.json();
-        const m = data?.message ?? data?.error;
-        if (Array.isArray(m)) msg = m.join(' | ');
-        else if (typeof m === 'string') msg = m;
-      } catch {
-        try {
-          const t = await res.text();
-          if (t) msg = t.slice(0, 300);
-        } catch {
-          // ignora
-        }
-      }
-
+      const msg = await errorMessageFromResponse(res);
       notify('error', 'Não foi possível gerar o PDF', msg);
       return;
     }
 
-    // ✅ checa content-type antes de baixar
-    const contentType = res.headers.get('content-type') || '';
-    if (!contentType.toLowerCase().includes('application/pdf') && !contentType.toLowerCase().includes('pdf')) {
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    if (!contentType.includes('application/pdf') && !contentType.includes('pdf')) {
       let msg = 'O servidor não retornou um PDF.';
       try {
-        const data = await res.json();
+        const data = await jsonSafe(res);
         const m = data?.message ?? data?.error;
         if (Array.isArray(m)) msg = m.join(' | ');
         else if (typeof m === 'string') msg = m;
-      } catch {
-        // pode não ser JSON
-      }
+      } catch {}
       notify('error', 'Resposta inválida', msg);
       return;
     }
 
     const blob = await res.blob();
 
-    // tenta pegar filename do header; se não, usa fallback
     const cd = res.headers.get('content-disposition') || '';
     let filename = `desempenho-${studentId}.pdf`;
     const m = /filename="([^"]+)"/i.exec(cd);
@@ -388,20 +409,24 @@ async function downloadStudentPerformancePdf(roomId) {
     notify('success', 'PDF pronto', 'Download iniciado.');
   } catch (e) {
     console.error(e);
-    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    // se foi AUTH_401/403, authFetch já redireciona
+    if (!String(e?.message || '').startsWith('AUTH_')) {
+      notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    }
   } finally {
     setPdfBtnLoading(false);
   }
 }
 
-// ---------------- tarefas: buscar títulos + createdAt ----------------
+// ---------------- tarefas: buscar títulos + createdAt (authFetch) ----------------
 async function fetchTasksMetaByRoom(roomId) {
   try {
-    const res = await fetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
+    const res = await authFetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
     if (!res.ok) return [];
-    const tasks = await res.json();
+    const tasks = await jsonSafe(res);
     return Array.isArray(tasks) ? tasks : [];
-  } catch {
+  } catch (e) {
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     return [];
   }
 }
@@ -409,7 +434,8 @@ async function fetchTasksMetaByRoom(roomId) {
 function buildTasksMap(tasksArr) {
   const map = new Map();
   (Array.isArray(tasksArr) ? tasksArr : []).forEach((t) => {
-    if (t?.id) map.set(String(t.id), String(t.title || 'Tarefa'));
+    const id = String(t?.id || t?.taskId || '').trim();
+    if (id) map.set(id, String(t?.title || t?.taskTitle || t?.name || 'Tarefa'));
   });
   return map;
 }
@@ -420,7 +446,13 @@ function normalizeTasksMeta(rawArr) {
     .map((t) => {
       const id = String(t?.id || t?.taskId || '').trim();
       const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
-      const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+      const createdAt = pickDate(t, [
+        'createdAt',
+        'created_at',
+        'created',
+        'dateCreated',
+        'timestamp',
+      ]);
       const createdTime = toDateSafe(createdAt)?.getTime?.() ?? null;
       return { id, title, createdTime, _raw: t };
     })
@@ -470,6 +502,11 @@ function computeNewestTaskIdFromEssays(essays) {
   }
   return bestId;
 }
+
+// =======================
+// ✅ PARTE 2 CONTINUA AQUI
+// (renderTasksHistory, carregarSalasDoAluno, carregarDesempenho e INIT)
+// =======================
 
 // ---------------- UI: tarefas com abrir/fechar ----------------
 function closeAllTaskPanels() {
@@ -577,7 +614,13 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
 
   let tasks = Array.from(byTask.entries()).map(([taskId, list]) => {
     const title = tasksMap.get(taskId) || `Tarefa ${taskId.slice(0, 6)}…`;
-    return { taskId, title, list };
+    // ordena as redações da tarefa por data (mais recente primeiro) para pegar a mais nova no painel
+    const sortedList = [...list].sort((a, b) => {
+      const at = toDateSafe(getEssaySentAt(a))?.getTime?.() ?? -Infinity;
+      const bt = toDateSafe(getEssaySentAt(b))?.getTime?.() ?? -Infinity;
+      return bt - at;
+    });
+    return { taskId, title, list: sortedList };
   });
 
   tasks.sort((a, b) => {
@@ -616,7 +659,7 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
     titleWrap.appendChild(strong);
     if (isNewest) titleWrap.appendChild(makeNewestBadge());
 
-    const essay = t.list[0];
+    const essay = t.list[0]; // (já vem ordenada)
     const score = safeScore(essay?.score);
 
     const resumo = document.createElement('div');
@@ -649,14 +692,24 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
         const c3 = clamp0to200(essay?.c3);
         const c4 = clamp0to200(essay?.c4);
         const c5 = clamp0to200(essay?.c5);
-        renderDonutWithLegend(donut, legend, { c1, c2, c3, c4, c5, totalText: String(score) });
+        renderDonutWithLegend(donut, legend, {
+          c1,
+          c2,
+          c3,
+          c4,
+          c5,
+          totalText: String(score),
+        });
       }
 
       const viewBtn = panel.querySelector('#mkTaskPanelViewBtn');
       if (viewBtn) {
+        const essayId = essay?.id ? String(essay.id) : '';
+        viewBtn.disabled = !essayId;
         viewBtn.onclick = (ev) => {
           ev.stopPropagation();
-          window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(essay.id)}`;
+          if (!essayId) return;
+          window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(essayId)}`;
         };
       }
 
@@ -689,19 +742,25 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
   });
 }
 
-// ---------------- salas do aluno ----------------
+// ---------------- salas do aluno (authFetch) ----------------
 async function carregarSalasDoAluno() {
   if (!roomSelect) return [];
 
   roomSelect.innerHTML = `<option value="">Carregando...</option>`;
 
   try {
-    const res = await fetch(
+    const res = await authFetch(
       `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`
     );
-    if (!res.ok) throw new Error();
 
-    const rooms = await res.json();
+    if (!res.ok) {
+      const msg = await errorMessageFromResponse(res);
+      roomSelect.innerHTML = `<option value="">Erro ao carregar salas</option>`;
+      notify('error', 'Erro', msg);
+      return [];
+    }
+
+    const rooms = await jsonSafe(res);
     if (!Array.isArray(rooms) || rooms.length === 0) {
       roomSelect.innerHTML = `<option value="">(você não está em nenhuma sala)</option>`;
       return [];
@@ -720,13 +779,15 @@ async function carregarSalasDoAluno() {
     roomSelect.value = exists ? roomIdFromUrl : rooms[0].id;
 
     return rooms;
-  } catch {
+  } catch (e) {
+    // AUTH_* já redireciona
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     roomSelect.innerHTML = `<option value="">Erro ao carregar salas</option>`;
     return [];
   }
 }
 
-// ---------------- desempenho do aluno na sala ----------------
+// ---------------- desempenho do aluno na sala (authFetch) ----------------
 async function carregarDesempenho(roomId) {
   // ✅ liga/desliga botão conforme sala
   if (downloadPdfBtn) {
@@ -746,14 +807,19 @@ async function carregarDesempenho(roomId) {
   renderTasksHistory([], new Map(), null);
 
   try {
-    const res = await fetch(
-      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(
-        roomId
-      )}&studentId=${encodeURIComponent(studentId)}`
+    const res = await authFetch(
+      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(roomId)}&studentId=${encodeURIComponent(studentId)}`
     );
-    if (!res.ok) throw new Error();
 
-    const essays = await res.json();
+    if (!res.ok) {
+      const msg = await errorMessageFromResponse(res);
+      setStatus('Erro ao carregar desempenho.');
+      renderTasksHistory([], new Map(), null);
+      notify('error', 'Erro', msg);
+      return;
+    }
+
+    const essays = await jsonSafe(res);
 
     if (!Array.isArray(essays) || essays.length === 0) {
       setStatus('Sem redações nesta sala ainda.');
@@ -798,8 +864,7 @@ async function carregarDesempenho(roomId) {
         totalText: String(mTotal),
       });
     } else {
-      if (avgDonutEl)
-        avgDonutEl.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
+      if (avgDonutEl) avgDonutEl.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
       if (avgLegendEl) avgLegendEl.innerHTML = '';
     }
 
@@ -807,7 +872,8 @@ async function carregarDesempenho(roomId) {
 
     setStatus('');
   } catch (e) {
-    console.error(e);
+    // AUTH_* já redireciona
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     setStatus('Erro ao carregar desempenho.');
     renderTasksHistory([], new Map(), null);
     notify('error', 'Erro', 'Não foi possível carregar seu desempenho agora.');
@@ -838,4 +904,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (downloadPdfBtn) downloadPdfBtn.style.display = 'none';
   }
 });
-
