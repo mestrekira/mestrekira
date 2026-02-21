@@ -2,17 +2,127 @@
 import { API_URL } from './config.js';
 import { toast, confirmDialog } from './ui-feedback.js';
 
-// 🔹 Parâmetros
+// -----------------------
+// Session / API helpers
+// -----------------------
+const LS = {
+  token: 'token',
+  user: 'user',
+  professorId: 'professorId',
+  studentId: 'studentId',
+};
+
+function notify(type, title, message, duration) {
+  toast({
+    type,
+    title,
+    message,
+    duration:
+      duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+  });
+}
+
+function safeJsonParse(s) {
+  try {
+    return s ? JSON.parse(s) : null;
+  } catch {
+    return null;
+  }
+}
+
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
+}
+
+function clearAuthStorage() {
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.studentId);
+}
+
+function redirectToLogin() {
+  window.location.replace('login-professor.html');
+}
+
+function requireProfessorSession() {
+  const token = localStorage.getItem(LS.token);
+  const user = safeJsonParse(localStorage.getItem(LS.user));
+  const role = normRole(user?.role);
+
+  if (!token || role !== 'PROFESSOR') {
+    clearAuthStorage();
+    redirectToLogin();
+    throw new Error('Sessão de professor ausente/inválida');
+  }
+
+  // compatibilidade
+  if (user?.id) localStorage.setItem(LS.professorId, String(user.id));
+  return { token, user };
+}
+
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function unwrapResult(data) {
+  // suporta: array puro, objeto puro, ou { ok, result }
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    if (Array.isArray(data.result)) return data.result;
+    if (data.result && typeof data.result === 'object') return data.result;
+    if (Array.isArray(data.data)) return data.data;
+    if (data.data && typeof data.data === 'object') return data.data;
+  }
+  return data; // fallback: devolve como veio
+}
+
+async function apiFetch(path, { token, method = 'GET', body } = {}) {
+  const headers = {};
+  if (body) headers['Content-Type'] = 'application/json';
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    clearAuthStorage();
+    redirectToLogin();
+    throw new Error(`Auth error: HTTP ${res.status}`);
+  }
+
+  const data = await readJsonSafe(res);
+
+  if (!res.ok) {
+    const msg = data?.message || data?.error || `Erro HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+// -----------------------
+// Params
+// -----------------------
 const params = new URLSearchParams(window.location.search);
 const roomId = params.get('roomId');
 
 if (!roomId) {
-  toast({ title: 'Acesso inválido', message: 'Sala inválida.', type: 'error' });
-  window.location.href = 'professor-salas.html';
+  notify('error', 'Acesso inválido', 'Sala inválida.');
+  window.location.replace('professor-salas.html');
   throw new Error('roomId ausente');
 }
 
-// 🔹 Elementos
+// -----------------------
+// Elements
+// -----------------------
 const roomNameEl = document.getElementById('roomName');
 const roomCodeEl = document.getElementById('roomCode');
 const studentsList = document.getElementById('studentsList');
@@ -21,31 +131,24 @@ const copyCodeBtn = document.getElementById('copyCodeBtn');
 const createTaskBtn = document.getElementById('createTaskBtn');
 const performanceBtn = document.getElementById('performanceBtn');
 
-if (
-  !roomNameEl ||
-  !roomCodeEl ||
-  !studentsList ||
-  !tasksList ||
-  !copyCodeBtn ||
-  !createTaskBtn
-) {
+if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn || !createTaskBtn) {
   console.error('Elementos da sala do professor não encontrados.');
   throw new Error('HTML incompleto');
 }
 
+// sessão
+const { token, user } = requireProfessorSession();
+
 // ✅ Botão de desempenho
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
-    window.location.href = `desempenho-professor.html?roomId=${encodeURIComponent(
-      roomId
-    )}`;
+    window.location.href = `desempenho-professor.html?roomId=${encodeURIComponent(roomId)}`;
   });
 }
 
-// =======================
-// Helpers
-// =======================
-
+// -----------------------
+// Normalizers
+// -----------------------
 function normalizeStudent(s) {
   const id = String(s?.id || s?.studentId || '').trim();
   const name = String(s?.name || s?.studentName || '').trim();
@@ -85,7 +188,6 @@ function normalizeDateInput(value) {
   }
 
   if (typeof value === 'number') {
-    // aceita epoch em segundos ou ms
     const ms = value < 1e12 ? value * 1000 : value;
     const d = new Date(ms);
     return Number.isNaN(d.getTime()) ? null : d;
@@ -94,7 +196,6 @@ function normalizeDateInput(value) {
   const s = String(value).trim();
   if (!s) return null;
 
-  // "YYYY-MM-DD HH:mm(:ss)" -> vira "YYYY-MM-DDTHH:mm(:ss)"
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
     const isoLike = s.replace(' ', 'T');
     const d = new Date(isoLike);
@@ -118,8 +219,9 @@ function formatDateBR(value) {
   }
 }
 
-// ----- destaque “mais recente” (igual ao aluno, com badge diferente)
-
+// -----------------------
+// "Mais recente" marker
+// -----------------------
 function getLastCreatedTaskKey() {
   return `mk_last_created_task_${roomId}`;
 }
@@ -135,34 +237,26 @@ function getLastCreatedTaskId() {
     return '';
   }
 }
-
 function computeNewestTaskId(tasksNormalized) {
-  if (!Array.isArray(tasksNormalized) || tasksNormalized.length === 0)
-    return null;
+  if (!Array.isArray(tasksNormalized) || tasksNormalized.length === 0) return null;
 
-  // ✅ prioridade 1: a última criada via UI (quando criamos agora)
   const lastCreated = getLastCreatedTaskId();
   if (lastCreated && tasksNormalized.some((t) => String(t.id) === String(lastCreated))) {
     return lastCreated;
   }
 
-  // ✅ prioridade 2: maior createdAt válido
   let newestId = null;
   let newestTime = -Infinity;
 
   tasksNormalized.forEach((t) => {
     const dt = normalizeDateInput(t.createdAt)?.getTime?.() ?? NaN;
-    if (!Number.isNaN(dt)) {
-      if (dt > newestTime) {
-        newestTime = dt;
-        newestId = t.id;
-      }
+    if (!Number.isNaN(dt) && dt > newestTime) {
+      newestTime = dt;
+      newestId = t.id;
     }
   });
 
-  // ✅ fallback: última do array (se backend não manda createdAt)
   if (!newestId) newestId = tasksNormalized[tasksNormalized.length - 1]?.id || null;
-
   return newestId;
 }
 
@@ -177,7 +271,7 @@ function makeMaisRecenteBadge() {
   badge.style.fontSize = '11px';
   badge.style.fontWeight = '900';
   badge.style.marginLeft = '10px';
-  badge.style.background = 'rgba(16,185,129,.12)'; // verde suave
+  badge.style.background = 'rgba(16,185,129,.12)';
   badge.style.border = '1px solid rgba(16,185,129,.35)';
   badge.style.color = '#0b1f4b';
   return badge;
@@ -189,78 +283,62 @@ function placeholderAvatar(size = 36) {
     encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
         <rect width="100%" height="100%" fill="#eee"/>
-        <text x="50%" y="55%" font-size="${Math.round(
-          size * 0.45
-        )}" text-anchor="middle" fill="#888">?</text>
-      </svg>`
+        <text x="50%" y="55%" font-size="${Math.round(size * 0.45)}" text-anchor="middle" fill="#888">?</text>
+      </svg>`,
     )
   );
 }
 
-function renderMultiline(el, text, fallback = '') {
-  if (!el) return;
-  const v = text === null || text === undefined ? '' : String(text);
-  el.textContent = v.trim() ? v : fallback;
-  el.style.whiteSpace = 'pre-wrap';
-  el.style.lineHeight = '1.6';
-  el.style.textAlign = 'justify';
+function disable(btn, value) {
+  if (btn) btn.disabled = !!value;
 }
 
-// =======================
+// -----------------------
 // Sala
-// =======================
-
+// -----------------------
 async function carregarSala() {
   try {
-    const response = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await apiFetch(`/rooms/${encodeURIComponent(roomId)}`, { token });
+    const room = unwrapResult(data);
 
-    const room = await response.json();
     roomNameEl.textContent = room?.name || 'Sala';
     roomCodeEl.textContent = room?.code || '—';
   } catch (err) {
     console.error(err);
-    toast({
-      title: 'Erro',
-      message: 'Erro ao carregar dados da sala.',
-      type: 'error',
-    });
+    notify('error', 'Erro', 'Erro ao carregar dados da sala.');
   }
 }
 
-// 🔹 Copiar código
+// Copiar código (com fallback)
 copyCodeBtn.addEventListener('click', async () => {
   const code = (roomCodeEl.textContent || '').trim();
   if (!code || code === '—') {
-    toast({
-      title: 'Atenção',
-      message: 'Código da sala indisponível.',
-      type: 'warn',
-    });
+    notify('warn', 'Atenção', 'Código da sala indisponível.');
     return;
   }
 
   try {
     await navigator.clipboard.writeText(code);
-    toast({
-      title: 'Tudo certo!',
-      message: 'Código da sala copiado.',
-      type: 'success',
-    });
+    notify('success', 'Tudo certo!', 'Código da sala copiado.');
   } catch {
-    toast({
-      title: 'Não foi possível',
-      message: 'Selecione e copie manualmente.',
-      type: 'error',
-    });
+    // fallback: tenta selecionar manualmente
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(roomCodeEl);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      notify('warn', 'Copie manualmente', 'Selecione e copie (Ctrl+C).');
+    } catch {
+      notify('error', 'Não foi possível', 'Selecione e copie manualmente.');
+    }
   }
 });
 
-// =======================
+// -----------------------
 // Alunos
-// =======================
-
-async function removerAluno(studentId, studentName = 'este aluno') {
+// -----------------------
+async function removerAluno(studentId, studentName = 'este aluno', btnRef) {
   const ok = await confirmDialog({
     title: 'Remover estudante',
     message: `Remover ${studentName} da sala?`,
@@ -269,22 +347,19 @@ async function removerAluno(studentId, studentName = 'este aluno') {
   });
   if (!ok) return;
 
+  disable(btnRef, true);
+
   try {
-    const res = await fetch(
-      `${API_URL}/rooms/${encodeURIComponent(roomId)}/students/${encodeURIComponent(
-        studentId
-      )}`,
-      { method: 'DELETE' }
+    await apiFetch(
+      `/rooms/${encodeURIComponent(roomId)}/students/${encodeURIComponent(studentId)}`,
+      { token, method: 'DELETE' },
     );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     await carregarAlunos();
   } catch (err) {
     console.error(err);
-    toast({
-      title: 'Erro',
-      message: 'Erro ao remover aluno da sala.',
-      type: 'error',
-    });
+    notify('error', 'Erro', 'Erro ao remover aluno da sala.');
+  } finally {
+    disable(btnRef, false);
   }
 }
 
@@ -293,31 +368,30 @@ async function carregarAlunos() {
   const photoKey = (studentId) => `mk_photo_student_${studentId}`;
 
   try {
-    const response = await fetch(
-      `${API_URL}/rooms/${encodeURIComponent(roomId)}/students`
-    );
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const raw = await response.json();
+    const data = await apiFetch(`/rooms/${encodeURIComponent(roomId)}/students`, { token });
+    const raw = unwrapResult(data);
     const arr = Array.isArray(raw) ? raw : [];
     const students = arr.map(normalizeStudent).filter((s) => !!s.id);
 
     studentsList.innerHTML = '';
+
     if (students.length === 0) {
       studentsList.innerHTML = '<li>Nenhum aluno matriculado ainda.</li>';
       return;
     }
 
-    students.forEach((student) => {
+    for (const student of students) {
       const li = document.createElement('li');
       li.style.display = 'flex';
       li.style.alignItems = 'center';
       li.style.justifyContent = 'space-between';
+      li.style.gap = '10px';
 
       const left = document.createElement('div');
       left.style.display = 'flex';
       left.style.alignItems = 'center';
       left.style.gap = '10px';
+      left.style.minWidth = '0';
 
       const img = document.createElement('img');
       img.alt = 'Foto do aluno';
@@ -330,18 +404,27 @@ async function carregarAlunos() {
       const dataUrl = localStorage.getItem(photoKey(student.id));
       img.src = dataUrl || placeholderAvatar(36);
 
+      // ✅ sem innerHTML (evita XSS)
       const text = document.createElement('div');
-      const name = student.name || 'Aluno';
-      const email = student.email || '';
-      text.innerHTML = `<strong>${name}</strong>${
-        email ? `<br><small>${email}</small>` : ''
-      }`;
+      text.style.minWidth = '0';
+
+      const nameEl = document.createElement('strong');
+      nameEl.textContent = student.name || 'Aluno';
+      text.appendChild(nameEl);
+
+      if (student.email) {
+        const br = document.createElement('br');
+        const small = document.createElement('small');
+        small.textContent = student.email;
+        text.appendChild(br);
+        text.appendChild(small);
+      }
 
       const removeBtn = document.createElement('button');
       removeBtn.textContent = 'Remover';
       removeBtn.addEventListener('click', (ev) => {
         ev.stopPropagation();
-        removerAluno(student.id, name);
+        removerAluno(student.id, student.name || 'este aluno', removeBtn);
       });
 
       left.appendChild(img);
@@ -349,32 +432,29 @@ async function carregarAlunos() {
       li.appendChild(left);
       li.appendChild(removeBtn);
       studentsList.appendChild(li);
-    });
+    }
   } catch (err) {
     console.error(err);
     studentsList.innerHTML = '<li>Não foi possível carregar alunos agora.</li>';
   }
 }
 
-// =======================
+// -----------------------
 // Tarefas
-// =======================
-
+// -----------------------
 async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando tarefas...</li>';
 
   try {
-    const response = await fetch(
-      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`
-    );
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await apiFetch(`/tasks/by-room?roomId=${encodeURIComponent(roomId)}`, { token });
+    const raw = unwrapResult(data);
 
-    const raw = await response.json();
     const tasks = (Array.isArray(raw) ? raw : [])
       .map(normalizeTask)
       .filter((t) => !!t.id);
 
     tasksList.innerHTML = '';
+
     if (tasks.length === 0) {
       tasksList.innerHTML = '<li>Nenhuma tarefa criada.</li>';
       return;
@@ -382,16 +462,14 @@ async function carregarTarefas() {
 
     const newestId = computeNewestTaskId(tasks);
 
-    tasks.forEach((task) => {
+    for (const task of tasks) {
       const li = document.createElement('li');
 
-      // ✅ destaque visual da mais recente
       if (task.id === newestId) {
         li.style.border = '2px solid rgba(16,185,129,.35)';
         li.style.boxShadow = '0 10px 24px rgba(16,185,129,0.12)';
       }
 
-      // título + badge
       const titleWrap = document.createElement('div');
       titleWrap.style.display = 'flex';
       titleWrap.style.alignItems = 'center';
@@ -402,11 +480,8 @@ async function carregarTarefas() {
       title.textContent = task.title || 'Tarefa';
       titleWrap.appendChild(title);
 
-      if (task.id === newestId) {
-        titleWrap.appendChild(makeMaisRecenteBadge());
-      }
+      if (task.id === newestId) titleWrap.appendChild(makeMaisRecenteBadge());
 
-      // meta data
       const meta = document.createElement('div');
       meta.style.marginTop = '6px';
       meta.style.fontSize = '12px';
@@ -431,21 +506,21 @@ async function carregarTarefas() {
         });
         if (!ok) return;
 
-        try {
-          const res = await fetch(`${API_URL}/tasks/${encodeURIComponent(task.id)}`, {
-            method: 'DELETE',
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        disable(delBtn, true);
 
-          // se apagou a “última criada”, limpa o marcador
+        try {
+          await apiFetch(`/tasks/${encodeURIComponent(task.id)}`, { token, method: 'DELETE' });
+
           if (String(getLastCreatedTaskId()) === String(task.id)) {
             setLastCreatedTaskId('');
           }
 
-          carregarTarefas();
+          await carregarTarefas();
         } catch (err) {
           console.error(err);
-          toast({ title: 'Erro', message: 'Erro ao excluir tarefa.', type: 'error' });
+          notify('error', 'Erro', 'Erro ao excluir tarefa.');
+        } finally {
+          disable(delBtn, false);
         }
       });
 
@@ -455,17 +530,16 @@ async function carregarTarefas() {
       li.appendChild(btn);
       li.appendChild(delBtn);
       tasksList.appendChild(li);
-    });
+    }
   } catch (err) {
     console.error(err);
     tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
 }
 
-// =======================
+// -----------------------
 // Criar tarefa
-// =======================
-
+// -----------------------
 createTaskBtn.addEventListener('click', async () => {
   const titleEl = document.getElementById('taskTitle');
   const guidelinesEl = document.getElementById('taskGuidelines');
@@ -474,40 +548,39 @@ createTaskBtn.addEventListener('click', async () => {
   const guidelines = guidelinesEl?.value || '';
 
   if (!title) {
-    toast({ title: 'Campo obrigatório', message: 'Informe o tema da redação.', type: 'warn' });
+    notify('warn', 'Campo obrigatório', 'Informe o tema da redação.');
     return;
   }
 
+  disable(createTaskBtn, true);
+
   try {
-    const response = await fetch(`${API_URL}/tasks`, {
+    const data = await apiFetch('/tasks', {
+      token,
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId, title, guidelines }),
+      body: { roomId, title, guidelines },
     });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const created = await response.json().catch(() => null);
-
-    // ✅ tenta salvar o ID da tarefa recém-criada para destacar
+    const created = unwrapResult(data);
     const createdId = String(created?.id || created?.taskId || '').trim();
     if (createdId) setLastCreatedTaskId(createdId);
 
-    toast({ title: 'Criada!', message: 'Tarefa criada com sucesso.', type: 'success' });
-
+    notify('success', 'Criada!', 'Tarefa criada com sucesso.');
     if (titleEl) titleEl.value = '';
     if (guidelinesEl) guidelinesEl.value = '';
 
-    carregarTarefas();
+    await carregarTarefas();
   } catch (err) {
     console.error(err);
-    toast({ title: 'Erro', message: 'Erro ao criar tarefa.', type: 'error' });
+    notify('error', 'Erro', 'Erro ao criar tarefa.');
+  } finally {
+    disable(createTaskBtn, false);
   }
 });
 
-// =======================
+// -----------------------
 // INIT
-// =======================
+// -----------------------
 carregarSala();
 carregarAlunos();
 carregarTarefas();
