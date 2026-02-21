@@ -2,6 +2,13 @@
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
+const LS = {
+  token: 'token',
+  user: 'user',
+  professorId: 'professorId',
+  studentId: 'studentId',
+};
+
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
 const resendVerifyBtn = document.getElementById('resendVerifyBtn');
@@ -34,233 +41,265 @@ function notify(type, title, message, duration) {
 }
 
 function normalizeRole(role) {
-  return String(role || '').trim().toUpperCase(); // PROFESSOR / STUDENT
+  return String(role || '').trim().toUpperCase(); // PROFESSOR / STUDENT / ALUNO etc
+}
+
+function safeJsonParse(s) {
+  try {
+    return s ? JSON.parse(s) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearAuthStorage() {
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.studentId);
 }
 
 function getLoginEmail() {
   return (emailLoginEl?.value || '').trim().toLowerCase();
 }
 
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 function justLoggedOutGuard() {
-  // ✅ evita loop quando acabou de fazer logout e caiu no login
+  // evita loop quando acabou de fazer logout e caiu no login
   if (sessionStorage.getItem('mk_just_logged_out') === '1') {
     sessionStorage.removeItem('mk_just_logged_out');
-
-    // limpa TUDO que pode causar auto-redirect
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('professorId');
-    localStorage.removeItem('studentId');
-
+    clearAuthStorage();
     return true;
   }
   return false;
 }
 
-// ✅ Se já estiver logado com token, vai direto (MAS não após logout)
+// ✅ Auto-redirect (apenas se já estiver logado como professor)
 (function autoRedirectIfLogged() {
   if (justLoggedOutGuard()) return;
 
-  const token = localStorage.getItem('token');
-  const userJson = localStorage.getItem('user');
+  const token = localStorage.getItem(LS.token);
+  const user = safeJsonParse(localStorage.getItem(LS.user));
+  const role = normalizeRole(user?.role);
 
-  try {
-    const user = userJson ? JSON.parse(userJson) : null;
-    const role = normalizeRole(user?.role);
-
-    if (token && role === 'PROFESSOR') {
-      window.location.replace('professor-salas.html');
-    }
-  } catch {
-    // ignora
+  if (token && role === 'PROFESSOR') {
+    window.location.replace('professor-salas.html');
   }
 })();
 
 // -------------------------
 // ✅ LOGIN (Auth)
 // -------------------------
-if (loginBtn) {
-  loginBtn.addEventListener('click', async () => {
-    const email = getLoginEmail();
-    const password = passLoginEl?.value || '';
+async function fazerLoginProfessor() {
+  const email = getLoginEmail();
+  const password = passLoginEl?.value || '';
 
-    show(resendVerifyBtn, false);
+  show(resendVerifyBtn, false);
 
-    if (!email || !password) {
-      notify('warn', 'Campos obrigatórios', 'Preencha e-mail e senha.');
+  if (!email || !password) {
+    notify('warn', 'Campos obrigatórios', 'Preencha e-mail e senha.');
+    return;
+  }
+
+  disable(loginBtn, true);
+  notify('info', 'Entrando...', 'Verificando seus dados...', 1800);
+
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await readJsonSafe(response);
+
+    if (!data) {
+      notify('error', 'Erro', 'Resposta inválida do servidor. Tente novamente.');
       return;
     }
 
-    disable(loginBtn, true);
-    notify('info', 'Entrando...', 'Verificando seus dados...', 1800);
+    // erro (inclui "email não verificado")
+    if (!response.ok || !data?.ok || !data?.token || !data?.user) {
+      const msg = data?.message || data?.error || 'Login inválido.';
 
-    try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      // ❌ erro (inclui "email não verificado")
-      if (!response.ok || !data?.ok || !data?.token || !data?.user) {
-        const msg = data?.error || 'Login inválido.';
-
-        if (data?.emailVerified === false) {
-          show(resendVerifyBtn, true);
-          notify(
-            'warn',
-            'E-mail não confirmado',
-            'Confirme seu e-mail para acessar. Se precisar, clique em “Reenviar verificação”.',
-          );
-        } else {
-          notify('error', 'Não foi possível entrar', msg);
-        }
-        return;
+      if (data?.emailVerified === false) {
+        show(resendVerifyBtn, true);
+        notify(
+          'warn',
+          'E-mail não confirmado',
+          'Confirme seu e-mail para acessar. Se precisar, clique em “Reenviar verificação”.',
+        );
+      } else {
+        notify('error', 'Não foi possível entrar', msg);
       }
-
-      const role = normalizeRole(data.user.role);
-
-      // ✅ garante que é professor
-      if (role !== 'PROFESSOR') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('professorId');
-        localStorage.removeItem('studentId');
-
-        notify('error', 'Acesso negado', 'Este acesso é apenas para professores.');
-        return;
-      }
-
-      // ✅ limpa possíveis restos de login de aluno
-      localStorage.removeItem('studentId');
-
-      // ✅ novo padrão (token + user)
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      // ✅ compatibilidade
-      localStorage.setItem('professorId', data.user.id);
-
-      notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1200);
-      window.location.replace('professor-salas.html');
-    } catch {
-      notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
-    } finally {
-      disable(loginBtn, false);
+      return;
     }
+
+    const role = normalizeRole(data.user.role);
+
+    // garante que é professor
+    if (role !== 'PROFESSOR') {
+      clearAuthStorage();
+      notify('error', 'Acesso negado', 'Este acesso é apenas para professores.');
+      return;
+    }
+
+    // limpa possíveis restos de login de aluno
+    localStorage.removeItem(LS.studentId);
+
+    // grava auth (padrão novo)
+    localStorage.setItem(LS.token, String(data.token));
+    localStorage.setItem(LS.user, JSON.stringify(data.user));
+    localStorage.setItem(LS.professorId, String(data.user.id)); // compat
+
+    notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
+    window.location.replace('professor-salas.html');
+  } catch {
+    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+  } finally {
+    disable(loginBtn, false);
+  }
+}
+
+if (loginBtn) {
+  loginBtn.addEventListener('click', fazerLoginProfessor);
+}
+
+// Enter no campo de senha
+if (passLoginEl) {
+  passLoginEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') fazerLoginProfessor();
   });
 }
 
 // -------------------------
 // ✅ REENVIAR VERIFICAÇÃO
 // -------------------------
-if (resendVerifyBtn) {
-  resendVerifyBtn.addEventListener('click', async () => {
-    const email = getLoginEmail();
-    if (!email) {
+async function reenviarVerificacao() {
+  const email = getLoginEmail();
+  if (!email) {
+    notify(
+      'warn',
+      'Digite seu e-mail',
+      'Informe seu e-mail no campo de login para reenviar o link.',
+    );
+    return;
+  }
+
+  disable(resendVerifyBtn, true);
+  notify('info', 'Reenviando...', 'Enviando novo link de verificação...', 1800);
+
+  try {
+    const response = await fetch(`${API_URL}/auth/request-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await readJsonSafe(response);
+
+    if (!data) {
+      notify('error', 'Erro', 'Resposta inválida do servidor. Tente novamente.');
+      return;
+    }
+
+    if (!response.ok || !data?.ok) {
       notify(
-        'warn',
-        'Digite seu e-mail',
-        'Informe seu e-mail no campo de login para reenviar o link.',
+        'error',
+        'Não foi possível reenviar',
+        data?.message || data?.error || 'Tente novamente em instantes.',
       );
       return;
     }
 
-    disable(resendVerifyBtn, true);
-    notify('info', 'Reenviando...', 'Enviando novo link de verificação...', 1800);
-
-    try {
-      const response = await fetch(`${API_URL}/auth/request-verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data?.ok) {
-        notify(
-          'error',
-          'Não foi possível reenviar',
-          data?.message || data?.error || 'Tente novamente em instantes.',
-        );
-        return;
-      }
-
-      notify('success', 'Link enviado', 'Verifique a caixa de entrada e o Spam.');
-      show(resendVerifyBtn, false);
-    } catch {
-      notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
-    } finally {
-      disable(resendVerifyBtn, false);
-    }
-  });
+    notify('success', 'Link enviado', 'Verifique a caixa de entrada e o Spam.');
+    show(resendVerifyBtn, false);
+  } catch {
+    notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
+  } finally {
+    disable(resendVerifyBtn, false);
+  }
 }
 
-// -------------------------
-// ✅ CADASTRO (Users -> Auth dispara e-mail)
-// -------------------------
-if (registerBtn) {
-  registerBtn.addEventListener('click', async () => {
-    const name = (nameRegEl?.value || '').trim();
-    const email = (emailRegEl?.value || '').trim().toLowerCase();
-    const password = passRegEl?.value || '';
+if (resendVerifyBtn) {
+  // começa oculto por padrão
+  show(resendVerifyBtn, false);
+  resendVerifyBtn.addEventListener('click', reenviarVerificacao);
+}
 
-    show(resendVerifyBtn, false);
+async function cadastrarProfessor() {
+  const name = (nameRegEl?.value || '').trim();
+  const email = (emailRegEl?.value || '').trim().toLowerCase();
+  const password = passRegEl?.value || '';
 
-    if (!name || !email || !password) {
-      notify('warn', 'Campos obrigatórios', 'Preencha nome, e-mail e senha.');
+  show(resendVerifyBtn, false);
+
+  if (!name || !email || !password) {
+    notify('warn', 'Campos obrigatórios', 'Preencha nome, e-mail e senha.');
+    return;
+  }
+
+  if (password.length < 8) {
+    notify('warn', 'Senha fraca', 'A senha deve ter no mínimo 8 caracteres.');
+    return;
+  }
+
+  disable(registerBtn, true);
+  notify('info', 'Cadastrando...', 'Criando sua conta...', 1800);
+
+  try {
+    const response = await fetch(`${API_URL}/users/professor`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    const data = await readJsonSafe(response);
+
+    if (!data) {
+      notify('error', 'Erro', 'Resposta inválida do servidor. Tente novamente.');
       return;
     }
 
-    if (password.length < 8) {
-      notify('warn', 'Senha fraca', 'A senha deve ter no mínimo 8 caracteres.');
-      return;
-    }
-
-    disable(registerBtn, true);
-    notify('info', 'Cadastrando...', 'Criando sua conta...', 1800);
-
-    try {
-      const response = await fetch(`${API_URL}/users/professor`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data?.ok) {
-        notify(
-          'error',
-          'Não foi possível cadastrar',
-          data?.message ||
-            data?.error ||
-            'Erro ao cadastrar professor. Tente outro e-mail.',
-        );
-        return;
-      }
-
+    if (!response.ok || !data?.ok) {
       notify(
-        'success',
-        'Cadastro criado!',
-        'Enviamos um link de verificação para seu e-mail. Confirme a conta para poder entrar.',
-        4200,
+        'error',
+        'Não foi possível cadastrar',
+        data?.message ||
+          data?.error ||
+          'Erro ao cadastrar professor. Tente outro e-mail.',
       );
-
-      // pré-preenche login (ajuda)
-      if (emailLoginEl) emailLoginEl.value = email;
-
-      // limpa campos de cadastro
-      if (nameRegEl) nameRegEl.value = '';
-      if (emailRegEl) emailRegEl.value = '';
-      if (passRegEl) passRegEl.value = '';
-    } catch {
-      notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
-    } finally {
-      disable(registerBtn, false);
+      return;
     }
-  });
+
+    notify(
+      'success',
+      'Cadastro criado!',
+      'Enviamos um link de verificação para seu e-mail. Confirme a conta para poder entrar.',
+      4200,
+    );
+
+    // pré-preenche login (ajuda)
+    if (emailLoginEl) emailLoginEl.value = email;
+
+    // limpa campos de cadastro
+    if (nameRegEl) nameRegEl.value = '';
+    if (emailRegEl) emailRegEl.value = '';
+    if (passRegEl) passRegEl.value = '';
+  } catch {
+    notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
+  } finally {
+    disable(registerBtn, false);
+  }
+}
+
+if (registerBtn) {
+  registerBtn.addEventListener('click', cadastrarProfessor);
 }
