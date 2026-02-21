@@ -9,23 +9,42 @@ function disable(btn, value) {
   if (btn) btn.disabled = !!value;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const nameEl = document.getElementById('name');
-  const emailEl = document.getElementById('email');
-  const passEl = document.getElementById('password');
-  const btn = document.getElementById('signupBtn');
+function getValue(id) {
+  const el = document.getElementById(id);
+  return el?.value ?? '';
+}
 
+function isValidEmail(email) {
+  // validação simples (suficiente pro frontend)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('signupBtn');
   if (!btn) return;
 
   btn.addEventListener('click', async () => {
-    const name = (nameEl?.value || '').trim();
-    const email = (emailEl?.value || '').trim().toLowerCase();
-    const password = passEl?.value || '';
+    const name = String(getValue('name')).trim();
+    const email = String(getValue('email')).trim().toLowerCase();
+    const password = String(getValue('password'));
 
     setStatus('');
 
     if (!name || !email || !password) {
       setStatus('Preencha nome, e-mail e senha.');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setStatus('Digite um e-mail válido.');
       return;
     }
 
@@ -38,15 +57,19 @@ document.addEventListener('DOMContentLoaded', () => {
     setStatus('Criando conta...');
 
     try {
-      // ✅ mantém seu endpoint atual
-      // (ele deve chamar AuthService.registerStudent por trás e enviar o e-mail)
       const res = await fetch(`${API_URL}/users/student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data = await res.json().catch(() => null);
+      const data = await readJsonSafe(res);
+
+      if (!data) {
+        setStatus('Resposta inválida do servidor. Tente novamente.');
+        disable(btn, false);
+        return;
+      }
 
       if (!res.ok || !data?.ok) {
         setStatus(data?.message || data?.error || 'Erro ao criar conta.');
@@ -54,19 +77,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // ✅ NÃO redireciona automaticamente (precisa verificar e-mail antes)
       setStatus(
         'Conta criada! Enviamos um link de verificação para seu e-mail. Confirme a conta para poder entrar.',
       );
 
       // limpeza de campos
+      const nameEl = document.getElementById('name');
+      const emailEl = document.getElementById('email');
+      const passEl = document.getElementById('password');
       if (nameEl) nameEl.value = '';
       if (emailEl) emailEl.value = '';
       if (passEl) passEl.value = '';
 
       disable(btn, false);
-
-      // opcional: se você quiser ainda levar para login depois de alguns segundos, deixe isso comentado:
+      // opcional:
       // setTimeout(() => window.location.replace('login-aluno.html'), 2500);
     } catch {
       setStatus('Erro ao criar conta. Tente novamente.');
