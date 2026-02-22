@@ -15,8 +15,7 @@ function notify(type, title, message, duration) {
       title,
       message,
       duration:
-        duration ??
-        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+        duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
     });
   } catch {
     if (type === 'error') console.error(title, message);
@@ -29,9 +28,13 @@ const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 // -------------------- Elementos --------------------
 const roomsList = document.getElementById('roomsList');
 
+// -------------------- Utils --------------------
 function renderEmpty(msg) {
   if (!roomsList) return;
-  roomsList.innerHTML = `<li>${msg}</li>`;
+  roomsList.innerHTML = ''; // limpa nós
+  const li = document.createElement('li');
+  li.textContent = msg || '';
+  roomsList.appendChild(li);
 }
 
 function normalizeRoom(r) {
@@ -40,6 +43,19 @@ function normalizeRoom(r) {
   return { id, name };
 }
 
+async function jsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function goToRoom(roomId) {
+  window.location.href = `sala-aluno.html?roomId=${encodeURIComponent(roomId)}`;
+}
+
+// -------------------- Carregar salas --------------------
 async function carregarMinhasSalas() {
   if (!roomsList) return;
 
@@ -49,7 +65,7 @@ async function carregarMinhasSalas() {
     const res = await authFetch(
       `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
       { method: 'GET' },
-      { redirectTo: 'login-aluno.html' },
+      { redirectTo: 'login-aluno.html' }
     );
 
     if (!res.ok) {
@@ -57,7 +73,7 @@ async function carregarMinhasSalas() {
       throw new Error(msg);
     }
 
-    const raw = await res.json().catch(() => null);
+    const raw = await jsonSafe(res);
     const arr = Array.isArray(raw) ? raw : [];
     const rooms = arr.map(normalizeRoom).filter((r) => !!r.id);
 
@@ -70,6 +86,8 @@ async function carregarMinhasSalas() {
 
     rooms.forEach((room) => {
       const li = document.createElement('li');
+      li.style.cursor = 'pointer';
+      li.title = 'Clique para abrir a sala';
 
       const nameText = document.createElement('span');
       nameText.textContent = room.name + ' ';
@@ -77,9 +95,12 @@ async function carregarMinhasSalas() {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = 'Abrir';
-      btn.addEventListener('click', () => {
-        window.location.href = `sala-aluno.html?roomId=${encodeURIComponent(room.id)}`;
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        goToRoom(room.id);
       });
+
+      li.addEventListener('click', () => goToRoom(room.id));
 
       li.appendChild(nameText);
       li.appendChild(btn);
@@ -90,7 +111,11 @@ async function carregarMinhasSalas() {
     if (!String(err?.message || '').startsWith('AUTH_')) {
       console.error(err);
       renderEmpty('Erro ao carregar suas salas.');
-      notify('error', 'Erro', 'Não foi possível carregar suas salas agora. Tente novamente.');
+      notify(
+        'error',
+        'Erro',
+        'Não foi possível carregar suas salas agora. Tente novamente.'
+      );
     }
   }
 }
