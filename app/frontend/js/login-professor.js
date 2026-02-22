@@ -7,6 +7,10 @@ const LS = {
   user: 'user',
   professorId: 'professorId',
   studentId: 'studentId',
+
+  // legados (se existirem no seu projeto antigo)
+  professorName: 'professorName',
+  professorEmail: 'professorEmail',
 };
 
 const loginBtn = document.getElementById('loginBtn');
@@ -34,14 +38,12 @@ function notify(type, title, message, duration) {
     type,
     title,
     message,
-    duration:
-      duration ??
-      (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
   });
 }
 
 function normalizeRole(role) {
-  return String(role || '').trim().toUpperCase(); // PROFESSOR / STUDENT / ALUNO etc
+  return String(role || '').trim().toUpperCase();
 }
 
 function safeJsonParse(s) {
@@ -57,6 +59,10 @@ function clearAuthStorage() {
   localStorage.removeItem(LS.user);
   localStorage.removeItem(LS.professorId);
   localStorage.removeItem(LS.studentId);
+
+  // legados (se existirem)
+  localStorage.removeItem(LS.professorName);
+  localStorage.removeItem(LS.professorEmail);
 }
 
 function getLoginEmail() {
@@ -72,7 +78,6 @@ async function readJsonSafe(res) {
 }
 
 function justLoggedOutGuard() {
-  // evita loop quando acabou de fazer logout e caiu no login
   if (sessionStorage.getItem('mk_just_logged_out') === '1') {
     sessionStorage.removeItem('mk_just_logged_out');
     clearAuthStorage();
@@ -89,7 +94,7 @@ function justLoggedOutGuard() {
   const user = safeJsonParse(localStorage.getItem(LS.user));
   const role = normalizeRole(user?.role);
 
-  if (token && role === 'PROFESSOR') {
+  if (token && (role === 'PROFESSOR' || role === 'TEACHER')) {
     window.location.replace('professor-salas.html');
   }
 })();
@@ -125,7 +130,6 @@ async function fazerLoginProfessor() {
       return;
     }
 
-    // erro (inclui "email não verificado")
     if (!response.ok || !data?.ok || !data?.token || !data?.user) {
       const msg = data?.message || data?.error || 'Login inválido.';
 
@@ -145,9 +149,16 @@ async function fazerLoginProfessor() {
     const role = normalizeRole(data.user.role);
 
     // garante que é professor
-    if (role !== 'PROFESSOR') {
+    if (role !== 'PROFESSOR' && role !== 'TEACHER') {
       clearAuthStorage();
       notify('error', 'Acesso negado', 'Este acesso é apenas para professores.');
+      return;
+    }
+
+    const userId = data?.user?.id;
+    if (!userId) {
+      clearAuthStorage();
+      notify('error', 'Erro', 'Login ok, mas o servidor não retornou o ID do professor.');
       return;
     }
 
@@ -157,7 +168,7 @@ async function fazerLoginProfessor() {
     // grava auth (padrão novo)
     localStorage.setItem(LS.token, String(data.token));
     localStorage.setItem(LS.user, JSON.stringify(data.user));
-    localStorage.setItem(LS.professorId, String(data.user.id)); // compat
+    localStorage.setItem(LS.professorId, String(userId)); // compat
 
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
     window.location.replace('professor-salas.html');
@@ -168,11 +179,8 @@ async function fazerLoginProfessor() {
   }
 }
 
-if (loginBtn) {
-  loginBtn.addEventListener('click', fazerLoginProfessor);
-}
+if (loginBtn) loginBtn.addEventListener('click', fazerLoginProfessor);
 
-// Enter no campo de senha
 if (passLoginEl) {
   passLoginEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') fazerLoginProfessor();
@@ -185,11 +193,7 @@ if (passLoginEl) {
 async function reenviarVerificacao() {
   const email = getLoginEmail();
   if (!email) {
-    notify(
-      'warn',
-      'Digite seu e-mail',
-      'Informe seu e-mail no campo de login para reenviar o link.',
-    );
+    notify('warn', 'Digite seu e-mail', 'Informe seu e-mail no campo de login para reenviar o link.');
     return;
   }
 
@@ -211,11 +215,7 @@ async function reenviarVerificacao() {
     }
 
     if (!response.ok || !data?.ok) {
-      notify(
-        'error',
-        'Não foi possível reenviar',
-        data?.message || data?.error || 'Tente novamente em instantes.',
-      );
+      notify('error', 'Não foi possível reenviar', data?.message || data?.error || 'Tente novamente em instantes.');
       return;
     }
 
@@ -229,11 +229,13 @@ async function reenviarVerificacao() {
 }
 
 if (resendVerifyBtn) {
-  // começa oculto por padrão
   show(resendVerifyBtn, false);
   resendVerifyBtn.addEventListener('click', reenviarVerificacao);
 }
 
+// -------------------------
+// ✅ CADASTRO PROFESSOR
+// -------------------------
 async function cadastrarProfessor() {
   const name = (nameRegEl?.value || '').trim();
   const email = (emailRegEl?.value || '').trim().toLowerCase();
@@ -272,9 +274,7 @@ async function cadastrarProfessor() {
       notify(
         'error',
         'Não foi possível cadastrar',
-        data?.message ||
-          data?.error ||
-          'Erro ao cadastrar professor. Tente outro e-mail.',
+        data?.message || data?.error || 'Erro ao cadastrar professor. Tente outro e-mail.',
       );
       return;
     }
@@ -286,10 +286,8 @@ async function cadastrarProfessor() {
       4200,
     );
 
-    // pré-preenche login (ajuda)
     if (emailLoginEl) emailLoginEl.value = email;
 
-    // limpa campos de cadastro
     if (nameRegEl) nameRegEl.value = '';
     if (emailRegEl) emailRegEl.value = '';
     if (passRegEl) passRegEl.value = '';
@@ -300,6 +298,4 @@ async function cadastrarProfessor() {
   }
 }
 
-if (registerBtn) {
-  registerBtn.addEventListener('click', cadastrarProfessor);
-}
+if (registerBtn) registerBtn.addEventListener('click', cadastrarProfessor);
