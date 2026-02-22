@@ -43,7 +43,7 @@ function isStudentSession() {
   const token = localStorage.getItem('token') || '';
   const userJson = localStorage.getItem('user');
 
-  // mantém compatibilidade: se ainda não migrou para token/user,
+  // compat: se ainda não migrou para token/user,
   // ao menos exige studentId (mas o ideal é token + user)
   if (!token || !userJson) {
     return !!getStudentIdCompat();
@@ -73,7 +73,11 @@ async function authFetch(url, options = {}) {
   const token = getToken();
   const headers = { ...(options.headers || {}) };
 
-  if (options.body && !headers['Content-Type']) {
+  const hasBody = options.body !== undefined && options.body !== null;
+  const isFormData =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+  if (hasBody && !isFormData && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -293,8 +297,13 @@ async function saveDraftServerPacked(packedContent) {
   });
 
   if (!res.ok) {
-    const data = await res.json().catch(() => null);
-    const msg = data?.message || data?.error || `HTTP ${res.status}`;
+    let msg = `HTTP ${res.status}`;
+    try {
+      const data = await res.json();
+      const m = data?.message ?? data?.error;
+      if (Array.isArray(m)) msg = m.join(' | ');
+      else if (typeof m === 'string' && m.trim()) msg = m;
+    } catch {}
     throw new Error(msg);
   }
 
@@ -459,9 +468,8 @@ async function checarJaEnviou() {
   }
 }
 
-// =====================
-// ENVIAR REDAÇÃO (envio final)
-// =====================
+// (PARTE 2 continua daqui: ENVIAR REDAÇÃO + flush autosave + INIT)
+
 let sending = false;
 
 sendBtn.addEventListener('click', async () => {
@@ -497,13 +505,12 @@ sendBtn.addEventListener('click', async () => {
       return;
     }
 
-    // opcional: garante que o último estado foi salvo como rascunho antes de enviar
-    // (reduz chance de perder texto se a rede falhar no POST final)
+    // opcional: salva o último estado como rascunho antes do envio final
     try {
       await saveDraftServerPacked(packContent(title, text));
     } catch (e) {
       console.warn('[redacao] Falha ao salvar rascunho antes do envio:', e);
-      // segue mesmo assim, porque o envio final é o que importa
+      // segue mesmo assim
     }
 
     setStatus('Enviando redação...');
@@ -518,8 +525,13 @@ sendBtn.addEventListener('click', async () => {
     });
 
     if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      const msg = data?.message || data?.error || `HTTP ${response.status}`;
+      let msg = `HTTP ${response.status}`;
+      try {
+        const data = await response.json();
+        const m = data?.message ?? data?.error;
+        if (Array.isArray(m)) msg = m.join(' | ');
+        else if (typeof m === 'string' && m.trim()) msg = m;
+      } catch {}
       throw new Error(msg);
     }
 
@@ -530,8 +542,6 @@ sendBtn.addEventListener('click', async () => {
 
     const essayId = essay?.id ? String(essay.id) : '';
     if (!essayId) {
-      // se backend não devolveu id, ainda assim não deixa o aluno reenviar
-      // (mas precisa do id para abrir feedback)
       notify(
         'warn',
         'Enviada',
