@@ -1,18 +1,13 @@
-// painel-aluno.js (padronizado com auth.js)
-// - usa requireStudentSession + authFetch + readErrorMessage do auth.js
-// - lista salas do aluno e abre sala-aluno.html?roomId=...
+// painel-aluno.js (final / prático)
+// - usa auth.js (requireStudentSession + authFetch + readErrorMessage)
+// - lista as salas do aluno e abre sala-aluno.html?roomId=...
 
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-import {
-  requireStudentSession,
-  getStudentIdCompat,
-  authFetch,
-  readErrorMessage,
-} from './auth.js';
+import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
-// -------------------- UI helpers --------------------
+// -------------------- Toast helper --------------------
 function notify(type, title, message, duration) {
   try {
     toast({
@@ -29,10 +24,9 @@ function notify(type, title, message, duration) {
 }
 
 // -------------------- Guard --------------------
-requireStudentSession({ redirectTo: 'login-aluno.html' });
-const studentId = getStudentIdCompat();
+const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
-// -------------------- Página --------------------
+// -------------------- Elementos --------------------
 const roomsList = document.getElementById('roomsList');
 
 function renderEmpty(msg) {
@@ -54,7 +48,7 @@ async function carregarMinhasSalas() {
   try {
     const res = await authFetch(
       `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
-      {},
+      { method: 'GET' },
       { redirectTo: 'login-aluno.html' },
     );
 
@@ -65,7 +59,6 @@ async function carregarMinhasSalas() {
 
     const raw = await res.json().catch(() => null);
     const arr = Array.isArray(raw) ? raw : [];
-
     const rooms = arr.map(normalizeRoom).filter((r) => !!r.id);
 
     roomsList.innerHTML = '';
@@ -93,7 +86,7 @@ async function carregarMinhasSalas() {
       roomsList.appendChild(li);
     });
   } catch (err) {
-    // se foi AUTH_401/403, authFetch já redireciona
+    // Se AUTH_401/403, authFetch já avisou e redirecionou
     if (!String(err?.message || '').startsWith('AUTH_')) {
       console.error(err);
       renderEmpty('Erro ao carregar suas salas.');
