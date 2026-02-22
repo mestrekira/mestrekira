@@ -429,6 +429,7 @@ saveBtn.addEventListener('click', async () => {
   const title = (titleInput.value || '').trim();
   const text = textarea.value || '';
 
+  // se estiver vazio, limpa só UX
   if (!title && !text.trim()) {
     await clearDraftUXOnly();
     setStatus('Nada para salvar.');
@@ -454,7 +455,7 @@ saveBtn.addEventListener('click', async () => {
 });
 
 // =====================
-// VERIFICAR SE JÁ ENVIOU
+// VERIFICAR SE JÁ ENVIOU (servidor)
 // =====================
 async function checarJaEnviou() {
   try {
@@ -468,8 +469,9 @@ async function checarJaEnviou() {
   }
 }
 
-// (PARTE 2 continua daqui: ENVIAR REDAÇÃO + flush autosave + INIT)
-
+// =====================
+// ENVIAR REDAÇÃO (envio final)
+// =====================
 let sending = false;
 
 sendBtn.addEventListener('click', async () => {
@@ -505,12 +507,11 @@ sendBtn.addEventListener('click', async () => {
       return;
     }
 
-    // opcional: salva o último estado como rascunho antes do envio final
+    // opcional: tenta salvar rascunho antes do envio final
     try {
       await saveDraftServerPacked(packContent(title, text));
     } catch (e) {
       console.warn('[redacao] Falha ao salvar rascunho antes do envio:', e);
-      // segue mesmo assim
     }
 
     setStatus('Enviando redação...');
@@ -540,35 +541,35 @@ sendBtn.addEventListener('click', async () => {
     setStatus('Redação enviada com sucesso!');
     notify('success', 'Enviada!', 'Redação enviada com sucesso.');
 
-    const essayId = essay?.id ? String(essay.id) : '';
-    if (!essayId) {
+    const newEssayId = essay?.id ? String(essay.id) : '';
+    if (!newEssayId) {
       notify(
         'warn',
         'Enviada',
         'Redação enviada, mas não consegui obter o ID para abrir o feedback automaticamente.',
-        4200,
+        4200
       );
       return;
     }
 
     setTimeout(() => {
-      window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(essayId)}`);
+      window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(newEssayId)}`);
     }, 600);
   } catch (err) {
     console.error(err);
-    sending = false;
 
     // destrava UI
     setDisabledAll(false);
-
     setStatus('Erro ao enviar redação.');
     notify('error', 'Erro', 'Erro ao enviar redação.');
+  } finally {
+    sending = false;
   }
 });
 
 // =====================
-// FLUSH de autosave ao sair da página
-// (evita perder texto quando o usuário fecha a aba)
+// FLUSH do autosave ao sair da página
+// (melhora muito perda de texto ao fechar aba)
 // =====================
 async function flushAutosave() {
   try {
@@ -588,7 +589,7 @@ async function flushAutosave() {
 }
 
 window.addEventListener('pagehide', () => {
-  // não dá para "await" aqui — mas dispara tentativa final
+  // não dá para "await" aqui; dispara tentativa final
   flushAutosave();
 });
 
@@ -620,5 +621,7 @@ window.addEventListener('pagehide', () => {
   } catch (e) {
     console.error(e);
     setStatus('Erro ao inicializar a página.');
+    notify('error', 'Erro', 'Erro ao inicializar a página.');
   }
 })();
+
