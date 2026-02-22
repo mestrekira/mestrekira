@@ -1,16 +1,12 @@
-// desempenho.js (com auth.js centralizado)
+// desempenho.js (final / prático com auth.js centralizado)
 // - usa requireStudentSession + authFetch + readErrorMessage do seu auth.js
-// - mantém toda a lógica original (médias, donut, histórico, PDF)
+// - mantém lógica original (médias, donut, histórico, PDF)
+// - evita “body already used” no fluxo do PDF
 
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-import {
-  requireStudentSession,
-  getStudentIdCompat,
-  authFetch,
-  readErrorMessage,
-} from './auth.js';
+import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
 // ---------------- Toast helper ----------------
 function notify(type, title, message, duration) {
@@ -29,8 +25,7 @@ function notify(type, title, message, duration) {
 
 // ---------------- Guard ----------------
 // garante sessão + retorna studentId compat
-requireStudentSession({ redirectTo: 'login-aluno.html' });
-const studentId = getStudentIdCompat();
+const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 // ---------------- Params ----------------
 const params = new URLSearchParams(window.location.search);
@@ -133,6 +128,12 @@ function toDateSafe(value) {
 
   const s = String(value).trim();
   if (!s) return null;
+
+  // permite "YYYY-MM-DD HH:mm(:ss)"
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
+    const d0 = new Date(s.replace(' ', 'T'));
+    return Number.isNaN(d0.getTime()) ? null : d0;
+  }
 
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) return d;
@@ -275,7 +276,11 @@ function legendItem(label, color, isGap = false) {
   return item;
 }
 
-function renderDonutWithLegend(targetDonutEl, targetLegendEl, { c1, c2, c3, c4, c5, totalText }) {
+function renderDonutWithLegend(
+  targetDonutEl,
+  targetLegendEl,
+  { c1, c2, c3, c4, c5, totalText }
+) {
   if (!targetDonutEl || !targetLegendEl) return;
 
   const used = Math.max(0, Math.min(MAX, c1 + c2 + c3 + c4 + c5));
@@ -336,13 +341,15 @@ async function downloadStudentPerformancePdf(roomId) {
     }
 
     const contentType = (res.headers.get('content-type') || '').toLowerCase();
+
+    // ✅ se NÃO for PDF, consome body como texto/JSON e finaliza (não tenta blob depois)
     if (!contentType.includes('application/pdf') && !contentType.includes('pdf')) {
-      // tenta mostrar alguma mensagem do backend
       const msg = await readErrorMessage(res, 'O servidor não retornou um PDF.');
       notify('error', 'Resposta inválida', msg);
       return;
     }
 
+    // ✅ aqui é PDF de verdade: consome como blob
     const blob = await res.blob();
 
     const cd = res.headers.get('content-disposition') || '';
@@ -361,7 +368,7 @@ async function downloadStudentPerformancePdf(roomId) {
 
     notify('success', 'PDF pronto', 'Download iniciado.');
   } catch (e) {
-    // se for AUTH_401/403, authFetch já redireciona
+    // AUTH_401/403: authFetch já redireciona
     if (!String(e?.message || '').startsWith('AUTH_')) {
       console.error(e);
       notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
@@ -376,8 +383,8 @@ async function fetchTasksMetaByRoom(roomId) {
   try {
     const res = await authFetch(
       `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
-      {},
-      { redirectTo: 'login-aluno.html' },
+      { method: 'GET' },
+      { redirectTo: 'login-aluno.html' }
     );
     if (!res.ok) return [];
     const tasks = await jsonSafe(res);
@@ -403,7 +410,13 @@ function normalizeTasksMeta(rawArr) {
     .map((t) => {
       const id = String(t?.id || t?.taskId || '').trim();
       const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
-      const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+      const createdAt = pickDate(t, [
+        'createdAt',
+        'created_at',
+        'created',
+        'dateCreated',
+        'timestamp',
+      ]);
       const createdTime = toDateSafe(createdAt)?.getTime?.() ?? null;
       return { id, title, createdTime, _raw: t };
     })
@@ -611,7 +624,8 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
     resumo.style.marginTop = '6px';
     resumo.style.fontSize = '12px';
     resumo.style.opacity = '0.9';
-    resumo.textContent = score === null ? 'Ainda não corrigida.' : `Nota: ${score} / 1000`;
+    resumo.textContent =
+      score === null ? 'Ainda não corrigida.' : `Nota: ${score} / 1000`;
 
     const btn = document.createElement('button');
     btn.style.marginTop = '10px';
@@ -629,7 +643,9 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
       const legend = panel.querySelector('#mkTaskPanelLegend');
 
       if (score === null) {
-        if (donut) donut.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correção ainda.</div>';
+        if (donut)
+          donut.innerHTML =
+            '<div style="font-size:12px;opacity:.8;">Sem correção ainda.</div>';
         if (legend) legend.innerHTML = '';
       } else {
         const c1 = clamp0to200(essay?.c1);
@@ -637,7 +653,14 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
         const c3 = clamp0to200(essay?.c3);
         const c4 = clamp0to200(essay?.c4);
         const c5 = clamp0to200(essay?.c5);
-        renderDonutWithLegend(donut, legend, { c1, c2, c3, c4, c5, totalText: String(score) });
+        renderDonutWithLegend(donut, legend, {
+          c1,
+          c2,
+          c3,
+          c4,
+          c5,
+          totalText: String(score),
+        });
       }
 
       const viewBtn = panel.querySelector('#mkTaskPanelViewBtn');
@@ -647,7 +670,9 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
         viewBtn.onclick = (ev) => {
           ev.stopPropagation();
           if (!eId) return;
-          window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(eId)}`;
+          window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(
+            eId
+          )}`;
         };
       }
 
@@ -689,8 +714,8 @@ async function carregarSalasDoAluno() {
   try {
     const res = await authFetch(
       `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
-      {},
-      { redirectTo: 'login-aluno.html' },
+      { method: 'GET' },
+      { redirectTo: 'login-aluno.html' }
     );
 
     if (!res.ok) {
@@ -746,9 +771,11 @@ async function carregarDesempenho(roomId) {
 
   try {
     const res = await authFetch(
-      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(roomId)}&studentId=${encodeURIComponent(studentId)}`,
-      {},
-      { redirectTo: 'login-aluno.html' },
+      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(
+        roomId
+      )}&studentId=${encodeURIComponent(studentId)}`,
+      { method: 'GET' },
+      { redirectTo: 'login-aluno.html' }
     );
 
     if (!res.ok) {
