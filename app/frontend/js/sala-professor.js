@@ -1,115 +1,20 @@
-// sala-professor.js
+// sala-professor.js (refatorado p/ padrão auth.js)
+// - usa auth.js (notify + requireProfessorSession + authFetch + readErrorMessage)
+// - sem duplicar sessão/apiFetch/toast
+// - confirmDialog opcional (fallback confirm)
+
 import { API_URL } from './config.js';
-import { toast, confirmDialog } from './ui-feedback.js';
+import { confirmDialog as uiConfirmDialog } from './ui-feedback.js';
+import {
+  notify,
+  requireProfessorSession,
+  authFetch,
+  readErrorMessage,
+  getUser,
+} from './auth.js';
 
 // -----------------------
-// Session / API helpers
-// -----------------------
-const LS = {
-  token: 'token',
-  user: 'user',
-  professorId: 'professorId',
-  studentId: 'studentId',
-};
-
-function notify(type, title, message, duration) {
-  toast({
-    type,
-    title,
-    message,
-    duration:
-      duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
-  });
-}
-
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
-}
-
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function clearAuthStorage() {
-  localStorage.removeItem(LS.token);
-  localStorage.removeItem(LS.user);
-  localStorage.removeItem(LS.professorId);
-  localStorage.removeItem(LS.studentId);
-}
-
-function redirectToLogin() {
-  window.location.replace('login-professor.html');
-}
-
-function requireProfessorSession() {
-  const token = localStorage.getItem(LS.token);
-  const user = safeJsonParse(localStorage.getItem(LS.user));
-  const role = normRole(user?.role);
-
-  if (!token || role !== 'PROFESSOR') {
-    clearAuthStorage();
-    redirectToLogin();
-    throw new Error('Sessão de professor ausente/inválida');
-  }
-
-  // compatibilidade
-  if (user?.id) localStorage.setItem(LS.professorId, String(user.id));
-  return { token, user };
-}
-
-async function readJsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-function unwrapResult(data) {
-  // suporta: array puro, objeto puro, ou { ok, result }
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') {
-    if (Array.isArray(data.result)) return data.result;
-    if (data.result && typeof data.result === 'object') return data.result;
-    if (Array.isArray(data.data)) return data.data;
-    if (data.data && typeof data.data === 'object') return data.data;
-  }
-  return data; // fallback: devolve como veio
-}
-
-async function apiFetch(path, { token, method = 'GET', body } = {}) {
-  const headers = {};
-  if (body) headers['Content-Type'] = 'application/json';
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    clearAuthStorage();
-    redirectToLogin();
-    throw new Error(`Auth error: HTTP ${res.status}`);
-  }
-
-  const data = await readJsonSafe(res);
-
-  if (!res.ok) {
-    const msg = data?.message || data?.error || `Erro HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-
-  return data;
-}
-
-// -----------------------
-// Params
+// Params + Guard
 // -----------------------
 const params = new URLSearchParams(window.location.search);
 const roomId = params.get('roomId');
@@ -119,6 +24,10 @@ if (!roomId) {
   window.location.replace('professor-salas.html');
   throw new Error('roomId ausente');
 }
+
+// ✅ sessão professor (1x no topo)
+const professorIdCompat = requireProfessorSession({ redirectTo: 'login-professor.html' });
+const user = getUser() || null;
 
 // -----------------------
 // Elements
@@ -136,14 +45,48 @@ if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn ||
   throw new Error('HTML incompleto');
 }
 
-// sessão
-const { token, user } = requireProfessorSession();
-
 // ✅ Botão de desempenho
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
     window.location.href = `desempenho-professor.html?roomId=${encodeURIComponent(roomId)}`;
   });
+}
+
+// -----------------------
+// helpers
+// -----------------------
+function disable(btn, value) {
+  if (btn) btn.disabled = !!value;
+}
+
+async function confirmDialog(opts) {
+  // se houver confirmDialog do seu UI, usa; senão, fallback
+  if (typeof uiConfirmDialog === 'function') {
+    try {
+      return await uiConfirmDialog(opts);
+    } catch {
+      // cai no fallback abaixo
+    }
+  }
+  return window.confirm(`${opts?.title ? opts.title + '\n\n' : ''}${opts?.message || 'Confirmar?'}`);
+}
+
+function unwrapResult(data) {
+  // suporta: array puro, objeto puro, ou { ok, result }
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    if (Array.isArray(data.result)) return data.result;
+    if (data.result && typeof data.result === 'object') return data.result;
+    if (Array.isArray(data.data)) return data.data;
+    if (data.data && typeof data.data === 'object') return data.data;
+  }
+  return data; // fallback: devolve como veio
+}
+
+async function apiJson(url, options) {
+  const res = await authFetch(url, options || {}, { redirectTo: 'login-professor.html' });
+  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
+  return res.json().catch(() => null);
 }
 
 // -----------------------
@@ -284,13 +227,9 @@ function placeholderAvatar(size = 36) {
       `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
         <rect width="100%" height="100%" fill="#eee"/>
         <text x="50%" y="55%" font-size="${Math.round(size * 0.45)}" text-anchor="middle" fill="#888">?</text>
-      </svg>`,
+      </svg>`
     )
   );
-}
-
-function disable(btn, value) {
-  if (btn) btn.disabled = !!value;
 }
 
 // -----------------------
@@ -298,14 +237,14 @@ function disable(btn, value) {
 // -----------------------
 async function carregarSala() {
   try {
-    const data = await apiFetch(`/rooms/${encodeURIComponent(roomId)}`, { token });
+    const data = await apiJson(`${API_URL}/rooms/${encodeURIComponent(roomId)}`, { method: 'GET' });
     const room = unwrapResult(data);
 
     roomNameEl.textContent = room?.name || 'Sala';
     roomCodeEl.textContent = room?.code || '—';
   } catch (err) {
     console.error(err);
-    notify('error', 'Erro', 'Erro ao carregar dados da sala.');
+    notify('error', 'Erro', String(err?.message || 'Erro ao carregar dados da sala.'));
   }
 }
 
@@ -350,14 +289,14 @@ async function removerAluno(studentId, studentName = 'este aluno', btnRef) {
   disable(btnRef, true);
 
   try {
-    await apiFetch(
-      `/rooms/${encodeURIComponent(roomId)}/students/${encodeURIComponent(studentId)}`,
-      { token, method: 'DELETE' },
+    await apiJson(
+      `${API_URL}/rooms/${encodeURIComponent(roomId)}/students/${encodeURIComponent(studentId)}`,
+      { method: 'DELETE' }
     );
     await carregarAlunos();
   } catch (err) {
     console.error(err);
-    notify('error', 'Erro', 'Erro ao remover aluno da sala.');
+    notify('error', 'Erro', String(err?.message || 'Erro ao remover aluno da sala.'));
   } finally {
     disable(btnRef, false);
   }
@@ -368,7 +307,10 @@ async function carregarAlunos() {
   const photoKey = (studentId) => `mk_photo_student_${studentId}`;
 
   try {
-    const data = await apiFetch(`/rooms/${encodeURIComponent(roomId)}/students`, { token });
+    const data = await apiJson(
+      `${API_URL}/rooms/${encodeURIComponent(roomId)}/students`,
+      { method: 'GET' }
+    );
     const raw = unwrapResult(data);
     const arr = Array.isArray(raw) ? raw : [];
     const students = arr.map(normalizeStudent).filter((s) => !!s.id);
@@ -446,7 +388,10 @@ async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando tarefas...</li>';
 
   try {
-    const data = await apiFetch(`/tasks/by-room?roomId=${encodeURIComponent(roomId)}`, { token });
+    const data = await apiJson(
+      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
+      { method: 'GET' }
+    );
     const raw = unwrapResult(data);
 
     const tasks = (Array.isArray(raw) ? raw : [])
@@ -509,7 +454,7 @@ async function carregarTarefas() {
         disable(delBtn, true);
 
         try {
-          await apiFetch(`/tasks/${encodeURIComponent(task.id)}`, { token, method: 'DELETE' });
+          await apiJson(`${API_URL}/tasks/${encodeURIComponent(task.id)}`, { method: 'DELETE' });
 
           if (String(getLastCreatedTaskId()) === String(task.id)) {
             setLastCreatedTaskId('');
@@ -518,7 +463,7 @@ async function carregarTarefas() {
           await carregarTarefas();
         } catch (err) {
           console.error(err);
-          notify('error', 'Erro', 'Erro ao excluir tarefa.');
+          notify('error', 'Erro', String(err?.message || 'Erro ao excluir tarefa.'));
         } finally {
           disable(delBtn, false);
         }
@@ -555,10 +500,13 @@ createTaskBtn.addEventListener('click', async () => {
   disable(createTaskBtn, true);
 
   try {
-    const data = await apiFetch('/tasks', {
-      token,
+    // ✅ ideal: backend pega professorId pelo token.
+    // (não é necessário enviar professorId aqui se o endpoint já valida pelo JWT)
+    const professorId = String(user?.id || professorIdCompat || '').trim();
+
+    const data = await apiJson(`${API_URL}/tasks`, {
       method: 'POST',
-      body: { roomId, title, guidelines },
+      body: JSON.stringify({ roomId, title, guidelines, professorId }),
     });
 
     const created = unwrapResult(data);
@@ -572,7 +520,7 @@ createTaskBtn.addEventListener('click', async () => {
     await carregarTarefas();
   } catch (err) {
     console.error(err);
-    notify('error', 'Erro', 'Erro ao criar tarefa.');
+    notify('error', 'Erro', String(err?.message || 'Erro ao criar tarefa.'));
   } finally {
     disable(createTaskBtn, false);
   }
