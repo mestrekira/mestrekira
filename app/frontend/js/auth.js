@@ -1,16 +1,18 @@
-// auth.js
+// auth.js (final / prático)
 // Utilitário único de autenticação para front (aluno/professor)
 
 import { toast } from './ui-feedback.js';
 
 // ---------- toast safe ----------
-function notify(type, title, message, duration) {
+export function notify(type, title, message, duration) {
   try {
     toast({
       type,
       title,
       message,
-      duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+      duration:
+        duration ??
+        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
     });
   } catch {
     if (type === 'error') console.error(title, message);
@@ -43,7 +45,7 @@ export function getUser() {
   }
 }
 
-// compat IDs antigos (enquanto você migra)
+// compat IDs antigos
 export function getStudentIdCompat() {
   const id = localStorage.getItem('studentId');
   if (!id || id === 'undefined' || id === 'null') return '';
@@ -56,13 +58,11 @@ export function getProfessorIdCompat() {
   return String(id);
 }
 
-export function isStudentSession({ allowCompatIdOnly = true } = {}) {
+export function isStudentSession({ allowCompatIdOnly = false } = {}) {
   const token = getToken();
   const user = getUser();
 
-  if (!token || !user) {
-    return allowCompatIdOnly ? !!getStudentIdCompat() : false;
-  }
+  if (!token || !user) return allowCompatIdOnly ? !!getStudentIdCompat() : false;
 
   const role = normRole(user?.role);
   const ok = role === 'STUDENT' || role === 'ALUNO';
@@ -70,17 +70,14 @@ export function isStudentSession({ allowCompatIdOnly = true } = {}) {
   if (ok && user?.id && !getStudentIdCompat()) {
     localStorage.setItem('studentId', String(user.id));
   }
-
   return ok;
 }
 
-export function isProfessorSession({ allowCompatIdOnly = true } = {}) {
+export function isProfessorSession({ allowCompatIdOnly = false } = {}) {
   const token = getToken();
   const user = getUser();
 
-  if (!token || !user) {
-    return allowCompatIdOnly ? !!getProfessorIdCompat() : false;
-  }
+  if (!token || !user) return allowCompatIdOnly ? !!getProfessorIdCompat() : false;
 
   const role = normRole(user?.role);
   const ok = role === 'PROFESSOR' || role === 'TEACHER';
@@ -88,101 +85,57 @@ export function isProfessorSession({ allowCompatIdOnly = true } = {}) {
   if (ok && user?.id && !getProfessorIdCompat()) {
     localStorage.setItem('professorId', String(user.id));
   }
-
   return ok;
 }
 
-// ---------- login redirect ----------
-export function redirectToLogin(kind = 'student') {
-  // kind: 'student' | 'professor' | 'auto'
-  if (kind === 'professor') return window.location.replace('login-professor.html');
-  if (kind === 'student') return window.location.replace('login-aluno.html');
+// Decide para qual login mandar (sem você ter que lembrar)
+function inferLoginPage() {
+  const path = String(window.location.pathname || '').toLowerCase();
 
-  // auto: tenta inferir pelo role, senão cai em login-aluno
-  const user = getUser();
-  const role = normRole(user?.role);
-  if (role === 'PROFESSOR' || role === 'TEACHER') {
-    return window.location.replace('login-professor.html');
-  }
-  return window.location.replace('login-aluno.html');
+  // Se a URL/página contém "professor", assume ambiente professor
+  if (path.includes('professor')) return 'login-professor.html';
+
+  // Se a sessão atual for professor, manda pro professor
+  const u = getUser();
+  const r = normRole(u?.role);
+  if (r === 'PROFESSOR' || r === 'TEACHER') return 'login-professor.html';
+
+  // default: aluno
+  return 'login-aluno.html';
 }
 
-// ---------- guards prontos (evita duplicação) ----------
-export function requireStudent(loginPage = 'login-aluno.html') {
-  if (!isStudentSession({ allowCompatIdOnly: false })) {
+// Guards práticos
+export function requireStudentSession({ redirectTo = 'login-aluno.html' } = {}) {
+  if (!isStudentSession()) {
     clearAuth();
-    window.location.replace(loginPage);
+    window.location.replace(redirectTo);
     throw new Error('Sessão de aluno ausente/inválida');
   }
-
-  const studentId = getStudentIdCompat();
-  if (!studentId) {
+  const sid = getStudentIdCompat();
+  if (!sid) {
     clearAuth();
-    window.location.replace(loginPage);
+    window.location.replace(redirectTo);
     throw new Error('studentId ausente/inválido');
   }
-
-  return { studentId, user: getUser() };
+  return sid;
 }
 
-export function requireProfessor(loginPage = 'login-professor.html') {
-  if (!isProfessorSession({ allowCompatIdOnly: false })) {
+export function requireProfessorSession({ redirectTo = 'login-professor.html' } = {}) {
+  if (!isProfessorSession()) {
     clearAuth();
-    window.location.replace(loginPage);
+    window.location.replace(redirectTo);
     throw new Error('Sessão de professor ausente/inválida');
   }
-
-  const professorId = getProfessorIdCompat();
-  if (!professorId) {
+  const pid = getProfessorIdCompat();
+  if (!pid) {
     clearAuth();
-    window.location.replace(loginPage);
+    window.location.replace(redirectTo);
     throw new Error('professorId ausente/inválido');
   }
-
-  return { professorId, user: getUser() };
-}
-
-// ---------- util: leitura de erro (robusta) ----------
-export async function readErrorMessage(res, fallback) {
-  const msgFallback = fallback || `HTTP ${res.status}`;
-
-  // lê o body UMA vez (robusto)
-  let text = '';
-  try {
-    text = await res.text();
-  } catch {
-    return msgFallback;
-  }
-
-  const trimmed = (text || '').trim();
-  if (!trimmed) return msgFallback;
-
-  // tenta JSON.parse do texto
-  try {
-    const data = JSON.parse(trimmed);
-    const m = data?.message ?? data?.error;
-    if (Array.isArray(m)) return m.join(' | ');
-    if (typeof m === 'string' && m.trim()) return m.trim();
-    // se tiver outro formato, cai no texto
-  } catch {
-    // não é JSON
-  }
-
-  return trimmed.slice(0, 300);
+  return pid;
 }
 
 // ---------- authFetch ----------
-/**
- * @param {string} url
- * @param {RequestInit} options
- * @param {object} cfg
- * @param {'student'|'professor'|'auto'|string} cfg.redirectTo
- *   - 'student' -> login-aluno.html
- *   - 'professor' -> login-professor.html
- *   - 'auto' -> decide por role
- *   - string -> usa como página (ex: 'login-aluno.html')
- * @param {boolean} cfg.silentAuthError - se true, não notifica toast
- */
 export async function authFetch(url, options = {}, cfg = {}) {
   const token = getToken();
   const headers = { ...(options.headers || {}) };
@@ -200,30 +153,38 @@ export async function authFetch(url, options = {}, cfg = {}) {
   const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401 || res.status === 403) {
-    if (!cfg?.silentAuthError) {
-      notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    }
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
     clearAuth();
 
-    setTimeout(() => {
-      const rt = cfg?.redirectTo;
-
-      // string direta
-      if (typeof rt === 'string' && rt.endsWith('.html')) {
-        window.location.replace(rt);
-        return;
-      }
-
-      if (rt === 'professor') return redirectToLogin('professor');
-      if (rt === 'student') return redirectToLogin('student');
-      if (rt === 'auto') return redirectToLogin('auto');
-
-      // padrão (aluno)
-      redirectToLogin('student');
-    }, 600);
+    const redirectTo = cfg.redirectTo || inferLoginPage();
+    setTimeout(() => window.location.replace(redirectTo), 600);
 
     throw new Error(`AUTH_${res.status}`);
   }
 
   return res;
+}
+
+// ---------- util: leitura de erro (sem "body already used") ----------
+export async function readErrorMessage(res, fallback) {
+  let msg = fallback || `HTTP ${res.status}`;
+
+  // tenta JSON via clone (não consome o body do res principal)
+  try {
+    const data = await res.clone().json();
+    const m = data?.message ?? data?.error;
+    if (Array.isArray(m)) msg = m.join(' | ');
+    else if (typeof m === 'string' && m.trim()) msg = m.trim();
+    return msg;
+  } catch {
+    // ignora
+  }
+
+  // tenta texto via clone
+  try {
+    const t = await res.clone().text();
+    if (t && t.trim()) msg = t.trim().slice(0, 300);
+  } catch {}
+
+  return msg;
 }
