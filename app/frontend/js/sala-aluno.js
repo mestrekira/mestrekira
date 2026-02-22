@@ -57,11 +57,34 @@ function isStudentSession() {
   }
 }
 
+async function readErrorMessage(res) {
+  try {
+    const data = await res.json();
+    const msg = data?.message ?? data?.error;
+    if (Array.isArray(msg)) return msg.join(' | ');
+    if (typeof msg === 'string' && msg.trim()) return msg.trim();
+  } catch {}
+
+  try {
+    const t = await res.text();
+    if (t && String(t).trim()) return String(t).trim().slice(0, 300);
+  } catch {}
+
+  return `HTTP ${res.status}`;
+}
+
+let redirected = false;
+
 async function authFetch(url, options = {}) {
   const token = localStorage.getItem('token') || '';
   const headers = { ...(options.headers || {}) };
 
-  if (options.body && !headers['Content-Type']) {
+  const hasBody = options.body !== undefined && options.body !== null;
+  const isFormData =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+  // ✅ não quebra FormData
+  if (hasBody && !isFormData && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -69,7 +92,8 @@ async function authFetch(url, options = {}) {
 
   const res = await fetch(url, { ...options, headers });
 
-  if (res.status === 401 || res.status === 403) {
+  if ((res.status === 401 || res.status === 403) && !redirected) {
+    redirected = true;
     notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
     clearAuth();
     setTimeout(() => window.location.replace('login-aluno.html'), 600);
@@ -215,9 +239,9 @@ function makeAvatarFromLocalStorage(key, size = 34, alt = 'Foto') {
         `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
           <rect width="100%" height="100%" fill="#eee"/>
           <text x="50%" y="55%" font-size="${Math.round(
-            size * 0.45,
+            size * 0.45
           )}" text-anchor="middle" fill="#888">?</text>
-        </svg>`,
+        </svg>`
       );
 
   return img;
@@ -240,8 +264,7 @@ if (leaveBtn) {
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        const msg = data?.message || data?.error || `HTTP ${res.status}`;
+        const msg = await readErrorMessage(res);
         throw new Error(msg);
       }
 
@@ -265,7 +288,7 @@ async function carregarOverview() {
 
   try {
     const res = await authFetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(await readErrorMessage(res));
 
     const data = await res.json().catch(() => null);
 
@@ -283,11 +306,7 @@ async function carregarOverview() {
         wrap.style.alignItems = 'center';
         wrap.style.gap = '10px';
 
-        const avatar = makeAvatarFromLocalStorage(
-          photoKeyProfessor(p.id),
-          38,
-          'Foto do professor',
-        );
+        const avatar = makeAvatarFromLocalStorage(photoKeyProfessor(p.id), 38, 'Foto do professor');
 
         const text = document.createElement('div');
         const name = String(p.name || 'Professor').trim();
@@ -330,11 +349,7 @@ async function carregarOverview() {
         li.style.alignItems = 'center';
         li.style.gap = '10px';
 
-        const avatar = makeAvatarFromLocalStorage(
-          photoKeyStudent(s.id),
-          36,
-          'Foto do colega',
-        );
+        const avatar = makeAvatarFromLocalStorage(photoKeyStudent(s.id), 36, 'Foto do colega');
 
         const text = document.createElement('div');
         const name = s.name && s.name.trim() ? s.name : 'Aluno';
@@ -381,13 +396,7 @@ function computeNewestTaskId(tasks) {
   let newestTime = -Infinity;
 
   tasks.forEach((t) => {
-    const createdAt = pickDate(t, [
-      'createdAt',
-      'created_at',
-      'created',
-      'dateCreated',
-      'timestamp',
-    ]);
+    const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
     const dt = toDateSafe(createdAt)?.getTime?.() ?? NaN;
 
     if (!Number.isNaN(dt)) {
@@ -429,10 +438,8 @@ async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando...</li>';
 
   try {
-    const response = await authFetch(
-      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
-    );
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const response = await authFetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
+    if (!response.ok) throw new Error(await readErrorMessage(response));
 
     const raw = await response.json().catch(() => null);
     const arr = Array.isArray(raw) ? raw : [];
@@ -445,18 +452,11 @@ async function carregarTarefas() {
       return;
     }
 
-    // normaliza
     const tasks = arr
       .map((t) => {
         const id = String(t?.id || t?.taskId || '').trim();
         const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
-        const createdAt = pickDate(t, [
-          'createdAt',
-          'created_at',
-          'created',
-          'dateCreated',
-          'timestamp',
-        ]);
+        const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
         return { id, title, createdAt, _raw: t };
       })
       .filter((t) => !!t.id);
@@ -469,7 +469,7 @@ async function carregarTarefas() {
 
     const newestId = computeNewestTaskId(tasks.map((t) => ({ ...t._raw, id: t.id })));
 
-    // 1) renderiza a lista primeiro (rápido)
+    // 1) renderiza lista primeiro
     const uiByTaskId = new Map(); // taskId -> { btnWrite, btnFeedback }
 
     tasks.forEach((task) => {
@@ -527,12 +527,12 @@ async function carregarTarefas() {
       uiByTaskId.set(task.id, { btnWrite, btnFeedback });
     });
 
-    // 2) checa as redações em paralelo (muito mais rápido que await dentro do loop)
+    // 2) checa redações em paralelo
     const checks = await Promise.allSettled(
       tasks.map(async (task) => {
         const essay = await getMyEssayByTask(task.id);
         return { taskId: task.id, essay };
-      }),
+      })
     );
 
     checks.forEach((r) => {
@@ -542,7 +542,6 @@ async function carregarTarefas() {
       const ui = uiByTaskId.get(taskId);
       if (!ui) return;
 
-      // mostra feedback só se tiver enviada (isDraft === false)
       if (essay && essay.id && essay.isDraft === false) {
         ui.btnWrite.style.display = 'none';
         ui.btnFeedback.style.display = 'inline-block';
