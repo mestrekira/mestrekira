@@ -1,31 +1,40 @@
-// entrar-sala.js (refatorado / padrão authFetch + token)
-// - entra na sala pelo CÓDIGO (sem criar/logar aqui)
-// - exige sessão de aluno (token + user.role), com compatibilidade de studentId
-// - trata 401/403 com redirect limpo para login-aluno.html
+// entrar-sala.js (refatorado)
+// - NÃO faz login/cadastro aqui (apenas entra na sala)
+// - exige sessão válida de aluno (token + user)
+// - usa authFetch com tratamento 401/403
+// - compat: também envia studentId (se backend ainda exigir)
 
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-// =====================
-// Toast helper (não quebra se toast não existir)
-// =====================
+// -------------------- UI --------------------
+const status = document.getElementById('status');
+const enterBtn = document.getElementById('enterBtn');
+const codeEl = document.getElementById('code');
+
 function notify(type, title, message, duration) {
   try {
     toast({
       type,
       title,
       message,
-      duration:
-        duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+      duration: duration ?? (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
     });
   } catch {
-    if (type === 'error') console.error(title, message);
+    if (type === 'error') alert(`${title}\n\n${message}`);
   }
 }
 
-// =====================
-// Sessão / Auth helpers
-// =====================
+function setStatus(msg) {
+  if (status) status.textContent = msg || '';
+}
+
+function setBusy(busy) {
+  if (enterBtn) enterBtn.disabled = !!busy;
+  if (codeEl) codeEl.disabled = !!busy;
+}
+
+// -------------------- Auth helpers --------------------
 function normRole(role) {
   return String(role || '').trim().toUpperCase();
 }
@@ -37,6 +46,20 @@ function clearAuth() {
   localStorage.removeItem('studentId');
 }
 
+function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
+function getUser() {
+  const raw = localStorage.getItem('user');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 function getStudentIdCompat() {
   const id = localStorage.getItem('studentId');
   if (!id || id === 'undefined' || id === 'null') return '';
@@ -44,30 +67,39 @@ function getStudentIdCompat() {
 }
 
 function isStudentSession() {
-  const token = localStorage.getItem('token') || '';
-  const userJson = localStorage.getItem('user');
-  if (!token || !userJson) return false;
+  const token = getToken();
+  const user = getUser();
+  if (!token || !user) return false;
 
-  try {
-    const user = JSON.parse(userJson);
-    const role = normRole(user?.role);
+  const role = normRole(user?.role);
+  const ok = role === 'STUDENT' || role === 'ALUNO';
 
-    // aceita STUDENT e ALUNO (compatibilidade)
-    if (role !== 'STUDENT' && role !== 'ALUNO') return false;
-
-    // garante studentId compatível com páginas antigas
-    if (user?.id && !getStudentIdCompat()) {
-      localStorage.setItem('studentId', String(user.id));
-    }
-
-    return true;
-  } catch {
-    return false;
+  // injeta compat id
+  if (ok && user?.id && !getStudentIdCompat()) {
+    localStorage.setItem('studentId', String(user.id));
   }
+
+  return ok;
 }
 
-function getToken() {
-  return localStorage.getItem('token') || '';
+async function readErrorMessage(res) {
+  // tenta JSON
+  try {
+    const data = await res.json();
+    const msg = data?.message ?? data?.error;
+    if (Array.isArray(msg)) return msg.join(' | ');
+    if (typeof msg === 'string' && msg.trim()) return msg.trim();
+  } catch {
+    // ignora
+  }
+  // tenta texto
+  try {
+    const t = await res.text();
+    if (t && t.trim()) return t.trim().slice(0, 300);
+  } catch {
+    // ignora
+  }
+  return `HTTP ${res.status}`;
 }
 
 async function authFetch(url, options = {}) {
@@ -96,71 +128,19 @@ async function authFetch(url, options = {}) {
   return res;
 }
 
-async function errorMessageFromResponse(res) {
-  // tenta json -> texto
-  try {
-    const ct = (res.headers.get('content-type') || '').toLowerCase();
-    if (ct.includes('application/json')) {
-      const data = await res.json().catch(() => null);
-      const m = data?.message ?? data?.error;
-      if (Array.isArray(m)) return m.join(' | ');
-      if (typeof m === 'string' && m.trim()) return m;
-    }
-  } catch {
-    // ignora
-  }
-
-  try {
-    const t = await res.text().catch(() => '');
-    if (t && t.trim()) return t.slice(0, 300);
-  } catch {
-    // ignora
-  }
-
-  return `Erro (HTTP ${res.status}).`;
-}
-
-// =====================
-// ELEMENTOS
-// =====================
-const statusEl = document.getElementById('status');
-const enterBtn = document.getElementById('enterBtn');
-const codeEl = document.getElementById('code');
-
-function setStatus(msg) {
-  if (statusEl) statusEl.textContent = msg || '';
-}
-
-function setBusy(busy) {
-  if (enterBtn) enterBtn.disabled = !!busy;
-  if (codeEl) codeEl.disabled = !!busy;
-}
-
-// =====================
-// Guard inicial
-// =====================
+// -------------------- Guard --------------------
 if (!isStudentSession()) {
   clearAuth();
   window.location.replace('login-aluno.html');
   throw new Error('Sessão de aluno ausente/inválida');
 }
 
-const studentId = getStudentIdCompat();
-if (!studentId) {
-  clearAuth();
-  window.location.replace('login-aluno.html');
-  throw new Error('studentId ausente/inválido');
-}
-
-// =====================
-// Entrar na sala
-// =====================
-async function entrar() {
+// -------------------- Action --------------------
+async function entrarSala() {
   const code = (codeEl?.value || '').trim().toUpperCase();
-
   if (!code) {
     setStatus('Informe o código da sala.');
-    notify('warn', 'Campo obrigatório', 'Informe o código da sala.');
+    notify('warn', 'Código obrigatório', 'Digite o código da sala para entrar.');
     return;
   }
 
@@ -168,46 +148,40 @@ async function entrar() {
   setStatus('Entrando na sala...');
 
   try {
+    const studentId = getStudentIdCompat(); // compat
     const res = await authFetch(`${API_URL}/enrollments/join`, {
       method: 'POST',
       body: JSON.stringify({ code, studentId }),
     });
 
     if (!res.ok) {
-      const msg = await errorMessageFromResponse(res);
-      notify('error', 'Não foi possível entrar', msg);
-      setStatus('Erro ao entrar na sala. Verifique o código.');
-      setBusy(false);
-      return;
+      const msg = await readErrorMessage(res);
+      throw new Error(msg);
     }
 
     const data = await res.json().catch(() => null);
-    const roomId = data?.roomId ? String(data.roomId) : '';
+    const roomId = data?.roomId || data?.id || data?.room?.id;
 
     if (!roomId) {
-      notify('error', 'Resposta inválida', 'O servidor não retornou o ID da sala.');
-      setStatus('Não foi possível abrir a sala agora.');
-      setBusy(false);
-      return;
+      throw new Error('Resposta inválida do servidor (roomId ausente).');
     }
 
-    setStatus('Tudo certo! Abrindo sala...');
-    window.location.replace(`sala-aluno.html?roomId=${encodeURIComponent(roomId)}`);
+    notify('success', 'Tudo certo', 'Você entrou na sala!');
+    window.location.href = `sala-aluno.html?roomId=${encodeURIComponent(String(roomId))}`;
   } catch (e) {
-    // AUTH_* já redireciona
-    if (!String(e?.message || '').startsWith('AUTH_')) {
-      console.error(e);
-      notify('error', 'Erro', 'Não foi possível acessar o servidor agora.');
-      setStatus('Erro ao entrar na sala.');
+    const msg = String(e?.message || 'Erro ao entrar na sala.');
+    if (!msg.startsWith('AUTH_')) {
+      setStatus('Erro ao entrar na sala. Verifique o código.');
+      notify('error', 'Não foi possível entrar', msg);
       setBusy(false);
     }
   }
 }
 
-if (enterBtn) enterBtn.addEventListener('click', entrar);
-
+// Eventos
+if (enterBtn) enterBtn.addEventListener('click', entrarSala);
 if (codeEl) {
   codeEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') entrar();
+    if (e.key === 'Enter') entrarSala();
   });
 }
