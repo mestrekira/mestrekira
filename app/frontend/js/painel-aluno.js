@@ -1,16 +1,10 @@
 // painel-aluno.js
-// - robusto (token + role) e compatível com studentId antigo
-// - authFetch com tratamento 401/403
-// - não lê res.json() duas vezes (bug comum)
-// - tenta extrair erro de JSON ou texto
 
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
 // -------------------- UI helpers --------------------
-
 function notify(type, title, message, duration) {
-  // caso ui-feedback.js não exista nesta página, não quebra
   try {
     toast({
       type,
@@ -26,7 +20,6 @@ function notify(type, title, message, duration) {
 }
 
 // -------------------- Auth helpers --------------------
-
 function normRole(role) {
   return String(role || '').trim().toUpperCase();
 }
@@ -53,10 +46,8 @@ function isStudentSession() {
     const user = JSON.parse(userJson);
     const role = normRole(user?.role);
 
-    // aceita STUDENT e ALUNO (compatibilidade)
     if (role !== 'STUDENT' && role !== 'ALUNO') return false;
 
-    // garante compatibilidade de studentId (se faltar, injeta)
     if (user?.id && !getStudentIdCompat()) {
       localStorage.setItem('studentId', String(user.id));
     }
@@ -68,44 +59,42 @@ function isStudentSession() {
 }
 
 async function readErrorMessage(res) {
-  // tenta JSON
+  // ⚠️ Só chamar isso quando você NÃO for ler o body depois (você já faz certo)
   try {
     const data = await res.json();
     const msg = data?.message ?? data?.error;
     if (Array.isArray(msg)) return msg.join(' | ');
     if (typeof msg === 'string' && msg.trim()) return msg.trim();
-  } catch {
-    // ignora
-  }
+  } catch {}
 
-  // tenta texto
   try {
     const t = await res.text();
     if (t && String(t).trim()) return String(t).trim().slice(0, 300);
-  } catch {
-    // ignora
-  }
+  } catch {}
 
   return `HTTP ${res.status}`;
 }
+
+let redirected = false;
 
 async function authFetch(url, options = {}) {
   const token = localStorage.getItem('token') || '';
   const headers = { ...(options.headers || {}) };
 
-  // define JSON automaticamente se body for string e não houver content-type
-  // (evita quebrar FormData sem querer)
-  if (options.body && !headers['Content-Type']) {
-    if (typeof options.body === 'string') {
-      headers['Content-Type'] = 'application/json';
-    }
+  const hasBody = options.body !== undefined && options.body !== null;
+  const isFormData =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+  if (hasBody && !isFormData && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
   }
 
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(url, { ...options, headers });
 
-  if (res.status === 401 || res.status === 403) {
+  if ((res.status === 401 || res.status === 403) && !redirected) {
+    redirected = true;
     notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
     clearAuth();
     setTimeout(() => window.location.replace('login-aluno.html'), 600);
@@ -116,7 +105,6 @@ async function authFetch(url, options = {}) {
 }
 
 // -------------------- Guard inicial --------------------
-
 if (!isStudentSession()) {
   clearAuth();
   window.location.replace('login-aluno.html');
@@ -131,7 +119,6 @@ if (!studentId) {
 }
 
 // -------------------- Página --------------------
-
 const roomsList = document.getElementById('roomsList');
 
 function renderEmpty(msg) {
@@ -162,7 +149,6 @@ async function carregarMinhasSalas() {
 
     const raw = await res.json().catch(() => null);
     const arr = Array.isArray(raw) ? raw : [];
-
     const rooms = arr.map(normalizeRoom).filter((r) => !!r.id);
 
     roomsList.innerHTML = '';
