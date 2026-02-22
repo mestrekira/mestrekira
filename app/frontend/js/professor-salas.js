@@ -1,115 +1,23 @@
+// professor-salas.js (refatorado p/ padrão auth.js)
+// - lista/cria/exclui salas do professor
+// - usa auth.js (notify + requireProfessorSession + authFetch + readErrorMessage)
+// - compat: aceita endpoints que retornam { ok, result: [...] } ou { data: [...] } ou array direto
+
 import { API_URL } from './config.js';
-import { toast } from './ui-feedback.js'; // se não quiser toast aqui, posso tirar
+import {
+  notify,
+  requireProfessorSession,
+  authFetch,
+  readErrorMessage,
+  getUser,
+} from './auth.js';
 
-const LS = {
-  token: 'token',
-  user: 'user',
-  professorId: 'professorId',
-  studentId: 'studentId',
-};
-
-function notify(type, title, message, duration) {
-  // fallback caso ui-feedback não exista nesta página
-  if (typeof toast === 'function') {
-    toast({
-      type,
-      title,
-      message,
-      duration:
-        duration ??
-        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
-    });
-  } else {
-    // fallback mínimo
-    if (type === 'error') alert(`${title}\n\n${message}`);
-    else console.log(title, message);
-  }
-}
-
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
-}
-
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function clearAuthStorage() {
-  localStorage.removeItem(LS.token);
-  localStorage.removeItem(LS.user);
-  localStorage.removeItem(LS.professorId);
-  localStorage.removeItem(LS.studentId);
-}
-
-function redirectToLogin() {
-  // marca que veio de logout/expiração? (opcional)
-  window.location.replace('login-professor.html');
-}
-
-function requireProfessorSession() {
-  const token = localStorage.getItem(LS.token);
-  const user = safeJsonParse(localStorage.getItem(LS.user));
-  const role = normRole(user?.role);
-
-  if (!token || role !== 'PROFESSOR') {
-    clearAuthStorage();
-    redirectToLogin();
-    throw new Error('Sessão de professor ausente/inválida');
-  }
-
-  // mantém compatibilidade para páginas antigas
-  if (user?.id) localStorage.setItem(LS.professorId, String(user.id));
-
-  return { token, user };
-}
-
-async function readJsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-function unwrapResult(data) {
-  // suporta: [..] OU { ok:true, result:[..] }
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') {
-    if (Array.isArray(data.result)) return data.result;
-    if (Array.isArray(data.data)) return data.data; // caso algum endpoint use "data"
-  }
-  return null;
-}
-
-async function apiFetch(path, { token, method = 'GET', body } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  // se token expirou / acesso negado, volta pro login limpando tudo
-  if (res.status === 401 || res.status === 403) {
-    clearAuthStorage();
-    redirectToLogin();
-    throw new Error(`Auth error: HTTP ${res.status}`);
-  }
-
-  const data = await readJsonSafe(res);
-  if (!res.ok) {
-    const msg =
-      data?.message || data?.error || `Erro HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-  return data;
-}
+// --------------------
+// Guard: sessão professor (1x no topo)
+// --------------------
+const professorIdCompat = requireProfessorSession({ redirectTo: 'login-professor.html' });
+// professorIdCompat é string (compat). Se quiser usar user.id real:
+const user = getUser() || null;
 
 // --------------------
 // Página
@@ -118,10 +26,55 @@ const roomsList = document.getElementById('roomsList');
 const createRoomBtn = document.getElementById('createRoomBtn');
 const roomNameInput = document.getElementById('roomName');
 
-// garante sessão
-const { token, user } = requireProfessorSession();
-// const professorId = String(user.id); // se ainda precisar localmente
+function disable(btn, value) {
+  if (btn) btn.disabled = !!value;
+}
 
+function unwrapResult(data) {
+  // suporta: [..] OU { ok:true, result:[..] } OU { data:[..] }
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    if (Array.isArray(data.result)) return data.result;
+    if (Array.isArray(data.data)) return data.data;
+  }
+  return null;
+}
+
+// --------------------
+// API helpers (padrão authFetch)
+// --------------------
+async function apiGetJson(url) {
+  const res = await authFetch(url, { method: 'GET' }, { redirectTo: 'login-professor.html' });
+  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
+  return res.json().catch(() => null);
+}
+
+async function apiDelete(url) {
+  const res = await authFetch(
+    url,
+    { method: 'DELETE' },
+    { redirectTo: 'login-professor.html' }
+  );
+  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
+  return res.json().catch(() => null);
+}
+
+async function apiPostJson(url, body) {
+  const res = await authFetch(
+    url,
+    {
+      method: 'POST',
+      body: JSON.stringify(body ?? {}),
+    },
+    { redirectTo: 'login-professor.html' }
+  );
+  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
+  return res.json().catch(() => null);
+}
+
+// --------------------
+// Carregar salas
+// --------------------
 async function carregarSalas() {
   if (!roomsList) return;
 
@@ -129,11 +82,11 @@ async function carregarSalas() {
 
   try {
     // ✅ ideal: backend lê professorId pelo token.
-    // Mantive query por compatibilidade (se o endpoint ainda exige), mas pode remover depois.
-    const professorId = String(user.id);
-    const data = await apiFetch(
-      `/rooms/by-professor?professorId=${encodeURIComponent(professorId)}`,
-      { token },
+    // Mantemos query por compatibilidade (se o endpoint ainda exige).
+    const professorId = String(user?.id || professorIdCompat || '').trim();
+
+    const data = await apiGetJson(
+      `${API_URL}/rooms/by-professor?professorId=${encodeURIComponent(professorId)}`
     );
 
     const rooms = unwrapResult(data);
@@ -157,7 +110,7 @@ async function carregarSalas() {
       const btn = document.createElement('button');
       btn.textContent = 'Acessar';
       btn.addEventListener('click', () => {
-        window.location.href = `sala-professor.html?roomId=${encodeURIComponent(room.id)}`;
+        window.location.href = `sala-professor.html?roomId=${encodeURIComponent(String(room?.id || ''))}`;
       });
 
       // excluir
@@ -170,15 +123,12 @@ async function carregarSalas() {
         disable(delBtn, true);
 
         try {
-          await apiFetch(`/rooms/${encodeURIComponent(room.id)}`, {
-            token,
-            method: 'DELETE',
-          });
-
+          await apiDelete(`${API_URL}/rooms/${encodeURIComponent(String(room?.id || ''))}`);
           notify('success', 'Sala excluída', 'A sala foi excluída com sucesso.', 1800);
           await carregarSalas();
         } catch (e) {
-          notify('error', 'Erro ao excluir', String(e?.message || 'Falha ao excluir sala.'));
+          const msg = String(e?.message || 'Falha ao excluir sala.');
+          notify('error', 'Erro ao excluir', msg);
         } finally {
           disable(delBtn, false);
         }
@@ -190,14 +140,14 @@ async function carregarSalas() {
     }
   } catch (e) {
     roomsList.innerHTML = '<li>Erro ao carregar salas.</li>';
-    notify('error', 'Erro', String(e?.message || 'Não foi possível carregar as salas.'));
+    const msg = String(e?.message || 'Não foi possível carregar as salas.');
+    notify('error', 'Erro', msg);
   }
 }
 
-function disable(btn, value) {
-  if (btn) btn.disabled = !!value;
-}
-
+// --------------------
+// Criar sala
+// --------------------
 if (createRoomBtn && roomNameInput) {
   createRoomBtn.addEventListener('click', async () => {
     const name = String(roomNameInput.value || '').trim();
@@ -210,24 +160,22 @@ if (createRoomBtn && roomNameInput) {
 
     try {
       // ✅ ideal: backend pega professorId pelo token.
-      // Mantive professorId no body por compatibilidade caso seu endpoint exija.
-      const professorId = String(user.id);
+      // Mantemos professorId no body por compatibilidade caso seu endpoint exija.
+      const professorId = String(user?.id || professorIdCompat || '').trim();
 
-      await apiFetch('/rooms', {
-        token,
-        method: 'POST',
-        body: { name, professorId },
-      });
+      await apiPostJson(`${API_URL}/rooms`, { name, professorId });
 
       roomNameInput.value = '';
       notify('success', 'Sala criada', 'Sua sala foi criada com sucesso.', 1600);
       await carregarSalas();
     } catch (e) {
-      notify('error', 'Erro ao criar', String(e?.message || 'Erro ao criar sala.'));
+      const msg = String(e?.message || 'Erro ao criar sala.');
+      notify('error', 'Erro ao criar', msg);
     } finally {
       disable(createRoomBtn, false);
     }
   });
 }
 
+// INIT
 carregarSalas();
