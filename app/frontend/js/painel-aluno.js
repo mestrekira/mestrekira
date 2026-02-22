@@ -1,7 +1,16 @@
-// painel-aluno.js
+// painel-aluno.js (padronizado com auth.js)
+// - usa requireStudentSession + authFetch + readErrorMessage do auth.js
+// - lista salas do aluno e abre sala-aluno.html?roomId=...
 
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
+
+import {
+  requireStudentSession,
+  getStudentIdCompat,
+  authFetch,
+  readErrorMessage,
+} from './auth.js';
 
 // -------------------- UI helpers --------------------
 function notify(type, title, message, duration) {
@@ -19,104 +28,9 @@ function notify(type, title, message, duration) {
   }
 }
 
-// -------------------- Auth helpers --------------------
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function clearAuth() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  localStorage.removeItem('professorId');
-  localStorage.removeItem('studentId');
-}
-
-function getStudentIdCompat() {
-  const id = localStorage.getItem('studentId');
-  if (!id || id === 'undefined' || id === 'null') return '';
-  return String(id);
-}
-
-function isStudentSession() {
-  const token = localStorage.getItem('token') || '';
-  const userJson = localStorage.getItem('user');
-  if (!token || !userJson) return false;
-
-  try {
-    const user = JSON.parse(userJson);
-    const role = normRole(user?.role);
-
-    if (role !== 'STUDENT' && role !== 'ALUNO') return false;
-
-    if (user?.id && !getStudentIdCompat()) {
-      localStorage.setItem('studentId', String(user.id));
-    }
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function readErrorMessage(res) {
-  // ⚠️ Só chamar isso quando você NÃO for ler o body depois (você já faz certo)
-  try {
-    const data = await res.json();
-    const msg = data?.message ?? data?.error;
-    if (Array.isArray(msg)) return msg.join(' | ');
-    if (typeof msg === 'string' && msg.trim()) return msg.trim();
-  } catch {}
-
-  try {
-    const t = await res.text();
-    if (t && String(t).trim()) return String(t).trim().slice(0, 300);
-  } catch {}
-
-  return `HTTP ${res.status}`;
-}
-
-let redirected = false;
-
-async function authFetch(url, options = {}) {
-  const token = localStorage.getItem('token') || '';
-  const headers = { ...(options.headers || {}) };
-
-  const hasBody = options.body !== undefined && options.body !== null;
-  const isFormData =
-    typeof FormData !== 'undefined' && options.body instanceof FormData;
-
-  if (hasBody && !isFormData && !headers['Content-Type']) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(url, { ...options, headers });
-
-  if ((res.status === 401 || res.status === 403) && !redirected) {
-    redirected = true;
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    clearAuth();
-    setTimeout(() => window.location.replace('login-aluno.html'), 600);
-    throw new Error(`AUTH_${res.status}`);
-  }
-
-  return res;
-}
-
-// -------------------- Guard inicial --------------------
-if (!isStudentSession()) {
-  clearAuth();
-  window.location.replace('login-aluno.html');
-  throw new Error('Sessão de aluno ausente/inválida');
-}
-
+// -------------------- Guard --------------------
+requireStudentSession({ redirectTo: 'login-aluno.html' });
 const studentId = getStudentIdCompat();
-if (!studentId) {
-  clearAuth();
-  window.location.replace('login-aluno.html');
-  throw new Error('studentId ausente/inválido');
-}
 
 // -------------------- Página --------------------
 const roomsList = document.getElementById('roomsList');
@@ -139,16 +53,19 @@ async function carregarMinhasSalas() {
 
   try {
     const res = await authFetch(
-      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`
+      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
+      {},
+      { redirectTo: 'login-aluno.html' },
     );
 
     if (!res.ok) {
-      const msg = await readErrorMessage(res);
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
       throw new Error(msg);
     }
 
     const raw = await res.json().catch(() => null);
     const arr = Array.isArray(raw) ? raw : [];
+
     const rooms = arr.map(normalizeRoom).filter((r) => !!r.id);
 
     roomsList.innerHTML = '';
@@ -176,9 +93,12 @@ async function carregarMinhasSalas() {
       roomsList.appendChild(li);
     });
   } catch (err) {
-    console.error(err);
-    renderEmpty('Erro ao carregar suas salas.');
-    notify('error', 'Erro', 'Não foi possível carregar suas salas agora. Tente novamente.');
+    // se foi AUTH_401/403, authFetch já redireciona
+    if (!String(err?.message || '').startsWith('AUTH_')) {
+      console.error(err);
+      renderEmpty('Erro ao carregar suas salas.');
+      notify('error', 'Erro', 'Não foi possível carregar suas salas agora. Tente novamente.');
+    }
   }
 }
 
