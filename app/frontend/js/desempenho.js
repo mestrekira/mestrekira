@@ -1,12 +1,14 @@
+// desempenho.js (com auth.js centralizado)
+// - usa requireStudentSession + authFetch + readErrorMessage do seu auth.js
+// - mantém toda a lógica original (médias, donut, histórico, PDF)
+
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-// ✅ IMPORTA DO SEU auth.js (ajuste os nomes se necessário)
 import {
   requireStudentSession,
-  getStudentId,
-  authFetchStudent,
-  jsonSafe,
+  getStudentIdCompat,
+  authFetch,
   readErrorMessage,
 } from './auth.js';
 
@@ -26,8 +28,9 @@ function notify(type, title, message, duration) {
 }
 
 // ---------------- Guard ----------------
-requireStudentSession('login-aluno.html');
-const studentId = getStudentId();
+// garante sessão + retorna studentId compat
+requireStudentSession({ redirectTo: 'login-aluno.html' });
+const studentId = getStudentIdCompat();
 
 // ---------------- Params ----------------
 const params = new URLSearchParams(window.location.search);
@@ -48,10 +51,9 @@ const avgDonutEl = document.getElementById('avgDonut');
 const avgLegendEl = document.getElementById('avgLegend');
 
 const historyList = document.getElementById('historyList');
-
-// ✅ botão que já existe no seu HTML
 const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 
+// ---------------- helpers ----------------
 function setPdfBtnLoading(loading) {
   if (!downloadPdfBtn) return;
   downloadPdfBtn.disabled = !!loading;
@@ -59,7 +61,14 @@ function setPdfBtnLoading(loading) {
   downloadPdfBtn.textContent = loading ? 'Gerando PDF...' : 'Baixar desempenho (PDF)';
 }
 
-// ---------------- util ----------------
+async function jsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 function setText(el, value) {
   if (!el) return;
   el.textContent = value === null || value === undefined ? '—' : String(value);
@@ -309,7 +318,7 @@ function renderDonutWithLegend(targetDonutEl, targetLegendEl, { c1, c2, c3, c4, 
   targetLegendEl.appendChild(legend);
 }
 
-// ---------------- PDF DOWNLOAD (authFetchStudent) ----------------
+// ---------------- PDF DOWNLOAD ----------------
 async function downloadStudentPerformancePdf(roomId) {
   const url =
     `${API_URL}/pdf/student-performance?roomId=${encodeURIComponent(roomId)}` +
@@ -318,17 +327,19 @@ async function downloadStudentPerformancePdf(roomId) {
   setPdfBtnLoading(true);
 
   try {
-    const res = await authFetchStudent(url, { method: 'GET' });
+    const res = await authFetch(url, { method: 'GET' }, { redirectTo: 'login-aluno.html' });
 
     if (!res.ok) {
-      const msg = await readErrorMessage(res);
+      const msg = await readErrorMessage(res, `Erro (HTTP ${res.status}).`);
       notify('error', 'Não foi possível gerar o PDF', msg);
       return;
     }
 
     const contentType = (res.headers.get('content-type') || '').toLowerCase();
     if (!contentType.includes('application/pdf') && !contentType.includes('pdf')) {
-      notify('error', 'Resposta inválida', 'O servidor não retornou um PDF.');
+      // tenta mostrar alguma mensagem do backend
+      const msg = await readErrorMessage(res, 'O servidor não retornou um PDF.');
+      notify('error', 'Resposta inválida', msg);
       return;
     }
 
@@ -350,8 +361,11 @@ async function downloadStudentPerformancePdf(roomId) {
 
     notify('success', 'PDF pronto', 'Download iniciado.');
   } catch (e) {
-    console.error(e);
-    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    // se for AUTH_401/403, authFetch já redireciona
+    if (!String(e?.message || '').startsWith('AUTH_')) {
+      console.error(e);
+      notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    }
   } finally {
     setPdfBtnLoading(false);
   }
@@ -360,12 +374,16 @@ async function downloadStudentPerformancePdf(roomId) {
 // ---------------- tarefas: buscar títulos + createdAt ----------------
 async function fetchTasksMetaByRoom(roomId) {
   try {
-    const res = await authFetchStudent(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
+    const res = await authFetch(
+      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
+      {},
+      { redirectTo: 'login-aluno.html' },
+    );
     if (!res.ok) return [];
     const tasks = await jsonSafe(res);
     return Array.isArray(tasks) ? tasks : [];
   } catch (e) {
-    console.error(e);
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     return [];
   }
 }
@@ -669,12 +687,14 @@ async function carregarSalasDoAluno() {
   roomSelect.innerHTML = `<option value="">Carregando...</option>`;
 
   try {
-    const res = await authFetchStudent(
-      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`
+    const res = await authFetch(
+      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
+      {},
+      { redirectTo: 'login-aluno.html' },
     );
 
     if (!res.ok) {
-      const msg = await readErrorMessage(res);
+      const msg = await readErrorMessage(res, `Erro (HTTP ${res.status}).`);
       roomSelect.innerHTML = `<option value="">Erro ao carregar salas</option>`;
       notify('error', 'Erro', msg);
       return [];
@@ -700,7 +720,7 @@ async function carregarSalasDoAluno() {
 
     return rooms;
   } catch (e) {
-    console.error(e);
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     roomSelect.innerHTML = `<option value="">Erro ao carregar salas</option>`;
     return [];
   }
@@ -725,12 +745,14 @@ async function carregarDesempenho(roomId) {
   renderTasksHistory([], new Map(), null);
 
   try {
-    const res = await authFetchStudent(
-      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(roomId)}&studentId=${encodeURIComponent(studentId)}`
+    const res = await authFetch(
+      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(roomId)}&studentId=${encodeURIComponent(studentId)}`,
+      {},
+      { redirectTo: 'login-aluno.html' },
     );
 
     if (!res.ok) {
-      const msg = await readErrorMessage(res);
+      const msg = await readErrorMessage(res, `Erro (HTTP ${res.status}).`);
       setStatus('Erro ao carregar desempenho.');
       renderTasksHistory([], new Map(), null);
       notify('error', 'Erro', msg);
@@ -782,15 +804,17 @@ async function carregarDesempenho(roomId) {
         totalText: String(mTotal),
       });
     } else {
-      if (avgDonutEl)
-        avgDonutEl.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
+      if (avgDonutEl) {
+        avgDonutEl.innerHTML =
+          '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
+      }
       if (avgLegendEl) avgLegendEl.innerHTML = '';
     }
 
     renderTasksHistory(essays, tasksMap, newestTaskId);
     setStatus('');
   } catch (e) {
-    console.error(e);
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     setStatus('Erro ao carregar desempenho.');
     renderTasksHistory([], new Map(), null);
     notify('error', 'Erro', 'Não foi possível carregar seu desempenho agora.');
