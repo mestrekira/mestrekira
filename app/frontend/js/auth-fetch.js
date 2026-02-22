@@ -1,8 +1,29 @@
-// auth-fetch.js
+// auth.js
 import { toast } from './ui-feedback.js';
 
-export function getToken() {
-  return localStorage.getItem('token') || '';
+// =====================
+// Toast helper (não quebra se toast não existir)
+// =====================
+function notify(type, title, message, duration) {
+  try {
+    toast({
+      type,
+      title,
+      message,
+      duration:
+        duration ??
+        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    });
+  } catch {
+    if (type === 'error') console.error(title, message);
+  }
+}
+
+// =====================
+// Sessão / Auth helpers
+// =====================
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
 }
 
 export function clearAuth() {
@@ -12,104 +33,104 @@ export function clearAuth() {
   localStorage.removeItem('studentId');
 }
 
-// ✅ detecta se o usuário é aluno/professor pra mandar ao login certo
-export function guessLoginPage() {
-  // se tiver professorId, manda pro login-professor
-  const professorId = localStorage.getItem('professorId');
-  if (professorId && professorId !== 'undefined' && professorId !== 'null') {
-    return 'login-professor.html';
-  }
-  return 'login-aluno.html';
+export function getToken() {
+  return localStorage.getItem('token') || '';
 }
 
-function notifyAuthExpired() {
+/**
+ * Compat: ainda usa studentId em páginas legadas.
+ * (No futuro, o ideal é o backend derivar o id do token, sem querystring.)
+ */
+export function getStudentIdCompat() {
+  const id = localStorage.getItem('studentId');
+  if (!id || id === 'undefined' || id === 'null') return '';
+  return String(id);
+}
+
+/**
+ * Garante sessão de aluno:
+ * - Se houver token + user.role: valida role
+ * - Se houver token + user.id: injeta studentId compat (se faltar)
+ * - Se NÃO houver token/user: fallback aceitando apenas studentId (legado)
+ */
+export function requireStudentSession(options = {}) {
+  const redirectTo = options.redirectTo || 'login-aluno.html';
+  const allowLegacyWithoutToken = options.allowLegacyWithoutToken ?? true;
+
+  const token = getToken();
+  const userJson = localStorage.getItem('user');
+
+  // legado: só studentId
+  if ((!token || !userJson) && allowLegacyWithoutToken) {
+    const sid = getStudentIdCompat();
+    if (sid) return { ok: true, studentId: sid, legacy: true };
+  }
+
+  if (!token || !userJson) {
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    clearAuth();
+    window.location.replace(redirectTo);
+    throw new Error('AUTH_MISSING');
+  }
+
   try {
-    toast({
-      type: 'warn',
-      title: 'Sessão expirada',
-      message: 'Faça login novamente para continuar.',
-      duration: 3200,
-    });
-  } catch {
-    // fallback silencioso
+    const user = JSON.parse(userJson);
+    const role = normRole(user?.role);
+
+    if (role !== 'STUDENT' && role !== 'ALUNO') {
+      notify('error', 'Acesso negado', 'Você não tem permissão para acessar esta página.', 3200);
+      window.location.replace(redirectTo);
+      throw new Error('AUTH_ROLE');
+    }
+
+    // injeta studentId compat se faltar
+    if (user?.id && !getStudentIdCompat()) {
+      localStorage.setItem('studentId', String(user.id));
+    }
+
+    const sid = getStudentIdCompat() || (user?.id ? String(user.id) : '');
+    if (!sid) {
+      notify('warn', 'Sessão inválida', 'Faça login novamente.', 3200);
+      clearAuth();
+      window.location.replace(redirectTo);
+      throw new Error('AUTH_NO_STUDENTID');
+    }
+
+    return { ok: true, studentId: sid, legacy: false };
+  } catch (e) {
+    notify('warn', 'Sessão inválida', 'Faça login novamente.', 3200);
+    clearAuth();
+    window.location.replace(redirectTo);
+    throw new Error('AUTH_BAD_USER');
   }
 }
 
 /**
- * ✅ authFetch:
- * - injeta Authorization: Bearer <token> quando existir
- * - injeta Content-Type automaticamente quando houver body e não for FormData
- * - trata 401/403: limpa auth e redireciona
+ * authFetch:
+ * - Injeta Authorization: Bearer <token> (se existir)
+ * - Injeta Content-Type: application/json quando há body e não foi setado
+ * - Trata 401/403: limpa sessão + redireciona
  */
-export async function authFetch(url, options = {}) {
+export async function authFetch(url, options = {}, authOptions = {}) {
+  const redirectTo = authOptions.redirectTo || 'login-aluno.html';
+
   const token = getToken();
+  const headers = { ...(options.headers || {}) };
 
-  const headers = new Headers(options.headers || {});
-
-  const hasBody = options.body !== undefined && options.body !== null;
-  const isFormData =
-    typeof FormData !== 'undefined' && options.body instanceof FormData;
-
-  if (hasBody && !isFormData && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
   }
 
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401 || res.status === 403) {
-    notifyAuthExpired();
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
     clearAuth();
-    setTimeout(() => window.location.replace(guessLoginPage()), 600);
+    setTimeout(() => window.location.replace(redirectTo), 600);
     throw new Error(`AUTH_${res.status}`);
   }
 
   return res;
-}
-
-// ----------------- helpers opcionais -----------------
-
-async function parseErrorMessage(res) {
-  // tenta JSON -> message/error; senão texto
-  try {
-    const data = await res.clone().json();
-    const msg = data?.message ?? data?.error;
-    if (Array.isArray(msg)) return msg.join(' | ');
-    if (typeof msg === 'string' && msg.trim()) return msg;
-  } catch {}
-
-  try {
-    const t = await res.clone().text();
-    if (t && t.trim()) return t.slice(0, 300);
-  } catch {}
-
-  return `HTTP ${res.status}`;
-}
-
-export async function apiGet(url) {
-  const res = await authFetch(url, { method: 'GET' });
-  if (!res.ok) throw new Error(await parseErrorMessage(res));
-  return res.json().catch(() => null);
-}
-
-export async function apiPost(url, bodyObj) {
-  const res = await authFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(bodyObj ?? {}),
-  });
-  if (!res.ok) throw new Error(await parseErrorMessage(res));
-  return res.json().catch(() => null);
-}
-
-export async function apiDelete(url, bodyObj) {
-  const opts = { method: 'DELETE' };
-  if (bodyObj !== undefined) {
-    opts.body = JSON.stringify(bodyObj);
-  }
-  const res = await authFetch(url, opts);
-  if (!res.ok) throw new Error(await parseErrorMessage(res));
-  return res.json().catch(() => null);
 }
