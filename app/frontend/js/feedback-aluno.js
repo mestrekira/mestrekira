@@ -1,14 +1,11 @@
-// feedback-aluno.js (refatorado - usa auth.js)
+// feedback-aluno.js (corrigido e robusto)
+// - exige sessão válida de aluno (token + user)
+// - authFetch com 401/403
+// - corrige bug: removido fetchTaskById inexistente (usa fetchTaskTitle)
+// - preserva parágrafos e datas enviadas/corrigidas
+
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
-
-import {
-  requireStudentSession,
-  getStudentId,
-  authFetchStudent,
-  jsonSafe,
-  readErrorMessage,
-} from './auth.js';
 
 // ---------------- toast helper ----------------
 function notify(type, title, message, duration) {
@@ -17,36 +14,135 @@ function notify(type, title, message, duration) {
       type,
       title,
       message,
-      duration:
-        duration ?? (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
+      duration: duration ?? (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
     });
   } catch {
-    if (type === 'error') console.error(title, message);
+    if (type === 'error') alert(`${title}\n\n${message}`);
   }
 }
 
-// ---------------- Guard + params ----------------
-requireStudentSession('login-aluno.html');
-
-const params = new URLSearchParams(window.location.search);
-const essayId = params.get('essayId') || '';
-
-const studentId = getStudentId();
-
-if (!essayId) {
-  notify('error', 'Acesso inválido', 'Você precisa acessar por uma redação válida.', 3200);
-  window.location.replace('painel-aluno.html');
-  throw new Error('essayId ausente');
+// ---------------- Auth helpers ----------------
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
 }
 
-// ---------------- Elements ----------------
+function clearAuth() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('professorId');
+  localStorage.removeItem('studentId');
+}
+
+function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
+function getUser() {
+  const raw = localStorage.getItem('user');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function getStudentIdCompat() {
+  const id = localStorage.getItem('studentId');
+  if (!id || id === 'undefined' || id === 'null') return '';
+  return String(id);
+}
+
+function isStudentSession() {
+  const token = getToken();
+  const user = getUser();
+  if (!token || !user) return false;
+
+  const role = normRole(user?.role);
+  const ok = role === 'STUDENT' || role === 'ALUNO';
+
+  if (ok && user?.id && !getStudentIdCompat()) {
+    localStorage.setItem('studentId', String(user.id));
+  }
+
+  return ok;
+}
+
+async function errorMessageFromResponse(res) {
+  try {
+    const data = await res.json().catch(() => null);
+    const m = data?.message ?? data?.error;
+    if (Array.isArray(m)) return m.join(' | ');
+    if (typeof m === 'string' && m.trim()) return m.trim();
+  } catch {
+    // ignora
+  }
+
+  try {
+    const t = await res.text().catch(() => '');
+    if (t && t.trim()) return t.trim().slice(0, 300);
+  } catch {
+    // ignora
+  }
+
+  return `Erro (HTTP ${res.status}).`;
+}
+
+async function jsonSafe(res) {
+  return res.json().catch(() => null);
+}
+
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  const headers = { ...(options.headers || {}) };
+
+  const hasBody = options.body !== undefined && options.body !== null;
+  const isFormData =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+  if (hasBody && !isFormData && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401 || res.status === 403) {
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    clearAuth();
+    setTimeout(() => window.location.replace('login-aluno.html'), 600);
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  return res;
+}
+
+// ---------------- PARAMS + GUARD ----------------
+const params = new URLSearchParams(window.location.search);
+const essayId = params.get('essayId');
+
+if (!isStudentSession()) {
+  clearAuth();
+  window.location.replace('login-aluno.html');
+  throw new Error('Sessão de aluno ausente/inválida');
+}
+
+const studentId = getStudentIdCompat();
+if (!essayId || !studentId) {
+  notify('error', 'Acesso inválido', 'Você precisa acessar por uma redação válida.');
+  window.location.replace('painel-aluno.html');
+  throw new Error('Parâmetros ausentes');
+}
+
+// ---------------- ELEMENTOS ----------------
 const taskTitleEl = document.getElementById('taskTitle');
 const essayContentEl = document.getElementById('essayContent');
 const scoreEl = document.getElementById('score');
 const feedbackEl = document.getElementById('feedback');
 const backBtn = document.getElementById('backBtn');
 
-// ✅ meta de datas (HTML: <div id="essayMeta"></div>)
+// meta de datas (adicione no HTML: <div id="essayMeta"></div>)
 const essayMetaEl = document.getElementById('essayMeta');
 
 const c1El = document.getElementById('c1');
@@ -62,15 +158,10 @@ function setText(el, value, fallback = '—') {
   el.textContent = v ? v : fallback;
 }
 
-/**
- * ✅ Preserva parágrafos e linhas em branco.
- * Funciona para <div>/<p> (textContent) e <textarea>/<input> (value).
- */
 function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
 
-  const raw =
-    value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
+  const raw = value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
   const finalText = raw.trim() ? raw : fallback;
 
   if ('value' in el) el.value = finalText;
@@ -84,7 +175,7 @@ function setMultilinePreserve(el, value, fallback = '') {
   el.style.setProperty('display', 'block', 'important');
 }
 
-// ---------------- datas (robusto) ----------------
+// ---------------- datas ----------------
 function pickDate(obj, keys) {
   for (const k of keys) {
     const v = obj?.[k];
@@ -125,10 +216,7 @@ function formatDateBR(value) {
   const d = toDateSafe(value);
   if (!d) return '—';
   try {
-    return new Intl.DateTimeFormat('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    }).format(d);
+    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
   } catch {
     return '—';
   }
@@ -161,7 +249,6 @@ function renderEssayMeta(metaEl, essay) {
   const lines = [];
   lines.push(`Enviada em: ${sentAtStr}`);
   if (showCorrected) lines.push(`Corrigida em: ${correctedAtStr}`);
-
   metaEl.textContent = lines.join('\n');
 }
 
@@ -169,7 +256,6 @@ function renderEssayMeta(metaEl, essay) {
 function splitTitleAndBody(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
 
-  // marcador (variações)
   const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
   const m = text.match(re);
   if (m) {
@@ -179,12 +265,10 @@ function splitTitleAndBody(raw) {
     };
   }
 
-  // fallback: primeira linha não vazia = título
   const trimmed = text.trim();
   if (!trimmed) return { title: '—', body: '' };
 
   const lines = text.split('\n');
-
   let firstIdx = -1;
   for (let i = 0; i < lines.length; i++) {
     if (String(lines[i] || '').trim()) {
@@ -196,7 +280,6 @@ function splitTitleAndBody(raw) {
 
   const title = String(lines[firstIdx] || '').trim() || '—';
   const bodyLines = lines.slice(firstIdx + 1);
-
   while (bodyLines.length && !String(bodyLines[0] || '').trim()) bodyLines.shift();
 
   const body = bodyLines.join('\n').trimEnd();
@@ -263,27 +346,31 @@ function patchCompetencyLabels() {
   });
 }
 
-// ---------------- API helpers (via authFetchStudent) ----------------
+// ---------------- fetch helpers ----------------
 async function fetchEssayById(id) {
-  const res = await authFetchStudent(`${API_URL}/essays/${encodeURIComponent(id)}`);
-  if (!res.ok) throw new Error(await readErrorMessage(res));
+  const res = await authFetch(`${API_URL}/essays/${encodeURIComponent(id)}`);
+  if (!res.ok) {
+    const msg = await errorMessageFromResponse(res);
+    throw new Error(msg);
+  }
   return jsonSafe(res);
 }
 
 async function fetchTaskTitle(taskId) {
   if (!taskId) return null;
+
   try {
-    const res = await authFetchStudent(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
+    const res = await authFetch(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
     if (!res.ok) return null;
     const task = await jsonSafe(res);
     return task?.title ? String(task.title) : null;
   } catch (e) {
-    console.warn(e);
+    if (!String(e?.message || '').startsWith('AUTH_')) console.warn(e);
     return null;
   }
 }
 
-// ---------------- MAIN ----------------
+// ---------------- CARREGAR FEEDBACK ----------------
 async function carregarFeedback() {
   try {
     // 1) redação
@@ -292,15 +379,15 @@ async function carregarFeedback() {
 
     // 🔐 checagem (front)
     if (String(essay.studentId) !== String(studentId)) {
-      notify('error', 'Sem permissão', 'Você não tem permissão para ver esta redação.');
+      notify('error', 'Sem permissão', 'Você não pode ver esta redação.');
       window.location.replace('painel-aluno.html');
       return;
     }
 
-    // meta
+    // ✅ meta: enviada/corrigida
     renderEssayMeta(essayMetaEl, essay);
 
-    // 2) tema
+    // 2) tema (task)
     setText(taskTitleEl, '—');
     const taskTitle = await fetchTaskTitle(essay.taskId);
     if (taskTitle) setText(taskTitleEl, taskTitle);
@@ -325,16 +412,21 @@ async function carregarFeedback() {
     patchCompetencyLabels();
   } catch (err) {
     console.error(err);
+
+    // AUTH_* já redireciona
+    if (String(err?.message || '').startsWith('AUTH_')) return;
+
     notify('error', 'Erro', 'Erro ao carregar feedback.');
     window.location.replace('painel-aluno.html');
   }
 }
 
-// voltar
+// ---------------- VOLTAR ----------------
 if (backBtn) {
   backBtn.addEventListener('click', () => {
     window.location.href = 'painel-aluno.html';
   });
 }
 
+// INIT
 carregarFeedback();
