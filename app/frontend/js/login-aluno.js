@@ -7,6 +7,10 @@ const LS = {
   user: 'user',
   studentId: 'studentId',
   professorId: 'professorId',
+
+  // legados (se existirem no seu projeto)
+  studentName: 'studentName',
+  studentEmail: 'studentEmail',
 };
 
 function disable(btn, value) {
@@ -32,9 +36,7 @@ function notify(type, title, message, duration) {
     type,
     title,
     message,
-    duration:
-      duration ??
-      (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
   });
 }
 
@@ -47,15 +49,17 @@ function safeJsonParse(s) {
 }
 
 function clearAuthStorage() {
-  // limpa tudo que pode gerar conflitos/loops
   localStorage.removeItem(LS.token);
   localStorage.removeItem(LS.user);
   localStorage.removeItem(LS.studentId);
   localStorage.removeItem(LS.professorId);
+
+  // legados (se existirem)
+  localStorage.removeItem(LS.studentName);
+  localStorage.removeItem(LS.studentEmail);
 }
 
 function justLoggedOutGuard() {
-  // evita loop quando acabou de fazer logout e caiu no login
   if (sessionStorage.getItem('mk_just_logged_out') === '1') {
     sessionStorage.removeItem('mk_just_logged_out');
     clearAuthStorage();
@@ -94,26 +98,19 @@ async function fazerLogin() {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // evita enviar espaços sem querer
       body: JSON.stringify({ email: email.trim(), password }),
     });
 
     const data = await readJsonSafe(res);
 
-    // Se API caiu/retornou HTML/sem JSON, cai aqui
     if (!data) {
       notify('error', 'Erro', 'Resposta inválida do servidor. Tente novamente.');
       return;
     }
 
-    // erro (inclui "email não verificado")
     if (!res.ok || !data?.ok || !data?.token || !data?.user) {
-      const msg =
-        data?.message ||
-        data?.error ||
-        'Usuário ou senha inválidos.';
+      const msg = data?.message || data?.error || 'Usuário ou senha inválidos.';
 
-      // padrão específico (seu backend pode mandar emailVerified=false)
       if (data?.emailVerified === false) {
         show(resendVerifyBtn, true);
         notify(
@@ -129,20 +126,26 @@ async function fazerLogin() {
 
     const role = normRole(data.user.role);
 
-    // bloqueia se não for STUDENT/ALUNO
     if (role !== 'STUDENT' && role !== 'ALUNO') {
       clearAuthStorage();
       notify('error', 'Acesso negado', 'Este acesso é apenas para estudantes.');
       return;
     }
 
+    const userId = data?.user?.id;
+    if (!userId) {
+      clearAuthStorage();
+      notify('error', 'Erro', 'Login ok, mas o servidor não retornou o ID do aluno.');
+      return;
+    }
+
     // evita conflito de papéis
     localStorage.removeItem(LS.professorId);
 
-    // grava auth (padrão novo)
+    // grava auth
     localStorage.setItem(LS.token, String(data.token));
     localStorage.setItem(LS.user, JSON.stringify(data.user));
-    localStorage.setItem(LS.studentId, String(data.user.id));
+    localStorage.setItem(LS.studentId, String(userId));
 
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
     window.location.replace('painel-aluno.html');
@@ -197,11 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const pass = document.getElementById('password');
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
 
-  // evita looping pós-logout
   if (justLoggedOutGuard()) return;
 
-  // Se já estiver logado com token e for STUDENT/ALUNO, vai direto.
-  // Obs.: aqui é só atalho UX. Se token expirou, o painel deve lidar.
   const token = localStorage.getItem(LS.token);
   const user = safeJsonParse(localStorage.getItem(LS.user));
   const role = normRole(user?.role);
@@ -221,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (resendVerifyBtn) {
     resendVerifyBtn.addEventListener('click', reenviarVerificacao);
-    // começa oculto por padrão
     show(resendVerifyBtn, false);
   }
 });
