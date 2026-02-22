@@ -1,6 +1,6 @@
-// professor-salas.js (refatorado p/ padrão auth.js)
+// professor-salas.js (final / padrão auth.js)
 // - lista/cria/exclui salas do professor
-// - usa auth.js (notify + requireProfessorSession + authFetch + readErrorMessage)
+// - usa auth.js (notify + requireProfessorSession + authFetch + readErrorMessage + getUser)
 // - compat: aceita endpoints que retornam { ok, result: [...] } ou { data: [...] } ou array direto
 
 import { API_URL } from './config.js';
@@ -16,7 +16,6 @@ import {
 // Guard: sessão professor (1x no topo)
 // --------------------
 const professorIdCompat = requireProfessorSession({ redirectTo: 'login-professor.html' });
-// professorIdCompat é string (compat). Se quiser usar user.id real:
 const user = getUser() || null;
 
 // --------------------
@@ -37,7 +36,8 @@ function unwrapResult(data) {
     if (Array.isArray(data.result)) return data.result;
     if (Array.isArray(data.data)) return data.data;
   }
-  return null;
+  // fallback seguro para este arquivo (esperamos lista)
+  return [];
 }
 
 // --------------------
@@ -50,11 +50,7 @@ async function apiGetJson(url) {
 }
 
 async function apiDelete(url) {
-  const res = await authFetch(
-    url,
-    { method: 'DELETE' },
-    { redirectTo: 'login-professor.html' }
-  );
+  const res = await authFetch(url, { method: 'DELETE' }, { redirectTo: 'login-professor.html' });
   if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
   return res.json().catch(() => null);
 }
@@ -62,10 +58,7 @@ async function apiDelete(url) {
 async function apiPostJson(url, body) {
   const res = await authFetch(
     url,
-    {
-      method: 'POST',
-      body: JSON.stringify(body ?? {}),
-    },
+    { method: 'POST', body: JSON.stringify(body ?? {}) },
     { redirectTo: 'login-professor.html' }
   );
   if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
@@ -92,12 +85,14 @@ async function carregarSalas() {
     const rooms = unwrapResult(data);
     roomsList.innerHTML = '';
 
-    if (!Array.isArray(rooms) || rooms.length === 0) {
+    if (!rooms.length) {
       roomsList.innerHTML = '<li>Você ainda não criou nenhuma sala.</li>';
       return;
     }
 
     for (const room of rooms) {
+      const roomId = String(room?.id || '').trim();
+
       const li = document.createElement('li');
 
       // nome
@@ -110,20 +105,23 @@ async function carregarSalas() {
       const btn = document.createElement('button');
       btn.textContent = 'Acessar';
       btn.addEventListener('click', () => {
-        window.location.href = `sala-professor.html?roomId=${encodeURIComponent(String(room?.id || ''))}`;
+        if (!roomId) return;
+        window.location.href = `sala-professor.html?roomId=${encodeURIComponent(roomId)}`;
       });
 
       // excluir
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
       delBtn.addEventListener('click', async () => {
+        if (!roomId) return;
+
         const ok = confirm(`Excluir a sala "${String(room?.name || '')}"?`);
         if (!ok) return;
 
         disable(delBtn, true);
 
         try {
-          await apiDelete(`${API_URL}/rooms/${encodeURIComponent(String(room?.id || ''))}`);
+          await apiDelete(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
           notify('success', 'Sala excluída', 'A sala foi excluída com sucesso.', 1800);
           await carregarSalas();
         } catch (e) {
