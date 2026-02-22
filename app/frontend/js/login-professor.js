@@ -1,16 +1,23 @@
-// login-professor.js
+// login-professor.js (refatorado p/ padrão auth.js)
+// - usa auth.js (notify + clearAuth + getToken/getUser + isProfessorSession + readErrorMessage)
+// - mantém resend verify e cadastro
+// - evita loops de redirect (mk_just_logged_out)
+
 import { API_URL } from './config.js';
-import { toast } from './ui-feedback.js';
+import {
+  notify,
+  clearAuth,
+  getToken,
+  getUser,
+  isProfessorSession,
+  readErrorMessage,
+} from './auth.js';
 
-const LS = {
-  token: 'token',
-  user: 'user',
-  professorId: 'professorId',
-  studentId: 'studentId',
-
-  // legados (se existirem no seu projeto antigo)
+const LS_LEGACY = {
   professorName: 'professorName',
   professorEmail: 'professorEmail',
+  studentId: 'studentId',
+  professorId: 'professorId',
 };
 
 const loginBtn = document.getElementById('loginBtn');
@@ -33,54 +40,22 @@ function show(el, value) {
   el.style.display = value ? 'inline-block' : 'none';
 }
 
-function notify(type, title, message, duration) {
-  toast({
-    type,
-    title,
-    message,
-    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
-  });
-}
-
-function normalizeRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
-}
-
-function clearAuthStorage() {
-  localStorage.removeItem(LS.token);
-  localStorage.removeItem(LS.user);
-  localStorage.removeItem(LS.professorId);
-  localStorage.removeItem(LS.studentId);
-
-  // legados (se existirem)
-  localStorage.removeItem(LS.professorName);
-  localStorage.removeItem(LS.professorEmail);
-}
-
 function getLoginEmail() {
   return (emailLoginEl?.value || '').trim().toLowerCase();
 }
 
-async function readJsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
+function clearLegacyProfessorFields() {
+  localStorage.removeItem(LS_LEGACY.professorName);
+  localStorage.removeItem(LS_LEGACY.professorEmail);
 }
 
 function justLoggedOutGuard() {
   if (sessionStorage.getItem('mk_just_logged_out') === '1') {
     sessionStorage.removeItem('mk_just_logged_out');
-    clearAuthStorage();
+    // limpa tudo (padrão novo)
+    clearAuth();
+    // limpa restos legados, se existirem
+    clearLegacyProfessorFields();
     return true;
   }
   return false;
@@ -90,11 +65,12 @@ function justLoggedOutGuard() {
 (function autoRedirectIfLogged() {
   if (justLoggedOutGuard()) return;
 
-  const token = localStorage.getItem(LS.token);
-  const user = safeJsonParse(localStorage.getItem(LS.user));
-  const role = normalizeRole(user?.role);
+  // usa fonte da verdade
+  const token = getToken();
+  const user = getUser();
 
-  if (token && (role === 'PROFESSOR' || role === 'TEACHER')) {
+  // evita depender apenas de token: isProfessorSession valida role e faz compat professorId
+  if (token && user && isProfessorSession({ allowCompatIdOnly: false })) {
     window.location.replace('professor-salas.html');
   }
 })();
@@ -117,28 +93,29 @@ async function fazerLoginProfessor() {
   notify('info', 'Entrando...', 'Verificando seus dados...', 1800);
 
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await readJsonSafe(response);
+    // ✅ mesmo endpoint do aluno: lê erro/ok com helper seguro
+    if (!res.ok) {
+      const msg = await readErrorMessage(res, 'Login inválido.');
 
-    if (!data) {
-      notify('error', 'Erro', 'Resposta inválida do servidor. Tente novamente.');
-      return;
-    }
+      // tenta inferir emailVerified=false pelo corpo (se vier no JSON)
+      let emailVerified = null;
+      try {
+        const data = await res.clone().json();
+        if (typeof data?.emailVerified === 'boolean') emailVerified = data.emailVerified;
+      } catch {}
 
-    if (!response.ok || !data?.ok || !data?.token || !data?.user) {
-      const msg = data?.message || data?.error || 'Login inválido.';
-
-      if (data?.emailVerified === false) {
+      if (emailVerified === false) {
         show(resendVerifyBtn, true);
         notify(
           'warn',
           'E-mail não confirmado',
-          'Confirme seu e-mail para acessar. Se precisar, clique em “Reenviar verificação”.',
+          'Confirme seu e-mail para acessar. Se precisar, clique em “Reenviar verificação”.'
         );
       } else {
         notify('error', 'Não foi possível entrar', msg);
@@ -146,33 +123,44 @@ async function fazerLoginProfessor() {
       return;
     }
 
-    const role = normalizeRole(data.user.role);
+    const data = await res.json().catch(() => null);
+
+    // contrato esperado: { ok, token, user, emailVerified? }
+    if (!data?.ok || !data?.token || !data?.user) {
+      const msg = data?.message || data?.error || 'Login inválido.';
+      notify('error', 'Não foi possível entrar', msg);
+      return;
+    }
 
     // garante que é professor
+    const role = String(data?.user?.role || '').trim().toUpperCase();
     if (role !== 'PROFESSOR' && role !== 'TEACHER') {
-      clearAuthStorage();
+      clearAuth();
+      clearLegacyProfessorFields();
       notify('error', 'Acesso negado', 'Este acesso é apenas para professores.');
       return;
     }
 
     const userId = data?.user?.id;
     if (!userId) {
-      clearAuthStorage();
+      clearAuth();
+      clearLegacyProfessorFields();
       notify('error', 'Erro', 'Login ok, mas o servidor não retornou o ID do professor.');
       return;
     }
 
-    // limpa possíveis restos de login de aluno
-    localStorage.removeItem(LS.studentId);
+    // limpa possíveis restos de login de aluno (compat)
+    localStorage.removeItem(LS_LEGACY.studentId);
 
     // grava auth (padrão novo)
-    localStorage.setItem(LS.token, String(data.token));
-    localStorage.setItem(LS.user, JSON.stringify(data.user));
-    localStorage.setItem(LS.professorId, String(userId)); // compat
+    localStorage.setItem('token', String(data.token));
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('professorId', String(userId)); // compat
 
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
     window.location.replace('professor-salas.html');
-  } catch {
+  } catch (e) {
+    console.error(e);
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
   } finally {
     disable(loginBtn, false);
@@ -193,7 +181,11 @@ if (passLoginEl) {
 async function reenviarVerificacao() {
   const email = getLoginEmail();
   if (!email) {
-    notify('warn', 'Digite seu e-mail', 'Informe seu e-mail no campo de login para reenviar o link.');
+    notify(
+      'warn',
+      'Digite seu e-mail',
+      'Informe seu e-mail no campo de login para reenviar o link.'
+    );
     return;
   }
 
@@ -201,27 +193,35 @@ async function reenviarVerificacao() {
   notify('info', 'Reenviando...', 'Enviando novo link de verificação...', 1800);
 
   try {
-    const response = await fetch(`${API_URL}/auth/request-verify`, {
+    const res = await fetch(`${API_URL}/auth/request-verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
 
-    const data = await readJsonSafe(response);
-
-    if (!data) {
-      notify('error', 'Erro', 'Resposta inválida do servidor. Tente novamente.');
+    if (!res.ok) {
+      const msg = await readErrorMessage(
+        res,
+        'Não foi possível reenviar. Tente novamente em instantes.'
+      );
+      notify('error', 'Não foi possível reenviar', msg);
       return;
     }
 
-    if (!response.ok || !data?.ok) {
-      notify('error', 'Não foi possível reenviar', data?.message || data?.error || 'Tente novamente em instantes.');
+    const data = await res.json().catch(() => null);
+    if (data && data?.ok === false) {
+      notify(
+        'error',
+        'Não foi possível reenviar',
+        data?.message || data?.error || 'Tente novamente em instantes.'
+      );
       return;
     }
 
     notify('success', 'Link enviado', 'Verifique a caixa de entrada e o Spam.');
     show(resendVerifyBtn, false);
-  } catch {
+  } catch (e) {
+    console.error(e);
     notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
   } finally {
     disable(resendVerifyBtn, false);
@@ -257,24 +257,27 @@ async function cadastrarProfessor() {
   notify('info', 'Cadastrando...', 'Criando sua conta...', 1800);
 
   try {
-    const response = await fetch(`${API_URL}/users/professor`, {
+    const res = await fetch(`${API_URL}/users/professor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
     });
 
-    const data = await readJsonSafe(response);
-
-    if (!data) {
-      notify('error', 'Erro', 'Resposta inválida do servidor. Tente novamente.');
+    if (!res.ok) {
+      const msg = await readErrorMessage(
+        res,
+        'Erro ao cadastrar professor. Tente outro e-mail.'
+      );
+      notify('error', 'Não foi possível cadastrar', msg);
       return;
     }
 
-    if (!response.ok || !data?.ok) {
+    const data = await res.json().catch(() => null);
+    if (data && data?.ok === false) {
       notify(
         'error',
         'Não foi possível cadastrar',
-        data?.message || data?.error || 'Erro ao cadastrar professor. Tente outro e-mail.',
+        data?.message || data?.error || 'Erro ao cadastrar professor. Tente outro e-mail.'
       );
       return;
     }
@@ -283,7 +286,7 @@ async function cadastrarProfessor() {
       'success',
       'Cadastro criado!',
       'Enviamos um link de verificação para seu e-mail. Confirme a conta para poder entrar.',
-      4200,
+      4200
     );
 
     if (emailLoginEl) emailLoginEl.value = email;
@@ -291,7 +294,8 @@ async function cadastrarProfessor() {
     if (nameRegEl) nameRegEl.value = '';
     if (emailRegEl) emailRegEl.value = '';
     if (passRegEl) passRegEl.value = '';
-  } catch {
+  } catch (e) {
+    console.error(e);
     notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
   } finally {
     disable(registerBtn, false);
