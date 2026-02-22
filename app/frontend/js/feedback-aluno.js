@@ -1,34 +1,22 @@
 // feedback-aluno.js (final / prático)
-// - usa auth.js (requireStudentSession + authFetch + readErrorMessage)
-// - corrige bug: não usa fetchTaskById inexistente (usa fetchTaskTitle)
+// - usa auth.js (notify + requireStudentSession + authFetch + readErrorMessage)
 // - preserva parágrafos (redação + feedback)
 // - mostra meta: enviada/corrigida (quando fizer sentido)
+// - sem duplicar toast/notify/authFetch
 
 import { API_URL } from './config.js';
-import { toast } from './ui-feedback.js';
-
-import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
-
-// ---------------- toast helper ----------------
-function notify(type, title, message, duration) {
-  try {
-    toast({
-      type,
-      title,
-      message,
-      duration:
-        duration ?? (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
-    });
-  } catch {
-    if (type === 'error') alert(`${title}\n\n${message}`);
-  }
-}
+import {
+  notify,
+  requireStudentSession,
+  authFetch,
+  readErrorMessage,
+} from './auth.js';
 
 // ---------------- PARAMS + GUARD ----------------
 const params = new URLSearchParams(window.location.search);
 const essayId = params.get('essayId');
 
-// exige sessão válida de aluno e devolve studentId
+// exige sessão válida de aluno e devolve studentId (compat)
 const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 if (!essayId) {
@@ -144,7 +132,7 @@ function getSentAt(essay) {
 }
 
 function getCorrectedAt(essay) {
-  // corrigida = updatedAt (ou correctedAt), mas só faz sentido com indício de correção
+  // corrigida = updatedAt (ou correctedAt)
   return pickDate(essay, ['correctedAt', 'corrected_at', 'updatedAt', 'updated_at']);
 }
 
@@ -272,9 +260,9 @@ function patchCompetencyLabels() {
 // ---------------- fetch helpers ----------------
 async function fetchEssayById(id) {
   const res = await authFetch(
-    `${API_URL}/essays/${encodeURIComponent(id)}`,
+    `${API_URL}/essays/${encodeURIComponent(String(id))}`,
     { method: 'GET' },
-    { redirectTo: 'login-aluno.html' },
+    { redirectTo: 'login-aluno.html' }
   );
 
   if (!res.ok) {
@@ -290,9 +278,9 @@ async function fetchTaskTitle(taskId) {
 
   try {
     const res = await authFetch(
-      `${API_URL}/tasks/${encodeURIComponent(taskId)}`,
+      `${API_URL}/tasks/${encodeURIComponent(String(taskId))}`,
       { method: 'GET' },
-      { redirectTo: 'login-aluno.html' },
+      { redirectTo: 'login-aluno.html' }
     );
 
     if (!res.ok) return null;
@@ -337,7 +325,7 @@ async function carregarFeedback() {
     setMultilinePreserve(
       feedbackEl,
       essay?.feedback || '',
-      'Aguardando correção do professor.',
+      'Aguardando correção do professor.'
     );
 
     // competências
@@ -354,7 +342,11 @@ async function carregarFeedback() {
     // AUTH_* já redireciona
     if (String(err?.message || '').startsWith('AUTH_')) return;
 
-    notify('error', 'Erro', 'Erro ao carregar feedback.');
+    notify(
+      'error',
+      'Erro',
+      String(err?.message || 'Erro ao carregar feedback.')
+    );
     window.location.replace('painel-aluno.html');
   }
 }
