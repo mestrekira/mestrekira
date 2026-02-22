@@ -1,16 +1,39 @@
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-// ✅ aluno logado
-const studentId = localStorage.getItem('studentId');
-if (!studentId || studentId === 'undefined' || studentId === 'null') {
-  window.location.replace('login-aluno.html');
-  throw new Error('studentId ausente');
+// ✅ IMPORTA DO SEU auth.js (ajuste os nomes se necessário)
+import {
+  requireStudentSession,
+  getStudentId,
+  authFetchStudent,
+  jsonSafe,
+  readErrorMessage,
+} from './auth.js';
+
+// ---------------- Toast helper ----------------
+function notify(type, title, message, duration) {
+  try {
+    toast({
+      type,
+      title,
+      message,
+      duration:
+        duration ?? (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
+    });
+  } catch {
+    if (type === 'error') console.error(title, message);
+  }
 }
 
+// ---------------- Guard ----------------
+requireStudentSession('login-aluno.html');
+const studentId = getStudentId();
+
+// ---------------- Params ----------------
 const params = new URLSearchParams(window.location.search);
 const roomIdFromUrl = params.get('roomId') || '';
 
+// ---------------- Elements ----------------
 const roomSelect = document.getElementById('roomSelect');
 const statusEl = document.getElementById('status');
 
@@ -29,85 +52,11 @@ const historyList = document.getElementById('historyList');
 // ✅ botão que já existe no seu HTML
 const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 
-// ---------------- Toast helper ----------------
-function notify(type, title, message, duration) {
-  toast({
-    type,
-    title,
-    message,
-    duration: duration ?? (type === 'error' ? 4200 : type === 'warn' ? 3200 : 2400),
-  });
-}
-
 function setPdfBtnLoading(loading) {
   if (!downloadPdfBtn) return;
   downloadPdfBtn.disabled = !!loading;
   downloadPdfBtn.style.opacity = loading ? '0.7' : '1';
   downloadPdfBtn.textContent = loading ? 'Gerando PDF...' : 'Baixar desempenho (PDF)';
-}
-
-// ---------------- AUTH FETCH (PADRÃO) ----------------
-function getToken() {
-  return localStorage.getItem('token') || '';
-}
-
-function clearAuth() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  localStorage.removeItem('professorId');
-  localStorage.removeItem('studentId');
-}
-
-async function authFetch(url, options = {}) {
-  const token = getToken();
-  const headers = { ...(options.headers || {}) };
-
-  // só seta content-type quando houver body
-  if (!headers['Content-Type'] && options.body) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(url, { ...options, headers });
-
-  if (res.status === 401 || res.status === 403) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    clearAuth();
-    setTimeout(() => window.location.replace('login-aluno.html'), 600);
-    throw new Error(`AUTH_${res.status}`);
-  }
-
-  return res;
-}
-
-async function jsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-async function errorMessageFromResponse(res) {
-  // tenta json -> texto
-  try {
-    const data = await res.json();
-    const m = data?.message ?? data?.error;
-    if (Array.isArray(m)) return m.join(' | ');
-    if (typeof m === 'string' && m.trim()) return m;
-  } catch {
-    // ignora
-  }
-
-  try {
-    const t = await res.text();
-    if (t && t.trim()) return t.slice(0, 300);
-  } catch {
-    // ignora
-  }
-
-  return `Erro (HTTP ${res.status}).`;
 }
 
 // ---------------- util ----------------
@@ -199,7 +148,7 @@ function getEssaySentAt(e) {
   ]);
 }
 
-// ---------------- Donut (mesmo estilo do projeto) ----------------
+// ---------------- Donut ----------------
 const MAX = 1000;
 const COLORS = {
   c1: '#4f46e5',
@@ -360,7 +309,7 @@ function renderDonutWithLegend(targetDonutEl, targetLegendEl, { c1, c2, c3, c4, 
   targetLegendEl.appendChild(legend);
 }
 
-// ---------------- PDF DOWNLOAD (authFetch) ----------------
+// ---------------- PDF DOWNLOAD (authFetchStudent) ----------------
 async function downloadStudentPerformancePdf(roomId) {
   const url =
     `${API_URL}/pdf/student-performance?roomId=${encodeURIComponent(roomId)}` +
@@ -369,24 +318,17 @@ async function downloadStudentPerformancePdf(roomId) {
   setPdfBtnLoading(true);
 
   try {
-    const res = await authFetch(url, { method: 'GET' });
+    const res = await authFetchStudent(url, { method: 'GET' });
 
     if (!res.ok) {
-      const msg = await errorMessageFromResponse(res);
+      const msg = await readErrorMessage(res);
       notify('error', 'Não foi possível gerar o PDF', msg);
       return;
     }
 
     const contentType = (res.headers.get('content-type') || '').toLowerCase();
     if (!contentType.includes('application/pdf') && !contentType.includes('pdf')) {
-      let msg = 'O servidor não retornou um PDF.';
-      try {
-        const data = await jsonSafe(res);
-        const m = data?.message ?? data?.error;
-        if (Array.isArray(m)) msg = m.join(' | ');
-        else if (typeof m === 'string') msg = m;
-      } catch {}
-      notify('error', 'Resposta inválida', msg);
+      notify('error', 'Resposta inválida', 'O servidor não retornou um PDF.');
       return;
     }
 
@@ -409,24 +351,21 @@ async function downloadStudentPerformancePdf(roomId) {
     notify('success', 'PDF pronto', 'Download iniciado.');
   } catch (e) {
     console.error(e);
-    // se foi AUTH_401/403, authFetch já redireciona
-    if (!String(e?.message || '').startsWith('AUTH_')) {
-      notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
-    }
+    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
   } finally {
     setPdfBtnLoading(false);
   }
 }
 
-// ---------------- tarefas: buscar títulos + createdAt (authFetch) ----------------
+// ---------------- tarefas: buscar títulos + createdAt ----------------
 async function fetchTasksMetaByRoom(roomId) {
   try {
-    const res = await authFetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
+    const res = await authFetchStudent(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
     if (!res.ok) return [];
     const tasks = await jsonSafe(res);
     return Array.isArray(tasks) ? tasks : [];
   } catch (e) {
-    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
+    console.error(e);
     return [];
   }
 }
@@ -446,13 +385,7 @@ function normalizeTasksMeta(rawArr) {
     .map((t) => {
       const id = String(t?.id || t?.taskId || '').trim();
       const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
-      const createdAt = pickDate(t, [
-        'createdAt',
-        'created_at',
-        'created',
-        'dateCreated',
-        'timestamp',
-      ]);
+      const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
       const createdTime = toDateSafe(createdAt)?.getTime?.() ?? null;
       return { id, title, createdTime, _raw: t };
     })
@@ -502,11 +435,6 @@ function computeNewestTaskIdFromEssays(essays) {
   }
   return bestId;
 }
-
-// =======================
-// ✅ PARTE 2 CONTINUA AQUI
-// (renderTasksHistory, carregarSalasDoAluno, carregarDesempenho e INIT)
-// =======================
 
 // ---------------- UI: tarefas com abrir/fechar ----------------
 function closeAllTaskPanels() {
@@ -614,7 +542,6 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
 
   let tasks = Array.from(byTask.entries()).map(([taskId, list]) => {
     const title = tasksMap.get(taskId) || `Tarefa ${taskId.slice(0, 6)}…`;
-    // ordena as redações da tarefa por data (mais recente primeiro) para pegar a mais nova no painel
     const sortedList = [...list].sort((a, b) => {
       const at = toDateSafe(getEssaySentAt(a))?.getTime?.() ?? -Infinity;
       const bt = toDateSafe(getEssaySentAt(b))?.getTime?.() ?? -Infinity;
@@ -659,7 +586,7 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
     titleWrap.appendChild(strong);
     if (isNewest) titleWrap.appendChild(makeNewestBadge());
 
-    const essay = t.list[0]; // (já vem ordenada)
+    const essay = t.list[0];
     const score = safeScore(essay?.score);
 
     const resumo = document.createElement('div');
@@ -692,24 +619,17 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
         const c3 = clamp0to200(essay?.c3);
         const c4 = clamp0to200(essay?.c4);
         const c5 = clamp0to200(essay?.c5);
-        renderDonutWithLegend(donut, legend, {
-          c1,
-          c2,
-          c3,
-          c4,
-          c5,
-          totalText: String(score),
-        });
+        renderDonutWithLegend(donut, legend, { c1, c2, c3, c4, c5, totalText: String(score) });
       }
 
       const viewBtn = panel.querySelector('#mkTaskPanelViewBtn');
       if (viewBtn) {
-        const essayId = essay?.id ? String(essay.id) : '';
-        viewBtn.disabled = !essayId;
+        const eId = essay?.id ? String(essay.id) : '';
+        viewBtn.disabled = !eId;
         viewBtn.onclick = (ev) => {
           ev.stopPropagation();
-          if (!essayId) return;
-          window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(essayId)}`;
+          if (!eId) return;
+          window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(eId)}`;
         };
       }
 
@@ -742,19 +662,19 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
   });
 }
 
-// ---------------- salas do aluno (authFetch) ----------------
+// ---------------- salas do aluno ----------------
 async function carregarSalasDoAluno() {
   if (!roomSelect) return [];
 
   roomSelect.innerHTML = `<option value="">Carregando...</option>`;
 
   try {
-    const res = await authFetch(
+    const res = await authFetchStudent(
       `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`
     );
 
     if (!res.ok) {
-      const msg = await errorMessageFromResponse(res);
+      const msg = await readErrorMessage(res);
       roomSelect.innerHTML = `<option value="">Erro ao carregar salas</option>`;
       notify('error', 'Erro', msg);
       return [];
@@ -780,16 +700,14 @@ async function carregarSalasDoAluno() {
 
     return rooms;
   } catch (e) {
-    // AUTH_* já redireciona
-    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
+    console.error(e);
     roomSelect.innerHTML = `<option value="">Erro ao carregar salas</option>`;
     return [];
   }
 }
 
-// ---------------- desempenho do aluno na sala (authFetch) ----------------
+// ---------------- desempenho do aluno na sala ----------------
 async function carregarDesempenho(roomId) {
-  // ✅ liga/desliga botão conforme sala
   if (downloadPdfBtn) {
     downloadPdfBtn.style.display = roomId ? 'inline-block' : 'none';
     downloadPdfBtn.onclick = roomId ? () => downloadStudentPerformancePdf(roomId) : null;
@@ -807,12 +725,12 @@ async function carregarDesempenho(roomId) {
   renderTasksHistory([], new Map(), null);
 
   try {
-    const res = await authFetch(
+    const res = await authFetchStudent(
       `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(roomId)}&studentId=${encodeURIComponent(studentId)}`
     );
 
     if (!res.ok) {
-      const msg = await errorMessageFromResponse(res);
+      const msg = await readErrorMessage(res);
       setStatus('Erro ao carregar desempenho.');
       renderTasksHistory([], new Map(), null);
       notify('error', 'Erro', msg);
@@ -864,16 +782,15 @@ async function carregarDesempenho(roomId) {
         totalText: String(mTotal),
       });
     } else {
-      if (avgDonutEl) avgDonutEl.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
+      if (avgDonutEl)
+        avgDonutEl.innerHTML = '<div style="font-size:12px;opacity:.8;">Sem correções ainda.</div>';
       if (avgLegendEl) avgLegendEl.innerHTML = '';
     }
 
     renderTasksHistory(essays, tasksMap, newestTaskId);
-
     setStatus('');
   } catch (e) {
-    // AUTH_* já redireciona
-    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
+    console.error(e);
     setStatus('Erro ao carregar desempenho.');
     renderTasksHistory([], new Map(), null);
     notify('error', 'Erro', 'Não foi possível carregar seu desempenho agora.');
@@ -882,7 +799,6 @@ async function carregarDesempenho(roomId) {
 
 // INIT
 document.addEventListener('DOMContentLoaded', async () => {
-  // botão começa oculto até ter sala
   if (downloadPdfBtn) downloadPdfBtn.style.display = 'none';
 
   const rooms = await carregarSalasDoAluno();
