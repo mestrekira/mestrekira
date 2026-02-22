@@ -1,99 +1,10 @@
+// redacao.js (refatorado p/ padrão auth.js)
+// - sem duplicar authFetch/notify/readErrorMessage
+// - requireStudentSession roda 1x no topo
+// - 401/403 tratados apenas pelo authFetch
+
 import { API_URL } from './config.js';
-import { toast } from './ui-feedback.js';
-
-// =====================
-// Toast helper (não quebra se toast não existir)
-// =====================
-function notify(type, title, message, duration) {
-  try {
-    toast({
-      type,
-      title,
-      message,
-      duration:
-        duration ??
-        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
-    });
-  } catch {
-    if (type === 'error') console.error(title, message);
-  }
-}
-
-// =====================
-// Sessão / Auth helpers
-// =====================
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function clearAuth() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  localStorage.removeItem('professorId');
-  localStorage.removeItem('studentId');
-}
-
-function getStudentIdCompat() {
-  const id = localStorage.getItem('studentId');
-  if (!id || id === 'undefined' || id === 'null') return '';
-  return String(id);
-}
-
-function isStudentSession() {
-  const token = localStorage.getItem('token') || '';
-  const userJson = localStorage.getItem('user');
-
-  // compat: se ainda não migrou para token/user,
-  // ao menos exige studentId (mas o ideal é token + user)
-  if (!token || !userJson) {
-    return !!getStudentIdCompat();
-  }
-
-  try {
-    const user = JSON.parse(userJson);
-    const role = normRole(user?.role);
-    if (role !== 'STUDENT' && role !== 'ALUNO') return false;
-
-    // garante studentId compatível com páginas antigas
-    if (user?.id && !getStudentIdCompat()) {
-      localStorage.setItem('studentId', String(user.id));
-    }
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function getToken() {
-  return localStorage.getItem('token') || '';
-}
-
-async function authFetch(url, options = {}) {
-  const token = getToken();
-  const headers = { ...(options.headers || {}) };
-
-  const hasBody = options.body !== undefined && options.body !== null;
-  const isFormData =
-    typeof FormData !== 'undefined' && options.body instanceof FormData;
-
-  if (hasBody && !isFormData && !headers['Content-Type']) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(url, { ...options, headers });
-
-  if (res.status === 401 || res.status === 403) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    clearAuth();
-    setTimeout(() => window.location.replace('login-aluno.html'), 600);
-    throw new Error(`AUTH_${res.status}`);
-  }
-
-  return res;
-}
+import { notify, requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
 // =====================
 // ELEMENTOS
@@ -110,18 +21,18 @@ const taskTitleEl = document.getElementById('taskTitle');
 const taskGuidelinesEl = document.getElementById('taskGuidelines');
 
 // =====================
-// PARÂMETROS
+// PARÂMETROS + GUARD
 // =====================
 const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
 
-// compat: studentId antigo, mas preferimos token/user
-const studentId = getStudentIdCompat();
+// ✅ sessão do aluno (uma vez, no topo)
+const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
-if (!taskId || !isStudentSession() || !studentId) {
+if (!taskId) {
   notify('error', 'Acesso inválido', 'Você precisa acessar por uma tarefa válida.');
   window.location.replace('painel-aluno.html');
-  throw new Error('Parâmetros/sessão ausentes');
+  throw new Error('taskId ausente');
 }
 
 if (!titleInput || !textarea || !charCount || !status || !sendBtn || !saveBtn) {
@@ -137,10 +48,11 @@ function setStatus(msg) {
 }
 
 function setDisabledAll(disabled) {
-  titleInput.disabled = !!disabled;
-  textarea.disabled = !!disabled;
-  saveBtn.disabled = !!disabled;
-  sendBtn.disabled = !!disabled;
+  const d = !!disabled;
+  titleInput.disabled = d;
+  textarea.disabled = d;
+  saveBtn.disabled = d;
+  sendBtn.disabled = d;
 }
 
 function updateCount() {
@@ -206,7 +118,7 @@ function antiPaste(el, fieldName, options = {}) {
       'warn',
       'Ação bloqueada',
       `Colar texto não é permitido em ${fieldName}. Digite no sistema.`,
-      2600,
+      2600
     );
   }
 
@@ -276,10 +188,10 @@ async function getMyEssayByTask() {
     `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student` +
     `?studentId=${encodeURIComponent(studentId)}`;
 
-  const res = await authFetch(url);
+  const res = await authFetch(url, {}, { redirectTo: 'login-aluno.html' });
 
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
 
   const data = await res.json().catch(() => null);
   return data || null;
@@ -287,26 +199,20 @@ async function getMyEssayByTask() {
 
 // Salva rascunho (upsert) no backend: POST /essays/draft
 async function saveDraftServerPacked(packedContent) {
-  const res = await authFetch(`${API_URL}/essays/draft`, {
-    method: 'POST',
-    body: JSON.stringify({
-      taskId,
-      studentId,
-      content: String(packedContent || ''),
-    }),
-  });
+  const res = await authFetch(
+    `${API_URL}/essays/draft`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        taskId,
+        studentId,
+        content: String(packedContent || ''),
+      }),
+    },
+    { redirectTo: 'login-aluno.html' }
+  );
 
-  if (!res.ok) {
-    let msg = `HTTP ${res.status}`;
-    try {
-      const data = await res.json();
-      const m = data?.message ?? data?.error;
-      if (Array.isArray(m)) msg = m.join(' | ');
-      else if (typeof m === 'string' && m.trim()) msg = m;
-    } catch {}
-    throw new Error(msg);
-  }
-
+  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
   return res.json().catch(() => null);
 }
 
@@ -323,10 +229,14 @@ async function clearDraftUXOnly() {
 // =====================
 async function carregarTarefa() {
   try {
-    const response = await authFetch(`${API_URL}/tasks/${encodeURIComponent(taskId)}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const res = await authFetch(
+      `${API_URL}/tasks/${encodeURIComponent(taskId)}`,
+      {},
+      { redirectTo: 'login-aluno.html' }
+    );
+    if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
 
-    const task = await response.json().catch(() => null);
+    const task = await res.json().catch(() => null);
 
     if (taskTitleEl) taskTitleEl.textContent = task?.title || 'Tema da Redação';
 
@@ -360,7 +270,9 @@ async function carregarRascunho() {
       setDisabledAll(true);
 
       setTimeout(() => {
-        window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(essay.id)}`);
+        window.location.replace(
+          `feedback-aluno.html?essayId=${encodeURIComponent(String(essay.id))}`
+        );
       }, 350);
 
       return;
@@ -448,7 +360,7 @@ saveBtn.addEventListener('click', async () => {
   } catch (err) {
     console.error(err);
     setStatus('Erro ao salvar rascunho no servidor.');
-    notify('error', 'Erro', 'Erro ao salvar rascunho no servidor.');
+    notify('error', 'Erro', String(err?.message || 'Erro ao salvar rascunho no servidor.'));
   } finally {
     saveBtn.disabled = false;
   }
@@ -461,7 +373,7 @@ async function checarJaEnviou() {
   try {
     const mine = await getMyEssayByTask();
     if (mine && mine.id && mine.isDraft === false) {
-      return { sent: true, essayId: mine.id };
+      return { sent: true, essayId: String(mine.id) };
     }
     return { sent: false };
   } catch {
@@ -503,11 +415,13 @@ sendBtn.addEventListener('click', async () => {
     if (ja.sent) {
       setStatus('Você já enviou esta redação. Não é permitido reenviar.');
       notify('info', 'Já enviada', 'Você já enviou esta redação.');
-      window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`);
+      window.location.replace(
+        `feedback-aluno.html?essayId=${encodeURIComponent(String(ja.essayId || ''))}`
+      );
       return;
     }
 
-    // opcional: tenta salvar rascunho antes do envio final
+    // tenta salvar rascunho antes do envio final (melhor chance de não perder)
     try {
       await saveDraftServerPacked(packContent(title, text));
     } catch (e) {
@@ -516,27 +430,22 @@ sendBtn.addEventListener('click', async () => {
 
     setStatus('Enviando redação...');
 
-    const response = await authFetch(`${API_URL}/essays`, {
-      method: 'POST',
-      body: JSON.stringify({
-        taskId,
-        studentId,
-        content: packContent(title, text),
-      }),
-    });
+    const res = await authFetch(
+      `${API_URL}/essays`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          taskId,
+          studentId,
+          content: packContent(title, text),
+        }),
+      },
+      { redirectTo: 'login-aluno.html' }
+    );
 
-    if (!response.ok) {
-      let msg = `HTTP ${response.status}`;
-      try {
-        const data = await response.json();
-        const m = data?.message ?? data?.error;
-        if (Array.isArray(m)) msg = m.join(' | ');
-        else if (typeof m === 'string' && m.trim()) msg = m;
-      } catch {}
-      throw new Error(msg);
-    }
+    if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
 
-    const essay = await response.json().catch(() => null);
+    const essay = await res.json().catch(() => null);
 
     setStatus('Redação enviada com sucesso!');
     notify('success', 'Enviada!', 'Redação enviada com sucesso.');
@@ -561,7 +470,7 @@ sendBtn.addEventListener('click', async () => {
     // destrava UI
     setDisabledAll(false);
     setStatus('Erro ao enviar redação.');
-    notify('error', 'Erro', 'Erro ao enviar redação.');
+    notify('error', 'Erro', String(err?.message || 'Erro ao enviar redação.'));
   } finally {
     sending = false;
   }
@@ -608,7 +517,9 @@ window.addEventListener('pagehide', () => {
       setDisabledAll(true);
 
       setTimeout(() => {
-        window.location.replace(`feedback-aluno.html?essayId=${encodeURIComponent(ja.essayId)}`);
+        window.location.replace(
+          `feedback-aluno.html?essayId=${encodeURIComponent(String(ja.essayId || ''))}`
+        );
       }, 400);
 
       return;
@@ -621,7 +532,6 @@ window.addEventListener('pagehide', () => {
   } catch (e) {
     console.error(e);
     setStatus('Erro ao inicializar a página.');
-    notify('error', 'Erro', 'Erro ao inicializar a página.');
+    notify('error', 'Erro', String(e?.message || 'Erro ao inicializar a página.'));
   }
 })();
-
