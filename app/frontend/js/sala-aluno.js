@@ -18,11 +18,21 @@ function notify(type, title, message, duration) {
       title,
       message,
       duration:
-        duration ??
-        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+        duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
     });
   } catch {
     if (type === 'error') console.error(title, message);
+  }
+}
+
+// =====================
+// jsonSafe
+// =====================
+async function jsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
   }
 }
 
@@ -39,6 +49,18 @@ if (!roomId) {
 }
 
 const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
+
+// Opcional: evita “resposta atrasada” mexer no DOM se sair da página
+const abort = new AbortController();
+window.addEventListener(
+  'beforeunload',
+  () => {
+    try {
+      abort.abort();
+    } catch {}
+  },
+  { once: true }
+);
 
 // =====================
 // Elements
@@ -151,9 +173,9 @@ function makeAvatarFromLocalStorage(key, size = 34, alt = 'Foto') {
         `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
           <rect width="100%" height="100%" fill="#eee"/>
           <text x="50%" y="55%" font-size="${Math.round(
-            size * 0.45,
+            size * 0.45
           )}" text-anchor="middle" fill="#888">?</text>
-        </svg>`,
+        </svg>`
       );
 
   return img;
@@ -175,8 +197,9 @@ if (leaveBtn) {
         {
           method: 'DELETE',
           body: JSON.stringify({ roomId, studentId }),
+          signal: abort.signal,
         },
-        { redirectTo: 'login-aluno.html' },
+        { redirectTo: 'login-aluno.html' }
       );
 
       if (!res.ok) {
@@ -205,8 +228,8 @@ async function carregarOverview() {
   try {
     const res = await authFetch(
       `${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`,
-      { method: 'GET' },
-      { redirectTo: 'login-aluno.html' },
+      { method: 'GET', signal: abort.signal },
+      { redirectTo: 'login-aluno.html' }
     );
 
     if (!res.ok) {
@@ -214,7 +237,7 @@ async function carregarOverview() {
       throw new Error(msg);
     }
 
-    const data = await res.json().catch(() => null);
+    const data = await jsonSafe(res);
 
     // sala
     if (roomNameEl) roomNameEl.textContent = data?.room?.name || 'Sala';
@@ -222,6 +245,8 @@ async function carregarOverview() {
     // professor
     if (teacherInfo) {
       const p = data?.professor;
+      teacherInfo.innerHTML = '';
+
       if (!p) {
         teacherInfo.textContent = 'Professor não identificado.';
       } else {
@@ -233,20 +258,30 @@ async function carregarOverview() {
         const avatar = makeAvatarFromLocalStorage(
           photoKeyProfessor(p.id),
           38,
-          'Foto do professor',
+          'Foto do professor'
         );
 
         const text = document.createElement('div');
+
         const name = String(p.name || 'Professor').trim();
         const email = String(p.email || '').trim();
-        text.innerHTML = `<strong>${name}</strong>${
-          email ? `<br><small>${email}</small>` : ''
-        }`;
+
+        const strong = document.createElement('strong');
+        strong.textContent = name;
+
+        text.appendChild(strong);
+
+        if (email) {
+          const br = document.createElement('br');
+          const small = document.createElement('small');
+          small.textContent = email;
+          text.appendChild(br);
+          text.appendChild(small);
+        }
 
         wrap.appendChild(avatar);
         wrap.appendChild(text);
 
-        teacherInfo.innerHTML = '';
         teacherInfo.appendChild(wrap);
       }
     }
@@ -264,13 +299,10 @@ async function carregarOverview() {
         }))
         .filter((s) => !!s.id);
 
-      const classmates = students.filter(
-        (s) => String(s.id) !== String(studentId),
-      );
+      const classmates = students.filter((s) => String(s.id) !== String(studentId));
 
       if (classmates.length === 0) {
-        classmatesList.innerHTML =
-          '<li>Nenhum colega ainda (só você na sala).</li>';
+        classmatesList.innerHTML = '<li>Nenhum colega ainda (só você na sala).</li>';
         return;
       }
 
@@ -285,15 +317,25 @@ async function carregarOverview() {
         const avatar = makeAvatarFromLocalStorage(
           photoKeyStudent(s.id),
           36,
-          'Foto do colega',
+          'Foto do colega'
         );
 
         const text = document.createElement('div');
+
         const name = s.name && s.name.trim() ? s.name : 'Aluno';
         const email = s.email && s.email.trim() ? s.email : '';
-        text.innerHTML = `<strong>${name}</strong>${
-          email ? `<br><small>${email}</small>` : ''
-        }`;
+
+        const strong = document.createElement('strong');
+        strong.textContent = name;
+        text.appendChild(strong);
+
+        if (email) {
+          const br = document.createElement('br');
+          const small = document.createElement('small');
+          small.textContent = email;
+          text.appendChild(br);
+          text.appendChild(small);
+        }
 
         li.appendChild(avatar);
         li.appendChild(text);
@@ -304,8 +346,7 @@ async function carregarOverview() {
     if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     if (roomNameEl) roomNameEl.textContent = 'Sala';
     if (teacherInfo) teacherInfo.textContent = 'Erro ao carregar professor.';
-    if (classmatesList)
-      classmatesList.innerHTML = '<li>Erro ao carregar colegas.</li>';
+    if (classmatesList) classmatesList.innerHTML = '<li>Erro ao carregar colegas.</li>';
   }
 }
 
@@ -317,13 +358,23 @@ async function getMyEssayByTask(taskIdValue) {
     `${API_URL}/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student` +
     `?studentId=${encodeURIComponent(studentId)}`;
 
-  const res = await authFetch(url, { method: 'GET' }, { redirectTo: 'login-aluno.html' });
+  try {
+    const res = await authFetch(
+      url,
+      { method: 'GET', signal: abort.signal },
+      { redirectTo: 'login-aluno.html' }
+    );
 
-  if (res.status === 404) return null;
-  if (!res.ok) return null;
+    if (res.status === 404) return null;
+    if (!res.ok) return null;
 
-  const data = await res.json().catch(() => null);
-  return data || null;
+    const data = await jsonSafe(res);
+    return data || null;
+  } catch (e) {
+    // AUTH_* já redireciona
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
+    return null;
+  }
 }
 
 // =====================
@@ -386,8 +437,8 @@ async function carregarTarefas() {
   try {
     const res = await authFetch(
       `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
-      { method: 'GET' },
-      { redirectTo: 'login-aluno.html' },
+      { method: 'GET', signal: abort.signal },
+      { redirectTo: 'login-aluno.html' }
     );
 
     if (!res.ok) {
@@ -395,7 +446,7 @@ async function carregarTarefas() {
       throw new Error(msg);
     }
 
-    const raw = await res.json().catch(() => null);
+    const raw = await jsonSafe(res);
     const arr = Array.isArray(raw) ? raw : [];
 
     tasksList.innerHTML = '';
@@ -428,7 +479,7 @@ async function carregarTarefas() {
     }
 
     const newestId = computeNewestTaskId(
-      tasks.map((t) => ({ ...t._raw, id: t.id })),
+      tasks.map((t) => ({ ...t._raw, id: t.id }))
     );
 
     // 1) renderiza lista primeiro (rápido)
@@ -489,12 +540,12 @@ async function carregarTarefas() {
       uiByTaskId.set(task.id, { btnWrite, btnFeedback });
     });
 
-    // 2) checa as redações em paralelo (muito mais rápido que await dentro do loop)
+    // 2) checa as redações em paralelo
     const checks = await Promise.allSettled(
       tasks.map(async (task) => {
         const essay = await getMyEssayByTask(task.id);
         return { taskId: task.id, essay };
-      }),
+      })
     );
 
     checks.forEach((r) => {
