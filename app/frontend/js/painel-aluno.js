@@ -1,10 +1,13 @@
-// painel-aluno.js (refatorado)
-// - mais robusto (token + role) e compatível com studentId antigo
-// - authFetch com tratamento 401/403 para evitar loops e estados zumbis
-// - mensagens estáveis sem quebrar HTML
+// painel-aluno.js
+// - robusto (token + role) e compatível com studentId antigo
+// - authFetch com tratamento 401/403
+// - não lê res.json() duas vezes (bug comum)
+// - tenta extrair erro de JSON ou texto
 
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
+
+// -------------------- UI helpers --------------------
 
 function notify(type, title, message, duration) {
   // caso ui-feedback.js não exista nesta página, não quebra
@@ -18,10 +21,11 @@ function notify(type, title, message, duration) {
         (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
     });
   } catch {
-    // fallback silencioso
     if (type === 'error') console.error(title, message);
   }
 }
+
+// -------------------- Auth helpers --------------------
 
 function normRole(role) {
   return String(role || '').trim().toUpperCase();
@@ -63,13 +67,38 @@ function isStudentSession() {
   }
 }
 
+async function readErrorMessage(res) {
+  // tenta JSON
+  try {
+    const data = await res.json();
+    const msg = data?.message ?? data?.error;
+    if (Array.isArray(msg)) return msg.join(' | ');
+    if (typeof msg === 'string' && msg.trim()) return msg.trim();
+  } catch {
+    // ignora
+  }
+
+  // tenta texto
+  try {
+    const t = await res.text();
+    if (t && String(t).trim()) return String(t).trim().slice(0, 300);
+  } catch {
+    // ignora
+  }
+
+  return `HTTP ${res.status}`;
+}
+
 async function authFetch(url, options = {}) {
   const token = localStorage.getItem('token') || '';
   const headers = { ...(options.headers || {}) };
 
-  // define JSON automaticamente se tiver body (objeto/string)
+  // define JSON automaticamente se body for string e não houver content-type
+  // (evita quebrar FormData sem querer)
   if (options.body && !headers['Content-Type']) {
-    headers['Content-Type'] = 'application/json';
+    if (typeof options.body === 'string') {
+      headers['Content-Type'] = 'application/json';
+    }
   }
 
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -77,12 +106,7 @@ async function authFetch(url, options = {}) {
   const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401 || res.status === 403) {
-    notify(
-      'warn',
-      'Sessão expirada',
-      'Faça login novamente para continuar.',
-      3200,
-    );
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
     clearAuth();
     setTimeout(() => window.location.replace('login-aluno.html'), 600);
     throw new Error(`AUTH_${res.status}`);
@@ -94,8 +118,6 @@ async function authFetch(url, options = {}) {
 // -------------------- Guard inicial --------------------
 
 if (!isStudentSession()) {
-  // fallback antigo: se tiver só studentId mas sem token/user, ainda assim bloqueia
-  // (mantém mais seguro e evita “meia sessão”)
   clearAuth();
   window.location.replace('login-aluno.html');
   throw new Error('Sessão de aluno ausente/inválida');
@@ -130,13 +152,11 @@ async function carregarMinhasSalas() {
 
   try {
     const res = await authFetch(
-      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
+      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`
     );
 
     if (!res.ok) {
-      // tenta ler payload de erro
-      const data = await res.json().catch(() => null);
-      const msg = data?.message || data?.error || `HTTP ${res.status}`;
+      const msg = await readErrorMessage(res);
       throw new Error(msg);
     }
 
@@ -172,11 +192,7 @@ async function carregarMinhasSalas() {
   } catch (err) {
     console.error(err);
     renderEmpty('Erro ao carregar suas salas.');
-    notify(
-      'error',
-      'Erro',
-      'Não foi possível carregar suas salas agora. Tente novamente.',
-    );
+    notify('error', 'Erro', 'Não foi possível carregar suas salas agora. Tente novamente.');
   }
 }
 
