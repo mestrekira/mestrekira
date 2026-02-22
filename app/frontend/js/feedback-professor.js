@@ -1,30 +1,49 @@
-import { API_URL } from './config.js';
-import { toast } from './ui-feedback.js';
+// feedback-professor.js (final / prático)
+// - usa auth.js (requireProfessorSession + authFetch + readErrorMessage + notify)
+// - aceita 2 modos:
+//   1) antigo: ?essayId=...
+//   2) novo:   ?taskId=...&studentId=...
+// - preserva parágrafos (redação + feedback)
+// - compatível com content empacotado __TITLE__:
 
-// 🔹 PARÂMETROS (aceita 2 modos)
+import { API_URL } from './config.js';
+import {
+  notify,
+  requireProfessorSession,
+  authFetch,
+  readErrorMessage,
+} from './auth.js';
+
+// ---------------- PARAMS ----------------
 const params = new URLSearchParams(window.location.search);
-const essayId = params.get('essayId');      // modo antigo
-const taskId = params.get('taskId');        // modo novo
-const studentId = params.get('studentId');  // modo novo
+const essayId = params.get('essayId'); // modo antigo
+const taskId = params.get('taskId'); // modo novo
+const studentId = params.get('studentId'); // modo novo
+
+// sessão obrigatória
+requireProfessorSession({ redirectTo: 'login-professor.html' });
 
 if (!essayId && !(taskId && studentId)) {
-  toast?.({ title: 'Acesso inválido', message: 'Parâmetros ausentes.', type: 'error' });
+  notify('error', 'Acesso inválido', 'Parâmetros ausentes.');
   window.location.replace('professor-salas.html');
   throw new Error('Parâmetros ausentes (essayId OU taskId+studentId)');
 }
 
-// 🔹 ELEMENTOS
+// ---------------- ELEMENTOS ----------------
 const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
 
 const taskTitleEl = document.getElementById('taskTitle');
 
-// ✅ datas (opcional no HTML)
+// datas (opcional no HTML)
 const essayMetaEl = document.getElementById('essayMeta');
 
+// modo novo (se existir no HTML)
 const essayTitleEl = document.getElementById('essayTitle');
 const essayBodyEl = document.getElementById('essayBody');
-const essayContentEl = document.getElementById('essayContent'); // fallback antigo
+
+// fallback antigo (se existir no HTML)
+const essayContentEl = document.getElementById('essayContent');
 
 const scoreEl = document.getElementById('score');
 const feedbackEl = document.getElementById('feedback');
@@ -37,114 +56,7 @@ const c5El = document.getElementById('c5');
 
 const backBtn = document.getElementById('backBtn');
 
-// ---------------- toast helpers ----------------
-
-function notify(type, title, message, duration) {
-  if (typeof toast === 'function') {
-    toast({
-      type,
-      title,
-      message,
-      duration:
-        duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
-    });
-  } else {
-    // fallback
-    if (type === 'error') alert(`${title}\n\n${message}`);
-    else console.log(title, message);
-  }
-}
-
-// ---------------- auth + fetch helpers ----------------
-
-const LS = {
-  token: 'token',
-  user: 'user',
-  professorId: 'professorId',
-  studentId: 'studentId',
-};
-
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
-}
-
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function clearAuth() {
-  localStorage.removeItem(LS.token);
-  localStorage.removeItem(LS.user);
-  localStorage.removeItem(LS.professorId);
-  localStorage.removeItem(LS.studentId);
-}
-
-function requireProfessorSession() {
-  const token = localStorage.getItem(LS.token);
-  const user = safeJsonParse(localStorage.getItem(LS.user));
-  const role = normRole(user?.role);
-  if (!token || role !== 'PROFESSOR') {
-    clearAuth();
-    window.location.replace('login-professor.html');
-    throw new Error('Sessão de professor ausente/inválida');
-  }
-  return { token, user };
-}
-
-async function readJsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-function unwrapResult(data) {
-  // suporta: puro, {ok,result}, {data}
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') {
-    if (Array.isArray(data.result)) return data.result;
-    if (data.result && typeof data.result === 'object') return data.result;
-    if (Array.isArray(data.data)) return data.data;
-    if (data.data && typeof data.data === 'object') return data.data;
-  }
-  return data;
-}
-
-async function authFetch(path, { token, method = 'GET', body } = {}) {
-  const headers = {};
-  if (body) headers['Content-Type'] = 'application/json';
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    clearAuth();
-    setTimeout(() => window.location.replace('login-professor.html'), 600);
-    throw new Error(`AUTH_${res.status}`);
-  }
-
-  const data = await readJsonSafe(res);
-
-  if (!res.ok) {
-    const msg = data?.message || data?.error || `Erro HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-
-  return data;
-}
-
 // ---------------- util render ----------------
-
 function setText(el, value, fallback = '—') {
   if (!el) return;
   const v = value === null || value === undefined ? '' : String(value).trim();
@@ -157,7 +69,8 @@ function setText(el, value, fallback = '—') {
 function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
 
-  const raw = value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
+  const raw =
+    value === null || value === undefined ? '' : String(value).replace(/\r\n/g, '\n');
   const finalText = raw.trim() ? raw : fallback;
 
   if ('value' in el) el.value = finalText;
@@ -177,6 +90,7 @@ function setMultilinePreserve(el, value, fallback = '') {
 function splitTitleAndBody(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
 
+  // padrão com marcador (variações)
   const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
   const m = text.match(re);
   if (m) {
@@ -186,11 +100,13 @@ function splitTitleAndBody(raw) {
     };
   }
 
+  // fallback: primeira linha não vazia vira título
   const trimmed = text.trim();
   if (!trimmed) return { title: '—', body: '' };
 
   const lines = text.split('\n');
   let firstIdx = -1;
+
   for (let i = 0; i < lines.length; i++) {
     if (String(lines[i] || '').trim()) {
       firstIdx = i;
@@ -199,22 +115,55 @@ function splitTitleAndBody(raw) {
   }
   if (firstIdx === -1) return { title: '—', body: '' };
 
-  const title = String(lines[firstIdx] || '').trim() || '—';
+  let title = String(lines[firstIdx] || '').trim();
+  if (title.startsWith('__TITLE__:')) title = title.replace(/^__TITLE__:\s*/, '').trim();
+
   const bodyLines = lines.slice(firstIdx + 1);
   while (bodyLines.length && !String(bodyLines[0] || '').trim()) bodyLines.shift();
 
   const body = bodyLines.join('\n').trimEnd();
-  return { title, body };
+  return { title: title || '—', body };
 }
 
-function renderEssayFormatted(titleEl, bodyEl, rawContent) {
+function renderEssayFormatted(rawContent) {
   const { title, body } = splitTitleAndBody(rawContent);
-  setText(titleEl, title || '—', '—');
-  setMultilinePreserve(bodyEl, String(body || '').trimEnd(), '');
+
+  // Preferência: se HTML tem title/body separados (novo)
+  if (essayTitleEl && essayBodyEl) {
+    setText(essayTitleEl, title || '—', '—');
+    setMultilinePreserve(essayBodyEl, body || '', '');
+    if (essayContentEl) {
+      essayContentEl.style.display = 'none';
+      essayContentEl.textContent = '';
+    }
+    return;
+  }
+
+  // Fallback: caixa única (antigo)
+  if (essayContentEl) {
+    essayContentEl.innerHTML = '';
+    essayContentEl.style.setProperty('white-space', 'pre-wrap', 'important');
+    essayContentEl.style.setProperty('line-height', '1.6', 'important');
+    essayContentEl.style.setProperty('text-align', 'justify', 'important');
+    essayContentEl.style.setProperty('overflow-wrap', 'anywhere', 'important');
+    essayContentEl.style.setProperty('word-break', 'break-word', 'important');
+
+    const h = document.createElement('div');
+    h.textContent = title || '—';
+    h.style.textAlign = 'center';
+    h.style.fontWeight = '800';
+    h.style.marginBottom = '10px';
+    essayContentEl.appendChild(h);
+
+    const b = document.createElement('div');
+    b.textContent = String(body || '').replace(/\r\n/g, '\n').trimEnd();
+    b.style.whiteSpace = 'pre-wrap';
+    b.style.textAlign = 'justify';
+    essayContentEl.appendChild(b);
+  }
 }
 
 // ---------------- datas ----------------
-
 function pickDate(obj, keys) {
   for (const k of keys) {
     const v = obj?.[k];
@@ -239,6 +188,12 @@ function toDateSafe(value) {
 
   const s = String(value).trim();
   if (!s) return null;
+
+  // aceita "YYYY-MM-DD HH:mm(:ss)"
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
+    const d0 = new Date(s.replace(' ', 'T'));
+    return Number.isNaN(d0.getTime()) ? null : d0;
+  }
 
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) return d;
@@ -275,11 +230,15 @@ function renderMetaDates(essay) {
   if (!essayMetaEl) return;
 
   const sentAt = formatDateBR(getSentAt(essay));
+
   const hasScore = essay?.score !== null && essay?.score !== undefined;
-  const correctedAt = hasScore ? formatDateBR(getCorrectedAt(essay)) : '—';
+  const hasFeedback = String(essay?.feedback || '').trim().length > 0;
+  const showCorrected = hasScore || hasFeedback;
+
+  const correctedAt = showCorrected ? formatDateBR(getCorrectedAt(essay)) : '—';
 
   const parts = [`Enviada em: ${sentAt}`];
-  if (hasScore) parts.push(`Corrigida em: ${correctedAt}`);
+  if (showCorrected) parts.push(`Corrigida em: ${correctedAt}`);
 
   essayMetaEl.textContent = parts.join('  •  ');
   essayMetaEl.style.setProperty('margin-top', '6px', 'important');
@@ -288,29 +247,59 @@ function renderMetaDates(essay) {
   essayMetaEl.style.setProperty('white-space', 'pre-wrap', 'important');
 }
 
-// ---------------- fetch domain ----------------
+// ---------------- fetch helpers ----------------
+function unwrapResult(data) {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    if (Array.isArray(data.result)) return data.result;
+    if (Array.isArray(data.data)) return data.data;
+    if (data.result && typeof data.result === 'object') return data.result;
+    if (data.data && typeof data.data === 'object') return data.data;
+  }
+  return data;
+}
 
-async function fetchEssayByIdWithStudent(id, token) {
-  const data = await authFetch(`/essays/${encodeURIComponent(id)}/with-student`, { token });
+async function apiJson(url, options) {
+  const res = await authFetch(url, options || {}, { redirectTo: 'login-professor.html' });
+  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
+  return res.json().catch(() => null);
+}
+
+async function fetchEssayByIdWithStudent(id) {
+  const data = await apiJson(`${API_URL}/essays/${encodeURIComponent(String(id))}/with-student`, {
+    method: 'GET',
+  });
   return unwrapResult(data);
 }
 
-async function fetchEssaysByTaskWithStudent(tId, token) {
-  const data = await authFetch(`/essays/by-task/${encodeURIComponent(tId)}/with-student`, { token });
-  return unwrapResult(data);
-}
-
-async function fetchEssayByTaskAndStudentFallback(tId, sId, token) {
-  const data = await authFetch(
-    `/essays/by-task/${encodeURIComponent(tId)}/by-student?studentId=${encodeURIComponent(sId)}`,
-    { token },
+async function fetchEssaysByTaskWithStudent(tId) {
+  const data = await apiJson(
+    `${API_URL}/essays/by-task/${encodeURIComponent(String(tId))}/with-student`,
+    { method: 'GET' }
   );
   return unwrapResult(data);
 }
 
-async function fetchTask(tId, token) {
+async function fetchEssayByTaskAndStudentFallback(tId, sId) {
+  // retorna essay (pode ser objeto ou null/404)
+  const res = await authFetch(
+    `${API_URL}/essays/by-task/${encodeURIComponent(String(tId))}/by-student?studentId=${encodeURIComponent(String(sId))}`,
+    { method: 'GET' },
+    { redirectTo: 'login-professor.html' }
+  );
+
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
+
+  const data = await res.json().catch(() => null);
+  return unwrapResult(data);
+}
+
+async function fetchTask(tId) {
   try {
-    const data = await authFetch(`/tasks/${encodeURIComponent(tId)}`, { token });
+    const data = await apiJson(`${API_URL}/tasks/${encodeURIComponent(String(tId))}`, {
+      method: 'GET',
+    });
     return unwrapResult(data);
   } catch {
     return null;
@@ -318,7 +307,6 @@ async function fetchTask(tId, token) {
 }
 
 // ---------------- render ----------------
-
 function renderEssay(essay) {
   const name =
     essay?.studentName ??
@@ -327,28 +315,19 @@ function renderEssay(essay) {
     essay?.name ??
     '';
 
-  const email =
-    essay?.studentEmail ??
-    essay?.student?.email ??
-    '';
+  const email = essay?.studentEmail ?? essay?.student?.email ?? '';
 
   setText(studentNameEl, name, 'Aluno');
   setText(studentEmailEl, email, '');
 
-  renderEssayFormatted(essayTitleEl, essayBodyEl, essay?.content || '');
-
-  // não duplicar redação crua
-  if (essayContentEl) {
-    essayContentEl.style.display = 'none';
-    essayContentEl.textContent = '';
-  }
+  renderEssayFormatted(essay?.content || '');
 
   renderMetaDates(essay);
 
   const hasScore = essay?.score !== null && essay?.score !== undefined;
   setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida', '—');
 
-  setMultilinePreserve(feedbackEl, essay?.feedback || '', 'Aguardando correção do professor.');
+  setMultilinePreserve(feedbackEl, essay?.feedback || '', 'Sem feedback registrado.');
 
   setText(c1El, essay?.c1 ?? '—', '—');
   setText(c2El, essay?.c2 ?? '—', '—');
@@ -357,49 +336,45 @@ function renderEssay(essay) {
   setText(c5El, essay?.c5 ?? '—', '—');
 }
 
+// ---------------- main ----------------
 async function carregar() {
-  const { token } = requireProfessorSession();
-
   try {
     let essay = null;
 
     // ✅ MODO NOVO: taskId + studentId
     if (taskId && studentId) {
-      let list = [];
+      let list = null;
+
       try {
-        list = await fetchEssaysByTaskWithStudent(taskId, token);
+        list = await fetchEssaysByTaskWithStudent(taskId);
       } catch (e) {
-        console.warn('[feedback-professor] falhou fetchEssaysByTaskWithStudent:', e);
+        console.warn('[feedback-professor] falhou by-task/with-student:', e);
       }
 
       if (Array.isArray(list) && list.length) {
         essay = list.find((x) => String(x?.studentId) === String(studentId)) || null;
       }
 
-      // fallback: by-student
+      // fallback: by-student (pode vir 404 se não enviou)
       if (!essay) {
-        try {
-          essay = await fetchEssayByTaskAndStudentFallback(taskId, studentId, token);
-        } catch (e) {
-          console.warn('[feedback-professor] falhou fallback by-student:', e);
-          essay = null;
-        }
-
-        if (!essay) {
+        const fallbackEssay = await fetchEssayByTaskAndStudentFallback(taskId, studentId);
+        if (!fallbackEssay) {
           notify(
             'warn',
             'Sem redação',
             'Não encontrei redação para este aluno nesta tarefa (talvez não tenha enviado).',
-            3600,
+            3600
           );
-          window.location.replace('professor-salas.html');
+          window.location.replace(`correcao.html?taskId=${encodeURIComponent(String(taskId))}`);
           return;
         }
+
+        essay = fallbackEssay;
 
         // tenta enriquecer com /with-student
         if (essay?.id) {
           try {
-            const enriched = await fetchEssayByIdWithStudent(essay.id, token);
+            const enriched = await fetchEssayByIdWithStudent(essay.id);
             if (enriched) essay = enriched;
           } catch (e) {
             console.warn('[feedback-professor] não consegui enriquecer por id:', e);
@@ -408,7 +383,7 @@ async function carregar() {
       }
     } else {
       // ✅ MODO ANTIGO: essayId
-      essay = await fetchEssayByIdWithStudent(essayId, token);
+      essay = await fetchEssayByIdWithStudent(essayId);
     }
 
     if (!essay) throw new Error('Redação não encontrada');
@@ -418,21 +393,33 @@ async function carregar() {
     // tema
     const effectiveTaskId = essay?.taskId || taskId;
     if (effectiveTaskId) {
-      const task = await fetchTask(effectiveTaskId, token);
+      const task = await fetchTask(effectiveTaskId);
       setText(taskTitleEl, task?.title, '—');
     } else {
       setText(taskTitleEl, '—', '—');
     }
   } catch (err) {
     console.error(err);
+
+    // AUTH_* já redireciona
+    if (String(err?.message || '').startsWith('AUTH_')) return;
+
     notify('error', 'Erro', 'Erro ao carregar redação/feedback.');
     window.location.replace('professor-salas.html');
   }
 }
 
-// VOLTAR
+// ---------------- VOLTAR ----------------
 if (backBtn) {
-  backBtn.addEventListener('click', () => history.back());
+  backBtn.addEventListener('click', () => {
+    // se veio do fluxo novo, volta para a lista da tarefa
+    if (taskId) {
+      window.location.href = `correcao.html?taskId=${encodeURIComponent(String(taskId))}`;
+      return;
+    }
+    // caso contrário, volta ao histórico
+    history.back();
+  });
 }
 
 carregar();
