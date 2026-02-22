@@ -1,4 +1,4 @@
-// feedback-professor.js (final / prático)
+// feedback-professor.js (final / alinhado ao feedback-professor.html)
 // - usa auth.js (requireProfessorSession + authFetch + readErrorMessage + notify)
 // - aceita 2 modos:
 //   1) antigo: ?essayId=...
@@ -29,21 +29,16 @@ if (!essayId && !(taskId && studentId)) {
   throw new Error('Parâmetros ausentes (essayId OU taskId+studentId)');
 }
 
-// ---------------- ELEMENTOS ----------------
+// ---------------- ELEMENTOS (IDs reais do HTML) ----------------
 const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
 
 const taskTitleEl = document.getElementById('taskTitle');
-
-// datas (opcional no HTML)
 const essayMetaEl = document.getElementById('essayMeta');
 
-// modo novo (se existir no HTML)
 const essayTitleEl = document.getElementById('essayTitle');
 const essayBodyEl = document.getElementById('essayBody');
-
-// fallback antigo (se existir no HTML)
-const essayContentEl = document.getElementById('essayContent');
+const essayContentEl = document.getElementById('essayContent'); // fallback antigo (fica hidden no HTML)
 
 const scoreEl = document.getElementById('score');
 const feedbackEl = document.getElementById('feedback');
@@ -65,6 +60,7 @@ function setText(el, value, fallback = '—') {
 
 /**
  * Preserva parágrafos e linhas em branco.
+ * (Aqui funciona em <div> via textContent)
  */
 function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
@@ -128,38 +124,14 @@ function splitTitleAndBody(raw) {
 function renderEssayFormatted(rawContent) {
   const { title, body } = splitTitleAndBody(rawContent);
 
-  // Preferência: se HTML tem title/body separados (novo)
-  if (essayTitleEl && essayBodyEl) {
-    setText(essayTitleEl, title || '—', '—');
-    setMultilinePreserve(essayBodyEl, body || '', '');
-    if (essayContentEl) {
-      essayContentEl.style.display = 'none';
-      essayContentEl.textContent = '';
-    }
-    return;
-  }
+  // seu HTML tem essayTitle + essayBody
+  setText(essayTitleEl, title || '—', '—');
+  setMultilinePreserve(essayBodyEl, String(body || '').trimEnd(), '');
 
-  // Fallback: caixa única (antigo)
+  // garante que o fallback antigo não apareça
   if (essayContentEl) {
-    essayContentEl.innerHTML = '';
-    essayContentEl.style.setProperty('white-space', 'pre-wrap', 'important');
-    essayContentEl.style.setProperty('line-height', '1.6', 'important');
-    essayContentEl.style.setProperty('text-align', 'justify', 'important');
-    essayContentEl.style.setProperty('overflow-wrap', 'anywhere', 'important');
-    essayContentEl.style.setProperty('word-break', 'break-word', 'important');
-
-    const h = document.createElement('div');
-    h.textContent = title || '—';
-    h.style.textAlign = 'center';
-    h.style.fontWeight = '800';
-    h.style.marginBottom = '10px';
-    essayContentEl.appendChild(h);
-
-    const b = document.createElement('div');
-    b.textContent = String(body || '').replace(/\r\n/g, '\n').trimEnd();
-    b.style.whiteSpace = 'pre-wrap';
-    b.style.textAlign = 'justify';
-    essayContentEl.appendChild(b);
+    essayContentEl.style.display = 'none';
+    essayContentEl.textContent = '';
   }
 }
 
@@ -281,7 +253,6 @@ async function fetchEssaysByTaskWithStudent(tId) {
 }
 
 async function fetchEssayByTaskAndStudentFallback(tId, sId) {
-  // retorna essay (pode ser objeto ou null/404)
   const res = await authFetch(
     `${API_URL}/essays/by-task/${encodeURIComponent(String(tId))}/by-student?studentId=${encodeURIComponent(String(sId))}`,
     { method: 'GET' },
@@ -321,7 +292,6 @@ function renderEssay(essay) {
   setText(studentEmailEl, email, '');
 
   renderEssayFormatted(essay?.content || '');
-
   renderMetaDates(essay);
 
   const hasScore = essay?.score !== null && essay?.score !== undefined;
@@ -412,12 +382,12 @@ async function carregar() {
 // ---------------- VOLTAR ----------------
 if (backBtn) {
   backBtn.addEventListener('click', () => {
-    // se veio do fluxo novo, volta para a lista da tarefa
+    // fluxo novo: volta para a lista da tarefa
     if (taskId) {
       window.location.href = `correcao.html?taskId=${encodeURIComponent(String(taskId))}`;
       return;
     }
-    // caso contrário, volta ao histórico
+    // caso contrário, histórico
     history.back();
   });
 }
