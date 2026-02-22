@@ -7,12 +7,7 @@
 
 import { API_URL } from './config.js';
 import { confirmDialog as uiConfirmDialog } from './ui-feedback.js';
-import {
-  notify,
-  requireProfessorSession,
-  authFetch,
-  readErrorMessage,
-} from './auth.js';
+import { notify, requireProfessorSession, authFetch, readErrorMessage } from './auth.js';
 
 // -------------------- PARAMS + GUARD --------------------
 const params = new URLSearchParams(window.location.search);
@@ -65,6 +60,9 @@ let currentEssayId = null;
 let currentAnchorLi = null;
 let cachedActiveSet = null;
 
+// snapshot do que foi carregado no painel (para dirty-check)
+let loadedSnapshot = null;
+
 const initialCorrectionParent = correctionSection.parentElement;
 const initialCorrectionNextSibling = correctionSection.nextSibling;
 
@@ -75,7 +73,9 @@ async function confirmDialog(opts) {
       return await uiConfirmDialog(opts);
     } catch {}
   }
-  return window.confirm(`${opts?.title ? opts.title + '\n\n' : ''}${opts?.message || 'Confirmar?'}`);
+  return window.confirm(
+    `${opts?.title ? `${opts.title}\n\n` : ''}${opts?.message || 'Confirmar?'}`
+  );
 }
 
 // -------------------- util: status --------------------
@@ -122,9 +122,7 @@ async function fetchActiveStudentsSet(roomId) {
     });
     const raw = unwrapResult(data);
     const arr = Array.isArray(raw) ? raw : [];
-    const ids = arr
-      .map((s) => String(s?.id || s?.studentId || '').trim())
-      .filter(Boolean);
+    const ids = arr.map((s) => String(s?.id || s?.studentId || '').trim()).filter(Boolean);
     return new Set(ids);
   } catch {
     return null;
@@ -150,10 +148,7 @@ async function fetchEssayById(essayId) {
 async function saveCorrection(essayId, payload) {
   const res = await authFetch(
     `${API_URL}/essays/${encodeURIComponent(String(essayId))}/correct`,
-    {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    },
+    { method: 'POST', body: JSON.stringify(payload) },
     { redirectTo: 'login-professor.html' }
   );
 
@@ -171,7 +166,7 @@ function pickDate(obj, keys) {
 }
 
 function toDateSafe(value) {
-  if (!value) return null;
+  if (value === null || value === undefined) return null;
 
   if (value instanceof Date) {
     const t = value.getTime();
@@ -200,10 +195,7 @@ function formatDateBR(value) {
   const d = toDateSafe(value);
   if (!d) return '—';
   try {
-    return new Intl.DateTimeFormat('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    }).format(d);
+    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
   } catch {
     return '—';
   }
@@ -218,7 +210,8 @@ function getCorrectedAt(essay) {
 }
 
 function isCorrected(essay) {
-  const hasScore = essay?.score !== null && essay?.score !== undefined && !Number.isNaN(Number(essay.score));
+  const hasScore =
+    essay?.score !== null && essay?.score !== undefined && !Number.isNaN(Number(essay.score));
   const hasFeedback = String(essay?.feedback || '').trim().length > 0;
   return hasScore || hasFeedback;
 }
@@ -288,8 +281,8 @@ function splitTitleAndBody(raw) {
 
   const bodyLines = lines.slice(firstIdx + 1);
   while (bodyLines.length && !String(bodyLines[0] || '').trim()) bodyLines.shift();
-  const body = bodyLines.join('\n').trimEnd();
 
+  const body = bodyLines.join('\n').trimEnd();
   return { title: title || '—', body };
 }
 
@@ -380,11 +373,9 @@ const RUBRICS = {
 };
 
 function initRubricsUI() {
-  // total ao digitar
   [c1Input, c2Input, c3Input, c4Input, c5Input].forEach((inp) => {
     if (!inp) return;
     inp.addEventListener('input', () => {
-      // limita visualmente
       const v = String(inp.value || '');
       if (v.length > 4) inp.value = v.slice(0, 4);
       updateTotalUI();
@@ -394,7 +385,6 @@ function initRubricsUI() {
   // feedback preserva parágrafos
   applyBoxStyle(feedbackEl);
 
-  // botões "Ver ficha"
   const buttons = Array.from(document.querySelectorAll('.rubric-btn'));
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -415,7 +405,6 @@ function initRubricsUI() {
         return;
       }
 
-      // render do painel (seguro)
       panel.innerHTML = '';
       const items = RUBRICS[comp] || [];
       items.forEach((it) => {
@@ -431,7 +420,6 @@ function initRubricsUI() {
         span.textContent = it.text;
         line.appendChild(span);
 
-        // clicar sugere valor (não força)
         line.style.cursor = 'pointer';
         line.addEventListener('click', () => {
           const targetInput = document.getElementById(comp);
@@ -451,7 +439,7 @@ function initRubricsUI() {
 // -------------------- cálculo ENEM --------------------
 function parseComp(inputEl) {
   const raw = String(inputEl?.value || '').trim();
-  if (!raw) return null;
+  if (raw === '') return null;
   const n = Number(raw);
   if (Number.isNaN(n)) return null;
   if (n < 0 || n > 200) return null;
@@ -471,7 +459,7 @@ function calcularTotal() {
 
 function updateTotalUI() {
   const totalObj = calcularTotal();
-  totalScoreEl.textContent = totalObj ? String(totalObj.total) : '—';
+  if (totalScoreEl) totalScoreEl.textContent = totalObj ? String(totalObj.total) : '—';
 }
 
 // -------------------- painel (ancorar abaixo do aluno) --------------------
@@ -483,10 +471,10 @@ function moveCorrectionSectionBelow(li) {
 
 function restoreCorrectionSection() {
   try {
-    if (initialCorrectionNextSibling && initialCorrectionParent.contains(initialCorrectionNextSibling)) {
+    if (initialCorrectionNextSibling && initialCorrectionParent?.contains(initialCorrectionNextSibling)) {
       initialCorrectionParent.insertBefore(correctionSection, initialCorrectionNextSibling);
     } else {
-      initialCorrectionParent.appendChild(correctionSection);
+      initialCorrectionParent?.appendChild(correctionSection);
     }
   } catch {}
 }
@@ -494,11 +482,37 @@ function restoreCorrectionSection() {
 function closeCorrection(silent = true) {
   currentEssayId = null;
   currentAnchorLi = null;
+  loadedSnapshot = null;
+
   setStatus('');
   correctionSection.style.display = 'none';
   restoreCorrectionSection();
 
   if (!silent) notify('info', 'Fechado', 'Painel de correção fechado.', 1200);
+}
+
+function snapshotCurrentForm() {
+  return {
+    c1: String(c1Input?.value ?? '').trim(),
+    c2: String(c2Input?.value ?? '').trim(),
+    c3: String(c3Input?.value ?? '').trim(),
+    c4: String(c4Input?.value ?? '').trim(),
+    c5: String(c5Input?.value ?? '').trim(),
+    feedback: String(feedbackEl?.value ?? '').replace(/\r\n/g, '\n').trimEnd(),
+  };
+}
+
+function isDirty() {
+  if (!loadedSnapshot) return false;
+  const cur = snapshotCurrentForm();
+  return (
+    cur.c1 !== loadedSnapshot.c1 ||
+    cur.c2 !== loadedSnapshot.c2 ||
+    cur.c3 !== loadedSnapshot.c3 ||
+    cur.c4 !== loadedSnapshot.c4 ||
+    cur.c5 !== loadedSnapshot.c5 ||
+    cur.feedback !== loadedSnapshot.feedback
+  );
 }
 
 // -------------------- abrir correção --------------------
@@ -519,34 +533,24 @@ async function abrirCorrecao(item, anchorLi) {
   try {
     let full = item?._raw || item;
 
-    // garante content/competências/feedback
     if (!full?.content) full = await fetchEssayById(currentEssayId);
 
-    // aluno
     const name = String(item?.studentName || full?.studentName || full?.student?.name || 'Aluno').trim();
     const email = String(item?.studentEmail || full?.studentEmail || full?.student?.email || '—').trim();
 
-    studentNameEl.textContent = name || 'Aluno';
-    studentEmailEl.textContent = email || '—';
+    if (studentNameEl) studentNameEl.textContent = name || 'Aluno';
+    if (studentEmailEl) studentEmailEl.textContent = email || '—';
 
     const sid = String(item?.studentId || full?.studentId || full?.student?.id || '').trim();
     const dataUrl = sid ? localStorage.getItem(photoKeyStudent(sid)) : null;
 
     if (studentPhotoImg) {
-      if (dataUrl) {
-        studentPhotoImg.src = dataUrl;
-        studentPhotoImg.style.display = '';
-      } else {
-        // mostra placeholder (opcional)
-        studentPhotoImg.src = placeholderAvatarDataUrl((name || '?').slice(0, 1));
-        studentPhotoImg.style.display = '';
-      }
+      studentPhotoImg.src = dataUrl || placeholderAvatarDataUrl((name || '?').slice(0, 1));
+      studentPhotoImg.style.display = '';
     }
 
-    // redação
     renderEssayForProfessor(essayContentEl, full?.content || '');
 
-    // competências
     c1Input.value = full?.c1 ?? '';
     c2Input.value = full?.c2 ?? '';
     c3Input.value = full?.c3 ?? '';
@@ -554,17 +558,12 @@ async function abrirCorrecao(item, anchorLi) {
     c5Input.value = full?.c5 ?? '';
     updateTotalUI();
 
-    // feedback
     feedbackEl.value = String(full?.feedback || '').replace(/\r\n/g, '\n');
 
-    // se por algum motivo já estiver corrigida, redireciona
-    if (isCorrected(full)) {
-      notify('info', 'Já corrigida', 'Abrindo feedback do professor...');
-      window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}&studentId=${encodeURIComponent(String(sid))}`;
-      return;
-    }
+    // snapshot para dirty-check
+    loadedSnapshot = snapshotCurrentForm();
 
-    setStatus('');
+    setStatus(isCorrected(full) ? 'Esta redação já possui correção registrada.' : '');
   } catch (e) {
     console.error(e);
     notify('error', 'Erro', String(e?.message || 'Não foi possível abrir a redação.'));
@@ -724,7 +723,9 @@ async function carregarRedacoes() {
       btn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         if (corrected) {
-          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}&studentId=${encodeURIComponent(String(item.studentId))}`;
+          window.location.href =
+            `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}` +
+            `&studentId=${encodeURIComponent(String(item.studentId))}`;
         } else {
           abrirCorrecao(item, li);
         }
@@ -732,7 +733,9 @@ async function carregarRedacoes() {
 
       li.addEventListener('click', () => {
         if (corrected) {
-          window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}&studentId=${encodeURIComponent(String(item.studentId))}`;
+          window.location.href =
+            `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}` +
+            `&studentId=${encodeURIComponent(String(item.studentId))}`;
         } else {
           abrirCorrecao(item, li);
         }
@@ -742,7 +745,6 @@ async function carregarRedacoes() {
       li.appendChild(btn);
       essaysList.appendChild(li);
 
-      // autoabrir se veio ?studentId= (apenas pendente)
       if (focusStudentId && String(item.studentId) === String(focusStudentId) && !corrected) {
         abrirCorrecao(item, li);
       }
@@ -777,15 +779,7 @@ async function carregarTemaDaTarefa() {
 // -------------------- eventos: fechar --------------------
 if (closeBtn) {
   closeBtn.addEventListener('click', async () => {
-    const dirty =
-      String(feedbackEl.value || '').trim().length > 0 ||
-      String(c1Input.value || '').trim() ||
-      String(c2Input.value || '').trim() ||
-      String(c3Input.value || '').trim() ||
-      String(c4Input.value || '').trim() ||
-      String(c5Input.value || '').trim();
-
-    if (dirty && currentEssayId) {
+    if (currentEssayId && isDirty()) {
       const ok = await confirmDialog({
         title: 'Fechar correção',
         message: 'Você tem alterações. Deseja fechar sem salvar?',
@@ -794,7 +788,6 @@ if (closeBtn) {
       });
       if (!ok) return;
     }
-
     closeCorrection(true);
   });
 }
@@ -854,7 +847,6 @@ if (saveBtn) {
 // -------------------- INIT --------------------
 (async () => {
   try {
-    // box visual
     applyBoxStyle(essayContentEl);
 
     initRubricsUI();
