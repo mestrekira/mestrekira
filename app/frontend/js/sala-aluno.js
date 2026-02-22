@@ -1,9 +1,15 @@
-// sala-aluno.js (refatorado / robusto)
+// sala-aluno.js (final / prático)
+// - usa auth.js (requireStudentSession + authFetch + readErrorMessage)
+// - overview da sala (professor + colegas)
+// - lista de tarefas com "Nova" e botão feedback quando enviada
+
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
+import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
+
 // =====================
-// Toast helper (não quebra se toast não existir)
+// Toast helper
 // =====================
 function notify(type, title, message, duration) {
   try {
@@ -20,89 +26,6 @@ function notify(type, title, message, duration) {
   }
 }
 
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function clearAuth() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  localStorage.removeItem('professorId');
-  localStorage.removeItem('studentId');
-}
-
-function getStudentIdCompat() {
-  const id = localStorage.getItem('studentId');
-  if (!id || id === 'undefined' || id === 'null') return '';
-  return String(id);
-}
-
-function isStudentSession() {
-  const token = localStorage.getItem('token') || '';
-  const userJson = localStorage.getItem('user');
-  if (!token || !userJson) return false;
-
-  try {
-    const user = JSON.parse(userJson);
-    const role = normRole(user?.role);
-    if (role !== 'STUDENT' && role !== 'ALUNO') return false;
-
-    // garante compatibilidade do studentId
-    if (user?.id && !getStudentIdCompat()) {
-      localStorage.setItem('studentId', String(user.id));
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function readErrorMessage(res) {
-  try {
-    const data = await res.json();
-    const msg = data?.message ?? data?.error;
-    if (Array.isArray(msg)) return msg.join(' | ');
-    if (typeof msg === 'string' && msg.trim()) return msg.trim();
-  } catch {}
-
-  try {
-    const t = await res.text();
-    if (t && String(t).trim()) return String(t).trim().slice(0, 300);
-  } catch {}
-
-  return `HTTP ${res.status}`;
-}
-
-let redirected = false;
-
-async function authFetch(url, options = {}) {
-  const token = localStorage.getItem('token') || '';
-  const headers = { ...(options.headers || {}) };
-
-  const hasBody = options.body !== undefined && options.body !== null;
-  const isFormData =
-    typeof FormData !== 'undefined' && options.body instanceof FormData;
-
-  // ✅ não quebra FormData
-  if (hasBody && !isFormData && !headers['Content-Type']) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(url, { ...options, headers });
-
-  if ((res.status === 401 || res.status === 403) && !redirected) {
-    redirected = true;
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    clearAuth();
-    setTimeout(() => window.location.replace('login-aluno.html'), 600);
-    throw new Error(`AUTH_${res.status}`);
-  }
-
-  return res;
-}
-
 // =====================
 // Params + Guard
 // =====================
@@ -115,25 +38,14 @@ if (!roomId) {
   throw new Error('roomId ausente');
 }
 
-if (!isStudentSession()) {
-  clearAuth();
-  window.location.replace('login-aluno.html');
-  throw new Error('Sessão de aluno ausente/inválida');
-}
-
-const studentId = getStudentIdCompat();
-if (!studentId) {
-  clearAuth();
-  window.location.replace('login-aluno.html');
-  throw new Error('studentId ausente/inválido');
-}
+const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 // =====================
 // Elements
 // =====================
 const roomNameEl = document.getElementById('roomName');
 const tasksList = document.getElementById('tasksList');
-const status = document.getElementById('status');
+const statusEl = document.getElementById('status');
 
 const teacherInfo = document.getElementById('teacherInfo');
 const classmatesList = document.getElementById('classmatesList');
@@ -149,7 +61,7 @@ if (performanceBtn) {
 }
 
 function setStatus(msg) {
-  if (status) status.textContent = msg || '';
+  if (statusEl) statusEl.textContent = msg || '';
 }
 
 // =====================
@@ -239,9 +151,9 @@ function makeAvatarFromLocalStorage(key, size = 34, alt = 'Foto') {
         `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
           <rect width="100%" height="100%" fill="#eee"/>
           <text x="50%" y="55%" font-size="${Math.round(
-            size * 0.45
+            size * 0.45,
           )}" text-anchor="middle" fill="#888">?</text>
-        </svg>`
+        </svg>`,
       );
 
   return img;
@@ -258,13 +170,17 @@ if (leaveBtn) {
     if (leaveStatus) leaveStatus.textContent = 'Saindo...';
 
     try {
-      const res = await authFetch(`${API_URL}/enrollments/leave`, {
-        method: 'DELETE',
-        body: JSON.stringify({ roomId, studentId }),
-      });
+      const res = await authFetch(
+        `${API_URL}/enrollments/leave`,
+        {
+          method: 'DELETE',
+          body: JSON.stringify({ roomId, studentId }),
+        },
+        { redirectTo: 'login-aluno.html' },
+      );
 
       if (!res.ok) {
-        const msg = await readErrorMessage(res);
+        const msg = await readErrorMessage(res, `HTTP ${res.status}`);
         throw new Error(msg);
       }
 
@@ -272,7 +188,7 @@ if (leaveBtn) {
       notify('success', 'Tudo certo', 'Você saiu da sala.');
       setTimeout(() => window.location.replace('painel-aluno.html'), 700);
     } catch (e) {
-      console.error(e);
+      if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
       if (leaveStatus) leaveStatus.textContent = 'Erro ao sair da sala.';
       notify('error', 'Erro', 'Não foi possível sair da sala agora.');
     }
@@ -287,8 +203,16 @@ async function carregarOverview() {
   if (classmatesList) classmatesList.innerHTML = '<li>Carregando colegas...</li>';
 
   try {
-    const res = await authFetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`);
-    if (!res.ok) throw new Error(await readErrorMessage(res));
+    const res = await authFetch(
+      `${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`,
+      { method: 'GET' },
+      { redirectTo: 'login-aluno.html' },
+    );
+
+    if (!res.ok) {
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+      throw new Error(msg);
+    }
 
     const data = await res.json().catch(() => null);
 
@@ -306,12 +230,18 @@ async function carregarOverview() {
         wrap.style.alignItems = 'center';
         wrap.style.gap = '10px';
 
-        const avatar = makeAvatarFromLocalStorage(photoKeyProfessor(p.id), 38, 'Foto do professor');
+        const avatar = makeAvatarFromLocalStorage(
+          photoKeyProfessor(p.id),
+          38,
+          'Foto do professor',
+        );
 
         const text = document.createElement('div');
         const name = String(p.name || 'Professor').trim();
         const email = String(p.email || '').trim();
-        text.innerHTML = `<strong>${name}</strong>${email ? `<br><small>${email}</small>` : ''}`;
+        text.innerHTML = `<strong>${name}</strong>${
+          email ? `<br><small>${email}</small>` : ''
+        }`;
 
         wrap.appendChild(avatar);
         wrap.appendChild(text);
@@ -334,10 +264,13 @@ async function carregarOverview() {
         }))
         .filter((s) => !!s.id);
 
-      const classmates = students.filter((s) => String(s.id) !== String(studentId));
+      const classmates = students.filter(
+        (s) => String(s.id) !== String(studentId),
+      );
 
       if (classmates.length === 0) {
-        classmatesList.innerHTML = '<li>Nenhum colega ainda (só você na sala).</li>';
+        classmatesList.innerHTML =
+          '<li>Nenhum colega ainda (só você na sala).</li>';
         return;
       }
 
@@ -349,12 +282,18 @@ async function carregarOverview() {
         li.style.alignItems = 'center';
         li.style.gap = '10px';
 
-        const avatar = makeAvatarFromLocalStorage(photoKeyStudent(s.id), 36, 'Foto do colega');
+        const avatar = makeAvatarFromLocalStorage(
+          photoKeyStudent(s.id),
+          36,
+          'Foto do colega',
+        );
 
         const text = document.createElement('div');
         const name = s.name && s.name.trim() ? s.name : 'Aluno';
         const email = s.email && s.email.trim() ? s.email : '';
-        text.innerHTML = `<strong>${name}</strong>${email ? `<br><small>${email}</small>` : ''}`;
+        text.innerHTML = `<strong>${name}</strong>${
+          email ? `<br><small>${email}</small>` : ''
+        }`;
 
         li.appendChild(avatar);
         li.appendChild(text);
@@ -362,10 +301,11 @@ async function carregarOverview() {
       });
     }
   } catch (e) {
-    console.error(e);
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     if (roomNameEl) roomNameEl.textContent = 'Sala';
     if (teacherInfo) teacherInfo.textContent = 'Erro ao carregar professor.';
-    if (classmatesList) classmatesList.innerHTML = '<li>Erro ao carregar colegas.</li>';
+    if (classmatesList)
+      classmatesList.innerHTML = '<li>Erro ao carregar colegas.</li>';
   }
 }
 
@@ -377,7 +317,7 @@ async function getMyEssayByTask(taskIdValue) {
     `${API_URL}/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student` +
     `?studentId=${encodeURIComponent(studentId)}`;
 
-  const res = await authFetch(url);
+  const res = await authFetch(url, { method: 'GET' }, { redirectTo: 'login-aluno.html' });
 
   if (res.status === 404) return null;
   if (!res.ok) return null;
@@ -396,7 +336,13 @@ function computeNewestTaskId(tasks) {
   let newestTime = -Infinity;
 
   tasks.forEach((t) => {
-    const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+    const createdAt = pickDate(t, [
+      'createdAt',
+      'created_at',
+      'created',
+      'dateCreated',
+      'timestamp',
+    ]);
     const dt = toDateSafe(createdAt)?.getTime?.() ?? NaN;
 
     if (!Number.isNaN(dt)) {
@@ -438,10 +384,18 @@ async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando...</li>';
 
   try {
-    const response = await authFetch(`${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
-    if (!response.ok) throw new Error(await readErrorMessage(response));
+    const res = await authFetch(
+      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
+      { method: 'GET' },
+      { redirectTo: 'login-aluno.html' },
+    );
 
-    const raw = await response.json().catch(() => null);
+    if (!res.ok) {
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+      throw new Error(msg);
+    }
+
+    const raw = await res.json().catch(() => null);
     const arr = Array.isArray(raw) ? raw : [];
 
     tasksList.innerHTML = '';
@@ -456,7 +410,13 @@ async function carregarTarefas() {
       .map((t) => {
         const id = String(t?.id || t?.taskId || '').trim();
         const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
-        const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+        const createdAt = pickDate(t, [
+          'createdAt',
+          'created_at',
+          'created',
+          'dateCreated',
+          'timestamp',
+        ]);
         return { id, title, createdAt, _raw: t };
       })
       .filter((t) => !!t.id);
@@ -467,9 +427,11 @@ async function carregarTarefas() {
       return;
     }
 
-    const newestId = computeNewestTaskId(tasks.map((t) => ({ ...t._raw, id: t.id })));
+    const newestId = computeNewestTaskId(
+      tasks.map((t) => ({ ...t._raw, id: t.id })),
+    );
 
-    // 1) renderiza lista primeiro
+    // 1) renderiza lista primeiro (rápido)
     const uiByTaskId = new Map(); // taskId -> { btnWrite, btnFeedback }
 
     tasks.forEach((task) => {
@@ -527,12 +489,12 @@ async function carregarTarefas() {
       uiByTaskId.set(task.id, { btnWrite, btnFeedback });
     });
 
-    // 2) checa redações em paralelo
+    // 2) checa as redações em paralelo (muito mais rápido que await dentro do loop)
     const checks = await Promise.allSettled(
       tasks.map(async (task) => {
         const essay = await getMyEssayByTask(task.id);
         return { taskId: task.id, essay };
-      })
+      }),
     );
 
     checks.forEach((r) => {
@@ -542,6 +504,7 @@ async function carregarTarefas() {
       const ui = uiByTaskId.get(taskId);
       if (!ui) return;
 
+      // mostra feedback só se tiver enviada (isDraft === false)
       if (essay && essay.id && essay.isDraft === false) {
         ui.btnWrite.style.display = 'none';
         ui.btnFeedback.style.display = 'inline-block';
@@ -556,7 +519,7 @@ async function carregarTarefas() {
 
     setStatus('');
   } catch (e) {
-    console.error(e);
+    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     setStatus('Erro ao carregar tarefas.');
     if (tasksList) tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
