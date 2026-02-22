@@ -15,13 +15,28 @@ export function notify(type, title, message, duration) {
         (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
     });
   } catch {
+    // fallback mínimo (não quebra nada)
     if (type === 'error') console.error(title, message);
+    else console.log(`[${type}]`, title, message);
   }
 }
 
 // ---------- helpers ----------
 function normRole(role) {
   return String(role || '').trim().toUpperCase();
+}
+
+function isOnLoginPage() {
+  const p = String(window.location.pathname || '').toLowerCase();
+  return p.includes('login-') || p.includes('login');
+}
+
+function hasHeader(headersObj, name) {
+  const target = String(name || '').toLowerCase();
+  for (const k of Object.keys(headersObj || {})) {
+    if (String(k).toLowerCase() === target) return true;
+  }
+  return false;
 }
 
 export function clearAuth() {
@@ -144,7 +159,8 @@ export async function authFetch(url, options = {}, cfg = {}) {
   const isFormData =
     typeof FormData !== 'undefined' && options.body instanceof FormData;
 
-  if (hasBody && !isFormData && !headers['Content-Type']) {
+  // evita duplicar Content-Type por casing diferente (ex.: content-type)
+  if (hasBody && !isFormData && !hasHeader(headers, 'content-type')) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -153,11 +169,26 @@ export async function authFetch(url, options = {}, cfg = {}) {
   const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401 || res.status === 403) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    // se acabou de dar logout, não exibe toast e não tenta "re-loginar" em loop
+    const justLoggedOut = sessionStorage.getItem('mk_just_logged_out') === '1';
+
     clearAuth();
 
-    const redirectTo = cfg.redirectTo || inferLoginPage();
-    setTimeout(() => window.location.replace(redirectTo), 600);
+    // se já estamos numa página de login, não redireciona de novo
+    if (!isOnLoginPage()) {
+      const redirectTo = cfg.redirectTo || inferLoginPage();
+
+      if (!justLoggedOut) {
+        notify(
+          'warn',
+          'Sessão expirada',
+          'Faça login novamente para continuar.',
+          3200
+        );
+      }
+
+      setTimeout(() => window.location.replace(redirectTo), 600);
+    }
 
     throw new Error(`AUTH_${res.status}`);
   }
