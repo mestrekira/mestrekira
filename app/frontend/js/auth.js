@@ -10,9 +10,7 @@ function notify(type, title, message, duration) {
       type,
       title,
       message,
-      duration:
-        duration ??
-        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+      duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
     });
   } catch {
     if (type === 'error') console.error(title, message);
@@ -94,8 +92,98 @@ export function isProfessorSession({ allowCompatIdOnly = true } = {}) {
   return ok;
 }
 
+// ---------- login redirect ----------
+export function redirectToLogin(kind = 'student') {
+  // kind: 'student' | 'professor' | 'auto'
+  if (kind === 'professor') return window.location.replace('login-professor.html');
+  if (kind === 'student') return window.location.replace('login-aluno.html');
+
+  // auto: tenta inferir pelo role, senão cai em login-aluno
+  const user = getUser();
+  const role = normRole(user?.role);
+  if (role === 'PROFESSOR' || role === 'TEACHER') {
+    return window.location.replace('login-professor.html');
+  }
+  return window.location.replace('login-aluno.html');
+}
+
+// ---------- guards prontos (evita duplicação) ----------
+export function requireStudent(loginPage = 'login-aluno.html') {
+  if (!isStudentSession({ allowCompatIdOnly: false })) {
+    clearAuth();
+    window.location.replace(loginPage);
+    throw new Error('Sessão de aluno ausente/inválida');
+  }
+
+  const studentId = getStudentIdCompat();
+  if (!studentId) {
+    clearAuth();
+    window.location.replace(loginPage);
+    throw new Error('studentId ausente/inválido');
+  }
+
+  return { studentId, user: getUser() };
+}
+
+export function requireProfessor(loginPage = 'login-professor.html') {
+  if (!isProfessorSession({ allowCompatIdOnly: false })) {
+    clearAuth();
+    window.location.replace(loginPage);
+    throw new Error('Sessão de professor ausente/inválida');
+  }
+
+  const professorId = getProfessorIdCompat();
+  if (!professorId) {
+    clearAuth();
+    window.location.replace(loginPage);
+    throw new Error('professorId ausente/inválido');
+  }
+
+  return { professorId, user: getUser() };
+}
+
+// ---------- util: leitura de erro (robusta) ----------
+export async function readErrorMessage(res, fallback) {
+  const msgFallback = fallback || `HTTP ${res.status}`;
+
+  // lê o body UMA vez (robusto)
+  let text = '';
+  try {
+    text = await res.text();
+  } catch {
+    return msgFallback;
+  }
+
+  const trimmed = (text || '').trim();
+  if (!trimmed) return msgFallback;
+
+  // tenta JSON.parse do texto
+  try {
+    const data = JSON.parse(trimmed);
+    const m = data?.message ?? data?.error;
+    if (Array.isArray(m)) return m.join(' | ');
+    if (typeof m === 'string' && m.trim()) return m.trim();
+    // se tiver outro formato, cai no texto
+  } catch {
+    // não é JSON
+  }
+
+  return trimmed.slice(0, 300);
+}
+
 // ---------- authFetch ----------
-export async function authFetch(url, options = {}) {
+/**
+ * @param {string} url
+ * @param {RequestInit} options
+ * @param {object} cfg
+ * @param {'student'|'professor'|'auto'|string} cfg.redirectTo
+ *   - 'student' -> login-aluno.html
+ *   - 'professor' -> login-professor.html
+ *   - 'auto' -> decide por role
+ *   - string -> usa como página (ex: 'login-aluno.html')
+ * @param {boolean} cfg.silentAuthError - se true, não notifica toast
+ */
+export async function authFetch(url, options = {}, cfg = {}) {
   const token = getToken();
   const headers = { ...(options.headers || {}) };
 
@@ -112,31 +200,30 @@ export async function authFetch(url, options = {}) {
   const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401 || res.status === 403) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    if (!cfg?.silentAuthError) {
+      notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    }
     clearAuth();
+
     setTimeout(() => {
-      // se quiser diferenciar professor/aluno depois, a gente ajusta
-      window.location.replace('login.html');
+      const rt = cfg?.redirectTo;
+
+      // string direta
+      if (typeof rt === 'string' && rt.endsWith('.html')) {
+        window.location.replace(rt);
+        return;
+      }
+
+      if (rt === 'professor') return redirectToLogin('professor');
+      if (rt === 'student') return redirectToLogin('student');
+      if (rt === 'auto') return redirectToLogin('auto');
+
+      // padrão (aluno)
+      redirectToLogin('student');
     }, 600);
+
     throw new Error(`AUTH_${res.status}`);
   }
 
   return res;
-}
-
-// ---------- util: leitura de erro ----------
-export async function readErrorMessage(res, fallback) {
-  let msg = fallback || `HTTP ${res.status}`;
-  try {
-    const data = await res.json();
-    const m = data?.message ?? data?.error;
-    if (Array.isArray(m)) msg = m.join(' | ');
-    else if (typeof m === 'string' && m.trim()) msg = m;
-  } catch {
-    try {
-      const t = await res.text();
-      if (t && t.trim()) msg = t.slice(0, 300);
-    } catch {}
-  }
-  return msg;
 }
