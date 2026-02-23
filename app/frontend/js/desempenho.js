@@ -323,7 +323,32 @@ function renderDonutWithLegend(
   targetLegendEl.appendChild(legend);
 }
 
-// ---------------- PDF DOWNLOAD ----------------
+// ---------------- PDF DOWNLOAD (mais robusto) ----------------
+function parseFilenameFromContentDisposition(cd, fallbackName) {
+  const dispo = String(cd || '');
+
+  // 1) filename*=UTF-8''... (RFC 5987)
+  const mStar = dispo.match(/filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i);
+  if (mStar && mStar[1]) {
+    const raw = mStar[1].trim().replace(/^"(.*)"$/, '$1');
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }
+
+  // 2) filename="..."
+  const m = dispo.match(/filename\s*=\s*"([^"]+)"/i);
+  if (m && m[1]) return m[1].trim();
+
+  // 3) filename=semAspas
+  const m2 = dispo.match(/filename\s*=\s*([^;]+)/i);
+  if (m2 && m2[1]) return m2[1].trim().replace(/^"(.*)"$/, '$1');
+
+  return fallbackName;
+}
+
 async function downloadStudentPerformancePdf(roomId) {
   const url =
     `${API_URL}/pdf/student-performance?roomId=${encodeURIComponent(roomId)}` +
@@ -342,29 +367,37 @@ async function downloadStudentPerformancePdf(roomId) {
 
     const contentType = (res.headers.get('content-type') || '').toLowerCase();
 
-    // ✅ se NÃO for PDF, consome body como texto/JSON e finaliza (não tenta blob depois)
+    // ✅ se NÃO for PDF, consome erro como texto/JSON e para aqui
     if (!contentType.includes('application/pdf') && !contentType.includes('pdf')) {
       const msg = await readErrorMessage(res, 'O servidor não retornou um PDF.');
       notify('error', 'Resposta inválida', msg);
       return;
     }
 
-    // ✅ aqui é PDF de verdade: consome como blob
+    // ✅ PDF
     const blob = await res.blob();
 
     const cd = res.headers.get('content-disposition') || '';
-    let filename = `desempenho-${studentId}.pdf`;
-    const m = /filename="([^"]+)"/i.exec(cd);
-    if (m && m[1]) filename = m[1];
+    const fallback = `desempenho-${studentId}.pdf`;
+    const filename = parseFilenameFromContentDisposition(cd, fallback);
 
     const blobUrl = window.URL.createObjectURL(blob);
+
+    // ✅ alguns browsers são chatos: melhor garantir que o link esteja no DOM
     const a = document.createElement('a');
     a.href = blobUrl;
     a.download = filename;
+    a.style.display = 'none';
     document.body.appendChild(a);
+
+    // ✅ dispara download
     a.click();
-    a.remove();
-    window.URL.revokeObjectURL(blobUrl);
+
+    // ✅ limpeza
+    setTimeout(() => {
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    }, 0);
 
     notify('success', 'PDF pronto', 'Download iniciado.');
   } catch (e) {
@@ -871,3 +904,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (downloadPdfBtn) downloadPdfBtn.style.display = 'none';
   }
 });
+
