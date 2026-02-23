@@ -1,5 +1,5 @@
 // auth.js (revisado / robusto)
-// Utilitário único de autenticação para front (aluno/professor)
+// Utilitário único de autenticação para front (aluno/professor/escola)
 
 import { toast } from './ui-feedback.js';
 
@@ -32,6 +32,7 @@ function isOnLoginPage() {
   return (
     p.includes('login-professor') ||
     p.includes('login-aluno') ||
+    p.includes('login-escola') ||
     p.endsWith('/login.html') ||
     p.endsWith('login.html') ||
     p.includes('login-')
@@ -51,6 +52,7 @@ export function clearAuth({ keepJustLoggedOutFlag = true } = {}) {
   localStorage.removeItem('user');
   localStorage.removeItem('professorId');
   localStorage.removeItem('studentId');
+  // (opcional futuro) localStorage.removeItem('schoolId');
 
   // por padrão mantém, para evitar loop de toast/redirect
   if (!keepJustLoggedOutFlag) {
@@ -81,6 +83,7 @@ export function getRoleNormalized() {
   const r = getRoleUpper();
   if (r === 'PROFESSOR' || r === 'TEACHER') return 'professor';
   if (r === 'STUDENT' || r === 'ALUNO') return 'student';
+  if (r === 'SCHOOL' || r === 'ESCOLA') return 'school';
   return null;
 }
 
@@ -131,6 +134,15 @@ export function isProfessorSession({ allowCompatIdOnly = false } = {}) {
   return ok;
 }
 
+export function isSchoolSession() {
+  const token = getToken();
+  const user = getUser();
+  if (!token || !user) return false;
+
+  const role = normRole(user?.role);
+  return role === 'SCHOOL' || role === 'ESCOLA';
+}
+
 // Decide para qual login mandar
 function inferLoginPage() {
   // se já estiver numa tela de login, não tenta inferir nada
@@ -138,11 +150,17 @@ function inferLoginPage() {
 
   const path = String(window.location.pathname || '').toLowerCase();
 
+  // Se a URL/página contém "escola"/"school", assume ambiente escola
+  if (path.includes('escola') || path.includes('school')) return 'login-escola.html';
+
   // Se a URL/página contém "professor", assume ambiente professor
   if (path.includes('professor')) return 'login-professor.html';
 
-  // Se a sessão atual for professor, manda pro professor
+  // Se a sessão atual for escola, manda pro login-escola
   const r = getRoleUpper();
+  if (r === 'SCHOOL' || r === 'ESCOLA') return 'login-escola.html';
+
+  // Se a sessão atual for professor, manda pro professor
   if (r === 'PROFESSOR' || r === 'TEACHER') return 'login-professor.html';
 
   // default: aluno
@@ -171,6 +189,14 @@ export function requireProfessorSession({ redirectTo = 'login-professor.html' } 
     window.location.replace(redirectTo);
     throw new Error('Sessão de professor ausente/inválida');
   }
+
+  // ✅ Se professor for gerenciado e precisa trocar senha, bloqueia navegação
+  const user = getUser();
+  if (user?.mustChangePassword) {
+    window.location.replace('professor-atualizar-senha.html');
+    throw new Error('MUST_CHANGE_PASSWORD');
+  }
+
   const pid = getProfessorIdCompat();
   if (!pid) {
     clearAuth();
@@ -178,6 +204,23 @@ export function requireProfessorSession({ redirectTo = 'login-professor.html' } 
     throw new Error('professorId ausente/inválido');
   }
   return pid;
+}
+
+export function requireSchoolSession({ redirectTo = 'login-escola.html' } = {}) {
+  if (!isSchoolSession()) {
+    clearAuth();
+    window.location.replace(redirectTo);
+    throw new Error('Sessão de escola ausente/inválida');
+  }
+
+  const u = getUser();
+  if (!u?.id) {
+    clearAuth();
+    window.location.replace(redirectTo);
+    throw new Error('school user.id ausente');
+  }
+
+  return String(u.id);
 }
 
 // ---------- authFetch ----------
