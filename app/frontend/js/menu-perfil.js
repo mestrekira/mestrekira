@@ -1,6 +1,13 @@
 import { API_URL } from './config.js';
 import { toast, confirmDialog } from './ui-feedback.js';
 
+/**
+ * ✅ FEATURE FLAG:
+ * Enquanto a plataforma for grátis, não mostrar "Gerenciar conta".
+ * Quando ativar o pago, troque para true (ou faça vir do backend).
+ */
+const BILLING_ENABLED = false;
+
 function $(id) {
   return document.getElementById(id);
 }
@@ -13,8 +20,8 @@ function safeText(el, value, fallback = '—') {
 
 /**
  * Normaliza papel:
- * - backend: "PROFESSOR" / "ALUNO" / "STUDENT" / "TEACHER"
- * - front: "professor" | "student"
+ * - backend: "PROFESSOR" / "ALUNO" / "STUDENT" / "TEACHER" / "SCHOOL"
+ * - front: "professor" | "student" | "school"
  */
 function normalizeRole(role) {
   if (!role) return null;
@@ -22,10 +29,12 @@ function normalizeRole(role) {
 
   if (r === 'PROFESSOR' || r === 'TEACHER') return 'professor';
   if (r === 'ALUNO' || r === 'STUDENT') return 'student';
+  if (r === 'SCHOOL' || r === 'ESCOLA') return 'school';
 
   const low = String(role).trim().toLowerCase();
   if (low === 'professor') return 'professor';
   if (low === 'student') return 'student';
+  if (low === 'school' || low === 'escola') return 'school';
 
   return null;
 }
@@ -33,6 +42,7 @@ function normalizeRole(role) {
 function roleLabel(roleNormalized) {
   if (roleNormalized === 'professor') return 'Professor(a)';
   if (roleNormalized === 'student') return 'Estudante';
+  if (roleNormalized === 'school') return 'Escola';
   return '';
 }
 
@@ -63,7 +73,12 @@ function getSession() {
   const roleFromUser = normalizeRole(user?.role);
   const idFromUser = user?.id ? String(user.id) : null;
 
-  if (roleFromUser && idFromUser && idFromUser !== 'undefined' && idFromUser !== 'null') {
+  if (
+    roleFromUser &&
+    idFromUser &&
+    idFromUser !== 'undefined' &&
+    idFromUser !== 'null'
+  ) {
     return { role: roleFromUser, id: idFromUser, token, user };
   }
 
@@ -92,7 +107,9 @@ function placeholderAvatar(size = 72) {
     encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
         <rect width="100%" height="100%" fill="#eee"/>
-        <text x="50%" y="55%" font-size="${Math.round(size * 0.35)}" text-anchor="middle" fill="#888">👤</text>
+        <text x="50%" y="55%" font-size="${Math.round(
+          size * 0.35
+        )}" text-anchor="middle" fill="#888">👤</text>
       </svg>`
     )
   );
@@ -115,7 +132,12 @@ function clearAuthStorage() {
   localStorage.removeItem(LS.studentId);
 }
 
-function redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, fallback = 'index.html') {
+function redirectAfterLogout(
+  role,
+  logoutRedirectProfessor,
+  logoutRedirectStudent,
+  fallback = 'index.html'
+) {
   if (role === 'professor') window.location.href = logoutRedirectProfessor;
   else if (role === 'student') window.location.href = logoutRedirectStudent;
   else window.location.href = fallback;
@@ -156,7 +178,10 @@ async function authFetchMenu(path, { method = 'GET', token, body } = {}) {
 async function tryFetchMe(id, token) {
   if (!id || id === 'undefined' || id === 'null') return null;
   try {
-    return await authFetchMenu(`/users/${encodeURIComponent(id)}`, { token, method: 'GET' });
+    return await authFetchMenu(`/users/${encodeURIComponent(id)}`, {
+      token,
+      method: 'GET',
+    });
   } catch {
     return null;
   }
@@ -182,13 +207,23 @@ export function initMenuPerfil(options = {}) {
 
   // abrir/fechar
   menuBtn.addEventListener('click', () => menuPanel.classList.toggle('open'));
-  if (closeBtn) closeBtn.addEventListener('click', () => menuPanel.classList.remove('open'));
+  if (closeBtn)
+    closeBtn.addEventListener('click', () =>
+      menuPanel.classList.remove('open')
+    );
 
   // sessão
   const session = getSession();
-  const role = session.role; // 'professor'|'student'|null
-  const id = session.id;     // string|null
+  const role = session.role; // 'professor'|'student'|'school'|null
+  const id = session.id; // string|null
   const token = session.token;
+
+  // (Opcional) Link de "Gerenciar conta" — oculto até BILLING_ENABLED = true
+  // Para funcionar, crie no HTML um item com id="manageAccountLink" (ou ajuste o id aqui).
+  const manageAccountLink = $('manageAccountLink');
+  if (manageAccountLink) {
+    manageAccountLink.style.display = BILLING_ENABLED ? '' : 'none';
+  }
 
   // NÃO exibir ID (se existir no HTML)
   const meIdEl = $('meId');
@@ -244,7 +279,11 @@ export function initMenuPerfil(options = {}) {
       if (!file) return;
 
       if (!['image/png', 'image/jpeg'].includes(file.type)) {
-        toast({ title: 'Formato inválido', message: 'Use PNG ou JPG.', type: 'warn' });
+        toast({
+          title: 'Formato inválido',
+          message: 'Use PNG ou JPG.',
+          type: 'warn',
+        });
         return;
       }
 
@@ -253,9 +292,17 @@ export function initMenuPerfil(options = {}) {
         try {
           localStorage.setItem(photoKey(role, id), reader.result);
           loadPhoto(role, id);
-          toast({ title: 'Pronto!', message: 'Foto atualizada.', type: 'success' });
+          toast({
+            title: 'Pronto!',
+            message: 'Foto atualizada.',
+            type: 'success',
+          });
         } catch {
-          toast({ title: 'Erro', message: 'Não foi possível salvar a foto.', type: 'error' });
+          toast({
+            title: 'Erro',
+            message: 'Não foi possível salvar a foto.',
+            type: 'error',
+          });
         }
       };
       reader.readAsDataURL(file);
@@ -333,7 +380,11 @@ export function initMenuPerfil(options = {}) {
         }
 
         if (statusEl) statusEl.textContent = 'Dados atualizados.';
-        toast({ title: 'Atualizado', message: 'Seus dados foram atualizados.', type: 'success' });
+        toast({
+          title: 'Atualizado',
+          message: 'Seus dados foram atualizados.',
+          type: 'success',
+        });
 
         if (newEmailEl) newEmailEl.value = '';
         if (newPassEl) newPassEl.value = '';
@@ -341,10 +392,19 @@ export function initMenuPerfil(options = {}) {
         const msg = String(e?.message || 'Erro ao atualizar dados.');
         if (String(msg).startsWith('AUTH_')) {
           // sessão expirada
-          toast({ title: 'Sessão expirada', message: 'Faça login novamente.', type: 'warn' });
+          toast({
+            title: 'Sessão expirada',
+            message: 'Faça login novamente.',
+            type: 'warn',
+          });
           sessionStorage.setItem('mk_just_logged_out', '1');
           clearAuthStorage();
-          redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, loginRedirect);
+          redirectAfterLogout(
+            role,
+            logoutRedirectProfessor,
+            logoutRedirectStudent,
+            loginRedirect
+          );
           return;
         }
 
@@ -370,7 +430,12 @@ export function initMenuPerfil(options = {}) {
       sessionStorage.setItem('mk_just_logged_out', '1');
 
       clearAuthStorage();
-      redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, loginRedirect);
+      redirectAfterLogout(
+        role,
+        logoutRedirectProfessor,
+        logoutRedirectStudent,
+        loginRedirect
+      );
     });
   }
 
@@ -379,14 +444,18 @@ export function initMenuPerfil(options = {}) {
     deleteBtn.addEventListener('click', async () => {
       const ok = await confirmDialog({
         title: 'Excluir conta',
-        message: 'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
+        message:
+          'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
         okText: 'Sim, excluir',
         cancelText: 'Cancelar',
       });
       if (!ok) return;
 
       try {
-        await authFetchMenu(`/users/${encodeURIComponent(id)}`, { method: 'DELETE', token });
+        await authFetchMenu(`/users/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          token,
+        });
 
         // remove sessão + foto
         localStorage.removeItem(photoKey(role, id));
@@ -399,14 +468,28 @@ export function initMenuPerfil(options = {}) {
           type: 'success',
         });
 
-        redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, loginRedirect);
+        redirectAfterLogout(
+          role,
+          logoutRedirectProfessor,
+          logoutRedirectStudent,
+          loginRedirect
+        );
       } catch (e) {
         const msg = String(e?.message || 'Erro ao excluir conta.');
         if (String(msg).startsWith('AUTH_')) {
-          toast({ title: 'Sessão expirada', message: 'Faça login novamente.', type: 'warn' });
+          toast({
+            title: 'Sessão expirada',
+            message: 'Faça login novamente.',
+            type: 'warn',
+          });
           sessionStorage.setItem('mk_just_logged_out', '1');
           clearAuthStorage();
-          redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, loginRedirect);
+          redirectAfterLogout(
+            role,
+            logoutRedirectProfessor,
+            logoutRedirectStudent,
+            loginRedirect
+          );
           return;
         }
 
