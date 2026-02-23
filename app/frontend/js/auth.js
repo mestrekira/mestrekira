@@ -1,4 +1,4 @@
-// auth.js (final / prático)
+// auth.js (revisado / robusto)
 // Utilitário único de autenticação para front (aluno/professor)
 
 import { toast } from './ui-feedback.js';
@@ -28,7 +28,14 @@ function normRole(role) {
 
 function isOnLoginPage() {
   const p = String(window.location.pathname || '').toLowerCase();
-  return p.includes('login-') || p.includes('login');
+  // mais específico (evita falso positivo com "login-info" etc)
+  return (
+    p.includes('login-professor') ||
+    p.includes('login-aluno') ||
+    p.endsWith('/login.html') ||
+    p.endsWith('login.html') ||
+    p.includes('login-')
+  );
 }
 
 function hasHeader(headersObj, name) {
@@ -39,11 +46,16 @@ function hasHeader(headersObj, name) {
   return false;
 }
 
-export function clearAuth() {
+export function clearAuth({ keepJustLoggedOutFlag = true } = {}) {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   localStorage.removeItem('professorId');
   localStorage.removeItem('studentId');
+
+  // por padrão mantém, para evitar loop de toast/redirect
+  if (!keepJustLoggedOutFlag) {
+    sessionStorage.removeItem('mk_just_logged_out');
+  }
 }
 
 export function getToken() {
@@ -58,6 +70,18 @@ export function getUser() {
   } catch {
     return null;
   }
+}
+
+export function getRoleUpper() {
+  const u = getUser();
+  return normRole(u?.role);
+}
+
+export function getRoleNormalized() {
+  const r = getRoleUpper();
+  if (r === 'PROFESSOR' || r === 'TEACHER') return 'professor';
+  if (r === 'STUDENT' || r === 'ALUNO') return 'student';
+  return null;
 }
 
 // compat IDs antigos
@@ -77,11 +101,13 @@ export function isStudentSession({ allowCompatIdOnly = false } = {}) {
   const token = getToken();
   const user = getUser();
 
+  // ⚠️ allowCompatIdOnly só serve para páginas antigas que NÃO chamam API
   if (!token || !user) return allowCompatIdOnly ? !!getStudentIdCompat() : false;
 
   const role = normRole(user?.role);
   const ok = role === 'STUDENT' || role === 'ALUNO';
 
+  // garante compat id
   if (ok && user?.id && !getStudentIdCompat()) {
     localStorage.setItem('studentId', String(user.id));
   }
@@ -92,27 +118,31 @@ export function isProfessorSession({ allowCompatIdOnly = false } = {}) {
   const token = getToken();
   const user = getUser();
 
+  // ⚠️ allowCompatIdOnly só serve para páginas antigas que NÃO chamam API
   if (!token || !user) return allowCompatIdOnly ? !!getProfessorIdCompat() : false;
 
   const role = normRole(user?.role);
   const ok = role === 'PROFESSOR' || role === 'TEACHER';
 
+  // garante compat id
   if (ok && user?.id && !getProfessorIdCompat()) {
     localStorage.setItem('professorId', String(user.id));
   }
   return ok;
 }
 
-// Decide para qual login mandar (sem você ter que lembrar)
+// Decide para qual login mandar
 function inferLoginPage() {
+  // se já estiver numa tela de login, não tenta inferir nada
+  if (isOnLoginPage()) return 'login-aluno.html';
+
   const path = String(window.location.pathname || '').toLowerCase();
 
   // Se a URL/página contém "professor", assume ambiente professor
   if (path.includes('professor')) return 'login-professor.html';
 
   // Se a sessão atual for professor, manda pro professor
-  const u = getUser();
-  const r = normRole(u?.role);
+  const r = getRoleUpper();
   if (r === 'PROFESSOR' || r === 'TEACHER') return 'login-professor.html';
 
   // default: aluno
@@ -159,7 +189,7 @@ export async function authFetch(url, options = {}, cfg = {}) {
   const isFormData =
     typeof FormData !== 'undefined' && options.body instanceof FormData;
 
-  // evita duplicar Content-Type por casing diferente (ex.: content-type)
+  // evita duplicar Content-Type por casing diferente
   if (hasBody && !isFormData && !hasHeader(headers, 'content-type')) {
     headers['Content-Type'] = 'application/json';
   }
@@ -169,12 +199,10 @@ export async function authFetch(url, options = {}, cfg = {}) {
   const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401 || res.status === 403) {
-    // se acabou de dar logout, não exibe toast e não tenta "re-loginar" em loop
     const justLoggedOut = sessionStorage.getItem('mk_just_logged_out') === '1';
 
-    clearAuth();
+    clearAuth(); // mantém o flag por padrão
 
-    // se já estamos numa página de login, não redireciona de novo
     if (!isOnLoginPage()) {
       const redirectTo = cfg.redirectTo || inferLoginPage();
 
@@ -200,7 +228,7 @@ export async function authFetch(url, options = {}, cfg = {}) {
 export async function readErrorMessage(res, fallback) {
   let msg = fallback || `HTTP ${res.status}`;
 
-  // tenta JSON via clone (não consome o body do res principal)
+  // tenta JSON via clone
   try {
     const data = await res.clone().json();
     const m = data?.message ?? data?.error;
