@@ -56,7 +56,7 @@ function goAfterVerify(user) {
     return;
   }
   // caso já esteja ok
-  window.location.replace('painel-professor.html');
+  window.location.replace('professor-salas.html');
 }
 
 (async function init() {
