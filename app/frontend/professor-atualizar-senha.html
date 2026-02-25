@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Definir nova senha • Mestre Kira</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="icon" href="logo1.png" type="image/png">
+  </head>
+  
+  <body>
+    <main class="container" style="max-width: 520px; margin: 0 auto; padding: 24px;">
+      <h1>Definir nova senha</h1>
+      <p style="opacity:.85; margin-top:8px;">
+        Por segurança, no primeiro acesso você precisa criar uma nova senha.
+      </p>
+
+      <section style="margin-top: 18px;">
+        <label for="pass1">Nova senha</label>
+        <input id="pass1" type="password" placeholder="mínimo 8 caracteres" autocomplete="new-password" />
+
+        <label for="pass2" style="margin-top: 10px;">Confirmar nova senha</label>
+        <input id="pass2" type="password" placeholder="repita a senha" autocomplete="new-password" />
+
+        <button id="btnSave" type="button" style="margin-top: 12px;">Salvar</button>
+      </section>
+
+      <p id="status" style="margin-top: 14px; opacity:.85;"></p>
+
+      <div style="margin-top: 20px;">
+        <a href="professor-escola-verificar.html">Voltar</a>
+      </div>
+    </main>
+
+    <script type="module" src="js/professor-atualizar-senha.js"></script>
+  </body>
+</html>
