@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Professor da Escola • Mestre Kira</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="icon" href="logo1.png" type="image/png">
+  </head>
+  
+  <body>
+    <main class="container" style="max-width: 520px; margin: 0 auto; padding: 24px;">
+      <h1>Professor cadastrado pela escola</h1>
+      <p style="opacity:.85; margin-top:8px;">
+        Informe seu e-mail para receber um código. Depois, digite o código para entrar.
+      </p>
+
+      <section style="margin-top: 18px;">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" placeholder="seuemail@escola.com" autocomplete="email" />
+        <button id="btnSend" type="button" style="margin-top: 10px;">Enviar código</button>
+      </section>
+
+      <hr style="margin: 18px 0; opacity:.25;" />
+
+      <section>
+        <label for="code">Código</label>
+        <input id="code" type="text" placeholder="Ex.: A1B2C3" autocomplete="one-time-code" />
+        <button id="btnVerify" type="button" style="margin-top: 10px;">Verificar e entrar</button>
+      </section>
+
+      <p id="status" style="margin-top: 14px; opacity:.85;"></p>
+
+      <div style="margin-top: 20px;">
+        <a href="login-professor.html">Voltar para login do professor</a>
+      </div>
+    </main>
+
+    <script type="module" src="./professor-escola-verificar.js"></script>
+  </body>
+</html>
