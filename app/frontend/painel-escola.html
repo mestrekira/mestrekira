@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Painel da Escola • Mestre Kira</title>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="icon" href="logo1.png" type="image/png">
+</head>
+<body>
+  <main class="container">
+    <h1>Painel da Escola</h1>
+
+    <section class="card">
+      <h2>Criar convite de professor</h2>
+      <input id="inviteEmail" type="email" placeholder="email do professor"/>
+      <button id="btnInvite">Gerar convite</button>
+      <pre id="inviteOut" class="muted"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Cadastrar sala (1 por professor)</h2>
+      <input id="roomName" placeholder="nome da sala"/>
+      <input id="teacherEmail" type="email" placeholder="email do professor (gerenciado)"/>
+      <button id="btnCreateRoom">Salvar</button>
+      <p id="roomStatus" class="muted"></p>
+    </section>
+
+    <section class="card">
+      <h2>Salas</h2>
+      <button id="btnRefresh">Atualizar</button>
+      <div id="roomsList"></div>
+    </section>
+
+    <p id="status" class="muted"></p>
+  </main>
+
+  <script type="module" src="js/painel-escola.js"></script>
+</body>
+</html>
