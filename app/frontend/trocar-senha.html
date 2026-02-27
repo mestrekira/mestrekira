@@ -1,44 +1,28 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Trocar senha • Mestre Kira</title>
-  <link rel="stylesheet" href="css/base.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trocar senha</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
-  
 <body>
- <main class="container" style="max-width:520px; margin:40px auto; padding:16px;">
-    <h1 style="margin:0 0 8px 0;">Trocar senha</h1>
-    <p style="margin:0 0 18px 0; color:#475569;">
-      Por segurança, é necessário definir uma nova senha no primeiro acesso.
-    </p>
 
-    <div id="status" style="min-height:18px; margin:0 0 10px 0; color:#475569;"></div>
+  <h2>Primeiro acesso — Troque sua senha</h2>
 
-    <div class="card" style="padding:16px; border:1px solid rgba(15,23,42,.12); border-radius:14px; background:#fff;">
-      <label for="newPassword" style="display:block; margin-bottom:6px;">Nova senha</label>
-      <input id="newPassword" type="password" autocomplete="new-password" style="width:100%; padding:10px; border-radius:10px; border:1px solid rgba(15,23,42,.18);" />
+  <section>
+    <p>Por segurança, você precisa definir uma nova senha antes de acessar o painel.</p>
 
-      <div style="height:12px;"></div>
+    <input type="password" id="newPassword" placeholder="Nova senha (mín. 8 caracteres)" />
+    <input type="password" id="confirmPassword" placeholder="Confirmar nova senha" />
+    <button id="saveBtn">Salvar e continuar</button>
 
-      <label for="confirmPassword" style="display:block; margin-bottom:6px;">Confirmar nova senha</label>
-      <input id="confirmPassword" type="password" autocomplete="new-password" style="width:100%; padding:10px; border-radius:10px; border:1px solid rgba(15,23,42,.18);" />
+    <p id="status"></p>
+  </section>
 
-      <div style="height:16px;"></div>
-
-      <button id="btnSave" style="width:100%; padding:10px 14px; border-radius:12px; border:none; background:#8113eb; color:#fff; font-weight:800; cursor:pointer;">
-        Salvar senha
-      </button>
-
-      <div style="height:10px;"></div>
-
-      <button id="btnLogout" style="width:100%; padding:10px 14px; border-radius:12px; border:1px solid rgba(15,23,42,.18); background:#fff; font-weight:700; cursor:pointer;">
-        Sair
-      </button>
-    </div>
-  </main>
   <script type="module" src="js/trocar-senha.js"></script>
+  <script src="js/footer.js"></script>
 </body>
 </html>
