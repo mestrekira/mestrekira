@@ -8,7 +8,7 @@ const LS = {
   studentId: 'studentId',
   professorId: 'professorId',
 
-  // legados (se existirem no seu projeto)
+  // legados (se existirem)
   professorName: 'professorName',
   professorEmail: 'professorEmail',
 };
@@ -22,13 +22,13 @@ function show(el, value) {
   el.style.display = value ? 'inline-block' : 'none';
 }
 
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
+function setStatus(msg) {
+  const el = document.getElementById('status');
+  if (el) el.textContent = String(msg || '');
 }
 
-function getEmail() {
-  const emailEl = document.getElementById('email');
-  return (emailEl?.value || '').trim().toLowerCase();
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
 }
 
 function notify(type, title, message, duration) {
@@ -54,7 +54,6 @@ function clearAuthStorage() {
   localStorage.removeItem(LS.studentId);
   localStorage.removeItem(LS.professorId);
 
-  // legados (se existirem)
   localStorage.removeItem(LS.professorName);
   localStorage.removeItem(LS.professorEmail);
 }
@@ -76,15 +75,23 @@ async function readJsonSafe(res) {
   }
 }
 
+function getLoginEmail() {
+  const el = document.getElementById('emailLogin');
+  return (el?.value || '').trim().toLowerCase();
+}
+
+function getRegisterEmail() {
+  const el = document.getElementById('emailRegister');
+  return (el?.value || '').trim().toLowerCase();
+}
+
 /**
- * Busca o perfil pelo /users/:id para ler mustChangePassword e dados atualizados.
+ * Busca perfil /users/:id para ler mustChangePassword (e outros campos).
  */
 async function fetchMe(userId, token) {
   const res = await fetch(`${API_URL}/users/${encodeURIComponent(String(userId))}`, {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${String(token)}`,
-    },
+    headers: { Authorization: `Bearer ${String(token)}` },
   });
 
   const data = await readJsonSafe(res);
@@ -95,15 +102,28 @@ async function fetchMe(userId, token) {
   return data;
 }
 
+function redirectAfterLogin(userObj) {
+  if (userObj?.mustChangePassword) {
+    window.location.replace('trocar-senha.html');
+  } else {
+    window.location.replace('professor-salas.html');
+  }
+}
+
+/**
+ * LOGIN (professor individual OU professor via escola)
+ * POST /auth/login
+ */
 async function fazerLogin() {
-  const passEl = document.getElementById('password');
+  const email = getLoginEmail();
+  const passEl = document.getElementById('passwordLogin');
+  const password = passEl?.value || '';
+
   const loginBtn = document.getElementById('loginBtn');
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
 
-  const email = getEmail();
-  const password = passEl?.value || '';
-
   show(resendVerifyBtn, false);
+  setStatus('');
 
   if (!email || !password) {
     notify('warn', 'Campos obrigatórios', 'Preencha e-mail e senha.');
@@ -127,7 +147,6 @@ async function fazerLogin() {
       return;
     }
 
-    // Seu backend às vezes retorna { error } mesmo com 200
     if (!res.ok || !data?.ok || !data?.token || !data?.user) {
       const msg = data?.message || data?.error || 'Usuário ou senha inválidos.';
 
@@ -136,20 +155,23 @@ async function fazerLogin() {
         notify(
           'warn',
           'E-mail não confirmado',
-          'Confirme seu e-mail para acessar. Se precisar, clique em “Reenviar verificação”.',
+          'Confirme seu e-mail para acessar. Se precisar, clique em “Reenviar link de verificação”.',
         );
+        setStatus('E-mail não confirmado. Reenvie o link se necessário.');
       } else {
         notify('error', 'Não foi possível entrar', msg);
+        setStatus(msg);
       }
       return;
     }
 
-    const role = normRole(data.user.role);
+    const role = normRole(data?.user?.role);
 
-    // ✅ Aqui entra professor INDIVIDUAL e professor via ESCOLA (ambos são role=professor)
+    // ✅ professor individual e professor de escola são role=professor
     if (role !== 'PROFESSOR' && role !== 'TEACHER') {
       clearAuthStorage();
       notify('error', 'Acesso negado', 'Este acesso é apenas para professores.');
+      setStatus('Acesso negado.');
       return;
     }
 
@@ -157,70 +179,67 @@ async function fazerLogin() {
     if (!userId) {
       clearAuthStorage();
       notify('error', 'Erro', 'Login ok, mas o servidor não retornou o ID do professor.');
+      setStatus('Erro: servidor não retornou o ID.');
       return;
     }
 
     // evita conflito de papéis
     localStorage.removeItem(LS.studentId);
 
-    // grava auth (rápido)
+    // grava auth
     localStorage.setItem(LS.token, String(data.token));
     localStorage.setItem(LS.user, JSON.stringify(data.user));
     localStorage.setItem(LS.professorId, String(userId));
 
-    // ✅ Agora confirma mustChangePassword no /users/:id
+    // busca perfil completo (mustChangePassword etc.)
     let me = null;
     try {
       me = await fetchMe(userId, data.token);
     } catch (e) {
-      // Se falhar, ainda deixa logado, mas avisa e segue para o painel
       notify(
         'warn',
         'Login realizado',
-        'Entrou, mas não foi possível carregar seu perfil completo. Tente novamente se algo estiver estranho.',
+        'Entrou, mas não foi possível carregar seu perfil completo. Se algo estiver estranho, recarregue a página.',
         2600,
       );
-      window.location.replace('professor-salas.html');
+      redirectAfterLogin(data.user);
       return;
     }
 
-    // Se por algum motivo o /users/:id vier com role diferente, bloqueia
     const meRole = normRole(me?.role);
     if (meRole && meRole !== 'PROFESSOR' && meRole !== 'TEACHER') {
       clearAuthStorage();
       notify('error', 'Acesso negado', 'Este acesso é apenas para professores.');
+      setStatus('Acesso negado.');
       return;
     }
 
-    // Atualiza user com dados mais completos (emailVerified, mustChangePassword, etc.)
-    // Mantém seu padrão de persistir `user` no LS
-    const mergedUser = {
-      ...(data.user || {}),
-      ...(me || {}),
-    };
+    // atualiza user no storage com dados completos
+    const mergedUser = { ...(data.user || {}), ...(me || {}) };
     localStorage.setItem(LS.user, JSON.stringify(mergedUser));
 
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
+    setStatus('');
 
-    if (mergedUser?.mustChangePassword) {
-      window.location.replace('trocar-senha.html');
-      return;
-    }
-
-    window.location.replace('professor-salas.html');
+    redirectAfterLogin(mergedUser);
   } catch {
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    setStatus('Erro de conexão.');
   } finally {
     disable(loginBtn, false);
   }
 }
 
+/**
+ * REENVIAR VERIFICAÇÃO
+ * POST /auth/request-verify
+ */
 async function reenviarVerificacao() {
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
-  const email = getEmail();
+  const email = getLoginEmail();
 
   if (!email) {
-    notify('warn', 'Digite seu e-mail', 'Informe seu e-mail para reenviar o link.');
+    notify('warn', 'Digite seu e-mail', 'Informe seu e-mail de login para reenviar o link.');
     return;
   }
 
@@ -247,6 +266,7 @@ async function reenviarVerificacao() {
 
     notify('success', 'Link enviado', 'Verifique a caixa de entrada e o Spam.');
     show(resendVerifyBtn, false);
+    setStatus('Link de verificação reenviado.');
   } catch {
     notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
   } finally {
@@ -254,37 +274,112 @@ async function reenviarVerificacao() {
   }
 }
 
+/**
+ * CADASTRO PROFESSOR INDIVIDUAL
+ * POST /users/professor
+ */
+async function cadastrarProfessor() {
+  const nameEl = document.getElementById('nameRegister');
+  const emailEl = document.getElementById('emailRegister');
+  const passEl = document.getElementById('passwordRegister');
+  const registerBtn = document.getElementById('registerBtn');
+
+  const name = String(nameEl?.value || '').trim();
+  const email = String(emailEl?.value || '').trim().toLowerCase();
+  const password = String(passEl?.value || '');
+
+  setStatus('');
+
+  if (!name || !email || !password) {
+    notify('warn', 'Campos obrigatórios', 'Preencha nome, e-mail e senha.');
+    return;
+  }
+  if (!email.includes('@')) {
+    notify('warn', 'E-mail inválido', 'Informe um e-mail válido.');
+    return;
+  }
+  if (password.length < 8) {
+    notify('warn', 'Senha fraca', 'A senha deve ter no mínimo 8 caracteres.');
+    return;
+  }
+
+  disable(registerBtn, true);
+  notify('info', 'Cadastrando...', 'Criando sua conta...', 1800);
+
+  try {
+    const res = await fetch(`${API_URL}/users/professor`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    const data = await readJsonSafe(res);
+
+    if (!res.ok || !data?.ok) {
+      const msg = data?.message || data?.error || 'Não foi possível criar o cadastro.';
+      notify('error', 'Erro no cadastro', msg);
+      setStatus(msg);
+      return;
+    }
+
+    notify(
+      'success',
+      'Cadastro criado',
+      data?.message || 'Cadastro criado. Confirme seu e-mail para acessar.',
+      3000,
+    );
+
+    setStatus('Cadastro criado. Agora confirme o e-mail e faça login.');
+    // opcional: já preenche o login
+    const emailLogin = document.getElementById('emailLogin');
+    if (emailLogin) emailLogin.value = email;
+  } catch {
+    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    setStatus('Erro de conexão.');
+  } finally {
+    disable(registerBtn, false);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('loginBtn');
-  const pass = document.getElementById('password');
+  const loginBtn = document.getElementById('loginBtn');
+  const passLogin = document.getElementById('passwordLogin');
   const resendVerifyBtn = document.getElementById('resendVerifyBtn');
+
+  const registerBtn = document.getElementById('registerBtn');
+  const passRegister = document.getElementById('passwordRegister');
 
   if (justLoggedOutGuard()) return;
 
+  // Auto redirect se já logado como professor
   const token = localStorage.getItem(LS.token);
   const user = safeJsonParse(localStorage.getItem(LS.user));
   const role = normRole(user?.role);
 
-  // Se já está logado como professor, manda para o painel (ou trocar senha)
   if (token && (role === 'PROFESSOR' || role === 'TEACHER')) {
-    if (user?.mustChangePassword) {
-      window.location.replace('trocar-senha.html');
-    } else {
-      window.location.replace('professor-salas.html');
-    }
+    redirectAfterLogin(user);
     return;
   }
 
-  if (btn) btn.addEventListener('click', fazerLogin);
-
-  if (pass) {
-    pass.addEventListener('keydown', (e) => {
+  // login
+  if (loginBtn) loginBtn.addEventListener('click', fazerLogin);
+  if (passLogin) {
+    passLogin.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') fazerLogin();
     });
   }
 
+  // resend verify
   if (resendVerifyBtn) {
     resendVerifyBtn.addEventListener('click', reenviarVerificacao);
     show(resendVerifyBtn, false);
+  }
+
+  // register
+  if (registerBtn) registerBtn.addEventListener('click', cadastrarProfessor);
+  if (passRegister) {
+    passRegister.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') cadastrarProfessor();
+    });
   }
 });
