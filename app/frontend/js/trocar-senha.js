@@ -1,164 +1,137 @@
 // trocar-senha.js
 import { API_URL } from './config.js';
+import { toast } from './ui-feedback.js';
 
-const $ = (id) => document.getElementById(id);
+const LS = {
+  token: 'token',
+  user: 'user',
+  professorId: 'professorId',
+  studentId: 'studentId',
+};
 
-function notify(type, title, message) {
-  if (typeof window.notify === 'function') return window.notify(type, title, message);
-
-  const prefix =
-    type === 'success' ? '✅ ' :
-    type === 'error' ? '❌ ' :
-    type === 'warn' ? '⚠️ ' : 'ℹ️ ';
-  alert(`${prefix}${title}\n\n${message}`);
+function notify(type, title, message, duration) {
+  toast({
+    type,
+    title,
+    message,
+    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+  });
 }
 
 function setStatus(msg) {
-  const el = $('status');
-  if (el) el.textContent = msg || '';
+  const el = document.getElementById('status');
+  if (el) el.textContent = String(msg || '');
 }
 
-function setBusy(isBusy) {
-  const btn = $('btnSave');
-  if (btn) {
-    btn.disabled = !!isBusy;
-    btn.textContent = isBusy ? 'Salvando...' : 'Salvar senha';
-  }
+function disable(btn, value) {
+  if (btn) btn.disabled = !!value;
 }
 
-async function api(path, { method = 'GET', token, body } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
+function safeJsonParse(s) {
+  try { return s ? JSON.parse(s) : null; } catch { return null; }
+}
 
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
+}
 
-  const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+async function readJsonSafe(res) {
+  try { return await res.json(); } catch { return null; }
+}
 
-  if (!res.ok) {
-    const msg =
-      (data && (data.message || data.error)) ||
-      text ||
-      `Erro HTTP ${res.status}`;
-    throw new Error(String(msg));
+function ensureProfessorSession() {
+  const token = localStorage.getItem(LS.token);
+  const user = safeJsonParse(localStorage.getItem(LS.user));
+  const professorId = localStorage.getItem(LS.professorId);
+
+  const role = normRole(user?.role);
+  if (!token || !professorId || (role !== 'PROFESSOR' && role !== 'TEACHER')) {
+    notify('warn', 'Sessão inválida', 'Faça login novamente.');
+    window.location.replace('login-professor.html');
+    return null;
   }
 
-  return data;
+  // evita conflito de papel
+  localStorage.removeItem(LS.studentId);
+
+  return { token, professorId, user };
 }
 
-function getSession() {
-  const token = String(localStorage.getItem('token') || '').trim();
-  const userId = String(localStorage.getItem('userId') || '').trim();
-  const role = String(localStorage.getItem('role') || '').trim().toLowerCase();
-  return { token, userId, role };
-}
+async function salvarNovaSenha() {
+  const sess = ensureProfessorSession();
+  if (!sess) return;
 
-function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('userId');
-  localStorage.removeItem('role');
-  // volta pro login do professor
-  window.location.href = 'login-professor.html';
-}
+  const newPassEl = document.getElementById('newPassword');
+  const confirmEl = document.getElementById('confirmPassword');
+  const saveBtn = document.getElementById('saveBtn');
 
-async function bootstrap() {
-  const { token, userId, role } = getSession();
+  const p1 = String(newPassEl?.value || '');
+  const p2 = String(confirmEl?.value || '');
 
-  if (!token || !userId) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente.');
-    window.location.href = 'login-professor.html';
-    return;
-  }
-
-  // opcional: confirma role/professor
-  try {
-    const me = await api(`/users/${encodeURIComponent(userId)}`, { token });
-    const meRole = String(me?.role || role || '').toLowerCase();
-
-    if (meRole !== 'professor') {
-      notify('error', 'Acesso negado', 'Esta área é exclusiva para professores.');
-      logout();
-      return;
-    }
-
-    // Se já não precisa trocar, manda pro painel
-    if (!me?.mustChangePassword) {
-      window.location.href = 'professor-salas.html';
-      return;
-    }
-  } catch (e) {
-    notify('error', 'Erro', String(e?.message || e));
-    logout();
-  }
-}
-
-async function savePassword() {
-  const { token, userId } = getSession();
-
-  if (!token || !userId) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente.');
-    window.location.href = 'login-professor.html';
-    return;
-  }
-
-  const p1 = String($('newPassword')?.value || '');
-  const p2 = String($('confirmPassword')?.value || '');
+  setStatus('');
 
   if (!p1 || !p2) {
     notify('warn', 'Campos obrigatórios', 'Preencha a nova senha e a confirmação.');
     return;
   }
-
   if (p1.length < 8) {
     notify('warn', 'Senha fraca', 'A senha deve ter no mínimo 8 caracteres.');
     return;
   }
-
   if (p1 !== p2) {
-    notify('warn', 'Senhas diferentes', 'A confirmação não confere.');
+    notify('warn', 'Confirmação', 'As senhas não coincidem.');
     return;
   }
 
-  setBusy(true);
-  setStatus('Atualizando senha...');
+  disable(saveBtn, true);
+  notify('info', 'Salvando...', 'Atualizando sua senha...', 1800);
+
   try {
-    // Seu UsersController já tem PATCH /users/:id com { password }
-    await api(`/users/${encodeURIComponent(userId)}`, {
+    const res = await fetch(`${API_URL}/users/${encodeURIComponent(sess.professorId)}`, {
       method: 'PATCH',
-      token,
-      body: { password: p1 },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sess.token}`,
+      },
+      body: JSON.stringify({ password: p1 }),
     });
 
-    notify('success', 'Senha atualizada', 'Senha definida com sucesso.');
+    const data = await readJsonSafe(res);
 
-    // Após trocar, manda pro painel do professor
-    window.location.href = 'professor-salas.html';
-  } catch (e) {
-    notify('error', 'Erro ao salvar', String(e?.message || e));
-    setStatus('');
+    if (!res.ok || !data?.ok) {
+      const msg = data?.message || data?.error || 'Não foi possível atualizar a senha.';
+      notify('error', 'Erro', msg);
+      setStatus(msg);
+      return;
+    }
+
+    // atualiza user no storage: mustChangePassword deve virar false (se backend setar)
+    // se seu backend não retorna o user atualizado, seguimos mesmo assim.
+    const user = safeJsonParse(localStorage.getItem(LS.user)) || {};
+    const merged = { ...user, mustChangePassword: false };
+    localStorage.setItem(LS.user, JSON.stringify(merged));
+
+    notify('success', 'Tudo certo', 'Senha atualizada. Vamos continuar!', 1200);
+    window.location.replace('professor-salas.html');
+  } catch {
+    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    setStatus('Erro de conexão.');
   } finally {
-    setBusy(false);
+    disable(saveBtn, false);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  bootstrap();
+  const sess = ensureProfessorSession();
+  if (!sess) return;
 
-  const btnSave = $('btnSave');
-  const btnLogout = $('btnLogout');
+  const saveBtn = document.getElementById('saveBtn');
+  const confirmEl = document.getElementById('confirmPassword');
 
-  if (btnSave) btnSave.addEventListener('click', savePassword);
-  if (btnLogout) btnLogout.addEventListener('click', logout);
-
-  const confirmEl = $('confirmPassword');
+  if (saveBtn) saveBtn.addEventListener('click', salvarNovaSenha);
   if (confirmEl) {
     confirmEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') savePassword();
+      if (e.key === 'Enter') salvarNovaSenha();
     });
   }
 });
