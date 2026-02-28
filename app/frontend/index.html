@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mestre Kira — Plataforma</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="icon" href="logo1.png" type="image/png">
@@ -16,7 +16,12 @@
 <section>
   <h3>Professor(a)</h3>
   <p>Crie salas, proponha tarefas e corrija redações.</p>
+
   <button id="goProfessorBtn">Entrar / Cadastrar como Professor(a)</button>
+
+  <div style="margin-top:10px;">
+    <button id="goSchoolSignupBtn">Cadastrar Escola</button>
+  </div>
 </section>
 
 <hr>
@@ -27,12 +32,16 @@
 
   <button id="goStudentLoginBtn">Entrar com e-mail e senha</button>
   <button id="goStudentSignupBtn">Criar conta (primeiro acesso)</button>
+
+  <div style="margin-top:10px;">
+    <button id="goStudentCodeBtn">Entrar em uma sala com código</button>
+  </div>
 </section>
 
 <p id="status"></p>
 
 <script type="module" src="js/login.js"></script>
 <script src="js/footer.js"></script>
-  
+
 </body>
 </html>
