@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Painel da Escola • Mestre Kira</title>
   <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/ui-feedback.css"/>
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
 <body>
@@ -12,29 +13,56 @@
     <h1>Painel da Escola</h1>
 
     <section class="card">
-      <h2>Criar convite de professor</h2>
-      <input id="inviteEmail" type="email" placeholder="email do professor"/>
-      <button id="btnInvite">Gerar convite</button>
-      <pre id="inviteOut" class="muted"></pre>
+      <h3>Perfil</h3>
+      <p><b>Escola:</b> <span id="schoolName">—</span></p>
+      <p><b>E-mail:</b> <span id="schoolEmail">—</span></p>
+
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="btnRefresh">Atualizar</button>
+        <button id="btnLogout">Sair</button>
+      </div>
+
+      <p id="status" class="muted"></p>
     </section>
 
     <section class="card">
-      <h2>Cadastrar sala (1 por professor)</h2>
-      <input id="roomName" placeholder="nome da sala"/>
-      <input id="teacherEmail" type="email" placeholder="email do professor (gerenciado)"/>
-      <button id="btnCreateRoom">Salvar</button>
-      <p id="roomStatus" class="muted"></p>
+      <h3>Cadastrar sala</h3>
+      <p class="muted">Regra: a escola só pode cadastrar <b>uma sala para cada professor</b>.</p>
+
+      <label>Nome da sala</label>
+      <input id="roomName" type="text" placeholder="Ex.: 3º Ano A"/>
+
+      <label>E-mail do professor</label>
+      <input id="teacherEmail" type="email" placeholder="professor@escola.com"/>
+
+      <button id="btnCreateRoom">Criar sala</button>
     </section>
 
     <section class="card">
-      <h2>Salas</h2>
-      <button id="btnRefresh">Atualizar</button>
-      <div id="roomsList"></div>
-    </section>
+      <h3>Salas cadastradas</h3>
 
-    <p id="status" class="muted"></p>
+      <div style="overflow:auto;">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Sala</th>
+              <th>Professor</th>
+              <th style="text-align:right;">Média geral</th>
+            </tr>
+          </thead>
+          <tbody id="roomsTbody">
+            <tr><td colspan="3">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="muted" style="margin-top:10px;">
+        A “Média geral” usa apenas redações <b>corrigidas</b> (nota preenchida).
+      </p>
+    </section>
   </main>
 
   <script type="module" src="js/painel-escola.js"></script>
+  <script src="js/footer.js"></script>
 </body>
 </html>
