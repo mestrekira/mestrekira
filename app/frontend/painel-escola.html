@@ -1,68 +1,123 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Painel da Escola • Mestre Kira</title>
-  <link rel="stylesheet" href="css/base.css"/>
-  <link rel="stylesheet" href="css/ui-feedback.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel da Escola</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="icon" href="logo1.png" type="image/png">
+
+  <style>
+    .mk-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; padding: 14px; background: #fff; }
+    .mk-muted { opacity: .85; }
+    .mk-row { display: flex; gap: 12px; align-items: flex-start; }
+    .mk-col { display: flex; flex-direction: column; gap: 8px; }
+    .mk-space { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+    .mk-task-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .mk-task-btn { width: 100%; text-align: left; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.10); background: #fff; cursor: pointer; }
+    .mk-task-btn:hover { background: rgba(0,0,0,0.02); }
+    .mk-task-btn strong { display:block; }
+    .mk-task-btn small { opacity: .8; }
+
+    .mk-task-panel { margin-top: 12px; }
+    .mk-task-panel-head { display:flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    .mk-student-item { display: flex; align-items: stretch; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; background: #fff; }
+    .mk-student-left { display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 200px; }
+    .mk-student-info { flex: 1; }
+    .mk-student-actions { display:flex; flex-direction: column; gap: 8px; justify-content: center; }
+
+    .mk-chart-wrap { display: flex; align-items: center; gap: 14px; min-width: 360px; justify-content: flex-end; }
+    .mk-donut { width: 120px; height: 120px; flex: 0 0 auto; }
+    .mk-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; align-content: start; min-width: 210px; }
+    .mk-legend-item { display:flex; align-items:center; gap:8px; font-size: 14px; }
+    .mk-dot { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; border: 1px solid rgba(0,0,0,0.10); }
+
+    .mk-inline-panel { margin-top: 10px; padding: 12px; border: 1px solid rgba(0,0,0,0.10); border-radius: 14px; background: #fff; }
+    .mk-inline-head { display:flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  </style>
 </head>
+
 <body>
-  <main class="container">
-    <h1>Painel da Escola</h1>
 
-    <section class="card">
-      <h3>Perfil</h3>
-      <p><b>Escola:</b> <span id="schoolName">—</span></p>
-      <p><b>E-mail:</b> <span id="schoolEmail">—</span></p>
+<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
-      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button id="btnRefresh">Atualizar</button>
-        <button id="btnLogout">Sair</button>
+<aside id="menuPanel" class="menu-panel">
+  <div class="menu-header">
+    <strong>Meu perfil</strong>
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+  </div>
+
+  <div class="menu-body">
+    <div class="menu-photo">
+      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+      <div class="menu-photo-actions">
+        <label class="menu-photo-label" title="Alterar foto do perfil">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
+        <a href="suporte.html" class="menu-photo-support" title="Abrir página de suporte">Suporte</a>
       </div>
+    </div>
+    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
-      <p id="status" class="muted"></p>
-    </section>
+    <hr>
 
-    <section class="card">
-      <h3>Cadastrar sala</h3>
-      <p class="muted">Regra: a escola só pode cadastrar <b>uma sala para cada professor</b>.</p>
+    <h4>Atualizar dados</h4>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+    <button id="saveProfileBtn">Salvar</button>
 
-      <label>Nome da sala</label>
-      <input id="roomName" type="text" placeholder="Ex.: 3º Ano A"/>
+    <p id="menuStatus"></p>
 
-      <label>E-mail do professor</label>
-      <input id="teacherEmail" type="email" placeholder="professor@escola.com"/>
+    <hr>
 
-      <button id="btnCreateRoom">Criar sala</button>
-    </section>
+    <button id="logoutMenuBtn">Sair</button>
+    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+  </div>
+</aside>
 
-    <section class="card">
-      <h3>Salas cadastradas</h3>
+<h2>Painel da Escola</h2>
 
-      <div style="overflow:auto;">
-        <table class="tabela">
-          <thead>
-            <tr>
-              <th>Sala</th>
-              <th>Professor</th>
-              <th style="text-align:right;">Média geral</th>
-            </tr>
-          </thead>
-          <tbody id="roomsTbody">
-            <tr><td colspan="3">Carregando...</td></tr>
-          </tbody>
-        </table>
-      </div>
+<p><strong>Escola:</strong> <span id="schoolName">Escola</span></p>
 
-      <p class="muted" style="margin-top:10px;">
-        A “Média geral” usa apenas redações <b>corrigidas</b> (nota preenchida).
-      </p>
-    </section>
-  </main>
+<hr>
 
-  <script type="module" src="js/painel-escola.js"></script>
-  <script src="js/footer.js"></script>
+<section class="mk-card">
+  <h3>Desempenho da Sala</h3>
+  <div class="mk-row" style="gap: 20px;">
+    <div class="mk-col">
+      <strong>Média geral da sala</strong>
+      <div id="roomAvgDonut" class="mk-donut"></div>
+      <div id="roomAvgLegend" class="mk-legend"></div>
+    </div>
+    <div class="mk-col">
+      <strong>Competências da redação</strong>
+      <ul>
+        <li>C1 — Domínio da norma culta: <span id="avgC1">—</span></li>
+        <li>C2 — Compreensão do tema e repertório: <span id="avgC2">—</span></li>
+        <li>C3 — Argumentação e projeto de texto: <span id="avgC3">—</span></li>
+        <li>C4 — Coesão e mecanismos linguísticos: <span id="avgC4">—</span></li>
+        <li>C5 — Proposta de intervenção: <span id="avgC5">—</span></li>
+        <li>Média total: <strong id="avgTotal">—</strong></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<section class="mk-card">
+  <h3>Tarefas da sala</h3>
+  <div id="tasksList" class="mk-task-list"></div>
+</section>
+
+<script type="module" src="js/painel-escola.js"></script>
+<script src="js/footer.js"></script>
+
 </body>
 </html>
