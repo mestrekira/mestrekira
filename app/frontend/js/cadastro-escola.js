@@ -2,6 +2,23 @@
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
+const $ = (id) => document.getElementById(id);
+
+const nameEl = $('name');
+const emailEl = $('email');
+const passEl = $('password');
+
+const btnRegister = $('btnRegister');
+const statusEl = $('status');
+
+function setStatus(msg) {
+  if (statusEl) statusEl.textContent = String(msg || '');
+}
+
+function disable(btn, v) {
+  if (btn) btn.disabled = !!v;
+}
+
 function notify(type, title, message, duration) {
   toast({
     type,
@@ -11,57 +28,40 @@ function notify(type, title, message, duration) {
   });
 }
 
-function setStatus(msg) {
-  const el = document.getElementById('status');
-  if (el) el.textContent = String(msg || '');
-}
-
-function disable(btn, value) {
-  if (btn) btn.disabled = !!value;
-}
-
 async function readJsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
+  try { return await res.json(); } catch { return null; }
 }
 
-function getValue(id) {
-  const el = document.getElementById(id);
-  return (el?.value || '').trim();
+function normEmail(v) {
+  return String(v || '').trim().toLowerCase();
 }
 
 async function cadastrarEscola() {
-  const btn = document.getElementById('registerBtn');
-
-  const name = getValue('name');
-  const email = getValue('email').toLowerCase();
-  const password = getValue('password');
+  const name = String(nameEl?.value || '').trim();
+  const email = normEmail(emailEl?.value);
+  const password = String(passEl?.value || '');
 
   setStatus('');
 
   if (!name || !email || !password) {
-    notify('warn', 'Campos obrigatórios', 'Preencha nome da escola, e-mail e senha.');
+    notify('warn', 'Campos obrigatórios', 'Preencha nome, e-mail e senha.');
     return;
   }
-
   if (!email.includes('@')) {
     notify('warn', 'E-mail inválido', 'Informe um e-mail válido.');
     return;
   }
-
   if (password.length < 8) {
     notify('warn', 'Senha fraca', 'A senha deve ter no mínimo 8 caracteres.');
     return;
   }
 
-  disable(btn, true);
+  disable(btnRegister, true);
   notify('info', 'Cadastrando...', 'Criando a conta da escola...', 1800);
 
   try {
-    const res = await fetch(`${API_URL}/auth/register-school`, {
+    // ✅ usa /users/school (compatível com seu UsersController atual)
+    const res = await fetch(`${API_URL}/users/school`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
@@ -69,7 +69,12 @@ async function cadastrarEscola() {
 
     const data = await readJsonSafe(res);
 
-    if (!res.ok || !data?.ok) {
+    if (!res.ok || !data) {
+      notify('error', 'Erro', 'Resposta inválida do servidor.');
+      return;
+    }
+
+    if (!data?.ok) {
       const msg = data?.message || data?.error || 'Não foi possível criar o cadastro.';
       notify('error', 'Erro no cadastro', msg);
       setStatus(msg);
@@ -78,34 +83,28 @@ async function cadastrarEscola() {
 
     notify(
       'success',
-      'Conta criada',
-      'Cadastro realizado! Agora confirme o e-mail para acessar.',
+      'Cadastro criado',
+      data?.message || 'Cadastro criado. Confirme seu e-mail para acessar.',
       3200,
     );
 
-    setStatus('Cadastro criado. Verifique seu e-mail (Inbox e Spam) para confirmar.');
+    setStatus('Cadastro criado. Agora confirme o e-mail e faça login como escola.');
+    // preenche e-mail no login (se quiser)
+    sessionStorage.setItem('mk_school_prefill_email', email);
 
-    // Opcional: após alguns segundos, volta para a home/login
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 1800);
+    // manda para login
+    window.location.href = 'login-escola.html';
   } catch {
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
     setStatus('Erro de conexão.');
   } finally {
-    disable(btn, false);
+    disable(btnRegister, false);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('registerBtn');
-  const pass = document.getElementById('password');
-
-  if (btn) btn.addEventListener('click', cadastrarEscola);
-
-  if (pass) {
-    pass.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') cadastrarEscola();
-    });
-  }
+  btnRegister?.addEventListener('click', cadastrarEscola);
+  passEl?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') cadastrarEscola();
+  });
 });
