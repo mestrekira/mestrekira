@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Professor(a)</title>
   <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
 <body>
@@ -15,12 +15,14 @@
 <section>
   <h3>Entrar</h3>
 
-  <input type="email" id="emailLogin" placeholder="E-mail" />
-  <input type="password" id="passwordLogin" placeholder="Senha" />
+  <input type="email" id="emailLogin" placeholder="E-mail" autocomplete="email" />
+  <input type="password" id="passwordLogin" placeholder="Senha" autocomplete="current-password" />
   <button id="loginBtn">Entrar</button>
-<div style="margin-top:10px;">
-  <a href="esqueci-senha.html">Esqueci minha senha</a>
-</div>
+
+  <div style="margin-top:10px;">
+    <a href="esqueci-senha.html">Esqueci minha senha</a>
+  </div>
+
   <!-- ✅ aparece só quando login falhar por e-mail não verificado -->
   <div style="margin-top: 10px;">
     <button id="resendVerifyBtn" style="display:none;">Reenviar link de verificação</button>
@@ -29,16 +31,16 @@
 
 <hr>
 
-  <a href="professor-escola-verificar.html">Professor cadastrado pela escola</a>
- 
-  <br>
+<a href="professor-escola-verificar.html">Professor cadastrado pela escola</a>
+
+<br>
 
 <section>
   <h3>Primeiro acesso — Cadastro</h3>
 
-  <input type="text" id="nameRegister" placeholder="Nome completo" />
-  <input type="email" id="emailRegister" placeholder="E-mail" />
-  <input type="password" id="passwordRegister" placeholder="Senha (mín. 8 caracteres)" />
+  <input type="text" id="nameRegister" placeholder="Nome completo" autocomplete="name" />
+  <input type="email" id="emailRegister" placeholder="E-mail" autocomplete="email" />
+  <input type="password" id="passwordRegister" placeholder="Senha (mín. 8 caracteres)" autocomplete="new-password" />
   <button id="registerBtn">Cadastrar</button>
 </section>
 
