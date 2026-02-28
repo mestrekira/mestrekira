@@ -1,45 +1,43 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Login Escola • Mestre Kira</title>
-
-  <link rel="stylesheet" href="css/base.css"/>
-  <link rel="stylesheet" href="css/ui-feedback.css"/>
+  <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Estudante</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
-
 <body>
-  <h2>Acesso — Escola</h2>
 
-  <section>
-    <h3>Entrar</h3>
+<h2>Login - Estudante</h2>
 
-    <input id="email" type="email" placeholder="E-mail" autocomplete="username"/>
-    <input id="password" type="password" placeholder="Senha" autocomplete="current-password"/>
+<section>
+  <input type="email" id="email" placeholder="E-mail" autocomplete="email" />
+  <input type="password" id="password" placeholder="Senha" autocomplete="current-password" />
+  <button id="loginBtn">Entrar</button>
+<div style="margin-top:10px;">
+  <a href="esqueci-senha.html">Esqueci minha senha</a>
+</div>
+ 
+  <div style="margin-top: 10px;">
+    <button id="resendVerifyBtn" style="display:none;">Reenviar link de verificação</button>
+  </div>
 
-    <button id="btnLogin">Entrar</button>
+  <p id="error"></p>
+</section>
 
-    <div style="margin-top:10px;">
-      <a href="esqueci-senha.html">Esqueci minha senha</a>
-    </div>
+<hr>
 
-    <div style="margin-top: 10px;">
-      <button id="resendVerifyBtn" style="display:none;">Reenviar link de verificação</button>
-    </div>
-  </section>
+<section>
+  <p>Primeiro acesso?</p>
+  <a href="cadastro-aluno.html">Criar conta</a>
+</section>
 
-  <hr>
+<script type="module" src="js/login-aluno.js"></script>
+<script src="js/footer.js"></script>
 
-  <section>
-    <p>Primeiro acesso?</p>
-    <a href="cadastro-escola.html">Criar cadastro de escola</a>
-  </section>
-
-  <p id="status"></p>
-
-  <script type="module" src="js/login-escola.js"></script>
-  <script src="js/footer.js"></script>
 </body>
 </html>
+
+
