@@ -1,10 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Login Escola • Mestre Kira</title>
-
   <link rel="stylesheet" href="css/base.css"/>
   <link rel="stylesheet" href="css/ui-feedback.css"/>
   <link rel="icon" href="logo1.png" type="image/png">
@@ -13,25 +12,22 @@
   <main class="container">
     <h1>Login da Escola</h1>
 
-    <label for="email">E-mail</label>
-    <input id="email" type="email" autocomplete="username" placeholder="E-mail da escola"/>
+    <label>E-mail</label>
+    <input id="email" type="email" autocomplete="username"/>
 
-    <label for="password">Senha</label>
-    <input id="password" type="password" autocomplete="current-password" placeholder="Senha"/>
+    <label>Senha</label>
+    <input id="password" type="password" autocomplete="current-password"/>
 
     <button id="btnLogin">Entrar</button>
 
-    <!-- ✅ aparece só quando login falhar por e-mail não verificado -->
-    <div style="margin-top: 10px;">
+    <div style="margin-top:10px;">
       <button id="resendVerifyBtn" style="display:none;">Reenviar link de verificação</button>
     </div>
 
     <p id="status" class="muted"></p>
 
     <div style="margin-top:10px;">
-      <a href="cadastro-escola.html">Criar conta da escola</a>
-      <span style="margin: 0 8px;">•</span>
-      <a href="index.html">Voltar</a>
+      <a href="cadastro-escola.html">Primeiro acesso → Cadastrar escola</a>
     </div>
   </main>
 
