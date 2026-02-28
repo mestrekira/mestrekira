@@ -1,50 +1,38 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!doctype html>
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro — Escola</title>
-
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/ui-feedback.css">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cadastro Escola • Mestre Kira</title>
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/ui-feedback.css"/>
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
 <body>
+  <main class="container">
+    <h1>Cadastro da Escola</h1>
 
-<h2>Cadastro — Escola</h2>
+    <section>
+      <label>Nome da escola</label>
+      <input id="name" type="text" autocomplete="organization"/>
 
-<p>Crie a conta da sua escola para gerenciar professores e salas.</p>
+      <label>E-mail</label>
+      <input id="email" type="email" autocomplete="username"/>
 
-<section>
-  <h3>Dados da escola</h3>
+      <label>Senha</label>
+      <input id="password" type="password" autocomplete="new-password" placeholder="mín. 8 caracteres"/>
 
-  <input type="text" id="name" placeholder="Nome da escola" autocomplete="organization" />
-  <input type="email" id="email" placeholder="E-mail" autocomplete="email" />
-  <input type="password" id="password" placeholder="Senha (mín. 8 caracteres)" autocomplete="new-password" />
+      <button id="btnRegister">Cadastrar</button>
 
-  <button id="registerBtn">Criar conta</button>
+      <p id="status" class="muted"></p>
 
-  <div style="margin-top:10px;">
-    <a href="index.html">Voltar</a>
-    <span style="margin: 0 8px;">•</span>
-    <a href="login-professor.html">Login de professor</a>
-  </div>
-</section>
+      <div style="margin-top:10px;">
+        <a href="login-escola.html">Já tenho conta → Entrar</a>
+      </div>
+    </section>
+  </main>
 
-<hr>
-
-<section>
-  <h3>Já tem conta?</h3>
-  <p>Use a página de login da escola (se você tiver uma separada) ou faça login pelo painel administrativo.</p>
-
-  <!-- Se você ainda não tem uma página de login escolar separada, deixe esse link só como "voltar" -->
-  <a href="index.html">Ir para a página inicial</a>
-</section>
-
-<p id="status"></p>
-
-<script type="module" src="js/cadastro-escola.js"></script>
-<script src="js/footer.js"></script>
-
+  <script type="module" src="js/cadastro-escola.js"></script>
+  <script src="js/footer.js"></script>
 </body>
 </html>
