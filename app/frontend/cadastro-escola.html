@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="icon" href="logo1.png" type="image/png">
+  <title>Cadastro - Escola</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="icon" href="logo1.png" type="image/png">
+</head>
+<body>
+
+  <h2>Cadastro — Escola</h2>
+
+  <section>
+    <h3>Criar conta da escola</h3>
+
+    <input type="text" id="name" placeholder="Nome da escola" />
+    <input type="email" id="email" placeholder="E-mail" />
+    <input type="password" id="password" placeholder="Senha (mín. 8 caracteres)" />
+
+    <button id="registerBtn">Cadastrar</button>
+
+    <div style="margin-top: 10px;">
+      <button id="resendVerifyBtn" style="display:none;">Reenviar link de verificação</button>
+    </div>
+
+    <p id="status"></p>
+
+    <div style="margin-top:10px;">
+      <a href="index.html">Voltar</a>
+    </div>
+  </section>
+
+  <script type="module" src="js/cadastro-escola.js"></script>
+  <script src="js/footer.js"></script>
+</body>
+</html>
