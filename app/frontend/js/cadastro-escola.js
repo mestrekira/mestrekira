@@ -2,15 +2,6 @@
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-function disable(btn, value) {
-  if (btn) btn.disabled = !!value;
-}
-
-function show(el, value) {
-  if (!el) return;
-  el.style.display = value ? 'inline-block' : 'none';
-}
-
 function notify(type, title, message, duration) {
   toast({
     type,
@@ -25,9 +16,8 @@ function setStatus(msg) {
   if (el) el.textContent = String(msg || '');
 }
 
-function getValue(id) {
-  const el = document.getElementById(id);
-  return (el?.value || '').trim();
+function disable(btn, value) {
+  if (btn) btn.disabled = !!value;
 }
 
 async function readJsonSafe(res) {
@@ -38,36 +28,37 @@ async function readJsonSafe(res) {
   }
 }
 
-function normalizeEmail(email) {
-  return String(email || '').trim().toLowerCase();
+function getValue(id) {
+  const el = document.getElementById(id);
+  return (el?.value || '').trim();
 }
 
 async function cadastrarEscola() {
-  const registerBtn = document.getElementById('registerBtn');
-  const resendVerifyBtn = document.getElementById('resendVerifyBtn');
+  const btn = document.getElementById('registerBtn');
 
   const name = getValue('name');
-  const email = normalizeEmail(getValue('email'));
-  const password = String(document.getElementById('password')?.value || '');
+  const email = getValue('email').toLowerCase();
+  const password = getValue('password');
 
-  show(resendVerifyBtn, false);
   setStatus('');
 
   if (!name || !email || !password) {
-    notify('warn', 'Campos obrigatórios', 'Preencha nome, e-mail e senha.');
+    notify('warn', 'Campos obrigatórios', 'Preencha nome da escola, e-mail e senha.');
     return;
   }
+
   if (!email.includes('@')) {
     notify('warn', 'E-mail inválido', 'Informe um e-mail válido.');
     return;
   }
+
   if (password.length < 8) {
     notify('warn', 'Senha fraca', 'A senha deve ter no mínimo 8 caracteres.');
     return;
   }
 
-  disable(registerBtn, true);
-  notify('info', 'Cadastrando...', 'Criando sua conta e enviando verificação...', 1800);
+  disable(btn, true);
+  notify('info', 'Cadastrando...', 'Criando a conta da escola...', 1800);
 
   try {
     const res = await fetch(`${API_URL}/auth/register-school`, {
@@ -78,92 +69,43 @@ async function cadastrarEscola() {
 
     const data = await readJsonSafe(res);
 
-    if (!res.ok || !data) {
-      notify('error', 'Erro', 'Não foi possível concluir o cadastro agora.');
-      return;
-    }
-
-    if (!data?.ok) {
-      const msg = data?.message || data?.error || 'Não foi possível cadastrar.';
-      notify('error', 'Cadastro não concluído', msg);
+    if (!res.ok || !data?.ok) {
+      const msg = data?.message || data?.error || 'Não foi possível criar o cadastro.';
+      notify('error', 'Erro no cadastro', msg);
       setStatus(msg);
       return;
     }
 
-    // Cadastro ok — por regra você exige verificação antes de login
     notify(
       'success',
-      'Cadastro criado',
-      'Enviamos um link de verificação para o e-mail informado. Verifique a caixa de entrada e o Spam.',
+      'Conta criada',
+      'Cadastro realizado! Agora confirme o e-mail para acessar.',
       3200,
     );
 
-    // Mostra botão de reenviar (caso não chegue)
-    show(resendVerifyBtn, true);
+    setStatus('Cadastro criado. Verifique seu e-mail (Inbox e Spam) para confirmar.');
 
-    // Sugestão: voltar para index após um tempo
+    // Opcional: após alguns segundos, volta para a home/login
     setTimeout(() => {
-      window.location.replace('index.html');
-    }, 1200);
+      window.location.href = 'index.html';
+    }, 1800);
   } catch {
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    setStatus('Erro de conexão.');
   } finally {
-    disable(registerBtn, false);
-  }
-}
-
-async function reenviarVerificacao() {
-  const resendVerifyBtn = document.getElementById('resendVerifyBtn');
-  const email = normalizeEmail(getValue('email'));
-
-  if (!email) {
-    notify('warn', 'Digite seu e-mail', 'Informe seu e-mail para reenviar o link.');
-    return;
-  }
-
-  disable(resendVerifyBtn, true);
-  notify('info', 'Reenviando...', 'Enviando novo link de verificação...', 1800);
-
-  try {
-    const res = await fetch(`${API_URL}/auth/request-verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-
-    const data = await readJsonSafe(res);
-
-    if (!res.ok || !data?.ok) {
-      notify(
-        'error',
-        'Não foi possível reenviar',
-        data?.message || data?.error || 'Tente novamente em instantes.',
-      );
-      return;
-    }
-
-    notify('success', 'Link enviado', 'Verifique a caixa de entrada e o Spam.', 2600);
-  } catch {
-    notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
-  } finally {
-    disable(resendVerifyBtn, false);
+    disable(btn, false);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const registerBtn = document.getElementById('registerBtn');
-  const resendVerifyBtn = document.getElementById('resendVerifyBtn');
-  const passwordEl = document.getElementById('password');
+  const btn = document.getElementById('registerBtn');
+  const pass = document.getElementById('password');
 
-  if (registerBtn) registerBtn.addEventListener('click', cadastrarEscola);
-  if (passwordEl) {
-    passwordEl.addEventListener('keydown', (e) => {
+  if (btn) btn.addEventListener('click', cadastrarEscola);
+
+  if (pass) {
+    pass.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') cadastrarEscola();
     });
-  }
-
-  if (resendVerifyBtn) {
-    resendVerifyBtn.addEventListener('click', reenviarVerificacao);
-    show(resendVerifyBtn, false);
   }
 });
