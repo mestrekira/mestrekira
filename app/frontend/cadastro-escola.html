@@ -1,36 +1,33 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Cadastro Escola • Mestre Kira</title>
-  <link rel="stylesheet" href="css/base.css"/>
-  <link rel="stylesheet" href="css/ui-feedback.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro — Escola</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
+
 <body>
-  <main class="container">
-    <h1>Cadastro da Escola</h1>
+  <h2>Cadastro — Escola</h2>
 
-    <section>
-      <label>Nome da escola</label>
-      <input id="name" type="text" autocomplete="organization"/>
+  <section>
+    <h3>Criar conta da escola</h3>
 
-      <label>E-mail</label>
-      <input id="email" type="email" autocomplete="username"/>
+    <input type="text" id="name" placeholder="Nome da escola" />
+    <input type="email" id="email" placeholder="E-mail" />
+    <input type="password" id="password" placeholder="Senha (mín. 8 caracteres)" />
 
-      <label>Senha</label>
-      <input id="password" type="password" autocomplete="new-password" placeholder="mín. 8 caracteres"/>
+    <button id="registerBtn">Cadastrar</button>
 
-      <button id="btnRegister">Cadastrar</button>
+    <p id="status"></p>
 
-      <p id="status" class="muted"></p>
-
-      <div style="margin-top:10px;">
-        <a href="login-escola.html">Já tenho conta → Entrar</a>
-      </div>
-    </section>
-  </main>
+    <div style="margin-top:10px;">
+      <a href="login-escola.html">Já tenho conta — entrar</a>
+    </div>
+  </section>
 
   <script type="module" src="js/cadastro-escola.js"></script>
   <script src="js/footer.js"></script>
