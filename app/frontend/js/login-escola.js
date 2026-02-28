@@ -2,56 +2,74 @@
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-const $ = (id) => document.getElementById(id);
-
-const emailEl = $('email');
-const passEl = $('password');
-const btn = $('btnLogin');
-const statusEl = $('status');
-const resendVerifyBtn = $('resendVerifyBtn');
-
 const LS = {
   token: 'token',
   user: 'user',
   schoolId: 'schoolId',
-  studentId: 'studentId',
   professorId: 'professorId',
+  studentId: 'studentId',
 };
 
-function setStatus(msg) {
-  if (statusEl) statusEl.textContent = String(msg || '');
-}
+const $ = (id) => document.getElementById(id);
 
-function disable(el, v) {
-  if (el) el.disabled = !!v;
-}
-
-function show(el, v) {
-  if (!el) return;
-  el.style.display = v ? 'inline-block' : 'none';
-}
+const emailEl = $('email');
+const passEl = $('password');
+const btnLogin = $('btnLogin');
+const statusEl = $('status');
+const resendVerifyBtn = $('resendVerifyBtn');
 
 function notify(type, title, message, duration) {
   toast({
     type,
     title,
     message,
-    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
   });
+}
+
+function setStatus(msg) {
+  if (statusEl) statusEl.textContent = String(msg || '');
+}
+
+function disable(btn, value) {
+  if (btn) btn.disabled = !!value;
+}
+
+function show(el, value) {
+  if (!el) return;
+  el.style.display = value ? 'inline-block' : 'none';
+}
+
+function safeJsonParse(s) {
+  try { return s ? JSON.parse(s) : null; } catch { return null; }
+}
+
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
+}
+
+function clearAuthStorage() {
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.schoolId);
+  localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.studentId);
 }
 
 async function readJsonSafe(res) {
   try { return await res.json(); } catch { return null; }
 }
 
-function normRole(role) {
-  return String(role || '').trim().toLowerCase();
-}
+function alreadyLoggedInGuard() {
+  const token = localStorage.getItem(LS.token);
+  const user = safeJsonParse(localStorage.getItem(LS.user));
+  const role = normRole(user?.role);
 
-function clearOtherRoles() {
-  // evita conflito
-  localStorage.removeItem(LS.studentId);
-  localStorage.removeItem(LS.professorId);
+  if (token && role === 'SCHOOL') {
+    window.location.replace('painel-escola.html');
+    return true;
+  }
+  return false;
 }
 
 async function login() {
@@ -67,9 +85,8 @@ async function login() {
     return;
   }
 
-  disable(btn, true);
+  disable(btnLogin, true);
   notify('info', 'Entrando...', 'Verificando seus dados...', 1800);
-  setStatus('Entrando...');
 
   try {
     const r = await fetch(`${API_URL}/auth/login`, {
@@ -86,8 +103,8 @@ async function login() {
       return;
     }
 
-    if (!data?.ok || !data?.token || !data?.user) {
-      const msg = data?.error || data?.message || 'Falha no login.';
+    if (!r.ok || !data?.ok || !data?.token || !data?.user) {
+      const msg = data?.message || data?.error || 'Falha no login.';
       if (data?.emailVerified === false) {
         show(resendVerifyBtn, true);
         notify(
@@ -103,37 +120,45 @@ async function login() {
       return;
     }
 
+    // ✅ garante role school
     const role = normRole(data?.user?.role);
-
-    if (role !== 'school') {
-      notify('error', 'Acesso negado', 'Este login é exclusivo para escolas.');
+    if (role !== 'SCHOOL') {
+      clearAuthStorage();
+      notify('error', 'Acesso negado', 'Este login é exclusivo para escola.');
       setStatus('Este login é exclusivo para escola.');
       return;
     }
 
-    clearOtherRoles();
+    const userId = data?.user?.id;
+    if (!userId) {
+      clearAuthStorage();
+      notify('error', 'Erro', 'Login ok, mas o servidor não retornou o ID da escola.');
+      setStatus('Erro: servidor não retornou o ID.');
+      return;
+    }
+
+    // evita conflito de papéis
+    localStorage.removeItem(LS.professorId);
+    localStorage.removeItem(LS.studentId);
 
     localStorage.setItem(LS.token, String(data.token));
     localStorage.setItem(LS.user, JSON.stringify(data.user));
-    localStorage.setItem(LS.schoolId, String(data.user.id)); // ✅ usado no index.js
+    localStorage.setItem(LS.schoolId, String(userId));
 
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
-    setStatus('');
-
-    window.location.href = 'painel-escola.html';
+    window.location.replace('painel-escola.html');
   } catch {
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
-    setStatus('Erro ao conectar.');
+    setStatus('Erro de conexão.');
   } finally {
-    disable(btn, false);
+    disable(btnLogin, false);
   }
 }
 
 async function reenviarVerificacao() {
   const email = String(emailEl?.value || '').trim().toLowerCase();
-
   if (!email) {
-    notify('warn', 'Digite seu e-mail', 'Informe o e-mail para reenviar o link.');
+    notify('warn', 'Digite seu e-mail', 'Informe seu e-mail para reenviar o link.');
     return;
   }
 
@@ -150,12 +175,17 @@ async function reenviarVerificacao() {
     const data = await readJsonSafe(res);
 
     if (!res.ok || !data?.ok) {
-      notify('error', 'Não foi possível reenviar', data?.message || data?.error || 'Tente novamente.');
+      notify(
+        'error',
+        'Não foi possível reenviar',
+        data?.message || data?.error || 'Tente novamente em instantes.',
+      );
       return;
     }
 
     notify('success', 'Link enviado', 'Verifique a caixa de entrada e o Spam.');
     show(resendVerifyBtn, false);
+    setStatus('Link de verificação reenviado.');
   } catch {
     notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
   } finally {
@@ -164,25 +194,14 @@ async function reenviarVerificacao() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // prefill do cadastro
-  const prefill = sessionStorage.getItem('mk_school_prefill_email');
-  if (prefill && emailEl) {
-    emailEl.value = prefill;
-    sessionStorage.removeItem('mk_school_prefill_email');
-  }
+  if (alreadyLoggedInGuard()) return;
 
-  btn?.addEventListener('click', login);
+  btnLogin?.addEventListener('click', login);
+
   passEl?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') login();
   });
 
   resendVerifyBtn?.addEventListener('click', reenviarVerificacao);
   show(resendVerifyBtn, false);
-
-  // se já estiver logado como escola, manda pro painel
-  const token = localStorage.getItem(LS.token);
-  const user = (() => { try { return JSON.parse(localStorage.getItem(LS.user) || 'null'); } catch { return null; } })();
-  if (token && normRole(user?.role) === 'school') {
-    window.location.href = 'painel-escola.html';
-  }
 });
