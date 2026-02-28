@@ -7,38 +7,33 @@ const $ = (id) => document.getElementById(id);
 const nameEl = $('name');
 const emailEl = $('email');
 const passEl = $('password');
-
-const btnRegister = $('btnRegister');
+const btn = $('registerBtn');
 const statusEl = $('status');
-
-function setStatus(msg) {
-  if (statusEl) statusEl.textContent = String(msg || '');
-}
-
-function disable(btn, v) {
-  if (btn) btn.disabled = !!v;
-}
 
 function notify(type, title, message, duration) {
   toast({
     type,
     title,
     message,
-    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
   });
+}
+
+function setStatus(msg) {
+  if (statusEl) statusEl.textContent = String(msg || '');
+}
+
+function disable(value) {
+  if (btn) btn.disabled = !!value;
 }
 
 async function readJsonSafe(res) {
   try { return await res.json(); } catch { return null; }
 }
 
-function normEmail(v) {
-  return String(v || '').trim().toLowerCase();
-}
-
-async function cadastrarEscola() {
+async function cadastrar() {
   const name = String(nameEl?.value || '').trim();
-  const email = normEmail(emailEl?.value);
+  const email = String(emailEl?.value || '').trim().toLowerCase();
   const password = String(passEl?.value || '');
 
   setStatus('');
@@ -56,12 +51,11 @@ async function cadastrarEscola() {
     return;
   }
 
-  disable(btnRegister, true);
+  disable(true);
   notify('info', 'Cadastrando...', 'Criando a conta da escola...', 1800);
 
   try {
-    // ✅ usa /users/school (compatível com seu UsersController atual)
-    const res = await fetch(`${API_URL}/users/school`, {
+    const res = await fetch(`${API_URL}/auth/register-school`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
@@ -70,14 +64,15 @@ async function cadastrarEscola() {
     const data = await readJsonSafe(res);
 
     if (!res.ok || !data) {
-      notify('error', 'Erro', 'Resposta inválida do servidor.');
+      notify('error', 'Erro', data?.message || data?.error || 'Não foi possível criar o cadastro.');
+      setStatus(data?.message || data?.error || 'Erro no cadastro.');
       return;
     }
 
-    if (!data?.ok) {
-      const msg = data?.message || data?.error || 'Não foi possível criar o cadastro.';
-      notify('error', 'Erro no cadastro', msg);
-      setStatus(msg);
+    // compat: alguns retornos podem vir sem ok, então tratamos pelos campos
+    if (data?.ok === false) {
+      notify('error', 'Erro no cadastro', data?.message || data?.error || 'Falha no cadastro.');
+      setStatus(data?.message || data?.error || 'Falha no cadastro.');
       return;
     }
 
@@ -88,23 +83,24 @@ async function cadastrarEscola() {
       3200,
     );
 
-    setStatus('Cadastro criado. Agora confirme o e-mail e faça login como escola.');
-    // preenche e-mail no login (se quiser)
-    sessionStorage.setItem('mk_school_prefill_email', email);
+    setStatus('Cadastro criado. Agora confirme o e-mail e faça login.');
 
-    // manda para login
-    window.location.href = 'login-escola.html';
+    // pré-preenche e-mail e redireciona pro login
+    setTimeout(() => {
+      window.location.href = `login-escola.html?email=${encodeURIComponent(email)}`;
+    }, 600);
   } catch {
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
     setStatus('Erro de conexão.');
   } finally {
-    disable(btnRegister, false);
+    disable(false);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  btnRegister?.addEventListener('click', cadastrarEscola);
+  btn?.addEventListener('click', cadastrar);
+
   passEl?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') cadastrarEscola();
+    if (e.key === 'Enter') cadastrar();
   });
 });
