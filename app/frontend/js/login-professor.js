@@ -28,7 +28,7 @@ function setStatus(msg) {
 }
 
 function normRole(role) {
-  return String(role || '').trim().toUpperCase();
+  return String(role || '').trim().toUpperCase(); // PROFESSOR | STUDENT | SCHOOL
 }
 
 function notify(type, title, message, duration) {
@@ -80,34 +80,36 @@ function getLoginEmail() {
   return (el?.value || '').trim().toLowerCase();
 }
 
-function getRegisterEmail() {
-  const el = document.getElementById('emailRegister');
-  return (el?.value || '').trim().toLowerCase();
-}
-
-/**
- * Busca perfil /users/:id para ler mustChangePassword (e outros campos).
- */
-async function fetchMe(userId, token) {
-  const res = await fetch(`${API_URL}/users/${encodeURIComponent(String(userId))}`, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${String(token)}` },
-  });
-
-  const data = await readJsonSafe(res);
-  if (!res.ok || !data) {
-    const msg = data?.message || data?.error || 'Não foi possível carregar seu perfil.';
-    throw new Error(msg);
-  }
-  return data;
-}
-
 function redirectAfterLogin(userObj) {
   if (userObj?.mustChangePassword) {
     window.location.replace('trocar-senha.html');
   } else {
     window.location.replace('professor-salas.html');
   }
+}
+
+/**
+ * ✅ Perfil seguro do token (evita /users/:id)
+ * GET /users/me  (JwtAuthGuard)
+ */
+async function fetchMe(token) {
+  const res = await fetch(`${API_URL}/users/me`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${String(token)}` },
+  });
+
+  const data = await readJsonSafe(res);
+
+  if (!res.ok || !data) {
+    const msg = data?.message || data?.error || 'Não foi possível carregar seu perfil.';
+    // se deu 401/403, limpa sessão pra não ficar loopando
+    if (res.status === 401 || res.status === 403) {
+      clearAuthStorage();
+    }
+    throw new Error(msg);
+  }
+
+  return data;
 }
 
 /**
@@ -147,9 +149,11 @@ async function fazerLogin() {
       return;
     }
 
+    // Falha de login
     if (!res.ok || !data?.ok || !data?.token || !data?.user) {
       const msg = data?.message || data?.error || 'Usuário ou senha inválidos.';
 
+      // caso especial: e-mail não verificado
       if (data?.emailVerified === false) {
         show(resendVerifyBtn, true);
         notify(
@@ -167,7 +171,7 @@ async function fazerLogin() {
 
     const role = normRole(data?.user?.role);
 
-    // ✅ professor individual e professor de escola são role=professor
+    // ✅ professor individual e professor cadastrado pela escola continuam role=PROFESSOR
     if (role !== 'PROFESSOR' && role !== 'TEACHER') {
       clearAuthStorage();
       notify('error', 'Acesso negado', 'Este acesso é apenas para professores.');
@@ -186,15 +190,15 @@ async function fazerLogin() {
     // evita conflito de papéis
     localStorage.removeItem(LS.studentId);
 
-    // grava auth
+    // grava auth (mínimo)
     localStorage.setItem(LS.token, String(data.token));
     localStorage.setItem(LS.user, JSON.stringify(data.user));
     localStorage.setItem(LS.professorId, String(userId));
 
-    // busca perfil completo (mustChangePassword etc.)
+    // ✅ busca perfil completo via /users/me (mustChangePassword, etc.)
     let me = null;
     try {
-      me = await fetchMe(userId, data.token);
+      me = await fetchMe(data.token);
     } catch (e) {
       notify(
         'warn',
@@ -202,6 +206,7 @@ async function fazerLogin() {
         'Entrou, mas não foi possível carregar seu perfil completo. Se algo estiver estranho, recarregue a página.',
         2600,
       );
+      // fallback: usa o user do login
       redirectAfterLogin(data.user);
       return;
     }
@@ -275,8 +280,9 @@ async function reenviarVerificacao() {
 }
 
 /**
- * CADASTRO PROFESSOR INDIVIDUAL
+ * CADASTRO PROFESSOR INDIVIDUAL (compat)
  * POST /users/professor
+ * (recomendado no futuro: /auth/register-professor)
  */
 async function cadastrarProfessor() {
   const nameEl = document.getElementById('nameRegister');
@@ -330,6 +336,7 @@ async function cadastrarProfessor() {
     );
 
     setStatus('Cadastro criado. Agora confirme o e-mail e faça login.');
+
     // opcional: já preenche o login
     const emailLogin = document.getElementById('emailLogin');
     if (emailLogin) emailLogin.value = email;
@@ -357,7 +364,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const role = normRole(user?.role);
 
   if (token && (role === 'PROFESSOR' || role === 'TEACHER')) {
-    redirectAfterLogin(user);
+    // se não tiver mustChangePassword no storage, ainda pode ser verdadeiro no backend
+    // então tentamos /users/me (silencioso) pra confirmar e decidir rota
+    (async () => {
+      try {
+        const me = await fetchMe(token);
+        const merged = { ...(user || {}), ...(me || {}) };
+        localStorage.setItem(LS.user, JSON.stringify(merged));
+        redirectAfterLogin(merged);
+      } catch {
+        // fallback
+        redirectAfterLogin(user);
+      }
+    })();
     return;
   }
 
