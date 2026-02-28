@@ -1,148 +1,195 @@
+// painel-escola.js
 import { API_URL } from './config.js';
+import { toast } from './ui-feedback.js';
+
+const LS = { token: 'token', user: 'user', schoolId: 'schoolId' };
 
 const $ = (id) => document.getElementById(id);
 
+const schoolNameEl = $('schoolName');
+const schoolEmailEl = $('schoolEmail');
 const statusEl = $('status');
-const inviteEmailEl = $('inviteEmail');
-const btnInvite = $('btnInvite');
-const inviteOut = $('inviteOut');
 
 const roomNameEl = $('roomName');
 const teacherEmailEl = $('teacherEmail');
 const btnCreateRoom = $('btnCreateRoom');
-const roomStatus = $('roomStatus');
 
 const btnRefresh = $('btnRefresh');
-const roomsList = $('roomsList');
+const btnLogout = $('btnLogout');
+const roomsTbody = $('roomsTbody');
 
-function token() {
-  return localStorage.getItem('token') || '';
+function notify(type, title, message, duration) {
+  toast({
+    type,
+    title,
+    message,
+    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+  });
 }
 
 function setStatus(msg) {
-  if (statusEl) statusEl.textContent = msg || '';
+  if (statusEl) statusEl.textContent = String(msg || '');
 }
 
-async function api(path, options = {}) {
-  const t = token();
-  if (!t) throw new Error('Sem token');
-
-  const r = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${t}`,
-      ...(options.headers || {}),
-    },
-  });
-
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.message || data?.error || 'Erro');
-  return data;
+function disable(el, v) {
+  if (el) el.disabled = !!v;
 }
 
-async function createInvite() {
-  const teacherEmail = String(inviteEmailEl?.value || '').trim();
-  if (!teacherEmail) return;
+function safeJsonParse(s) {
+  try { return s ? JSON.parse(s) : null; } catch { return null; }
+}
 
-  btnInvite.disabled = true;
-  inviteOut.textContent = 'Gerando...';
+function normRole(role) {
+  return String(role || '').trim().toLowerCase();
+}
 
-  try {
-    const data = await api('/school-teacher/invite', {
-      method: 'POST',
-      body: JSON.stringify({ teacherEmail }),
-    });
+async function readJsonSafe(res) {
+  try { return await res.json(); } catch { return null; }
+}
 
-    inviteOut.textContent =
-      `Convite gerado:\n` +
-      `Email: ${data.teacherEmail}\n` +
-      `Código: ${data.code}\n` +
-      `Expira: ${new Date(data.expiresAt).toLocaleString('pt-BR')}\n\n` +
-      `Professor deve usar /school-teacher/accept (ou sua tela de aceitar convite).`;
-  } catch (e) {
-    inviteOut.textContent = String(e?.message || 'Erro');
-  } finally {
-    btnInvite.disabled = false;
+function ensureSchoolSession() {
+  const token = localStorage.getItem(LS.token);
+  const user = safeJsonParse(localStorage.getItem(LS.user));
+  const role = normRole(user?.role);
+
+  if (!token || role !== 'school') {
+    notify('warn', 'Sessão inválida', 'Faça login como escola novamente.');
+    window.location.replace('login-escola.html');
+    return null;
   }
+  return { token, user };
 }
 
-async function createRoom() {
-  const roomName = String(roomNameEl?.value || '').trim();
-  const teacherEmail = String(teacherEmailEl?.value || '').trim();
+function renderRooms(rows) {
+  if (!roomsTbody) return;
 
-  if (!roomName || !teacherEmail) {
-    roomStatus.textContent = 'Preencha nome da sala e e-mail do professor.';
+  if (!Array.isArray(rows) || rows.length === 0) {
+    roomsTbody.innerHTML = `<tr><td colspan="3">Nenhuma sala encontrada.</td></tr>`;
     return;
   }
 
-  btnCreateRoom.disabled = true;
-  roomStatus.textContent = 'Salvando...';
-
-  try {
-    const data = await api('/schools/rooms', {
-      method: 'POST',
-      body: JSON.stringify({ roomName, teacherEmail }),
-    });
-
-    roomStatus.textContent = `OK: Sala criada (${data.room.name})`;
-    await loadRooms();
-  } catch (e) {
-    roomStatus.textContent = String(e?.message || 'Erro');
-  } finally {
-    btnCreateRoom.disabled = false;
-  }
+  roomsTbody.innerHTML = rows.map((r) => {
+    const avg = (r?.avgScore == null) ? '—' : String(r.avgScore);
+    return `
+      <tr>
+        <td>${escapeHtml(r?.roomName || 'Sala')}</td>
+        <td>${escapeHtml(r?.teacherName || '')}<div class="muted">${escapeHtml(r?.teacherEmail || '')}</div></td>
+        <td style="text-align:right;">${escapeHtml(avg)}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
-async function loadRooms() {
-  setStatus('Carregando salas...');
-  roomsList.innerHTML = '';
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+async function carregarResumo() {
+  const sess = ensureSchoolSession();
+  if (!sess) return;
+
+  setStatus('Carregando...');
+  disable(btnRefresh, true);
 
   try {
-    const rooms = await api('/schools/rooms', { method: 'GET' });
+    const res = await fetch(`${API_URL}/school-dashboard/rooms-summary`, {
+      headers: { Authorization: `Bearer ${sess.token}` },
+    });
 
-    if (!rooms.length) {
-      roomsList.innerHTML = '<p class="muted">Nenhuma sala cadastrada.</p>';
-      setStatus('');
+    const data = await readJsonSafe(res);
+
+    if (!res.ok || !data?.ok) {
+      const msg = data?.message || data?.error || 'Não foi possível carregar o resumo.';
+      notify('error', 'Erro', msg);
+      setStatus(msg);
       return;
     }
 
-    const frag = document.createDocumentFragment();
+    // Atualiza perfil
+    const me = data?.school || sess.user;
+    if (schoolNameEl) schoolNameEl.textContent = me?.name || '—';
+    if (schoolEmailEl) schoolEmailEl.textContent = me?.email || '—';
 
-    for (const r of rooms) {
-      const div = document.createElement('div');
-      div.className = 'card';
-      div.innerHTML = `
-        <b>${r.name}</b><br/>
-        Código: <span>${r.code}</span><br/>
-        Professor: ${r.teacherName || ''} (${r.teacherEmail || ''})<br/>
-        <button data-room="${r.id}">Ver média</button>
-        <span class="muted" id="avg-${r.id}"></span>
-      `;
-
-      div.querySelector('button')?.addEventListener('click', async () => {
-        const out = div.querySelector(`#avg-${r.id}`);
-        out.textContent = ' ...';
-        try {
-          const data = await api(`/schools/rooms/avg?roomId=${encodeURIComponent(r.id)}`, { method: 'GET' });
-          out.textContent = ` Média: ${data.average == null ? '—' : data.average} (n=${data.count})`;
-        } catch (e) {
-          out.textContent = ` Erro`;
-        }
-      });
-
-      frag.appendChild(div);
-    }
-
-    roomsList.appendChild(frag);
+    renderRooms(data?.rooms || []);
     setStatus('');
-  } catch (e) {
-    setStatus(String(e?.message || 'Erro'));
+  } catch {
+    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    setStatus('Erro de conexão.');
+  } finally {
+    disable(btnRefresh, false);
   }
 }
 
-btnInvite?.addEventListener('click', createInvite);
-btnCreateRoom?.addEventListener('click', createRoom);
-btnRefresh?.addEventListener('click', loadRooms);
+async function criarSala() {
+  const sess = ensureSchoolSession();
+  if (!sess) return;
 
-loadRooms().catch(() => {});
+  const roomName = String(roomNameEl?.value || '').trim();
+  const teacherEmail = String(teacherEmailEl?.value || '').trim().toLowerCase();
+
+  if (!roomName || !teacherEmail || !teacherEmail.includes('@')) {
+    notify('warn', 'Dados obrigatórios', 'Informe nome da sala e e-mail do professor.');
+    return;
+  }
+
+  disable(btnCreateRoom, true);
+  notify('info', 'Criando...', 'Cadastrando sala...', 1800);
+
+  try {
+    const res = await fetch(`${API_URL}/school-dashboard/create-room`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sess.token}`,
+      },
+      body: JSON.stringify({ roomName, teacherEmail }),
+    });
+
+    const data = await readJsonSafe(res);
+
+    if (!res.ok || !data?.ok) {
+      const msg = data?.message || data?.error || 'Não foi possível criar a sala.';
+      notify('error', 'Erro', msg);
+      return;
+    }
+
+    notify('success', 'Sala criada', 'Sala cadastrada com sucesso.');
+    if (roomNameEl) roomNameEl.value = '';
+    // mantém teacherEmail (você pode querer cadastrar várias)
+    await carregarResumo();
+  } catch {
+    notify('error', 'Erro de conexão', 'Tente novamente em instantes.');
+  } finally {
+    disable(btnCreateRoom, false);
+  }
+}
+
+function logout() {
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.schoolId);
+  notify('info', 'Saindo...', 'Sessão encerrada.');
+  window.location.replace('index.html');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const sess = ensureSchoolSession();
+  if (!sess) return;
+
+  // profile quick
+  if (schoolNameEl) schoolNameEl.textContent = sess.user?.name || '—';
+  if (schoolEmailEl) schoolEmailEl.textContent = sess.user?.email || '—';
+
+  btnRefresh?.addEventListener('click', carregarResumo);
+  btnLogout?.addEventListener('click', logout);
+  btnCreateRoom?.addEventListener('click', criarSala);
+
+  teacherEmailEl?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') criarSala();
+  });
+
+  carregarResumo();
+});
