@@ -1,16 +1,9 @@
+// painel-escola.js
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-// ------------------- Elementos ----------------------
-const roomAvgDonutEl = document.getElementById('roomAvgDonut');
-const roomAvgLegendEl = document.getElementById('roomAvgLegend');
-const avgTotal = document.getElementById('avgTotal');
-const avgC1 = document.getElementById('avgC1');
-const avgC2 = document.getElementById('avgC2');
-const avgC3 = document.getElementById('avgC3');
-const avgC4 = document.getElementById('avgC4');
-const avgC5 = document.getElementById('avgC5');
-const tasksListEl = document.getElementById('tasksList');
+// ⚠️ ajuste se seu controller usar outro prefixo
+const SCHOOL_API_BASE = '/school-dashboard';
 
 // ------------------- Toast helpers -------------------
 function notify(type, title, message, duration) {
@@ -19,8 +12,7 @@ function notify(type, title, message, duration) {
       type,
       title,
       message,
-      duration:
-        duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
+      duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
     });
   } else {
     if (type === 'error') alert(`${title}\n\n${message}`);
@@ -34,198 +26,504 @@ function setStatus(msg) {
 }
 
 function setText(el, value) {
-  if (el) el.textContent = value === null || value === undefined ? '—' : String(value);
+  if (!el) return;
+  el.textContent = value === null || value === undefined ? '—' : String(value);
+}
+
+function safeJsonParse(s) {
+  try { return s ? JSON.parse(s) : null; } catch { return null; }
+}
+
+function normRole(role) {
+  return String(role || '').trim().toUpperCase();
+}
+
+function fmtDateBR(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('pt-BR');
 }
 
 // ------------------- Sessão (escola) -------------------
-
 const LS = {
   token: 'token',
   user: 'user',
-  schoolId: 'schoolId',
+  schoolId: 'schoolId', // opcional: vamos preencher se não existir
+  professorId: 'professorId',
+  studentId: 'studentId',
 };
 
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
+function clearAuth() {
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.schoolId);
+  localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.studentId);
 }
 
 function requireSchoolSession() {
   const token = localStorage.getItem(LS.token);
   const user = safeJsonParse(localStorage.getItem(LS.user));
-  const role = String(user?.role || '').trim().toUpperCase();
+  const role = normRole(user?.role);
 
-  if (!token || role !== 'SCHOOL') {
+  // aceitamos SCHOOL/ESCOLA por compat
+  const isSchool = role === 'SCHOOL' || role === 'ESCOLA';
+
+  if (!token || !isSchool) {
+    clearAuth();
     window.location.replace('login-escola.html');
     throw new Error('Sessão de escola ausente/inválida');
   }
 
-  return { token, user };
+  // padroniza schoolId
+  const uid = String(user?.id || '').trim();
+  if (uid && !localStorage.getItem(LS.schoolId)) {
+    localStorage.setItem(LS.schoolId, uid);
+  }
+
+  // evita conflito de papéis
+  localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.studentId);
+
+  return { token, user, schoolId: uid };
 }
 
-// ------------------- Dados e renderização -------------------
+async function readJsonSafe(res) {
+  try { return await res.json(); } catch { return null; }
+}
 
-async function fetchRoomData(roomId, token) {
-  const data = await fetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  }).then(res => res.json());
+async function authFetch(path, { token, method = 'GET', body } = {}) {
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (body) headers['Content-Type'] = 'application/json';
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    clearAuth();
+    setTimeout(() => window.location.replace('login-escola.html'), 700);
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  const data = await readJsonSafe(res);
+
+  if (!res.ok) {
+    const msg = data?.message || data?.error || `Erro HTTP ${res.status}`;
+    throw new Error(msg);
+  }
 
   return data;
 }
 
-async function fetchPerformanceData(roomId, token) {
-  const data = await fetch(`${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  }).then(res => res.json());
+function unwrapList(data, keys = []) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
 
-  return data;
+  for (const k of keys) {
+    if (Array.isArray(data?.[k])) return data[k];
+  }
+  return [];
 }
 
-// ------------------ Renderizando o gráfico e os resumos ------------------
+// ------------------- Elementos -------------------
+const schoolNameEl = document.getElementById('schoolName');
 
-function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 18) {
-  const values = [
-    { key: 'c1', label: `C1 (${c1 ?? 0})`, value: Number(c1 || 0), color: '#4f46e5' },
-    { key: 'c2', label: `C2 (${c2 ?? 0})`, value: Number(c2 || 0), color: '#16a34a' },
-    { key: 'c3', label: `C3 (${c3 ?? 0})`, value: Number(c3 || 0), color: '#f59e0b' },
-    { key: 'c4', label: `C4 (${c4 ?? 0})`, value: Number(c4 || 0), color: '#0ea5e9' },
-    { key: 'c5', label: `C5 (${c5 ?? 0})`, value: Number(c5 || 0), color: '#ef4444' },
-  ];
+const yearNameEl = document.getElementById('yearName');
+const createYearBtn = document.getElementById('createYearBtn');
+const yearSelectEl = document.getElementById('yearSelect');
+const yearsTbody = document.getElementById('yearsTbody');
 
-  const safeTotal = Number.isFinite(Number(total)) ? Number(total) : null;
-  const margin = safeTotal === null ? 1000 : Math.max(0, 1000 - safeTotal);
+const refreshBtn = document.getElementById('refreshBtn');
 
-  values.push({
-    key: 'margin',
-    label: `Margem de evolução (${margin})`,
-    value: margin,
-    color: '#ffffff',
-    isMargin: true,
+const roomNameEl = document.getElementById('roomName');
+const teacherNameEl = document.getElementById('teacherName');
+const teacherEmailEl = document.getElementById('teacherEmail');
+const createRoomBtn = document.getElementById('createRoomBtn');
+const roomsTbody = document.getElementById('roomsTbody');
+
+// ------------------- API (anos) -------------------
+async function apiCreateYear(session, name) {
+  return authFetch(`${SCHOOL_API_BASE}/years`, {
+    token: session.token,
+    method: 'POST',
+    body: { name },
+  });
+}
+
+async function apiListYears(session) {
+  return authFetch(`${SCHOOL_API_BASE}/years`, { token: session.token });
+}
+
+async function apiUpdateYear(session, yearId, patch) {
+  return authFetch(`${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`, {
+    token: session.token,
+    method: 'PATCH',
+    body: patch,
+  });
+}
+
+async function apiDeleteYear(session, yearId) {
+  return authFetch(`${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`, {
+    token: session.token,
+    method: 'DELETE',
+  });
+}
+
+// ------------------- API (salas) -------------------
+async function apiCreateRoom(session, payload) {
+  // payload: { name, teacherEmail, yearId? }
+  return authFetch(`${SCHOOL_API_BASE}/rooms`, {
+    token: session.token,
+    method: 'POST',
+    body: payload,
+  });
+}
+
+async function apiListRooms(session, yearId) {
+  const q = yearId ? `?yearId=${encodeURIComponent(String(yearId))}` : '';
+  return authFetch(`${SCHOOL_API_BASE}/rooms${q}`, { token: session.token });
+}
+
+async function apiUpdateRoom(session, roomId, patch) {
+  return authFetch(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
+    token: session.token,
+    method: 'PATCH',
+    body: patch,
+  });
+}
+
+async function apiDeleteRoom(session, roomId) {
+  return authFetch(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
+    token: session.token,
+    method: 'DELETE',
+  });
+}
+
+// ------------------- Render: anos -------------------
+let cachedYears = [];
+
+function renderYearsSelect() {
+  if (!yearSelectEl) return;
+
+  const prev = String(yearSelectEl.value || '');
+
+  yearSelectEl.innerHTML = `<option value="">Todos</option>`;
+
+  cachedYears.forEach((y) => {
+    const opt = document.createElement('option');
+    opt.value = String(y.id);
+    opt.textContent = y.name || 'Ano letivo';
+    yearSelectEl.appendChild(opt);
   });
 
-  const sum = values.reduce((acc, x) => acc + (Number.isFinite(x.value) ? x.value : 0), 0) || 1000;
-  const r = (size - thickness) / 2;
-  const cx = size / 2;
-  const cy = size / 2;
-  const C = 2 * Math.PI * r;
-  let offset = 0;
+  // tenta manter seleção
+  if (prev) yearSelectEl.value = prev;
+}
 
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-  svg.setAttribute('width', String(size));
-  svg.setAttribute('height', String(size));
+function renderYearsTable(session) {
+  if (!yearsTbody) return;
+  yearsTbody.innerHTML = '';
 
-  const base = document.createElementNS(svgNS, 'circle');
-  base.setAttribute('cx', String(cx));
-  base.setAttribute('cy', String(cy));
-  base.setAttribute('r', String(r));
-  base.setAttribute('fill', 'none');
-  base.setAttribute('stroke', 'rgba(0,0,0,0.08)');
-  base.setAttribute('stroke-width', String(thickness));
-  svg.appendChild(base);
+  if (!cachedYears.length) {
+    yearsTbody.innerHTML = `<tr><td colspan="4" class="mk-muted">Nenhum ano letivo cadastrado.</td></tr>`;
+    return;
+  }
 
-  values.forEach((seg) => {
-    const frac = seg.value / sum;
-    const segLen = Math.max(0, frac * C);
+  cachedYears.forEach((y) => {
+    const tr = document.createElement('tr');
 
-    const circle = document.createElementNS(svgNS, 'circle');
-    circle.setAttribute('cx', String(cx));
-    circle.setAttribute('cy', String(cy));
-    circle.setAttribute('r', String(r));
-    circle.setAttribute('fill', 'none');
-    circle.setAttribute('stroke-width', String(thickness));
-    circle.setAttribute('stroke-linecap', 'butt');
+    const tdName = document.createElement('td');
+    tdName.textContent = y.name || '—';
 
-    circle.setAttribute('stroke', seg.isMargin ? '#ffffff' : seg.color);
-    circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
-    circle.setAttribute('stroke-dashoffset', String(-offset));
-    circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+    const tdStatus = document.createElement('td');
+    const badge = document.createElement('span');
+    const on = !!y.isActive;
+    badge.className = `mk-badge ${on ? 'on' : 'off'}`;
+    badge.textContent = on ? 'Ativo' : 'Inativo';
+    tdStatus.appendChild(badge);
 
-    svg.appendChild(circle);
+    const tdCreated = document.createElement('td');
+    tdCreated.textContent = fmtDateBR(y.createdAt);
 
-    if (seg.isMargin) {
-      const border = document.createElementNS(svgNS, 'circle');
-      border.setAttribute('cx', String(cx));
-      border.setAttribute('cy', String(cy));
-      border.setAttribute('r', String(r));
-      border.setAttribute('fill', 'none');
-      border.setAttribute('stroke', '#d1d5db');
-      border.setAttribute('stroke-width', '1');
-      svg.appendChild(border);
-    }
+    const tdActions = document.createElement('td');
+    const wrap = document.createElement('div');
+    wrap.className = 'mk-actions';
 
-    offset += segLen;
+    const btnRename = document.createElement('button');
+    btnRename.type = 'button';
+    btnRename.textContent = 'Renomear';
+    btnRename.onclick = async () => {
+      const name = prompt('Novo nome do ano letivo:', y.name || '');
+      if (name == null) return;
+      const n = String(name).trim();
+      if (!n) return notify('warn', 'Nome inválido', 'Informe um nome válido.');
+      try {
+        await apiUpdateYear(session, y.id, { name: n });
+        notify('success', 'Atualizado', 'Ano letivo renomeado.');
+        await refreshAll(session, { keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    const btnToggle = document.createElement('button');
+    btnToggle.type = 'button';
+    btnToggle.textContent = on ? 'Desativar' : 'Ativar';
+    btnToggle.onclick = async () => {
+      try {
+        await apiUpdateYear(session, y.id, { isActive: !on });
+        notify('success', 'Atualizado', `Ano letivo ${!on ? 'ativado' : 'desativado'}.`);
+        await refreshAll(session, { keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.className = 'danger';
+    btnDelete.textContent = 'Excluir';
+    btnDelete.onclick = async () => {
+      const ok = confirm(
+        `Excluir o ano letivo "${y.name}"?\n\nAs salas desse ano serão mantidas, mas ficarão sem ano letivo.`,
+      );
+      if (!ok) return;
+      try {
+        await apiDeleteYear(session, y.id);
+        notify('success', 'Excluído', 'Ano letivo removido.');
+        await refreshAll(session, { keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    wrap.appendChild(btnRename);
+    wrap.appendChild(btnToggle);
+    wrap.appendChild(btnDelete);
+
+    tdActions.appendChild(wrap);
+
+    tr.appendChild(tdName);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdCreated);
+    tr.appendChild(tdActions);
+
+    yearsTbody.appendChild(tr);
   });
-
-  const centerText = document.createElementNS(svgNS, 'text');
-  centerText.setAttribute('x', String(cx));
-  centerText.setAttribute('y', String(cy + 6));
-  centerText.setAttribute('text-anchor', 'middle');
-  centerText.setAttribute('font-size', '18');
-  centerText.setAttribute('font-weight', '700');
-  centerText.setAttribute('fill', '#111827');
-  centerText.textContent = safeTotal === null ? '—' : String(safeTotal);
-  svg.appendChild(centerText);
-
-  return svg;
 }
 
-function renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal }) {
-  if (!roomAvgDonutEl || !roomAvgLegendEl) return;
+// ------------------- Render: salas -------------------
+let cachedRooms = [];
 
-  roomAvgDonutEl.innerHTML = '';
-  roomAvgLegendEl.innerHTML = '';
+function renderRoomsTable(session) {
+  if (!roomsTbody) return;
+  roomsTbody.innerHTML = '';
 
-  const donutData = {
-    c1: mC1 ?? 0,
-    c2: mC2 ?? 0,
-    c3: mC3 ?? 0,
-    c4: mC4 ?? 0,
-    c5: mC5 ?? 0,
-    total: mTotal,
-  };
+  if (!cachedRooms.length) {
+    roomsTbody.innerHTML = `<tr><td colspan="4" class="mk-muted">Nenhuma sala cadastrada ainda.</td></tr>`;
+    return;
+  }
 
-  const svg = createDonutSVG(donutData);
-  roomAvgDonutEl.appendChild(svg);
+  cachedRooms.forEach((r) => {
+    const tr = document.createElement('tr');
 
-  roomAvgLegendEl.innerHTML = `
-    <div><strong>C1</strong> — ${mC1 ?? 0}</div>
-    <div><strong>C2</strong> — ${mC2 ?? 0}</div>
-    <div><strong>C3</strong> — ${mC3 ?? 0}</div>
-    <div><strong>C4</strong> — ${mC4 ?? 0}</div>
-    <div><strong>C5</strong> — ${mC5 ?? 0}</div>
-    <div><strong>Total</strong> — ${mTotal ?? 0}</div>
-  `;
+    const tdRoom = document.createElement('td');
+    tdRoom.innerHTML = `<strong>${r.name || 'Sala'}</strong><br><small class="mk-muted">Código: ${r.code || '—'}</small>`;
+
+    const tdTeacher = document.createElement('td');
+    tdTeacher.innerHTML = `<strong>${r.teacherNameSnapshot || 'Professor'}</strong><br><small class="mk-muted">${r.teacherEmail || ''}</small>`;
+
+    const tdCreated = document.createElement('td');
+    tdCreated.textContent = fmtDateBR(r.createdAt);
+
+    const tdActions = document.createElement('td');
+    const wrap = document.createElement('div');
+    wrap.className = 'mk-actions';
+
+    const btnView = document.createElement('button');
+    btnView.type = 'button';
+    btnView.textContent = 'Visualizar';
+    btnView.onclick = () => {
+      // Você pode criar desempenho-escola.html ou reutilizar desempenho-professor.html com ajuste de sessão
+      window.location.href = `desempenho-escola.html?roomId=${encodeURIComponent(String(r.id))}`;
+    };
+
+    const btnRename = document.createElement('button');
+    btnRename.type = 'button';
+    btnRename.textContent = 'Renomear';
+    btnRename.onclick = async () => {
+      const name = prompt('Novo nome da sala:', r.name || '');
+      if (name == null) return;
+      const n = String(name).trim();
+      if (!n) return notify('warn', 'Nome inválido', 'Informe um nome válido.');
+
+      try {
+        await apiUpdateRoom(session, r.id, { name: n });
+        notify('success', 'Atualizado', 'Sala renomeada.');
+        await refreshRooms(session, { keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.className = 'danger';
+    btnDelete.textContent = 'Excluir';
+    btnDelete.onclick = async () => {
+      const ok = confirm(
+        `Excluir a sala "${r.name}"?\n\nAtenção: isso pode falhar se o backend não permitir deletar com tarefas/matrículas.`,
+      );
+      if (!ok) return;
+      try {
+        await apiDeleteRoom(session, r.id);
+        notify('success', 'Excluída', 'Sala removida.');
+        await refreshRooms(session, { keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    wrap.appendChild(btnView);
+    wrap.appendChild(btnRename);
+    wrap.appendChild(btnDelete);
+
+    tdActions.appendChild(wrap);
+
+    tr.appendChild(tdRoom);
+    tr.appendChild(tdTeacher);
+    tr.appendChild(tdCreated);
+    tr.appendChild(tdActions);
+
+    roomsTbody.appendChild(tr);
+  });
 }
 
-// ------------------- Carregar dados ---------------------
+// ------------------- Loaders -------------------
+async function refreshYears(session, { keepStatus } = {}) {
+  if (!keepStatus) setStatus('Carregando anos letivos...');
+  const res = await apiListYears(session);
 
-async function carregarDados(session) {
+  // suporte a {ok:true, years:[...]} ou array direto
+  const years = unwrapList(res, ['years']);
+  cachedYears = (Array.isArray(years) ? years : []).map((y) => ({
+    id: y.id,
+    name: y.name,
+    isActive: !!y.isActive,
+    createdAt: y.createdAt || y.created_at || null,
+  }));
+
+  renderYearsSelect();
+  renderYearsTable(session);
+  if (!keepStatus) setStatus('');
+}
+
+async function refreshRooms(session, { keepStatus } = {}) {
+  if (!keepStatus) setStatus('Carregando salas...');
+  const yearId = yearSelectEl ? String(yearSelectEl.value || '') : '';
+  const res = await apiListRooms(session, yearId || null);
+
+  const rooms = unwrapList(res, ['rooms']);
+  cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    code: r.code,
+    teacherId: r.teacherId || r.teacher_id || null,
+    teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
+    teacherEmail: r.teacherEmail || '', // se backend não manda, fica vazio (ok)
+    createdAt: r.createdAt || r.created_at || null,
+  }));
+
+  renderRoomsTable(session);
+  if (!keepStatus) setStatus('');
+}
+
+async function refreshAll(session, { keepStatus } = {}) {
+  await refreshYears(session, { keepStatus: true });
+  await refreshRooms(session, { keepStatus: true });
+  if (!keepStatus) setStatus('');
+}
+
+// ------------------- Actions -------------------
+async function onCreateYear(session) {
+  const name = String(yearNameEl?.value || '').trim();
+  if (!name) return notify('warn', 'Campos obrigatórios', 'Informe o nome do ano letivo.');
+
   try {
-    setStatus('Carregando...');
-
-    const roomData = await fetchRoomData(session.roomId, session.token);
-    setText(document.getElementById('schoolName'), roomData?.name || 'Escola');
-
-    const performanceData = await fetchPerformanceData(session.roomId, session.token);
-    const media = performanceData?.media || {};
-
-    renderRoomAverageDonut(media);
-
+    setStatus('Cadastrando ano letivo...');
+    await apiCreateYear(session, name);
+    if (yearNameEl) yearNameEl.value = '';
+    notify('success', 'Criado', 'Ano letivo cadastrado.');
+    await refreshAll(session, { keepStatus: true });
     setStatus('');
-  } catch (err) {
-    console.error(err);
-    setStatus('Erro ao carregar dados.');
+  } catch (e) {
+    notify('error', 'Erro', String(e?.message || e));
+    setStatus('');
   }
 }
 
-// ------------------ Iniciar ----------------------------
+async function onCreateRoom(session) {
+  const name = String(roomNameEl?.value || '').trim();
+  const teacherName = String(teacherNameEl?.value || '').trim(); // UX
+  const teacherEmail = String(teacherEmailEl?.value || '').trim().toLowerCase();
+  const yearId = yearSelectEl ? String(yearSelectEl.value || '') : '';
 
-document.addEventListener('DOMContentLoaded', () => {
+  if (!name || !teacherEmail) {
+    return notify('warn', 'Campos obrigatórios', 'Informe nome da sala e e-mail do professor.');
+  }
+  if (!teacherEmail.includes('@')) {
+    return notify('warn', 'E-mail inválido', 'Informe um e-mail válido do professor.');
+  }
+
+  try {
+    setStatus('Cadastrando sala...');
+    await apiCreateRoom(session, {
+      name,
+      teacherEmail,
+      yearId: yearId || null,
+      teacherName, // se backend ignorar, ok
+    });
+
+    if (roomNameEl) roomNameEl.value = '';
+    if (teacherNameEl) teacherNameEl.value = '';
+    if (teacherEmailEl) teacherEmailEl.value = '';
+
+    notify('success', 'Criada', 'Sala cadastrada com sucesso.');
+    await refreshRooms(session, { keepStatus: true });
+    setStatus('');
+  } catch (e) {
+    notify('error', 'Erro', String(e?.message || e));
+    setStatus('');
+  }
+}
+
+// ------------------- Init -------------------
+document.addEventListener('DOMContentLoaded', async () => {
   const session = requireSchoolSession();
-  carregarDados(session);
+
+  // nome da escola pelo user salvo
+  setText(schoolNameEl, session.user?.name || 'Escola');
+
+  if (createYearBtn) createYearBtn.addEventListener('click', () => onCreateYear(session));
+  if (createRoomBtn) createRoomBtn.addEventListener('click', () => onCreateRoom(session));
+
+  if (refreshBtn) refreshBtn.addEventListener('click', () => refreshAll(session));
+
+  if (yearSelectEl) {
+    yearSelectEl.addEventListener('change', () => refreshRooms(session));
+  }
+
+  try {
+    await refreshAll(session);
+  } catch (e) {
+    console.error(e);
+    setStatus('Erro ao carregar painel.');
+    notify('error', 'Erro', String(e?.message || e));
+  }
 });
