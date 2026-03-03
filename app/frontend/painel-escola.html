@@ -11,32 +11,39 @@
   <style>
     .mk-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; padding: 14px; background: #fff; }
     .mk-muted { opacity: .85; }
-    .mk-row { display: flex; gap: 12px; align-items: flex-start; }
+    .mk-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
     .mk-col { display: flex; flex-direction: column; gap: 8px; }
-    .mk-space { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .mk-space { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-    .mk-task-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .mk-task-btn { width: 100%; text-align: left; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.10); background: #fff; cursor: pointer; }
-    .mk-task-btn:hover { background: rgba(0,0,0,0.02); }
-    .mk-task-btn strong { display:block; }
-    .mk-task-btn small { opacity: .8; }
+    .mk-grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 820px){ .mk-grid-2 { grid-template-columns: 1fr; } }
 
-    .mk-task-panel { margin-top: 12px; }
-    .mk-task-panel-head { display:flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .mk-input { width: 100%; }
+    .mk-actions { display:flex; gap: 8px; flex-wrap: wrap; }
 
-    .mk-student-item { display: flex; align-items: stretch; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 14px; background: #fff; }
-    .mk-student-left { display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 200px; }
-    .mk-student-info { flex: 1; }
-    .mk-student-actions { display:flex; flex-direction: column; gap: 8px; justify-content: center; }
+    .mk-table { width: 100%; border-collapse: collapse; }
+    .mk-table th, .mk-table td {
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .mk-table th { font-weight: 800; background: rgba(0,0,0,0.02); }
 
-    .mk-chart-wrap { display: flex; align-items: center; gap: 14px; min-width: 360px; justify-content: flex-end; }
-    .mk-donut { width: 120px; height: 120px; flex: 0 0 auto; }
-    .mk-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; align-content: start; min-width: 210px; }
-    .mk-legend-item { display:flex; align-items:center; gap:8px; font-size: 14px; }
-    .mk-dot { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; border: 1px solid rgba(0,0,0,0.10); }
+    .mk-badge {
+      display:inline-flex; align-items:center; justify-content:center;
+      padding: 3px 8px; border-radius: 999px;
+      font-size: 12px; font-weight: 800;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: rgba(0,0,0,0.04);
+    }
+    .mk-badge.on { border-color: rgba(22,163,74,0.35); background: rgba(22,163,74,0.10); }
+    .mk-badge.off { border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.10); }
 
-    .mk-inline-panel { margin-top: 10px; padding: 12px; border: 1px solid rgba(0,0,0,0.10); border-radius: 14px; background: #fff; }
-    .mk-inline-head { display:flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .mk-help { font-size: 13px; }
+    .mk-inline { display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+
+    .danger { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.35); }
   </style>
 </head>
 
@@ -61,6 +68,7 @@
         <a href="suporte.html" class="menu-photo-support" title="Abrir página de suporte">Suporte</a>
       </div>
     </div>
+
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
     <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
@@ -82,29 +90,53 @@
 </aside>
 
 <h2>Painel da Escola</h2>
-
-<p><strong>Escola:</strong> <span id="schoolName">Escola</span></p>
+<p><strong>Escola:</strong> <span id="schoolName">—</span></p>
+<p id="status"></p>
 
 <hr>
 
 <section class="mk-card">
-  <h3>Desempenho da Sala</h3>
-  <div class="mk-row" style="gap: 20px;">
+  <div class="mk-space">
+    <h3 style="margin:0;">Ano letivo</h3>
+    <small class="mk-muted mk-help">Crie e selecione um ano letivo para filtrar salas.</small>
+  </div>
+
+  <div class="mk-grid-2" style="margin-top:10px;">
     <div class="mk-col">
-      <strong>Média geral da sala</strong>
-      <div id="roomAvgDonut" class="mk-donut"></div>
-      <div id="roomAvgLegend" class="mk-legend"></div>
+      <label for="yearName">Nome do ano letivo</label>
+      <input id="yearName" class="mk-input" type="text" placeholder="Ex.: 2026 - 3º ano" />
+      <button id="createYearBtn" type="button">Cadastrar ano letivo</button>
     </div>
+
     <div class="mk-col">
-      <strong>Competências da redação</strong>
-      <ul>
-        <li>C1 — Domínio da norma culta: <span id="avgC1">—</span></li>
-        <li>C2 — Compreensão do tema e repertório: <span id="avgC2">—</span></li>
-        <li>C3 — Argumentação e projeto de texto: <span id="avgC3">—</span></li>
-        <li>C4 — Coesão e mecanismos linguísticos: <span id="avgC4">—</span></li>
-        <li>C5 — Proposta de intervenção: <span id="avgC5">—</span></li>
-        <li>Média total: <strong id="avgTotal">—</strong></li>
-      </ul>
+      <label for="yearSelect">Filtrar salas por ano letivo</label>
+      <select id="yearSelect" class="mk-input">
+        <option value="">Todos</option>
+      </select>
+
+      <div class="mk-inline">
+        <button id="refreshBtn" type="button">Atualizar lista</button>
+        <small class="mk-muted">Dica: use “Todos” para ver salas antigas.</small>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="mk-col">
+    <strong>Anos cadastrados</strong>
+    <div style="overflow:auto;">
+      <table class="mk-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Status</th>
+            <th>Criado em</th>
+            <th style="width: 260px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="yearsTbody"></tbody>
+      </table>
     </div>
   </div>
 </section>
@@ -112,9 +144,59 @@
 <hr>
 
 <section class="mk-card">
-  <h3>Tarefas da sala</h3>
-  <div id="tasksList" class="mk-task-list"></div>
+  <div class="mk-space">
+    <h3 style="margin:0;">Salas</h3>
+    <small class="mk-muted mk-help">Crie salas vinculadas à escola e ao professor responsável.</small>
+  </div>
+
+  <div class="mk-grid-2" style="margin-top:10px;">
+    <div class="mk-col">
+      <label for="roomName">Nome da sala</label>
+      <input id="roomName" class="mk-input" type="text" placeholder="Ex.: 3º Ano A" />
+
+      <label for="teacherName">Nome do professor</label>
+      <input id="teacherName" class="mk-input" type="text" placeholder="Ex.: Maria Silva" />
+
+      <label for="teacherEmail">E-mail do professor</label>
+      <input id="teacherEmail" class="mk-input" type="email" placeholder="professor@escola.com" />
+
+      <button id="createRoomBtn" type="button">Cadastrar sala</button>
+      <small class="mk-muted mk-help">O e-mail é o que valida o professor no sistema. O nome é apenas para UX.</small>
+    </div>
+
+    <div class="mk-col">
+      <strong>Salas cadastradas</strong>
+      <small class="mk-muted mk-help">Exibe professor responsável e data de criação.</small>
+      <div style="overflow:auto;">
+        <table class="mk-table">
+          <thead>
+            <tr>
+              <th>Sala</th>
+              <th>Professor</th>
+              <th>Criado em</th>
+              <th style="width: 320px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="roomsTbody"></tbody>
+        </table>
+      </div>
+
+      <small class="mk-muted mk-help">
+        “Visualizar” abre o desempenho da sala (média geral, C1–C5 e donut).
+      </small>
+    </div>
+  </div>
 </section>
+
+<script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+  initMenuPerfil({
+    loginRedirect: 'index.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html',
+    logoutRedirectSchool: 'login-escola.html'
+  });
+</script>
 
 <script type="module" src="js/painel-escola.js"></script>
 <script src="js/footer.js"></script>
