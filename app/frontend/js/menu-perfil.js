@@ -4,7 +4,6 @@ import { toast, confirmDialog } from './ui-feedback.js';
 /**
  * ✅ FEATURE FLAG:
  * Enquanto a plataforma for grátis, não mostrar "Gerenciar conta".
- * Quando ativar o pago, troque para true (ou faça vir do backend).
  */
 const BILLING_ENABLED = false;
 
@@ -51,6 +50,7 @@ const LS = {
   user: 'user',
   professorId: 'professorId',
   studentId: 'studentId',
+  schoolId: 'schoolId', // ✅ NOVO: padroniza para painéis escolares
 };
 
 function safeJsonParse(s) {
@@ -79,6 +79,14 @@ function getSession() {
     idFromUser !== 'undefined' &&
     idFromUser !== 'null'
   ) {
+    // ✅ garante schoolId para painéis escolares
+    if (roleFromUser === 'school') {
+      localStorage.setItem(LS.schoolId, idFromUser);
+      // evita confusão de papéis
+      localStorage.removeItem(LS.professorId);
+      localStorage.removeItem(LS.studentId);
+    }
+
     return { role: roleFromUser, id: idFromUser, token, user };
   }
 
@@ -91,6 +99,12 @@ function getSession() {
   const studentId = localStorage.getItem(LS.studentId);
   if (studentId && studentId !== 'undefined' && studentId !== 'null') {
     return { role: 'student', id: String(studentId), token, user: null };
+  }
+
+  // legado (school)
+  const schoolId = localStorage.getItem(LS.schoolId);
+  if (schoolId && schoolId !== 'undefined' && schoolId !== 'null') {
+    return { role: 'school', id: String(schoolId), token, user: null };
   }
 
   return { role: null, id: null, token: '', user: null };
@@ -130,16 +144,19 @@ function clearAuthStorage() {
   localStorage.removeItem(LS.user);
   localStorage.removeItem(LS.professorId);
   localStorage.removeItem(LS.studentId);
+  localStorage.removeItem(LS.schoolId);
 }
 
 function redirectAfterLogout(
   role,
   logoutRedirectProfessor,
   logoutRedirectStudent,
+  logoutRedirectSchool,
   fallback = 'index.html'
 ) {
   if (role === 'professor') window.location.href = logoutRedirectProfessor;
   else if (role === 'student') window.location.href = logoutRedirectStudent;
+  else if (role === 'school') window.location.href = logoutRedirectSchool;
   else window.location.href = fallback;
 }
 
@@ -174,8 +191,18 @@ async function authFetchMenu(path, { method = 'GET', token, body } = {}) {
   return data;
 }
 
-// ✅ nunca chama /users/undefined
-async function tryFetchMe(id, token) {
+// ✅ preferir /users/me (padrão seguro)
+async function tryFetchMe(token) {
+  if (!token) return null;
+  try {
+    return await authFetchMenu(`/users/me`, { token, method: 'GET' });
+  } catch {
+    return null;
+  }
+}
+
+// fallback: rota legada /users/:id (se existir)
+async function tryFetchUserById(id, token) {
   if (!id || id === 'undefined' || id === 'null') return null;
   try {
     return await authFetchMenu(`/users/${encodeURIComponent(id)}`, {
@@ -192,6 +219,7 @@ export function initMenuPerfil(options = {}) {
     loginRedirect = 'index.html',
     logoutRedirectProfessor = 'login-professor.html',
     logoutRedirectStudent = 'login-aluno.html',
+    logoutRedirectSchool = 'login-escola.html',
   } = options;
 
   const menuBtn = $('menuBtn');
@@ -218,8 +246,7 @@ export function initMenuPerfil(options = {}) {
   const id = session.id; // string|null
   const token = session.token;
 
-  // (Opcional) Link de "Gerenciar conta" — oculto até BILLING_ENABLED = true
-  // Para funcionar, crie no HTML um item com id="manageAccountLink" (ou ajuste o id aqui).
+  // (Opcional) Link de "Gerenciar conta"
   const manageAccountLink = $('manageAccountLink');
   if (manageAccountLink) {
     manageAccountLink.style.display = BILLING_ENABLED ? '' : 'none';
@@ -249,13 +276,11 @@ export function initMenuPerfil(options = {}) {
     safeText(meRoleEl, '', '');
     loadPhoto(null, null);
 
-    // esconde ações que só fazem sentido logado
     if (saveBtn) saveBtn.style.display = 'none';
     if (newEmailEl) newEmailEl.style.display = 'none';
     if (newPassEl) newPassEl.style.display = 'none';
     if (deleteBtn) deleteBtn.style.display = 'none';
 
-    // logout vira "Entrar"
     if (logoutBtn) {
       logoutBtn.textContent = 'Entrar';
       logoutBtn.addEventListener('click', () => {
@@ -263,13 +288,17 @@ export function initMenuPerfil(options = {}) {
         window.location.href = loginRedirect;
       });
     }
-
     return;
   }
 
   // ---------------- LOGADO ----------------
   safeText(meRoleEl, roleLabel(role), '');
   loadPhoto(role, id);
+
+  // ✅ regra: exclusão só para aluno
+  if (deleteBtn) {
+    deleteBtn.style.display = role === 'student' ? '' : 'none';
+  }
 
   // Foto local
   const photoInput = $('menuPhotoInput');
@@ -279,11 +308,7 @@ export function initMenuPerfil(options = {}) {
       if (!file) return;
 
       if (!['image/png', 'image/jpeg'].includes(file.type)) {
-        toast({
-          title: 'Formato inválido',
-          message: 'Use PNG ou JPG.',
-          type: 'warn',
-        });
+        toast({ title: 'Formato inválido', message: 'Use PNG ou JPG.', type: 'warn' });
         return;
       }
 
@@ -292,17 +317,9 @@ export function initMenuPerfil(options = {}) {
         try {
           localStorage.setItem(photoKey(role, id), reader.result);
           loadPhoto(role, id);
-          toast({
-            title: 'Pronto!',
-            message: 'Foto atualizada.',
-            type: 'success',
-          });
+          toast({ title: 'Pronto!', message: 'Foto atualizada.', type: 'success' });
         } catch {
-          toast({
-            title: 'Erro',
-            message: 'Não foi possível salvar a foto.',
-            type: 'error',
-          });
+          toast({ title: 'Erro', message: 'Não foi possível salvar a foto.', type: 'error' });
         }
       };
       reader.readAsDataURL(file);
@@ -311,13 +328,24 @@ export function initMenuPerfil(options = {}) {
 
   // Busca nome/email no backend (com token)
   (async () => {
-    const me = await tryFetchMe(id, token);
+    const me = (await tryFetchMe(token)) || (await tryFetchUserById(id, token));
+
     if (me) {
       safeText(meNameEl, me.name);
       safeText(meEmailEl, me.email);
 
       const normalized = normalizeRole(me.role);
       safeText(meRoleEl, roleLabel(normalized || role), '');
+
+      // ✅ garante schoolId se for escola
+      const r = normalized || role;
+      if (r === 'school' && me?.id) {
+        localStorage.setItem(LS.schoolId, String(me.id));
+      }
+
+      // ✅ mantém LS.user atualizado
+      const merged = { ...(session.user || {}), ...me };
+      localStorage.setItem(LS.user, JSON.stringify(merged));
     } else {
       // fallback: se tiver "user" no LS, exibe
       const u = session.user;
@@ -340,25 +368,16 @@ export function initMenuPerfil(options = {}) {
 
       if (!email && !password) {
         if (statusEl) statusEl.textContent = 'Nada para salvar.';
-        toast({
-          title: 'Nada a fazer',
-          message: 'Preencha e-mail ou senha para atualizar.',
-          type: 'info',
-        });
+        toast({ title: 'Nada a fazer', message: 'Preencha e-mail ou senha para atualizar.', type: 'info' });
         return;
       }
 
       if (password && password.length < 8) {
         if (statusEl) statusEl.textContent = 'Senha deve ter no mínimo 8 caracteres.';
-        toast({
-          title: 'Senha inválida',
-          message: 'A senha deve ter no mínimo 8 caracteres.',
-          type: 'warn',
-        });
+        toast({ title: 'Senha inválida', message: 'A senha deve ter no mínimo 8 caracteres.', type: 'warn' });
         return;
       }
 
-      // só envia o que foi preenchido
       const payload = {};
       if (email) payload.email = email;
       if (password) payload.password = password;
@@ -366,13 +385,13 @@ export function initMenuPerfil(options = {}) {
       try {
         if (statusEl) statusEl.textContent = 'Salvando...';
 
-        const updated = await authFetchMenu(`/users/${encodeURIComponent(id)}`, {
+        // ✅ usa /users/me (mais seguro)
+        const updated = await authFetchMenu(`/users/me`, {
           method: 'PATCH',
           token,
           body: payload,
         });
 
-        // se backend retorna user atualizado, atualiza LS.user
         if (updated && typeof updated === 'object') {
           const currentUser = safeJsonParse(localStorage.getItem(LS.user)) || {};
           const merged = { ...currentUser, ...updated };
@@ -380,31 +399,17 @@ export function initMenuPerfil(options = {}) {
         }
 
         if (statusEl) statusEl.textContent = 'Dados atualizados.';
-        toast({
-          title: 'Atualizado',
-          message: 'Seus dados foram atualizados.',
-          type: 'success',
-        });
+        toast({ title: 'Atualizado', message: 'Seus dados foram atualizados.', type: 'success' });
 
         if (newEmailEl) newEmailEl.value = '';
         if (newPassEl) newPassEl.value = '';
       } catch (e) {
         const msg = String(e?.message || 'Erro ao atualizar dados.');
         if (String(msg).startsWith('AUTH_')) {
-          // sessão expirada
-          toast({
-            title: 'Sessão expirada',
-            message: 'Faça login novamente.',
-            type: 'warn',
-          });
+          toast({ title: 'Sessão expirada', message: 'Faça login novamente.', type: 'warn' });
           sessionStorage.setItem('mk_just_logged_out', '1');
           clearAuthStorage();
-          redirectAfterLogout(
-            role,
-            logoutRedirectProfessor,
-            logoutRedirectStudent,
-            loginRedirect
-          );
+          redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, logoutRedirectSchool, loginRedirect);
           return;
         }
 
@@ -426,70 +431,51 @@ export function initMenuPerfil(options = {}) {
         duration: 1200,
       });
 
-      // evita auto-redirect no login
       sessionStorage.setItem('mk_just_logged_out', '1');
 
       clearAuthStorage();
-      redirectAfterLogout(
-        role,
-        logoutRedirectProfessor,
-        logoutRedirectStudent,
-        loginRedirect
-      );
+      redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, logoutRedirectSchool, loginRedirect);
     });
   }
 
   // ---------------- EXCLUIR CONTA (DELETE) ----------------
+  // ✅ agora só para alunos (o botão já está oculto, mas reforça aqui)
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
+      if (role !== 'student') {
+        toast({
+          title: 'Ação indisponível',
+          message: 'A exclusão de conta está disponível apenas para estudantes.',
+          type: 'warn',
+        });
+        return;
+      }
+
       const ok = await confirmDialog({
         title: 'Excluir conta',
-        message:
-          'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
+        message: 'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
         okText: 'Sim, excluir',
         cancelText: 'Cancelar',
       });
       if (!ok) return;
 
       try {
-        await authFetchMenu(`/users/${encodeURIComponent(id)}`, {
-          method: 'DELETE',
-          token,
-        });
+        await authFetchMenu(`/users/me`, { method: 'DELETE', token });
 
-        // remove sessão + foto
         localStorage.removeItem(photoKey(role, id));
         sessionStorage.setItem('mk_just_logged_out', '1');
         clearAuthStorage();
 
-        toast({
-          title: 'Conta excluída',
-          message: 'Sua conta foi removida com sucesso.',
-          type: 'success',
-        });
+        toast({ title: 'Conta excluída', message: 'Sua conta foi removida com sucesso.', type: 'success' });
 
-        redirectAfterLogout(
-          role,
-          logoutRedirectProfessor,
-          logoutRedirectStudent,
-          loginRedirect
-        );
+        redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, logoutRedirectSchool, loginRedirect);
       } catch (e) {
         const msg = String(e?.message || 'Erro ao excluir conta.');
         if (String(msg).startsWith('AUTH_')) {
-          toast({
-            title: 'Sessão expirada',
-            message: 'Faça login novamente.',
-            type: 'warn',
-          });
+          toast({ title: 'Sessão expirada', message: 'Faça login novamente.', type: 'warn' });
           sessionStorage.setItem('mk_just_logged_out', '1');
           clearAuthStorage();
-          redirectAfterLogout(
-            role,
-            logoutRedirectProfessor,
-            logoutRedirectStudent,
-            loginRedirect
-          );
+          redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, logoutRedirectSchool, loginRedirect);
           return;
         }
 
