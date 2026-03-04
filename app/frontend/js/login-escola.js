@@ -120,7 +120,6 @@ async function login() {
       return;
     }
 
-    // ✅ garante role school
     const role = normRole(data?.user?.role);
     if (role !== 'SCHOOL') {
       clearAuthStorage();
@@ -137,7 +136,6 @@ async function login() {
       return;
     }
 
-    // evita conflito de papéis
     localStorage.removeItem(LS.professorId);
     localStorage.removeItem(LS.studentId);
 
@@ -147,6 +145,7 @@ async function login() {
 
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
     window.location.replace('painel-escola.html');
+    return;
   } catch {
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
     setStatus('Erro de conexão.');
