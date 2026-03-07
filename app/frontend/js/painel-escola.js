@@ -1,4 +1,3 @@
-// painel-escola.js
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
@@ -14,8 +13,11 @@ function notify(type, title, message, duration) {
       duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
     });
   } else {
-    if (type === 'error') alert(`${title}\n\n${message}`);
-    else console.log(title, message);
+    if (type === 'error') {
+      alert(`${title}\n\n${message}`);
+    } else {
+      console.log(title, message);
+    }
   }
 }
 
@@ -26,11 +28,15 @@ function setStatus(msg) {
 
 function setText(el, value) {
   if (!el) return;
-  el.textContent = value === null || value === undefined ? '—' : String(value);
+  el.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
 }
 
 function safeJsonParse(s) {
-  try { return s ? JSON.parse(s) : null; } catch { return null; }
+  try {
+    return s ? JSON.parse(s) : null;
+  } catch {
+    return null;
+  }
 }
 
 function normRole(role) {
@@ -42,6 +48,15 @@ function fmtDateBR(value) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('pt-BR');
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 // ------------------- Sessão (escola) -------------------
@@ -86,11 +101,16 @@ function requireSchoolSession() {
 }
 
 async function readJsonSafe(res) {
-  try { return await res.json(); } catch { return null; }
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 async function authFetch(path, { token, method = 'GET', body } = {}) {
   const headers = {};
+
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body) headers['Content-Type'] = 'application/json';
 
@@ -113,8 +133,14 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
     if (res.status === 404) {
       throw new Error(`Rota não encontrada: ${path}`);
     }
-    const msg = data?.message || data?.error || `Erro HTTP ${res.status}`;
-    throw new Error(msg);
+
+    const msg =
+      data?.message ||
+      data?.error ||
+      (Array.isArray(data?.message) ? data.message.join(', ') : null) ||
+      `Erro HTTP ${res.status}`;
+
+    throw new Error(String(msg));
   }
 
   return data;
@@ -127,6 +153,7 @@ function unwrapList(data, keys = []) {
   for (const k of keys) {
     if (Array.isArray(data?.[k])) return data[k];
   }
+
   return [];
 }
 
@@ -135,7 +162,6 @@ const schoolNameEl = document.getElementById('schoolName');
 
 const yearNameEl = document.getElementById('yearName');
 const createYearBtn = document.getElementById('createYearBtn');
-const yearSelectEl = document.getElementById('yearSelect');
 const yearsTbody = document.getElementById('yearsTbody');
 
 const refreshBtn = document.getElementById('refreshBtn');
@@ -143,9 +169,15 @@ const refreshBtn = document.getElementById('refreshBtn');
 const roomNameEl = document.getElementById('roomName');
 const teacherNameEl = document.getElementById('teacherName');
 const teacherEmailEl = document.getElementById('teacherEmail');
+const roomYearSelectEl = document.getElementById('roomYearSelect');
 const createRoomBtn = document.getElementById('createRoomBtn');
+
+const roomsFilterYearSelectEl = document.getElementById('roomsFilterYearSelect');
 const roomsTbody = document.getElementById('roomsTbody');
+
 const roomsSectionEl = document.getElementById('roomsSection');
+const createRoomAreaEl = document.getElementById('createRoomArea');
+const roomsBlockedNoteEl = document.getElementById('roomsBlockedNote');
 
 // ------------------- API (anos) -------------------
 async function apiCreateYear(session, name) {
@@ -157,7 +189,9 @@ async function apiCreateYear(session, name) {
 }
 
 async function apiListYears(session) {
-  return authFetch(`${SCHOOL_API_BASE}/years`, { token: session.token });
+  return authFetch(`${SCHOOL_API_BASE}/years`, {
+    token: session.token,
+  });
 }
 
 async function apiUpdateYear(session, yearId, patch) {
@@ -186,7 +220,9 @@ async function apiCreateRoom(session, payload) {
 
 async function apiListRooms(session, yearId) {
   const q = yearId ? `?yearId=${encodeURIComponent(String(yearId))}` : '';
-  return authFetch(`${SCHOOL_API_BASE}/rooms${q}`, { token: session.token });
+  return authFetch(`${SCHOOL_API_BASE}/rooms${q}`, {
+    token: session.token,
+  });
 }
 
 async function apiUpdateRoom(session, roomId, patch) {
@@ -208,56 +244,138 @@ async function apiDeleteRoom(session, roomId) {
 let cachedYears = [];
 let cachedRooms = [];
 
+function sortYearsMostRecentFirst(years) {
+  return [...years].sort((a, b) => {
+    const da = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const db = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    if (db !== da) return db - da;
+
+    const na = Number(String(a?.name || '').replace(/[^\d]/g, '')) || 0;
+    const nb = Number(String(b?.name || '').replace(/[^\d]/g, '')) || 0;
+
+    return nb - na;
+  });
+}
+
+function getDefaultYearId() {
+  if (!cachedYears.length) return '';
+
+  const activeYears = sortYearsMostRecentFirst(cachedYears.filter((y) => !!y.isActive));
+  if (activeYears.length) return String(activeYears[0].id);
+
+  const allYears = sortYearsMostRecentFirst(cachedYears);
+  return allYears.length ? String(allYears[0].id) : '';
+}
+
+function getYearNameById(yearId) {
+  const year = cachedYears.find((y) => String(y.id) === String(yearId));
+  return year?.name || '—';
+}
+
 function updateRoomsAvailability() {
   const hasYears = cachedYears.length > 0;
 
   if (roomsSectionEl) {
-    roomsSectionEl.style.display = hasYears ? '' : 'none';
+    roomsSectionEl.style.display = '';
   }
 
-  if (!hasYears) {
-    if (createRoomBtn) createRoomBtn.disabled = true;
-    if (yearSelectEl) yearSelectEl.disabled = true;
-    if (roomsTbody) {
-      roomsTbody.innerHTML =
-        `<tr><td colspan="4" class="mk-muted">Cadastre ao menos um ano letivo para liberar o cadastro de salas.</td></tr>`;
-    }
-    return;
+  if (roomsBlockedNoteEl) {
+    roomsBlockedNoteEl.style.display = hasYears ? 'none' : '';
   }
 
-  if (createRoomBtn) createRoomBtn.disabled = false;
-  if (yearSelectEl) yearSelectEl.disabled = false;
+  if (createRoomAreaEl) {
+    createRoomAreaEl.style.display = hasYears ? 'flex' : 'none';
+  }
+
+  if (createRoomBtn) createRoomBtn.disabled = !hasYears;
+  if (roomYearSelectEl) roomYearSelectEl.disabled = !hasYears;
+  if (roomsFilterYearSelectEl) roomsFilterYearSelectEl.disabled = !hasYears;
+
+  if (!hasYears && roomsTbody) {
+    roomsTbody.innerHTML =
+      '<tr><td colspan="5" class="mk-muted">Cadastre ao menos um ano letivo para liberar o cadastro e a listagem filtrada de salas.</td></tr>';
+  }
 }
 
 // ------------------- Render: anos -------------------
-function renderYearsSelect() {
-  if (!yearSelectEl) return;
+function renderYearSelectOptions(selectEl, {
+  includeAllOption = false,
+  allLabel = 'Todos',
+  placeholder = 'Selecione um ano letivo',
+  selectedValue = '',
+} = {}) {
+  if (!selectEl) return;
 
-  const prev = String(yearSelectEl.value || '');
+  selectEl.innerHTML = '';
 
-  // ✅ não usar "Todos" porque a criação da sala precisa pertencer a um ano letivo
-  yearSelectEl.innerHTML = `<option value="">Selecione um ano letivo</option>`;
+  if (includeAllOption) {
+    const optAll = document.createElement('option');
+    optAll.value = '';
+    optAll.textContent = allLabel;
+    selectEl.appendChild(optAll);
+  } else {
+    const optPlaceholder = document.createElement('option');
+    optPlaceholder.value = '';
+    optPlaceholder.textContent = placeholder;
+    selectEl.appendChild(optPlaceholder);
+  }
 
-  cachedYears.forEach((y) => {
+  const years = sortYearsMostRecentFirst(cachedYears);
+
+  years.forEach((y) => {
     const opt = document.createElement('option');
     opt.value = String(y.id);
     opt.textContent = y.name || 'Ano letivo';
-    yearSelectEl.appendChild(opt);
+    selectEl.appendChild(opt);
   });
 
-  if (prev) yearSelectEl.value = prev;
+  if (selectedValue) {
+    selectEl.value = String(selectedValue);
+  }
+}
+
+function syncYearSelects() {
+  const defaultYearId = getDefaultYearId();
+
+  const currentCreateValue = String(roomYearSelectEl?.value || '');
+  const currentFilterValue = String(roomsFilterYearSelectEl?.value || '');
+
+  renderYearSelectOptions(roomYearSelectEl, {
+    includeAllOption: false,
+    placeholder: 'Selecione um ano letivo',
+    selectedValue: currentCreateValue || defaultYearId,
+  });
+
+  renderYearSelectOptions(roomsFilterYearSelectEl, {
+    includeAllOption: true,
+    allLabel: 'Todos os anos',
+    selectedValue: currentFilterValue || defaultYearId,
+  });
+
+  if (roomYearSelectEl && !roomYearSelectEl.value && defaultYearId) {
+    roomYearSelectEl.value = defaultYearId;
+  }
+
+  if (roomsFilterYearSelectEl && !roomsFilterYearSelectEl.value && defaultYearId) {
+    roomsFilterYearSelectEl.value = defaultYearId;
+  }
 }
 
 function renderYearsTable(session) {
   if (!yearsTbody) return;
+
   yearsTbody.innerHTML = '';
 
   if (!cachedYears.length) {
-    yearsTbody.innerHTML = `<tr><td colspan="4" class="mk-muted">Nenhum ano letivo cadastrado.</td></tr>`;
+    yearsTbody.innerHTML =
+      '<tr><td colspan="4" class="mk-muted">Nenhum ano letivo cadastrado.</td></tr>';
     return;
   }
 
-  cachedYears.forEach((y) => {
+  const years = sortYearsMostRecentFirst(cachedYears);
+
+  years.forEach((y) => {
     const tr = document.createElement('tr');
 
     const tdName = document.createElement('td');
@@ -283,8 +401,13 @@ function renderYearsTable(session) {
     btnRename.onclick = async () => {
       const name = prompt('Novo nome do ano letivo:', y.name || '');
       if (name == null) return;
+
       const n = String(name).trim();
-      if (!n) return notify('warn', 'Nome inválido', 'Informe um nome válido.');
+      if (!n) {
+        notify('warn', 'Nome inválido', 'Informe um nome válido.');
+        return;
+      }
+
       try {
         await apiUpdateYear(session, y.id, { name: n });
         notify('success', 'Atualizado', 'Ano letivo renomeado.');
@@ -316,6 +439,7 @@ function renderYearsTable(session) {
         `Excluir o ano letivo "${y.name}"?\n\nAs salas desse ano serão mantidas, mas ficarão sem ano letivo.`,
       );
       if (!ok) return;
+
       try {
         await apiDeleteYear(session, y.id);
         notify('success', 'Excluído', 'Ano letivo removido.');
@@ -328,7 +452,6 @@ function renderYearsTable(session) {
     wrap.appendChild(btnRename);
     wrap.appendChild(btnToggle);
     wrap.appendChild(btnDelete);
-
     tdActions.appendChild(wrap);
 
     tr.appendChild(tdName);
@@ -343,16 +466,18 @@ function renderYearsTable(session) {
 // ------------------- Render: salas -------------------
 function renderRoomsTable(session) {
   if (!roomsTbody) return;
+
   roomsTbody.innerHTML = '';
 
   if (!cachedYears.length) {
     roomsTbody.innerHTML =
-      `<tr><td colspan="4" class="mk-muted">Cadastre ao menos um ano letivo para liberar o cadastro de salas.</td></tr>`;
+      '<tr><td colspan="5" class="mk-muted">Cadastre ao menos um ano letivo para liberar o cadastro de salas.</td></tr>';
     return;
   }
 
   if (!cachedRooms.length) {
-    roomsTbody.innerHTML = `<tr><td colspan="4" class="mk-muted">Nenhuma sala cadastrada ainda.</td></tr>`;
+    roomsTbody.innerHTML =
+      '<tr><td colspan="5" class="mk-muted">Nenhuma sala cadastrada ainda.</td></tr>';
     return;
   }
 
@@ -360,10 +485,17 @@ function renderRoomsTable(session) {
     const tr = document.createElement('tr');
 
     const tdRoom = document.createElement('td');
-    tdRoom.innerHTML = `<strong>${r.name || 'Sala'}</strong><br><small class="mk-muted">Código: ${r.code || '—'}</small>`;
+    tdRoom.innerHTML =
+      `<strong>${escapeHtml(r.name || 'Sala')}</strong><br>` +
+      `<small class="mk-muted">Código: ${escapeHtml(r.code || '—')}</small>`;
 
     const tdTeacher = document.createElement('td');
-    tdTeacher.innerHTML = `<strong>${r.teacherNameSnapshot || 'Professor'}</strong><br><small class="mk-muted">${r.teacherEmail || ''}</small>`;
+    tdTeacher.innerHTML =
+      `<strong>${escapeHtml(r.teacherNameSnapshot || 'Professor')}</strong>` +
+      (r.teacherEmail ? `<br><small class="mk-muted">${escapeHtml(r.teacherEmail)}</small>` : '');
+
+    const tdYear = document.createElement('td');
+    tdYear.textContent = getYearNameById(r.schoolYearId);
 
     const tdCreated = document.createElement('td');
     tdCreated.textContent = fmtDateBR(r.createdAt);
@@ -385,8 +517,12 @@ function renderRoomsTable(session) {
     btnRename.onclick = async () => {
       const name = prompt('Novo nome da sala:', r.name || '');
       if (name == null) return;
+
       const n = String(name).trim();
-      if (!n) return notify('warn', 'Nome inválido', 'Informe um nome válido.');
+      if (!n) {
+        notify('warn', 'Nome inválido', 'Informe um nome válido.');
+        return;
+      }
 
       try {
         await apiUpdateRoom(session, r.id, { name: n });
@@ -403,9 +539,10 @@ function renderRoomsTable(session) {
     btnDelete.textContent = 'Excluir';
     btnDelete.onclick = async () => {
       const ok = confirm(
-        `Excluir a sala "${r.name}"?\n\nAtenção: isso pode falhar se o backend não permitir deletar com tarefas/matrículas.`,
+        `Excluir a sala "${r.name}"?\n\nAtenção: isso pode falhar se o backend não permitir deletar com tarefas ou matrículas.`,
       );
       if (!ok) return;
+
       try {
         await apiDeleteRoom(session, r.id);
         notify('success', 'Excluída', 'Sala removida.');
@@ -418,11 +555,11 @@ function renderRoomsTable(session) {
     wrap.appendChild(btnView);
     wrap.appendChild(btnRename);
     wrap.appendChild(btnDelete);
-
     tdActions.appendChild(wrap);
 
     tr.appendChild(tdRoom);
     tr.appendChild(tdTeacher);
+    tr.appendChild(tdYear);
     tr.appendChild(tdCreated);
     tr.appendChild(tdActions);
 
@@ -433,9 +570,10 @@ function renderRoomsTable(session) {
 // ------------------- Loaders -------------------
 async function refreshYears(session, { keepStatus } = {}) {
   if (!keepStatus) setStatus('Carregando anos letivos...');
-  const res = await apiListYears(session);
 
+  const res = await apiListYears(session);
   const years = unwrapList(res, ['years']);
+
   cachedYears = (Array.isArray(years) ? years : []).map((y) => ({
     id: y.id,
     name: y.name,
@@ -443,7 +581,7 @@ async function refreshYears(session, { keepStatus } = {}) {
     createdAt: y.createdAt || y.created_at || null,
   }));
 
-  renderYearsSelect();
+  syncYearSelects();
   renderYearsTable(session);
   updateRoomsAvailability();
 
@@ -458,11 +596,14 @@ async function refreshRooms(session, { keepStatus } = {}) {
   }
 
   if (!keepStatus) setStatus('Carregando salas...');
-  const yearId = yearSelectEl ? String(yearSelectEl.value || '') : '';
+
+  const yearId = roomsFilterYearSelectEl
+    ? String(roomsFilterYearSelectEl.value || '').trim()
+    : '';
 
   const res = await apiListRooms(session, yearId || null);
-
   const rooms = unwrapList(res, ['rooms']);
+
   cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
     id: r.id,
     name: r.name,
@@ -470,33 +611,44 @@ async function refreshRooms(session, { keepStatus } = {}) {
     teacherId: r.teacherId || r.teacher_id || null,
     teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
     teacherEmail: r.teacherEmail || '',
+    schoolYearId: r.schoolYearId || r.school_year_id || null,
     createdAt: r.createdAt || r.created_at || null,
   }));
 
   renderRoomsTable(session);
+
   if (!keepStatus) setStatus('');
 }
 
 async function refreshAll(session, { keepStatus } = {}) {
   await refreshYears(session, { keepStatus: true });
   await refreshRooms(session, { keepStatus: true });
+
   if (!keepStatus) setStatus('');
 }
 
 // ------------------- Actions -------------------
 async function onCreateYear(session) {
   const name = String(yearNameEl?.value || '').trim();
+
   if (!name) {
-    return notify('warn', 'Campos obrigatórios', 'Informe o nome do ano letivo.');
+    notify('warn', 'Campos obrigatórios', 'Informe o nome do ano letivo.');
+    return;
   }
 
   try {
     setStatus('Cadastrando ano letivo...');
     await apiCreateYear(session, name);
+
     if (yearNameEl) yearNameEl.value = '';
 
     notify('success', 'Criado', 'Ano letivo cadastrado.');
     await refreshAll(session, { keepStatus: true });
+
+    const defaultYearId = getDefaultYearId();
+    if (roomYearSelectEl && defaultYearId) roomYearSelectEl.value = defaultYearId;
+    if (roomsFilterYearSelectEl && defaultYearId) roomsFilterYearSelectEl.value = defaultYearId;
+
     setStatus('');
   } catch (e) {
     notify('error', 'Erro', String(e?.message || e));
@@ -506,45 +658,50 @@ async function onCreateYear(session) {
 
 async function onCreateRoom(session) {
   const name = String(roomNameEl?.value || '').trim();
-  const teacherName = String(teacherNameEl?.value || '').trim(); // UX
+  const teacherName = String(teacherNameEl?.value || '').trim();
   const teacherEmail = String(teacherEmailEl?.value || '').trim().toLowerCase();
-  const yearId = yearSelectEl ? String(yearSelectEl.value || '').trim() : '';
+  const yearId = roomYearSelectEl ? String(roomYearSelectEl.value || '').trim() : '';
 
   if (!cachedYears.length) {
-    return notify(
+    notify(
       'warn',
       'Ano letivo obrigatório',
       'Cadastre primeiro um ano letivo para liberar o cadastro de salas.',
     );
+    return;
   }
 
   if (!yearId) {
-    return notify(
+    notify(
       'warn',
-      'Selecione o ano letivo',
-      'Escolha um ano letivo antes de cadastrar a sala.',
+      'Ano letivo obrigatório',
+      'Selecione o ano letivo da sala antes de cadastrar.',
     );
+    return;
   }
 
   if (!name || !teacherEmail) {
-    return notify(
+    notify(
       'warn',
       'Campos obrigatórios',
-      'Informe nome da sala e e-mail do professor.',
+      'Informe o nome da sala e o e-mail do professor.',
     );
+    return;
   }
 
   if (!teacherEmail.includes('@')) {
-    return notify('warn', 'E-mail inválido', 'Informe um e-mail válido do professor.');
+    notify('warn', 'E-mail inválido', 'Informe um e-mail válido do professor.');
+    return;
   }
 
   try {
     setStatus('Cadastrando sala...');
+
     await apiCreateRoom(session, {
       name,
       teacherEmail,
       yearId,
-      teacherName, // backend pode ignorar
+      teacherName,
     });
 
     if (roomNameEl) roomNameEl.value = '';
@@ -552,6 +709,11 @@ async function onCreateRoom(session) {
     if (teacherEmailEl) teacherEmailEl.value = '';
 
     notify('success', 'Criada', 'Sala cadastrada com sucesso.');
+
+    if (roomsFilterYearSelectEl && yearId) {
+      roomsFilterYearSelectEl.value = yearId;
+    }
+
     await refreshRooms(session, { keepStatus: true });
     setStatus('');
   } catch (e) {
@@ -567,7 +729,7 @@ async function onCreateRoom(session) {
       notify(
         'error',
         'Rota não encontrada',
-        'O backend publicado não está reconhecendo a rota de salas. Verifique se o deploy do controller mais recente foi feito.',
+        'O backend publicado não está reconhecendo a rota de salas. Verifique se o deploy mais recente foi publicado no Render.',
       );
     } else {
       notify('error', 'Erro', msg);
@@ -583,18 +745,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   setText(schoolNameEl, session.user?.name || 'Escola');
 
-  if (createYearBtn) createYearBtn.addEventListener('click', () => onCreateYear(session));
-  if (createRoomBtn) createRoomBtn.addEventListener('click', () => onCreateRoom(session));
-  if (refreshBtn) refreshBtn.addEventListener('click', () => refreshAll(session));
+  if (createYearBtn) {
+    createYearBtn.addEventListener('click', () => onCreateYear(session));
+  }
 
-  if (yearSelectEl) {
-    yearSelectEl.addEventListener('change', () => refreshRooms(session));
+  if (createRoomBtn) {
+    createRoomBtn.addEventListener('click', () => onCreateRoom(session));
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => refreshAll(session));
+  }
+
+  if (roomsFilterYearSelectEl) {
+    roomsFilterYearSelectEl.addEventListener('change', () => refreshRooms(session));
   }
 
   try {
     await refreshAll(session);
   } catch (e) {
     console.error(e);
+
     const msg = String(e?.message || e);
 
     if (msg.includes('Rota não encontrada')) {
