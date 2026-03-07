@@ -2,7 +2,6 @@
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
-// ⚠️ ajuste se seu controller usar outro prefixo
 const SCHOOL_API_BASE = '/school-dashboard';
 
 // ------------------- Toast helpers -------------------
@@ -49,7 +48,7 @@ function fmtDateBR(value) {
 const LS = {
   token: 'token',
   user: 'user',
-  schoolId: 'schoolId', // opcional: vamos preencher se não existir
+  schoolId: 'schoolId',
   professorId: 'professorId',
   studentId: 'studentId',
 };
@@ -67,7 +66,6 @@ function requireSchoolSession() {
   const user = safeJsonParse(localStorage.getItem(LS.user));
   const role = normRole(user?.role);
 
-  // aceitamos SCHOOL/ESCOLA por compat
   const isSchool = role === 'SCHOOL' || role === 'ESCOLA';
 
   if (!token || !isSchool) {
@@ -76,13 +74,11 @@ function requireSchoolSession() {
     throw new Error('Sessão de escola ausente/inválida');
   }
 
-  // padroniza schoolId
   const uid = String(user?.id || '').trim();
   if (uid && !localStorage.getItem(LS.schoolId)) {
     localStorage.setItem(LS.schoolId, uid);
   }
 
-  // evita conflito de papéis
   localStorage.removeItem(LS.professorId);
   localStorage.removeItem(LS.studentId);
 
@@ -114,6 +110,9 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
   const data = await readJsonSafe(res);
 
   if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error(`Rota não encontrada: ${path}`);
+    }
     const msg = data?.message || data?.error || `Erro HTTP ${res.status}`;
     throw new Error(msg);
   }
@@ -146,6 +145,7 @@ const teacherNameEl = document.getElementById('teacherName');
 const teacherEmailEl = document.getElementById('teacherEmail');
 const createRoomBtn = document.getElementById('createRoomBtn');
 const roomsTbody = document.getElementById('roomsTbody');
+const roomsSectionEl = document.getElementById('roomsSection');
 
 // ------------------- API (anos) -------------------
 async function apiCreateYear(session, name) {
@@ -177,7 +177,6 @@ async function apiDeleteYear(session, yearId) {
 
 // ------------------- API (salas) -------------------
 async function apiCreateRoom(session, payload) {
-  // payload: { name, teacherEmail, yearId? }
   return authFetch(`${SCHOOL_API_BASE}/rooms`, {
     token: session.token,
     method: 'POST',
@@ -205,15 +204,39 @@ async function apiDeleteRoom(session, roomId) {
   });
 }
 
-// ------------------- Render: anos -------------------
+// ------------------- Estado UI -------------------
 let cachedYears = [];
+let cachedRooms = [];
 
+function updateRoomsAvailability() {
+  const hasYears = cachedYears.length > 0;
+
+  if (roomsSectionEl) {
+    roomsSectionEl.style.display = hasYears ? '' : 'none';
+  }
+
+  if (!hasYears) {
+    if (createRoomBtn) createRoomBtn.disabled = true;
+    if (yearSelectEl) yearSelectEl.disabled = true;
+    if (roomsTbody) {
+      roomsTbody.innerHTML =
+        `<tr><td colspan="4" class="mk-muted">Cadastre ao menos um ano letivo para liberar o cadastro de salas.</td></tr>`;
+    }
+    return;
+  }
+
+  if (createRoomBtn) createRoomBtn.disabled = false;
+  if (yearSelectEl) yearSelectEl.disabled = false;
+}
+
+// ------------------- Render: anos -------------------
 function renderYearsSelect() {
   if (!yearSelectEl) return;
 
   const prev = String(yearSelectEl.value || '');
 
-  yearSelectEl.innerHTML = `<option value="">Todos</option>`;
+  // ✅ não usar "Todos" porque a criação da sala precisa pertencer a um ano letivo
+  yearSelectEl.innerHTML = `<option value="">Selecione um ano letivo</option>`;
 
   cachedYears.forEach((y) => {
     const opt = document.createElement('option');
@@ -222,7 +245,6 @@ function renderYearsSelect() {
     yearSelectEl.appendChild(opt);
   });
 
-  // tenta manter seleção
   if (prev) yearSelectEl.value = prev;
 }
 
@@ -319,11 +341,15 @@ function renderYearsTable(session) {
 }
 
 // ------------------- Render: salas -------------------
-let cachedRooms = [];
-
 function renderRoomsTable(session) {
   if (!roomsTbody) return;
   roomsTbody.innerHTML = '';
+
+  if (!cachedYears.length) {
+    roomsTbody.innerHTML =
+      `<tr><td colspan="4" class="mk-muted">Cadastre ao menos um ano letivo para liberar o cadastro de salas.</td></tr>`;
+    return;
+  }
 
   if (!cachedRooms.length) {
     roomsTbody.innerHTML = `<tr><td colspan="4" class="mk-muted">Nenhuma sala cadastrada ainda.</td></tr>`;
@@ -350,7 +376,6 @@ function renderRoomsTable(session) {
     btnView.type = 'button';
     btnView.textContent = 'Visualizar';
     btnView.onclick = () => {
-      // Você pode criar desempenho-escola.html ou reutilizar desempenho-professor.html com ajuste de sessão
       window.location.href = `desempenho-escola.html?roomId=${encodeURIComponent(String(r.id))}`;
     };
 
@@ -410,7 +435,6 @@ async function refreshYears(session, { keepStatus } = {}) {
   if (!keepStatus) setStatus('Carregando anos letivos...');
   const res = await apiListYears(session);
 
-  // suporte a {ok:true, years:[...]} ou array direto
   const years = unwrapList(res, ['years']);
   cachedYears = (Array.isArray(years) ? years : []).map((y) => ({
     id: y.id,
@@ -421,12 +445,21 @@ async function refreshYears(session, { keepStatus } = {}) {
 
   renderYearsSelect();
   renderYearsTable(session);
+  updateRoomsAvailability();
+
   if (!keepStatus) setStatus('');
 }
 
 async function refreshRooms(session, { keepStatus } = {}) {
+  if (!cachedYears.length) {
+    cachedRooms = [];
+    renderRoomsTable(session);
+    return;
+  }
+
   if (!keepStatus) setStatus('Carregando salas...');
   const yearId = yearSelectEl ? String(yearSelectEl.value || '') : '';
+
   const res = await apiListRooms(session, yearId || null);
 
   const rooms = unwrapList(res, ['rooms']);
@@ -436,7 +469,7 @@ async function refreshRooms(session, { keepStatus } = {}) {
     code: r.code,
     teacherId: r.teacherId || r.teacher_id || null,
     teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
-    teacherEmail: r.teacherEmail || '', // se backend não manda, fica vazio (ok)
+    teacherEmail: r.teacherEmail || '',
     createdAt: r.createdAt || r.created_at || null,
   }));
 
@@ -453,12 +486,15 @@ async function refreshAll(session, { keepStatus } = {}) {
 // ------------------- Actions -------------------
 async function onCreateYear(session) {
   const name = String(yearNameEl?.value || '').trim();
-  if (!name) return notify('warn', 'Campos obrigatórios', 'Informe o nome do ano letivo.');
+  if (!name) {
+    return notify('warn', 'Campos obrigatórios', 'Informe o nome do ano letivo.');
+  }
 
   try {
     setStatus('Cadastrando ano letivo...');
     await apiCreateYear(session, name);
     if (yearNameEl) yearNameEl.value = '';
+
     notify('success', 'Criado', 'Ano letivo cadastrado.');
     await refreshAll(session, { keepStatus: true });
     setStatus('');
@@ -472,11 +508,32 @@ async function onCreateRoom(session) {
   const name = String(roomNameEl?.value || '').trim();
   const teacherName = String(teacherNameEl?.value || '').trim(); // UX
   const teacherEmail = String(teacherEmailEl?.value || '').trim().toLowerCase();
-  const yearId = yearSelectEl ? String(yearSelectEl.value || '') : '';
+  const yearId = yearSelectEl ? String(yearSelectEl.value || '').trim() : '';
+
+  if (!cachedYears.length) {
+    return notify(
+      'warn',
+      'Ano letivo obrigatório',
+      'Cadastre primeiro um ano letivo para liberar o cadastro de salas.',
+    );
+  }
+
+  if (!yearId) {
+    return notify(
+      'warn',
+      'Selecione o ano letivo',
+      'Escolha um ano letivo antes de cadastrar a sala.',
+    );
+  }
 
   if (!name || !teacherEmail) {
-    return notify('warn', 'Campos obrigatórios', 'Informe nome da sala e e-mail do professor.');
+    return notify(
+      'warn',
+      'Campos obrigatórios',
+      'Informe nome da sala e e-mail do professor.',
+    );
   }
+
   if (!teacherEmail.includes('@')) {
     return notify('warn', 'E-mail inválido', 'Informe um e-mail válido do professor.');
   }
@@ -486,8 +543,8 @@ async function onCreateRoom(session) {
     await apiCreateRoom(session, {
       name,
       teacherEmail,
-      yearId: yearId || null,
-      teacherName, // se backend ignorar, ok
+      yearId,
+      teacherName, // backend pode ignorar
     });
 
     if (roomNameEl) roomNameEl.value = '';
@@ -498,7 +555,24 @@ async function onCreateRoom(session) {
     await refreshRooms(session, { keepStatus: true });
     setStatus('');
   } catch (e) {
-    notify('error', 'Erro', String(e?.message || e));
+    const msg = String(e?.message || e);
+
+    if (msg.includes('Professor não encontrado')) {
+      notify(
+        'error',
+        'Professor não encontrado',
+        'O e-mail informado precisa ser de um professor já cadastrado e vinculado a esta escola.',
+      );
+    } else if (msg.includes('Rota não encontrada')) {
+      notify(
+        'error',
+        'Rota não encontrada',
+        'O backend publicado não está reconhecendo a rota de salas. Verifique se o deploy do controller mais recente foi feito.',
+      );
+    } else {
+      notify('error', 'Erro', msg);
+    }
+
     setStatus('');
   }
 }
@@ -507,12 +581,10 @@ async function onCreateRoom(session) {
 document.addEventListener('DOMContentLoaded', async () => {
   const session = requireSchoolSession();
 
-  // nome da escola pelo user salvo
   setText(schoolNameEl, session.user?.name || 'Escola');
 
   if (createYearBtn) createYearBtn.addEventListener('click', () => onCreateYear(session));
   if (createRoomBtn) createRoomBtn.addEventListener('click', () => onCreateRoom(session));
-
   if (refreshBtn) refreshBtn.addEventListener('click', () => refreshAll(session));
 
   if (yearSelectEl) {
@@ -523,7 +595,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshAll(session);
   } catch (e) {
     console.error(e);
-    setStatus('Erro ao carregar painel.');
-    notify('error', 'Erro', String(e?.message || e));
+    const msg = String(e?.message || e);
+
+    if (msg.includes('Rota não encontrada')) {
+      setStatus('Erro ao carregar painel: rota do backend não encontrada.');
+      notify(
+        'error',
+        'Backend desatualizado',
+        'A rota do painel escolar não foi encontrada no servidor. Verifique se o último deploy foi publicado.',
+      );
+    } else {
+      setStatus('Erro ao carregar painel.');
+      notify('error', 'Erro', msg);
+    }
   }
 });
