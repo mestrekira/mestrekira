@@ -221,16 +221,7 @@ export function initMenuPerfil(options = {}) {
     logoutRedirectStudent = 'login-aluno.html',
     logoutRedirectSchool = 'login-escola.html',
   } = options;
-  /
-  / em todos os lugares que chama redirectAfterLogout:
-  redirectAfterLogout(
-    role,
-    logoutRedirectProfessor,
-    logoutRedirectStudent,
-    logoutRedirectSchool,
-    loginRedirect
-  );
-//Pode ser que dê erro aqui, por não ter }
+
   const menuBtn = $('menuBtn');
   const menuPanel = $('menuPanel');
   const closeBtn = $('menuCloseBtn');
