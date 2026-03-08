@@ -52,6 +52,18 @@ function normRole(role) {
   return String(role || '').trim().toUpperCase();
 }
 
+function sanitizeToken(value) {
+  let t = String(value || '').trim();
+
+  if (/^Bearer\s+/i.test(t)) {
+    t = t.replace(/^Bearer\s+/i, '').trim();
+  }
+
+  t = t.replace(/^['"]+|['"]+$/g, '').trim();
+
+  return t;
+}
+
 function clearAuthStorage() {
   localStorage.removeItem(LS.token);
   localStorage.removeItem(LS.user);
@@ -69,7 +81,7 @@ async function readJsonSafe(res) {
 }
 
 async function alreadyLoggedInGuard() {
-  const token = localStorage.getItem(LS.token);
+  const token = sanitizeToken(localStorage.getItem(LS.token));
   const user = safeJsonParse(localStorage.getItem(LS.user));
   const role = normRole(user?.role);
 
@@ -78,7 +90,7 @@ async function alreadyLoggedInGuard() {
   try {
     const res = await fetch(`${API_URL}/users/me`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${sanitizeToken(token)}`,
       },
     });
 
@@ -95,6 +107,7 @@ async function alreadyLoggedInGuard() {
       return false;
     }
 
+    localStorage.setItem(LS.token, sanitizeToken(token));
     window.location.replace('painel-escola.html');
     return true;
   } catch {
@@ -108,7 +121,7 @@ async function debugToken(token) {
     const res = await fetch(`${API_URL}/auth/debug-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token: sanitizeToken(token) }),
     });
 
     return await readJsonSafe(res);
@@ -123,7 +136,7 @@ async function debugAuthHeader(token) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${sanitizeToken(token)}`,
       },
       body: JSON.stringify({}),
     });
@@ -138,7 +151,7 @@ async function debugProtected(token) {
   try {
     const res = await fetch(`${API_URL}/auth/debug-protected`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${sanitizeToken(token)}`,
       },
     });
 
@@ -220,7 +233,7 @@ async function login() {
       return;
     }
 
-    const token = String(data.token || '').trim();
+    const token = sanitizeToken(data.token);
     if (!token) {
       clearAuthStorage();
       notify('error', 'Erro', 'O servidor não retornou um token válido.');
@@ -236,6 +249,7 @@ async function login() {
     localStorage.setItem(LS.schoolId, String(userId));
 
     const tokenCheck = await debugToken(token);
+
     if (!tokenCheck?.ok) {
       clearAuthStorage();
       notify(
@@ -244,7 +258,9 @@ async function login() {
         tokenCheck?.error || 'O token retornado pelo login não pôde ser validado.',
       );
       setStatus(
-        `Falha ao validar token do login: ${String(tokenCheck?.error || 'Token inválido.')}`,
+        `Falha ao validar token do login: ${String(
+          tokenCheck?.error || 'Token inválido.',
+        )}`,
       );
       return;
     }
