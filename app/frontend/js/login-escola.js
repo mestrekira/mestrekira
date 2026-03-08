@@ -1,4 +1,3 @@
-// login-escola.js
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
@@ -23,7 +22,8 @@ function notify(type, title, message, duration) {
     type,
     title,
     message,
-    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
+    duration:
+      duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
   });
 }
 
@@ -41,7 +41,11 @@ function show(el, value) {
 }
 
 function safeJsonParse(s) {
-  try { return s ? JSON.parse(s) : null; } catch { return null; }
+  try {
+    return s ? JSON.parse(s) : null;
+  } catch {
+    return null;
+  }
 }
 
 function normRole(role) {
@@ -57,7 +61,11 @@ function clearAuthStorage() {
 }
 
 async function readJsonSafe(res) {
-  try { return await res.json(); } catch { return null; }
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 async function alreadyLoggedInGuard() {
@@ -79,11 +87,33 @@ async function alreadyLoggedInGuard() {
       return false;
     }
 
+    const data = await readJsonSafe(res);
+    const meRole = normRole(data?.role || data?.user?.role || user?.role);
+
+    if (meRole !== 'SCHOOL') {
+      clearAuthStorage();
+      return false;
+    }
+
     window.location.replace('painel-escola.html');
     return true;
   } catch {
     clearAuthStorage();
     return false;
+  }
+}
+
+async function debugToken(token) {
+  try {
+    const res = await fetch(`${API_URL}/auth/debug-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+
+    return await readJsonSafe(res);
+  } catch {
+    return null;
   }
 }
 
@@ -146,23 +176,67 @@ async function login() {
     const userId = data?.user?.id;
     if (!userId) {
       clearAuthStorage();
-      notify('error', 'Erro', 'Login ok, mas o servidor não retornou o ID da escola.');
+      notify(
+        'error',
+        'Erro',
+        'Login ok, mas o servidor não retornou o ID da escola.',
+      );
       setStatus('Erro: servidor não retornou o ID.');
+      return;
+    }
+
+    const token = String(data.token || '').trim();
+    if (!token) {
+      clearAuthStorage();
+      notify('error', 'Erro', 'O servidor não retornou um token válido.');
+      setStatus('Token ausente no retorno do login.');
       return;
     }
 
     localStorage.removeItem(LS.professorId);
     localStorage.removeItem(LS.studentId);
 
-    localStorage.setItem(LS.token, String(data.token));
+    localStorage.setItem(LS.token, token);
     localStorage.setItem(LS.user, JSON.stringify(data.user));
     localStorage.setItem(LS.schoolId, String(userId));
 
+    const debug = await debugToken(token);
+
+    if (!debug?.ok) {
+      clearAuthStorage();
+      notify(
+        'error',
+        'Token inválido',
+        debug?.error || 'O token retornado pelo login não pôde ser validado.',
+      );
+      setStatus(
+        `Falha ao validar token do login: ${String(debug?.error || 'Token inválido.')}`,
+      );
+      return;
+    }
+
+    const decodedRole = normRole(debug?.decoded?.role);
+    const decodedSub = String(debug?.decoded?.sub || '').trim();
+
+    if (decodedRole !== 'SCHOOL' || !decodedSub) {
+      clearAuthStorage();
+      notify(
+        'error',
+        'Sessão inválida',
+        'O token retornado não corresponde a uma conta de escola.',
+      );
+      setStatus('O token retornado não corresponde a uma conta de escola.');
+      return;
+    }
+
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
     window.location.replace('painel-escola.html');
-    return;
   } catch {
-    notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
+    notify(
+      'error',
+      'Erro de conexão',
+      'Não foi possível acessar o servidor agora.',
+    );
     setStatus('Erro de conexão.');
   } finally {
     disable(btnLogin, false);
@@ -172,7 +246,11 @@ async function login() {
 async function reenviarVerificacao() {
   const email = String(emailEl?.value || '').trim().toLowerCase();
   if (!email) {
-    notify('warn', 'Digite seu e-mail', 'Informe seu e-mail para reenviar o link.');
+    notify(
+      'warn',
+      'Digite seu e-mail',
+      'Informe seu e-mail para reenviar o link.',
+    );
     return;
   }
 
