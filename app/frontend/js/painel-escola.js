@@ -117,11 +117,24 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body) headers['Content-Type'] = 'application/json';
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const url = `${API_URL}${path}`;
+
+  console.log('[authFetch] URL:', url);
+  console.log('[authFetch] METHOD:', method);
+  console.log('[authFetch] TOKEN EXISTS:', !!token);
+  console.log('[authFetch] TOKEN PREVIEW:', token ? `${token.slice(0, 25)}...` : '(sem token)');
+  console.log('[authFetch] BODY:', body);
+
+  const res = await fetch(url, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
+
+  const data = await readJsonSafe(res);
+
+  console.log('[authFetch] STATUS:', res.status);
+  console.log('[authFetch] RESPONSE:', data);
 
   if (res.status === 401 || res.status === 403) {
     notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
@@ -130,11 +143,9 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
     throw new Error(`AUTH_${res.status}`);
   }
 
-  const data = await readJsonSafe(res);
-
   if (!res.ok) {
     if (res.status === 404) {
-      throw new Error(`Rota não encontrada: ${path}`);
+      throw new Error(`HTTP 404 em ${method} ${path}`);
     }
 
     const msg =
