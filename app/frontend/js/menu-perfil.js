@@ -2,7 +2,6 @@ import { API_URL } from './config.js';
 import { toast, confirmDialog } from './ui-feedback.js';
 
 /**
- * ✅ FEATURE FLAG:
  * Enquanto a plataforma for grátis, não mostrar "Gerenciar conta".
  */
 const BILLING_ENABLED = false;
@@ -17,11 +16,6 @@ function safeText(el, value, fallback = '—') {
   el.textContent = ok ? String(value) : fallback;
 }
 
-/**
- * Normaliza papel:
- * - backend: "PROFESSOR" / "ALUNO" / "STUDENT" / "TEACHER" / "SCHOOL"
- * - front: "professor" | "student" | "school"
- */
 function normalizeRole(role) {
   if (!role) return null;
   const r = String(role).trim().toUpperCase();
@@ -50,7 +44,7 @@ const LS = {
   user: 'user',
   professorId: 'professorId',
   studentId: 'studentId',
-  schoolId: 'schoolId', // ✅ NOVO: padroniza para painéis escolares
+  schoolId: 'schoolId',
 };
 
 function safeJsonParse(s) {
@@ -61,17 +55,36 @@ function safeJsonParse(s) {
   }
 }
 
-/**
- * Pega sessão atual:
- * 1) Preferência: localStorage.user (novo padrão)
- * 2) Fallback: professorId/studentId (legado)
- */
+function sanitizeToken(value) {
+  let t = String(value || '').trim();
+
+  if (/^Bearer\s+/i.test(t)) {
+    t = t.replace(/^Bearer\s+/i, '').trim();
+  }
+
+  t = t.replace(/^['"]+|['"]+$/g, '').trim();
+
+  return t;
+}
+
+function clearAuthStorage() {
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.studentId);
+  localStorage.removeItem(LS.schoolId);
+}
+
 function getSession() {
-  const token = localStorage.getItem(LS.token) || '';
+  const token = sanitizeToken(localStorage.getItem(LS.token) || '');
   const user = safeJsonParse(localStorage.getItem(LS.user));
 
+  if (token) {
+    localStorage.setItem(LS.token, token);
+  }
+
   const roleFromUser = normalizeRole(user?.role);
-  const idFromUser = user?.id ? String(user.id) : null;
+  const idFromUser = user?.id ? String(user.id).trim() : null;
 
   if (
     roleFromUser &&
@@ -79,31 +92,45 @@ function getSession() {
     idFromUser !== 'undefined' &&
     idFromUser !== 'null'
   ) {
-    // ✅ garante schoolId para painéis escolares
     if (roleFromUser === 'school') {
       localStorage.setItem(LS.schoolId, idFromUser);
-      // evita confusão de papéis
       localStorage.removeItem(LS.professorId);
       localStorage.removeItem(LS.studentId);
+    }
+
+    if (roleFromUser === 'professor') {
+      localStorage.setItem(LS.professorId, idFromUser);
+      localStorage.removeItem(LS.studentId);
+      localStorage.removeItem(LS.schoolId);
+    }
+
+    if (roleFromUser === 'student') {
+      localStorage.setItem(LS.studentId, idFromUser);
+      localStorage.removeItem(LS.professorId);
+      localStorage.removeItem(LS.schoolId);
     }
 
     return { role: roleFromUser, id: idFromUser, token, user };
   }
 
-  // legado
   const professorId = localStorage.getItem(LS.professorId);
   if (professorId && professorId !== 'undefined' && professorId !== 'null') {
+    localStorage.removeItem(LS.studentId);
+    localStorage.removeItem(LS.schoolId);
     return { role: 'professor', id: String(professorId), token, user: null };
   }
 
   const studentId = localStorage.getItem(LS.studentId);
   if (studentId && studentId !== 'undefined' && studentId !== 'null') {
+    localStorage.removeItem(LS.professorId);
+    localStorage.removeItem(LS.schoolId);
     return { role: 'student', id: String(studentId), token, user: null };
   }
 
-  // legado (school)
   const schoolId = localStorage.getItem(LS.schoolId);
   if (schoolId && schoolId !== 'undefined' && schoolId !== 'null') {
+    localStorage.removeItem(LS.professorId);
+    localStorage.removeItem(LS.studentId);
     return { role: 'school', id: String(schoolId), token, user: null };
   }
 
@@ -138,15 +165,7 @@ function loadPhoto(role, id) {
   img.style.display = 'inline-block';
 }
 
-// ---------------- Auth fetch helper (menu) ----------------
-function clearAuthStorage() {
-  localStorage.removeItem(LS.token);
-  localStorage.removeItem(LS.user);
-  localStorage.removeItem(LS.professorId);
-  localStorage.removeItem(LS.studentId);
-  localStorage.removeItem(LS.schoolId);
-}
-
+// ---------------- Auth fetch helper ----------------
 function redirectAfterLogout(
   role,
   logoutRedirectProfessor,
@@ -161,9 +180,11 @@ function redirectAfterLogout(
 }
 
 async function authFetchMenu(path, { method = 'GET', token, body } = {}) {
+  const cleanToken = sanitizeToken(token);
+
   const headers = {};
   if (body) headers['Content-Type'] = 'application/json';
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (cleanToken) headers.Authorization = `Bearer ${cleanToken}`;
 
   const res = await fetch(`${API_URL}${path}`, {
     method,
@@ -171,7 +192,6 @@ async function authFetchMenu(path, { method = 'GET', token, body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  // se expirar, força logout
   if (res.status === 401 || res.status === 403) {
     throw new Error(`AUTH_${res.status}`);
   }
@@ -191,22 +211,24 @@ async function authFetchMenu(path, { method = 'GET', token, body } = {}) {
   return data;
 }
 
-// ✅ preferir /users/me (padrão seguro)
 async function tryFetchMe(token) {
-  if (!token) return null;
+  const cleanToken = sanitizeToken(token);
+  if (!cleanToken) return null;
+
   try {
-    return await authFetchMenu(`/users/me`, { token, method: 'GET' });
+    return await authFetchMenu('/users/me', { token: cleanToken, method: 'GET' });
   } catch {
     return null;
   }
 }
 
-// fallback: rota legada /users/:id (se existir)
 async function tryFetchUserById(id, token) {
-  if (!id || id === 'undefined' || id === 'null') return null;
+  const cleanToken = sanitizeToken(token);
+  if (!id || id === 'undefined' || id === 'null' || !cleanToken) return null;
+
   try {
     return await authFetchMenu(`/users/${encodeURIComponent(id)}`, {
-      token,
+      token: cleanToken,
       method: 'GET',
     });
   } catch {
@@ -226,37 +248,32 @@ export function initMenuPerfil(options = {}) {
   const menuPanel = $('menuPanel');
   const closeBtn = $('menuCloseBtn');
 
-  // se a página nem tem menu, sai
   if (!menuBtn || !menuPanel) return;
-
-  // evita duplicar listeners
   if (menuPanel.dataset.mkInit === '1') return;
   menuPanel.dataset.mkInit = '1';
 
-  // abrir/fechar
   menuBtn.addEventListener('click', () => menuPanel.classList.toggle('open'));
-  if (closeBtn)
-    closeBtn.addEventListener('click', () =>
-      menuPanel.classList.remove('open')
-    );
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => menuPanel.classList.remove('open'));
+  }
 
-  // sessão
   const session = getSession();
-  const role = session.role; // 'professor'|'student'|'school'|null
-  const id = session.id; // string|null
-  const token = session.token;
+  const role = session.role;
+  const id = session.id;
+  const token = sanitizeToken(session.token);
 
-  // (Opcional) Link de "Gerenciar conta"
+  if (token) {
+    localStorage.setItem(LS.token, token);
+  }
+
   const manageAccountLink = $('manageAccountLink');
   if (manageAccountLink) {
     manageAccountLink.style.display = BILLING_ENABLED ? '' : 'none';
   }
 
-  // NÃO exibir ID (se existir no HTML)
   const meIdEl = $('meId');
   if (meIdEl) meIdEl.textContent = '';
 
-  // elementos comuns
   const meNameEl = $('meName');
   const meEmailEl = $('meEmail');
   const meRoleEl = $('meRole');
@@ -269,7 +286,6 @@ export function initMenuPerfil(options = {}) {
   const newPassEl = $('newPass');
   const statusEl = $('menuStatus');
 
-  // ---------------- VISITANTE ----------------
   if (!role || !id) {
     safeText(meNameEl, 'Visitante', 'Visitante');
     safeText(meEmailEl, '', '');
@@ -291,16 +307,13 @@ export function initMenuPerfil(options = {}) {
     return;
   }
 
-  // ---------------- LOGADO ----------------
   safeText(meRoleEl, roleLabel(role), '');
   loadPhoto(role, id);
 
-  // ✅ regra: exclusão só para aluno
   if (deleteBtn) {
     deleteBtn.style.display = role === 'student' ? '' : 'none';
   }
 
-  // Foto local
   const photoInput = $('menuPhotoInput');
   if (photoInput) {
     photoInput.addEventListener('change', (e) => {
@@ -308,7 +321,11 @@ export function initMenuPerfil(options = {}) {
       if (!file) return;
 
       if (!['image/png', 'image/jpeg'].includes(file.type)) {
-        toast({ title: 'Formato inválido', message: 'Use PNG ou JPG.', type: 'warn' });
+        toast({
+          title: 'Formato inválido',
+          message: 'Use PNG ou JPG.',
+          type: 'warn',
+        });
         return;
       }
 
@@ -317,16 +334,23 @@ export function initMenuPerfil(options = {}) {
         try {
           localStorage.setItem(photoKey(role, id), reader.result);
           loadPhoto(role, id);
-          toast({ title: 'Pronto!', message: 'Foto atualizada.', type: 'success' });
+          toast({
+            title: 'Pronto!',
+            message: 'Foto atualizada.',
+            type: 'success',
+          });
         } catch {
-          toast({ title: 'Erro', message: 'Não foi possível salvar a foto.', type: 'error' });
+          toast({
+            title: 'Erro',
+            message: 'Não foi possível salvar a foto.',
+            type: 'error',
+          });
         }
       };
       reader.readAsDataURL(file);
     });
   }
 
-  // Busca nome/email no backend (com token)
   (async () => {
     const me = (await tryFetchMe(token)) || (await tryFetchUserById(id, token));
 
@@ -335,19 +359,30 @@ export function initMenuPerfil(options = {}) {
       safeText(meEmailEl, me.email);
 
       const normalized = normalizeRole(me.role);
-      safeText(meRoleEl, roleLabel(normalized || role), '');
+      const resolvedRole = normalized || role;
+      safeText(meRoleEl, roleLabel(resolvedRole), '');
 
-      // ✅ garante schoolId se for escola
-      const r = normalized || role;
-      if (r === 'school' && me?.id) {
+      if (resolvedRole === 'school' && me?.id) {
         localStorage.setItem(LS.schoolId, String(me.id));
+        localStorage.removeItem(LS.professorId);
+        localStorage.removeItem(LS.studentId);
       }
 
-      // ✅ mantém LS.user atualizado
+      if (resolvedRole === 'professor' && me?.id) {
+        localStorage.setItem(LS.professorId, String(me.id));
+        localStorage.removeItem(LS.studentId);
+        localStorage.removeItem(LS.schoolId);
+      }
+
+      if (resolvedRole === 'student' && me?.id) {
+        localStorage.setItem(LS.studentId, String(me.id));
+        localStorage.removeItem(LS.professorId);
+        localStorage.removeItem(LS.schoolId);
+      }
+
       const merged = { ...(session.user || {}), ...me };
       localStorage.setItem(LS.user, JSON.stringify(merged));
     } else {
-      // fallback: se tiver "user" no LS, exibe
       const u = session.user;
       if (u) {
         safeText(meNameEl, u.name, '—');
@@ -360,7 +395,6 @@ export function initMenuPerfil(options = {}) {
     }
   })();
 
-  // ---------------- SALVAR ALTERAÇÕES (PATCH) ----------------
   if (saveBtn) {
     saveBtn.addEventListener('click', async () => {
       const email = String(newEmailEl?.value || '').trim();
@@ -368,13 +402,21 @@ export function initMenuPerfil(options = {}) {
 
       if (!email && !password) {
         if (statusEl) statusEl.textContent = 'Nada para salvar.';
-        toast({ title: 'Nada a fazer', message: 'Preencha e-mail ou senha para atualizar.', type: 'info' });
+        toast({
+          title: 'Nada a fazer',
+          message: 'Preencha e-mail ou senha para atualizar.',
+          type: 'info',
+        });
         return;
       }
 
       if (password && password.length < 8) {
         if (statusEl) statusEl.textContent = 'Senha deve ter no mínimo 8 caracteres.';
-        toast({ title: 'Senha inválida', message: 'A senha deve ter no mínimo 8 caracteres.', type: 'warn' });
+        toast({
+          title: 'Senha inválida',
+          message: 'A senha deve ter no mínimo 8 caracteres.',
+          type: 'warn',
+        });
         return;
       }
 
@@ -385,8 +427,7 @@ export function initMenuPerfil(options = {}) {
       try {
         if (statusEl) statusEl.textContent = 'Salvando...';
 
-        // ✅ usa /users/me (mais seguro)
-        const updated = await authFetchMenu(`/users/me`, {
+        const updated = await authFetchMenu('/users/me', {
           method: 'PATCH',
           token,
           body: payload,
@@ -399,17 +440,31 @@ export function initMenuPerfil(options = {}) {
         }
 
         if (statusEl) statusEl.textContent = 'Dados atualizados.';
-        toast({ title: 'Atualizado', message: 'Seus dados foram atualizados.', type: 'success' });
+        toast({
+          title: 'Atualizado',
+          message: 'Seus dados foram atualizados.',
+          type: 'success',
+        });
 
         if (newEmailEl) newEmailEl.value = '';
         if (newPassEl) newPassEl.value = '';
       } catch (e) {
         const msg = String(e?.message || 'Erro ao atualizar dados.');
-        if (String(msg).startsWith('AUTH_')) {
-          toast({ title: 'Sessão expirada', message: 'Faça login novamente.', type: 'warn' });
+        if (msg.startsWith('AUTH_')) {
+          toast({
+            title: 'Sessão expirada',
+            message: 'Faça login novamente.',
+            type: 'warn',
+          });
           sessionStorage.setItem('mk_just_logged_out', '1');
           clearAuthStorage();
-          redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, logoutRedirectSchool, loginRedirect);
+          redirectAfterLogout(
+            role,
+            logoutRedirectProfessor,
+            logoutRedirectStudent,
+            logoutRedirectSchool,
+            loginRedirect
+          );
           return;
         }
 
@@ -419,7 +474,6 @@ export function initMenuPerfil(options = {}) {
     });
   }
 
-  // ---------------- LOGOUT ----------------
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       menuPanel.classList.remove('open');
@@ -432,14 +486,18 @@ export function initMenuPerfil(options = {}) {
       });
 
       sessionStorage.setItem('mk_just_logged_out', '1');
-
       clearAuthStorage();
-      redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, logoutRedirectSchool, loginRedirect);
+
+      redirectAfterLogout(
+        role,
+        logoutRedirectProfessor,
+        logoutRedirectStudent,
+        logoutRedirectSchool,
+        loginRedirect
+      );
     });
   }
 
-  // ---------------- EXCLUIR CONTA (DELETE) ----------------
-  // ✅ agora só para alunos (o botão já está oculto, mas reforça aqui)
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
       if (role !== 'student') {
@@ -460,22 +518,42 @@ export function initMenuPerfil(options = {}) {
       if (!ok) return;
 
       try {
-        await authFetchMenu(`/users/me`, { method: 'DELETE', token });
+        await authFetchMenu('/users/me', { method: 'DELETE', token });
 
         localStorage.removeItem(photoKey(role, id));
         sessionStorage.setItem('mk_just_logged_out', '1');
         clearAuthStorage();
 
-        toast({ title: 'Conta excluída', message: 'Sua conta foi removida com sucesso.', type: 'success' });
+        toast({
+          title: 'Conta excluída',
+          message: 'Sua conta foi removida com sucesso.',
+          type: 'success',
+        });
 
-        redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, logoutRedirectSchool, loginRedirect);
+        redirectAfterLogout(
+          role,
+          logoutRedirectProfessor,
+          logoutRedirectStudent,
+          logoutRedirectSchool,
+          loginRedirect
+        );
       } catch (e) {
         const msg = String(e?.message || 'Erro ao excluir conta.');
-        if (String(msg).startsWith('AUTH_')) {
-          toast({ title: 'Sessão expirada', message: 'Faça login novamente.', type: 'warn' });
+        if (msg.startsWith('AUTH_')) {
+          toast({
+            title: 'Sessão expirada',
+            message: 'Faça login novamente.',
+            type: 'warn',
+          });
           sessionStorage.setItem('mk_just_logged_out', '1');
           clearAuthStorage();
-          redirectAfterLogout(role, logoutRedirectProfessor, logoutRedirectStudent, logoutRedirectSchool, loginRedirect);
+          redirectAfterLogout(
+            role,
+            logoutRedirectProfessor,
+            logoutRedirectStudent,
+            logoutRedirectSchool,
+            loginRedirect
+          );
           return;
         }
 
