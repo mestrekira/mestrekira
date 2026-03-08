@@ -117,6 +117,41 @@ async function debugToken(token) {
   }
 }
 
+async function debugAuthHeader(token) {
+  try {
+    const res = await fetch(`${API_URL}/auth/debug-auth-header`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+
+    return await readJsonSafe(res);
+  } catch {
+    return null;
+  }
+}
+
+async function debugProtected(token) {
+  try {
+    const res = await fetch(`${API_URL}/auth/debug-protected`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await readJsonSafe(res);
+    return {
+      status: res.status,
+      data,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function login() {
   const email = String(emailEl?.value || '').trim().toLowerCase();
   const password = String(passEl?.value || '');
@@ -200,23 +235,22 @@ async function login() {
     localStorage.setItem(LS.user, JSON.stringify(data.user));
     localStorage.setItem(LS.schoolId, String(userId));
 
-    const debug = await debugToken(token);
-
-    if (!debug?.ok) {
+    const tokenCheck = await debugToken(token);
+    if (!tokenCheck?.ok) {
       clearAuthStorage();
       notify(
         'error',
         'Token inválido',
-        debug?.error || 'O token retornado pelo login não pôde ser validado.',
+        tokenCheck?.error || 'O token retornado pelo login não pôde ser validado.',
       );
       setStatus(
-        `Falha ao validar token do login: ${String(debug?.error || 'Token inválido.')}`,
+        `Falha ao validar token do login: ${String(tokenCheck?.error || 'Token inválido.')}`,
       );
       return;
     }
 
-    const decodedRole = normRole(debug?.decoded?.role);
-    const decodedSub = String(debug?.decoded?.sub || '').trim();
+    const decodedRole = normRole(tokenCheck?.decoded?.role);
+    const decodedSub = String(tokenCheck?.decoded?.sub || '').trim();
 
     if (decodedRole !== 'SCHOOL' || !decodedSub) {
       clearAuthStorage();
@@ -226,6 +260,40 @@ async function login() {
         'O token retornado não corresponde a uma conta de escola.',
       );
       setStatus('O token retornado não corresponde a uma conta de escola.');
+      return;
+    }
+
+    const headerCheck = await debugAuthHeader(token);
+    const protectedCheck = await debugProtected(token);
+
+    setStatus(
+      [
+        `Token ok: sim`,
+        `Role token: ${decodedRole || '—'}`,
+        `Sub token: ${decodedSub || '—'}`,
+        `Header chegou: ${headerCheck?.hasAuthorizationHeader ? 'sim' : 'não'}`,
+        `Bearer ok: ${headerCheck?.startsWithBearer ? 'sim' : 'não'}`,
+        `Protegida status: ${protectedCheck?.status ?? '—'}`,
+      ].join(' | '),
+    );
+
+    if (!headerCheck?.hasAuthorizationHeader || !headerCheck?.startsWithBearer) {
+      clearAuthStorage();
+      notify(
+        'error',
+        'Authorization não chegou',
+        'O backend não recebeu corretamente o header Authorization.',
+      );
+      return;
+    }
+
+    if (protectedCheck?.status !== 200) {
+      clearAuthStorage();
+      notify(
+        'error',
+        'Token rejeitado pelo guard',
+        `A rota protegida retornou status ${protectedCheck?.status ?? 'desconhecido'}.`,
+      );
       return;
     }
 
