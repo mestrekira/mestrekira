@@ -118,12 +118,9 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
   if (body) headers['Content-Type'] = 'application/json';
 
   const url = `${API_URL}${path}`;
-
-  console.log('[authFetch] URL:', url);
-  console.log('[authFetch] METHOD:', method);
-  console.log('[authFetch] TOKEN EXISTS:', !!token);
-  console.log('[authFetch] TOKEN PREVIEW:', token ? `${token.slice(0, 25)}...` : '(sem token)');
-  console.log('[authFetch] BODY:', body);
+  setStatus(
+    `DEBUG → ${method} ${path} | token: ${token ? token.slice(0, 20) + '...' : '(ausente)'}`
+  );
 
   const res = await fetch(url, {
     method,
@@ -133,14 +130,8 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
 
   const data = await readJsonSafe(res);
 
-  console.log('[authFetch] STATUS:', res.status);
-  console.log('[authFetch] RESPONSE:', data);
-
   if (res.status === 401 || res.status === 403) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    clearAuth();
-    setTimeout(() => window.location.replace('login-escola.html'), 700);
-    throw new Error(`AUTH_${res.status}`);
+    throw new Error(`AUTH_${res.status}: ${JSON.stringify(data)}`);
   }
 
   if (!res.ok) {
