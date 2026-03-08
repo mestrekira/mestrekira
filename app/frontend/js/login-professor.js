@@ -30,7 +30,7 @@ function setStatus(msg) {
 }
 
 function normRole(role) {
-  return String(role || '').trim().toUpperCase(); // PROFESSOR | STUDENT | SCHOOL
+  return String(role || '').trim().toUpperCase();
 }
 
 function notify(type, title, message, duration) {
@@ -49,6 +49,18 @@ function safeJsonParse(s) {
   } catch {
     return null;
   }
+}
+
+function sanitizeToken(value) {
+  let t = String(value || '').trim();
+
+  if (/^Bearer\s+/i.test(t)) {
+    t = t.replace(/^Bearer\s+/i, '').trim();
+  }
+
+  t = t.replace(/^['"]+|['"]+$/g, '').trim();
+
+  return t;
 }
 
 function clearAuthStorage() {
@@ -95,7 +107,7 @@ async function fetchMe(token) {
   const res = await fetch(`${API_URL}/users/me`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${String(token).trim()}`,
+      Authorization: `Bearer ${sanitizeToken(token)}`,
     },
   });
 
@@ -118,7 +130,7 @@ async function debugToken(token) {
     const res = await fetch(`${API_URL}/auth/debug-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: String(token || '').trim() }),
+      body: JSON.stringify({ token: sanitizeToken(token) }),
     });
 
     return await readJsonSafe(res);
@@ -128,7 +140,7 @@ async function debugToken(token) {
 }
 
 async function alreadyLoggedInGuard() {
-  const token = localStorage.getItem(LS.token);
+  const token = sanitizeToken(localStorage.getItem(LS.token));
   const user = safeJsonParse(localStorage.getItem(LS.user));
   const role = normRole(user?.role);
 
@@ -152,6 +164,7 @@ async function alreadyLoggedInGuard() {
       localStorage.setItem(LS.professorId, String(merged.id));
     }
 
+    localStorage.setItem(LS.token, sanitizeToken(token));
     redirectAfterLogin(merged);
     return true;
   } catch {
@@ -222,7 +235,7 @@ async function fazerLogin() {
     }
 
     const userId = String(data?.user?.id || '').trim();
-    const token = String(data?.token || '').trim();
+    const token = sanitizeToken(data?.token);
 
     if (!userId || !token) {
       clearAuthStorage();
@@ -235,7 +248,6 @@ async function fazerLogin() {
       return;
     }
 
-    // evita conflito entre perfis
     localStorage.removeItem(LS.studentId);
     localStorage.removeItem(LS.schoolId);
 
@@ -243,7 +255,6 @@ async function fazerLogin() {
     localStorage.setItem(LS.user, JSON.stringify(data.user));
     localStorage.setItem(LS.professorId, userId);
 
-    // valida token emitido
     const tokenCheck = await debugToken(token);
     if (!tokenCheck?.ok) {
       clearAuthStorage();
@@ -277,7 +288,6 @@ async function fazerLogin() {
       return;
     }
 
-    // busca perfil completo e só continua se der certo
     let me = null;
     try {
       me = await fetchMe(token);
@@ -397,7 +407,6 @@ async function cadastrarProfessor() {
 
     let data = await readJsonSafe(res);
 
-    // fallback de compatibilidade
     if (res.status === 404) {
       res = await fetch(`${API_URL}/users/professor`, {
         method: 'POST',
