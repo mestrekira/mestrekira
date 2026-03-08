@@ -131,6 +131,9 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
   const data = await readJsonSafe(res);
 
   if (res.status === 401 || res.status === 403) {
+    clearAuth();
+    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
+    setTimeout(() => window.location.replace('login-escola.html'), 700);
     throw new Error(`AUTH_${res.status}: ${JSON.stringify(data)}`);
   }
 
