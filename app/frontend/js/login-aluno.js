@@ -1,4 +1,3 @@
-// login-aluno.js
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
@@ -7,11 +6,16 @@ const LS = {
   user: 'user',
   studentId: 'studentId',
   professorId: 'professorId',
+  schoolId: 'schoolId',
 
-  // legados (se existirem no seu projeto)
+  // legados
   studentName: 'studentName',
   studentEmail: 'studentEmail',
 };
+
+function $(id) {
+  return document.getElementById(id);
+}
 
 function disable(btn, value) {
   if (btn) btn.disabled = !!value;
@@ -27,8 +31,7 @@ function normRole(role) {
 }
 
 function getEmail() {
-  const emailEl = document.getElementById('email');
-  return (emailEl?.value || '').trim().toLowerCase();
+  return String($('email')?.value || '').trim().toLowerCase();
 }
 
 function notify(type, title, message, duration) {
@@ -36,7 +39,8 @@ function notify(type, title, message, duration) {
     type,
     title,
     message,
-    duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    duration:
+      duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
   });
 }
 
@@ -48,13 +52,25 @@ function safeJsonParse(s) {
   }
 }
 
+function sanitizeToken(value) {
+  let t = String(value || '').trim();
+
+  if (/^Bearer\s+/i.test(t)) {
+    t = t.replace(/^Bearer\s+/i, '').trim();
+  }
+
+  t = t.replace(/^['"]+|['"]+$/g, '').trim();
+
+  return t;
+}
+
 function clearAuthStorage() {
   localStorage.removeItem(LS.token);
   localStorage.removeItem(LS.user);
   localStorage.removeItem(LS.studentId);
   localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.schoolId);
 
-  // legados (se existirem)
   localStorage.removeItem(LS.studentName);
   localStorage.removeItem(LS.studentEmail);
 }
@@ -76,13 +92,37 @@ async function readJsonSafe(res) {
   }
 }
 
+async function fetchMe(token) {
+  const cleanToken = sanitizeToken(token);
+
+  const res = await fetch(`${API_URL}/users/me`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${cleanToken}`,
+    },
+  });
+
+  const data = await readJsonSafe(res);
+
+  if (!res.ok || !data) {
+    if (res.status === 401 || res.status === 403) {
+      clearAuthStorage();
+    }
+    throw new Error(
+      data?.message || data?.error || 'Não foi possível validar sua sessão.',
+    );
+  }
+
+  return data;
+}
+
 async function fazerLogin() {
-  const passEl = document.getElementById('password');
-  const loginBtn = document.getElementById('loginBtn');
-  const resendVerifyBtn = document.getElementById('resendVerifyBtn');
+  const passEl = $('password');
+  const loginBtn = $('loginBtn');
+  const resendVerifyBtn = $('resendVerifyBtn');
 
   const email = getEmail();
-  const password = passEl?.value || '';
+  const password = String(passEl?.value || '');
 
   show(resendVerifyBtn, false);
 
@@ -98,7 +138,7 @@ async function fazerLogin() {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), password }),
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await readJsonSafe(res);
@@ -132,20 +172,55 @@ async function fazerLogin() {
       return;
     }
 
-    const userId = data?.user?.id;
-    if (!userId) {
+    const userId = String(data?.user?.id || '').trim();
+    const token = sanitizeToken(data?.token);
+
+    if (!userId || !token) {
       clearAuthStorage();
-      notify('error', 'Erro', 'Login ok, mas o servidor não retornou o ID do aluno.');
+      notify(
+        'error',
+        'Erro',
+        'Login ok, mas o servidor não retornou ID/token válidos.',
+      );
       return;
     }
 
     // evita conflito de papéis
     localStorage.removeItem(LS.professorId);
+    localStorage.removeItem(LS.schoolId);
 
-    // grava auth
-    localStorage.setItem(LS.token, String(data.token));
+    // grava auth limpo
+    localStorage.setItem(LS.token, token);
     localStorage.setItem(LS.user, JSON.stringify(data.user));
-    localStorage.setItem(LS.studentId, String(userId));
+    localStorage.setItem(LS.studentId, userId);
+
+    // valida sessão protegida antes de redirecionar
+    try {
+      const me = await fetchMe(token);
+      const meRole = normRole(me?.role || data?.user?.role);
+
+      if (meRole !== 'STUDENT' && meRole !== 'ALUNO') {
+        clearAuthStorage();
+        notify(
+          'error',
+          'Acesso negado',
+          'Este acesso é apenas para estudantes.',
+        );
+        return;
+      }
+
+      const merged = { ...(data.user || {}), ...(me || {}) };
+      localStorage.setItem(LS.user, JSON.stringify(merged));
+      localStorage.setItem(LS.studentId, String(merged.id || userId));
+    } catch (e) {
+      clearAuthStorage();
+      notify(
+        'error',
+        'Login incompleto',
+        String(e?.message || 'Não foi possível validar a sessão do aluno.'),
+      );
+      return;
+    }
 
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
     window.location.replace('painel-aluno.html');
@@ -157,7 +232,7 @@ async function fazerLogin() {
 }
 
 async function reenviarVerificacao() {
-  const resendVerifyBtn = document.getElementById('resendVerifyBtn');
+  const resendVerifyBtn = $('resendVerifyBtn');
   const email = getEmail();
 
   if (!email) {
@@ -195,20 +270,38 @@ async function reenviarVerificacao() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('loginBtn');
-  const pass = document.getElementById('password');
-  const resendVerifyBtn = document.getElementById('resendVerifyBtn');
+document.addEventListener('DOMContentLoaded', async () => {
+  const btn = $('loginBtn');
+  const pass = $('password');
+  const resendVerifyBtn = $('resendVerifyBtn');
 
   if (justLoggedOutGuard()) return;
 
-  const token = localStorage.getItem(LS.token);
+  const token = sanitizeToken(localStorage.getItem(LS.token));
   const user = safeJsonParse(localStorage.getItem(LS.user));
   const role = normRole(user?.role);
 
+  if (token) {
+    localStorage.setItem(LS.token, token);
+  }
+
   if (token && (role === 'STUDENT' || role === 'ALUNO')) {
-    window.location.replace('painel-aluno.html');
-    return;
+    try {
+      const me = await fetchMe(token);
+      const meRole = normRole(me?.role || role);
+
+      if (meRole === 'STUDENT' || meRole === 'ALUNO') {
+        const merged = { ...(user || {}), ...(me || {}) };
+        localStorage.setItem(LS.user, JSON.stringify(merged));
+        localStorage.setItem(LS.studentId, String(merged.id || user?.id || ''));
+        window.location.replace('painel-aluno.html');
+        return;
+      }
+
+      clearAuthStorage();
+    } catch {
+      clearAuthStorage();
+    }
   }
 
   if (btn) btn.addEventListener('click', fazerLogin);
