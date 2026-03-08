@@ -60,16 +60,31 @@ async function readJsonSafe(res) {
   try { return await res.json(); } catch { return null; }
 }
 
-function alreadyLoggedInGuard() {
+async function alreadyLoggedInGuard() {
   const token = localStorage.getItem(LS.token);
   const user = safeJsonParse(localStorage.getItem(LS.user));
   const role = normRole(user?.role);
 
-  if (token && role === 'SCHOOL') {
+  if (!token || role !== 'SCHOOL') return false;
+
+  try {
+    const res = await fetch(`${API_URL}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      clearAuthStorage();
+      return false;
+    }
+
     window.location.replace('painel-escola.html');
     return true;
+  } catch {
+    clearAuthStorage();
+    return false;
   }
-  return false;
 }
 
 async function login() {
@@ -192,8 +207,8 @@ async function reenviarVerificacao() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (alreadyLoggedInGuard()) return;
+document.addEventListener('DOMContentLoaded', async () => {
+  if (await alreadyLoggedInGuard()) return;
 
   btnLogin?.addEventListener('click', login);
 
