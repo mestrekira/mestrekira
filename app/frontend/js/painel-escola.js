@@ -10,7 +10,9 @@ function notify(type, title, message, duration) {
       type,
       title,
       message,
-      duration: duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
+      duration:
+        duration ??
+        (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
     });
   } else {
     if (type === 'error') {
@@ -28,7 +30,8 @@ function setStatus(msg) {
 
 function setText(el, value) {
   if (!el) return;
-  el.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
+  el.textContent =
+    value === null || value === undefined || value === '' ? '—' : String(value);
 }
 
 function safeJsonParse(s) {
@@ -135,10 +138,9 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
     }
 
     const msg =
-      data?.message ||
-      data?.error ||
-      (Array.isArray(data?.message) ? data.message.join(', ') : null) ||
-      `Erro HTTP ${res.status}`;
+      Array.isArray(data?.message)
+        ? data.message.join(', ')
+        : data?.message || data?.error || `Erro HTTP ${res.status}`;
 
     throw new Error(String(msg));
   }
@@ -245,27 +247,33 @@ let cachedYears = [];
 let cachedRooms = [];
 
 function sortYearsMostRecentFirst(years) {
-  return [...years].sort((a, b) => {
-    const da = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const db = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+  return [...(Array.isArray(years) ? years : [])].sort((a, b) => {
+    const nameA = String(a?.name || '').trim();
+    const nameB = String(b?.name || '').trim();
 
-    if (db !== da) return db - da;
+    const numA = Number(nameA.replace(/[^\d]/g, '')) || 0;
+    const numB = Number(nameB.replace(/[^\d]/g, '')) || 0;
 
-    const na = Number(String(a?.name || '').replace(/[^\d]/g, '')) || 0;
-    const nb = Number(String(b?.name || '').replace(/[^\d]/g, '')) || 0;
+    if (numA !== numB) return numB - numA;
 
-    return nb - na;
+    const dateA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    return dateB - dateA;
   });
 }
 
 function getDefaultYearId() {
   if (!cachedYears.length) return '';
 
-  const activeYears = sortYearsMostRecentFirst(cachedYears.filter((y) => !!y.isActive));
-  if (activeYears.length) return String(activeYears[0].id);
+  const ordered = sortYearsMostRecentFirst(cachedYears);
+  const activeOrdered = ordered.filter((y) => !!y.isActive);
 
-  const allYears = sortYearsMostRecentFirst(cachedYears);
-  return allYears.length ? String(allYears[0].id) : '';
+  if (activeOrdered.length) {
+    return String(activeOrdered[0].id);
+  }
+
+  return String(ordered[0].id);
 }
 
 function getYearNameById(yearId) {
@@ -299,13 +307,19 @@ function updateRoomsAvailability() {
 }
 
 // ------------------- Render: anos -------------------
-function renderYearSelectOptions(selectEl, {
-  includeAllOption = false,
-  allLabel = 'Todos',
-  placeholder = 'Selecione um ano letivo',
-  selectedValue = '',
-} = {}) {
+function renderYearSelectOptions(
+  selectEl,
+  {
+    includeAllOption = false,
+    allLabel = 'Todos os anos',
+    placeholder = 'Selecione um ano letivo',
+    selectedValue = '',
+  } = {},
+) {
   if (!selectEl) return;
+
+  const years = sortYearsMostRecentFirst(cachedYears);
+  const validIds = new Set(years.map((y) => String(y.id)));
 
   selectEl.innerHTML = '';
 
@@ -321,8 +335,6 @@ function renderYearSelectOptions(selectEl, {
     selectEl.appendChild(optPlaceholder);
   }
 
-  const years = sortYearsMostRecentFirst(cachedYears);
-
   years.forEach((y) => {
     const opt = document.createElement('option');
     opt.value = String(y.id);
@@ -330,34 +342,48 @@ function renderYearSelectOptions(selectEl, {
     selectEl.appendChild(opt);
   });
 
-  if (selectedValue) {
-    selectEl.value = String(selectedValue);
+  const fallbackId = getDefaultYearId();
+  const desired =
+    selectedValue && validIds.has(String(selectedValue))
+      ? String(selectedValue)
+      : fallbackId && validIds.has(String(fallbackId))
+        ? String(fallbackId)
+        : '';
+
+  if (desired) {
+    selectEl.value = desired;
+  } else if (includeAllOption) {
+    selectEl.value = '';
   }
 }
 
 function syncYearSelects() {
-  const defaultYearId = getDefaultYearId();
-
-  const currentCreateValue = String(roomYearSelectEl?.value || '');
-  const currentFilterValue = String(roomsFilterYearSelectEl?.value || '');
+  const currentCreateValue = String(roomYearSelectEl?.value || '').trim();
+  const currentFilterValue = String(roomsFilterYearSelectEl?.value || '').trim();
 
   renderYearSelectOptions(roomYearSelectEl, {
     includeAllOption: false,
     placeholder: 'Selecione um ano letivo',
-    selectedValue: currentCreateValue || defaultYearId,
+    selectedValue: currentCreateValue,
   });
 
   renderYearSelectOptions(roomsFilterYearSelectEl, {
     includeAllOption: true,
     allLabel: 'Todos os anos',
-    selectedValue: currentFilterValue || defaultYearId,
+    selectedValue: currentFilterValue,
   });
 
-  if (roomYearSelectEl && !roomYearSelectEl.value && defaultYearId) {
+  const defaultYearId = getDefaultYearId();
+
+  if (roomYearSelectEl && !String(roomYearSelectEl.value || '').trim() && defaultYearId) {
     roomYearSelectEl.value = defaultYearId;
   }
 
-  if (roomsFilterYearSelectEl && !roomsFilterYearSelectEl.value && defaultYearId) {
+  if (
+    roomsFilterYearSelectEl &&
+    !String(roomsFilterYearSelectEl.value || '').trim() &&
+    defaultYearId
+  ) {
     roomsFilterYearSelectEl.value = defaultYearId;
   }
 }
@@ -423,7 +449,11 @@ function renderYearsTable(session) {
     btnToggle.onclick = async () => {
       try {
         await apiUpdateYear(session, y.id, { isActive: !on });
-        notify('success', 'Atualizado', `Ano letivo ${!on ? 'ativado' : 'desativado'}.`);
+        notify(
+          'success',
+          'Atualizado',
+          `Ano letivo ${!on ? 'ativado' : 'desativado'}.`,
+        );
         await refreshAll(session, { keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
@@ -492,7 +522,9 @@ function renderRoomsTable(session) {
     const tdTeacher = document.createElement('td');
     tdTeacher.innerHTML =
       `<strong>${escapeHtml(r.teacherNameSnapshot || 'Professor')}</strong>` +
-      (r.teacherEmail ? `<br><small class="mk-muted">${escapeHtml(r.teacherEmail)}</small>` : '');
+      (r.teacherEmail
+        ? `<br><small class="mk-muted">${escapeHtml(r.teacherEmail)}</small>`
+        : '');
 
     const tdYear = document.createElement('td');
     tdYear.textContent = getYearNameById(r.schoolYearId);
@@ -508,7 +540,9 @@ function renderRoomsTable(session) {
     btnView.type = 'button';
     btnView.textContent = 'Visualizar';
     btnView.onclick = () => {
-      window.location.href = `desempenho-escola.html?roomId=${encodeURIComponent(String(r.id))}`;
+      window.location.href = `desempenho-escola.html?roomId=${encodeURIComponent(
+        String(r.id),
+      )}`;
     };
 
     const btnRename = document.createElement('button');
@@ -574,12 +608,14 @@ async function refreshYears(session, { keepStatus } = {}) {
   const res = await apiListYears(session);
   const years = unwrapList(res, ['years']);
 
-  cachedYears = (Array.isArray(years) ? years : []).map((y) => ({
-    id: y.id,
-    name: y.name,
-    isActive: !!y.isActive,
-    createdAt: y.createdAt || y.created_at || null,
-  }));
+  cachedYears = (Array.isArray(years) ? years : [])
+    .filter((y) => y && y.id)
+    .map((y) => ({
+      id: String(y.id),
+      name: String(y.name || '').trim(),
+      isActive: !!y.isActive,
+      createdAt: y.createdAt || y.created_at || null,
+    }));
 
   syncYearSelects();
   renderYearsTable(session);
@@ -647,7 +683,9 @@ async function onCreateYear(session) {
 
     const defaultYearId = getDefaultYearId();
     if (roomYearSelectEl && defaultYearId) roomYearSelectEl.value = defaultYearId;
-    if (roomsFilterYearSelectEl && defaultYearId) roomsFilterYearSelectEl.value = defaultYearId;
+    if (roomsFilterYearSelectEl && defaultYearId) {
+      roomsFilterYearSelectEl.value = defaultYearId;
+    }
 
     setStatus('');
   } catch (e) {
@@ -660,7 +698,15 @@ async function onCreateRoom(session) {
   const name = String(roomNameEl?.value || '').trim();
   const teacherName = String(teacherNameEl?.value || '').trim();
   const teacherEmail = String(teacherEmailEl?.value || '').trim().toLowerCase();
-  const yearId = roomYearSelectEl ? String(roomYearSelectEl.value || '').trim() : '';
+
+  let yearId = roomYearSelectEl ? String(roomYearSelectEl.value || '').trim() : '';
+
+  if (!yearId) {
+    yearId = getDefaultYearId();
+    if (roomYearSelectEl && yearId) {
+      roomYearSelectEl.value = yearId;
+    }
+  }
 
   if (!cachedYears.length) {
     notify(
