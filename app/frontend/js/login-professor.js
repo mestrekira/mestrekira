@@ -104,10 +104,12 @@ function redirectAfterLogin(userObj) {
 }
 
 async function fetchMe(token) {
+  const cleanToken = sanitizeToken(token);
+
   const res = await fetch(`${API_URL}/users/me`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${sanitizeToken(token)}`,
+      Authorization: `Bearer ${cleanToken}`,
     },
   });
 
@@ -116,27 +118,15 @@ async function fetchMe(token) {
   if (!res.ok || !data) {
     const msg =
       data?.message || data?.error || 'Não foi possível carregar seu perfil.';
+
     if (res.status === 401 || res.status === 403) {
       clearAuthStorage();
     }
+
     throw new Error(String(msg));
   }
 
   return data;
-}
-
-async function debugToken(token) {
-  try {
-    const res = await fetch(`${API_URL}/auth/debug-token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: sanitizeToken(token) }),
-    });
-
-    return await readJsonSafe(res);
-  } catch {
-    return null;
-  }
 }
 
 async function alreadyLoggedInGuard() {
@@ -248,45 +238,14 @@ async function fazerLogin() {
       return;
     }
 
+    // evita conflito entre perfis
     localStorage.removeItem(LS.studentId);
     localStorage.removeItem(LS.schoolId);
 
+    // grava auth limpa
     localStorage.setItem(LS.token, token);
     localStorage.setItem(LS.user, JSON.stringify(data.user));
     localStorage.setItem(LS.professorId, userId);
-
-    const tokenCheck = await debugToken(token);
-    if (!tokenCheck?.ok) {
-      clearAuthStorage();
-      notify(
-        'error',
-        'Token inválido',
-        tokenCheck?.error || 'O token retornado pelo login não pôde ser validado.',
-      );
-      setStatus(
-        `Falha ao validar token do login: ${String(
-          tokenCheck?.error || 'Token inválido.',
-        )}`,
-      );
-      return;
-    }
-
-    const decodedRole = normRole(tokenCheck?.decoded?.role);
-    const decodedSub = String(tokenCheck?.decoded?.sub || '').trim();
-
-    if (
-      (decodedRole !== 'PROFESSOR' && decodedRole !== 'TEACHER') ||
-      !decodedSub
-    ) {
-      clearAuthStorage();
-      notify(
-        'error',
-        'Sessão inválida',
-        'O token retornado não corresponde a uma conta de professor.',
-      );
-      setStatus('O token retornado não corresponde a uma conta de professor.');
-      return;
-    }
 
     let me = null;
     try {
@@ -313,6 +272,7 @@ async function fazerLogin() {
     const mergedUser = { ...(data.user || {}), ...(me || {}) };
     localStorage.setItem(LS.user, JSON.stringify(mergedUser));
     localStorage.setItem(LS.professorId, String(mergedUser.id || userId));
+    localStorage.setItem(LS.token, token);
 
     notify('success', 'Bem-vindo!', 'Login realizado com sucesso.', 1100);
     setStatus('');
