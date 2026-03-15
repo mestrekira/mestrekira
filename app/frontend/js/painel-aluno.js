@@ -32,8 +32,25 @@ function renderEmpty(msg) {
 }
 
 function normalizeRoom(r) {
-  const id = String(r?.id || r?.roomId || '').trim();
-  const name = String(r?.name || r?.roomName || 'Sala').trim();
+  const nestedRoom = r?.room || r?.sala || r?.classroom || null;
+
+  const id = String(
+    nestedRoom?.id ||
+      r?.roomId ||
+      r?.room_id ||
+      r?.id ||
+      ''
+  ).trim();
+
+  const name = String(
+    nestedRoom?.name ||
+      nestedRoom?.roomName ||
+      r?.roomName ||
+      r?.room_name ||
+      r?.name ||
+      'Sala'
+  ).trim();
+
   return { id, name };
 }
 
@@ -54,8 +71,22 @@ async function carregarMinhasSalas() {
       { redirectTo: 'login-aluno.html' }
     );
 
-    const arr = Array.isArray(raw) ? raw : raw?.rooms || raw?.enrollments || [];
-    const rooms = arr.map(normalizeRoom).filter((r) => !!r.id);
+    console.log('[painel-aluno] by-student raw =>', raw);
+
+    const arr = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.rooms)
+        ? raw.rooms
+        : Array.isArray(raw?.enrollments)
+          ? raw.enrollments
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : [];
+
+    const rooms = arr
+      .map(normalizeRoom)
+      .filter((r) => !!r.id)
+      .filter((r, index, self) => self.findIndex((x) => x.id === r.id) === index);
 
     roomsList.innerHTML = '';
 
