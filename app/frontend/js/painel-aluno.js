@@ -17,41 +17,8 @@ function notify(type, title, message, duration) {
   }
 }
 
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
-}
-
-function resolveStudentId(sessionValue) {
-  if (typeof sessionValue === 'string' || typeof sessionValue === 'number') {
-    return String(sessionValue).trim();
-  }
-
-  if (sessionValue && typeof sessionValue === 'object') {
-    const direct = String(
-      sessionValue.studentId ||
-        sessionValue.id ||
-        sessionValue.userId ||
-        sessionValue.user?.id ||
-        ''
-    ).trim();
-
-    if (direct) return direct;
-  }
-
-  const user = safeJsonParse(localStorage.getItem('user'));
-  const lsStudentId = String(localStorage.getItem('studentId') || '').trim();
-  const userId = String(user?.id || '').trim();
-
-  return lsStudentId || userId || '';
-}
-
 // -------------------- Guard --------------------
-const session = requireStudentSession({ redirectTo: 'login-aluno.html' });
-const studentId = resolveStudentId(session);
+const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 // -------------------- Elementos --------------------
 const roomsList = document.getElementById('roomsList');
