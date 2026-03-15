@@ -1,12 +1,5 @@
-// sala-aluno.js (final / prático)
-// - usa auth.js (requireStudentSession + authFetch + readErrorMessage)
-// - overview da sala (professor + colegas)
-// - lista de tarefas com "Nova" e botão feedback quando enviada
-
-import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
-
-import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
+import { requireStudentSession, authFetch } from './auth.js';
 
 // =====================
 // Toast helper
@@ -26,17 +19,6 @@ function notify(type, title, message, duration) {
 }
 
 // =====================
-// jsonSafe
-// =====================
-async function jsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-// =====================
 // Params + Guard
 // =====================
 const params = new URLSearchParams(window.location.search);
@@ -49,18 +31,6 @@ if (!roomId) {
 }
 
 const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
-
-// Opcional: evita “resposta atrasada” mexer no DOM se sair da página
-const abort = new AbortController();
-window.addEventListener(
-  'beforeunload',
-  () => {
-    try {
-      abort.abort();
-    } catch {}
-  },
-  { once: true }
-);
 
 // =====================
 // Elements
@@ -87,7 +57,7 @@ function setStatus(msg) {
 }
 
 // =====================
-// Datas (helpers robustos)
+// Datas
 // =====================
 function pickDate(obj, keys) {
   for (const k of keys) {
@@ -101,20 +71,17 @@ function toDateSafe(value) {
   if (!value) return null;
 
   if (value instanceof Date) {
-    const t = value.getTime();
-    return Number.isNaN(t) ? null : value;
+    return Number.isNaN(value.getTime()) ? null : value;
   }
 
   if (typeof value === 'number') {
     const d = new Date(value);
-    const t = d.getTime();
-    return Number.isNaN(t) ? null : d;
+    return Number.isNaN(d.getTime()) ? null : d;
   }
 
   const s = String(value).trim();
   if (!s) return null;
 
-  // permite "YYYY-MM-DD HH:mm(:ss)"
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
     const d0 = new Date(s.replace(' ', 'T'));
     return Number.isNaN(d0.getTime()) ? null : d0;
@@ -135,6 +102,7 @@ function toDateSafe(value) {
 function formatDateBR(value) {
   const d = toDateSafe(value);
   if (!d) return '—';
+
   try {
     return new Intl.DateTimeFormat('pt-BR', {
       dateStyle: 'short',
@@ -146,11 +114,12 @@ function formatDateBR(value) {
 }
 
 // =====================
-// Fotos (localStorage)
+// Fotos
 // =====================
 function photoKeyStudent(id) {
   return id ? `mk_photo_student_${id}` : null;
 }
+
 function photoKeyProfessor(id) {
   return id ? `mk_photo_professor_${id}` : null;
 }
@@ -192,20 +161,14 @@ if (leaveBtn) {
     if (leaveStatus) leaveStatus.textContent = 'Saindo...';
 
     try {
-      const res = await authFetch(
-        `${API_URL}/enrollments/leave`,
+      await authFetch(
+        '/enrollments/leave',
         {
           method: 'DELETE',
-          body: JSON.stringify({ roomId, studentId }),
-          signal: abort.signal,
+          body: { roomId, studentId },
         },
         { redirectTo: 'login-aluno.html' }
       );
-
-      if (!res.ok) {
-        const msg = await readErrorMessage(res, `HTTP ${res.status}`);
-        throw new Error(msg);
-      }
 
       if (leaveStatus) leaveStatus.textContent = 'Você saiu da sala.';
       notify('success', 'Tudo certo', 'Você saiu da sala.');
@@ -226,23 +189,14 @@ async function carregarOverview() {
   if (classmatesList) classmatesList.innerHTML = '<li>Carregando colegas...</li>';
 
   try {
-    const res = await authFetch(
-      `${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`,
-      { method: 'GET', signal: abort.signal },
+    const data = await authFetch(
+      `/rooms/${encodeURIComponent(roomId)}/overview`,
+      { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
 
-    if (!res.ok) {
-      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
-      throw new Error(msg);
-    }
-
-    const data = await jsonSafe(res);
-
-    // sala
     if (roomNameEl) roomNameEl.textContent = data?.room?.name || 'Sala';
 
-    // professor
     if (teacherInfo) {
       const p = data?.professor;
       teacherInfo.innerHTML = '';
@@ -286,7 +240,6 @@ async function carregarOverview() {
       }
     }
 
-    // colegas
     if (classmatesList) {
       classmatesList.innerHTML = '';
 
@@ -354,31 +307,22 @@ async function carregarOverview() {
 // Essay do aluno na tarefa
 // =====================
 async function getMyEssayByTask(taskIdValue) {
-  const url =
-    `${API_URL}/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student` +
-    `?studentId=${encodeURIComponent(studentId)}`;
-
   try {
-    const res = await authFetch(
-      url,
-      { method: 'GET', signal: abort.signal },
+    const data = await authFetch(
+      `/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student?studentId=${encodeURIComponent(studentId)}`,
+      { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
 
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-
-    const data = await jsonSafe(res);
     return data || null;
   } catch (e) {
-    // AUTH_* já redireciona
     if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
     return null;
   }
 }
 
 // =====================
-// Destaque da tarefa mais recente ("Nova")
+// Destaque da tarefa mais recente
 // =====================
 function computeNewestTaskId(tasks) {
   if (!Array.isArray(tasks) || tasks.length === 0) return null;
@@ -396,11 +340,9 @@ function computeNewestTaskId(tasks) {
     ]);
     const dt = toDateSafe(createdAt)?.getTime?.() ?? NaN;
 
-    if (!Number.isNaN(dt)) {
-      if (dt > newestTime) {
-        newestTime = dt;
-        newestId = t.id;
-      }
+    if (!Number.isNaN(dt) && dt > newestTime) {
+      newestTime = dt;
+      newestId = t.id;
     }
   });
 
@@ -435,19 +377,13 @@ async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando...</li>';
 
   try {
-    const res = await authFetch(
-      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
-      { method: 'GET', signal: abort.signal },
+    const raw = await authFetch(
+      `/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
+      { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
 
-    if (!res.ok) {
-      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
-      throw new Error(msg);
-    }
-
-    const raw = await jsonSafe(res);
-    const arr = Array.isArray(raw) ? raw : [];
+    const arr = Array.isArray(raw) ? raw : raw?.tasks || [];
 
     tasksList.innerHTML = '';
 
@@ -482,8 +418,7 @@ async function carregarTarefas() {
       tasks.map((t) => ({ ...t._raw, id: t.id }))
     );
 
-    // 1) renderiza lista primeiro (rápido)
-    const uiByTaskId = new Map(); // taskId -> { btnWrite, btnFeedback }
+    const uiByTaskId = new Map();
 
     tasks.forEach((task) => {
       const li = document.createElement('li');
@@ -503,7 +438,9 @@ async function carregarTarefas() {
       title.textContent = task.title || 'Tarefa';
       titleWrap.appendChild(title);
 
-      if (task.id === newestId) titleWrap.appendChild(makeNovaBadge());
+      if (task.id === newestId) {
+        titleWrap.appendChild(makeNovaBadge());
+      }
 
       const meta = document.createElement('div');
       meta.style.marginTop = '6px';
@@ -540,7 +477,6 @@ async function carregarTarefas() {
       uiByTaskId.set(task.id, { btnWrite, btnFeedback });
     });
 
-    // 2) checa as redações em paralelo
     const checks = await Promise.allSettled(
       tasks.map(async (task) => {
         const essay = await getMyEssayByTask(task.id);
@@ -555,7 +491,6 @@ async function carregarTarefas() {
       const ui = uiByTaskId.get(taskId);
       if (!ui) return;
 
-      // mostra feedback só se tiver enviada (isDraft === false)
       if (essay && essay.id && essay.isDraft === false) {
         ui.btnWrite.style.display = 'none';
         ui.btnFeedback.style.display = 'inline-block';
