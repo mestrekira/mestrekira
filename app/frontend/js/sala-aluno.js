@@ -1,5 +1,6 @@
+import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
-import { requireStudentSession, authFetch } from './auth.js';
+import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
 // =====================
 // Toast helper
@@ -15,6 +16,17 @@ function notify(type, title, message, duration) {
     });
   } catch {
     if (type === 'error') console.error(title, message);
+  }
+}
+
+// =====================
+// jsonSafe
+// =====================
+async function jsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
   }
 }
 
@@ -71,12 +83,14 @@ function toDateSafe(value) {
   if (!value) return null;
 
   if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? null : value;
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : value;
   }
 
   if (typeof value === 'number') {
     const d = new Date(value);
-    return Number.isNaN(d.getTime()) ? null : d;
+    const t = d.getTime();
+    return Number.isNaN(t) ? null : d;
   }
 
   const s = String(value).trim();
@@ -102,7 +116,6 @@ function toDateSafe(value) {
 function formatDateBR(value) {
   const d = toDateSafe(value);
   if (!d) return '—';
-
   try {
     return new Intl.DateTimeFormat('pt-BR', {
       dateStyle: 'short',
@@ -119,7 +132,6 @@ function formatDateBR(value) {
 function photoKeyStudent(id) {
   return id ? `mk_photo_student_${id}` : null;
 }
-
 function photoKeyProfessor(id) {
   return id ? `mk_photo_professor_${id}` : null;
 }
@@ -161,14 +173,19 @@ if (leaveBtn) {
     if (leaveStatus) leaveStatus.textContent = 'Saindo...';
 
     try {
-      await authFetch(
-        '/enrollments/leave',
+      const res = await authFetch(
+        `${API_URL}/enrollments/leave`,
         {
           method: 'DELETE',
-          body: { roomId, studentId },
+          body: JSON.stringify({ roomId, studentId }),
         },
         { redirectTo: 'login-aluno.html' }
       );
+
+      if (!res.ok) {
+        const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+        throw new Error(msg);
+      }
 
       if (leaveStatus) leaveStatus.textContent = 'Você saiu da sala.';
       notify('success', 'Tudo certo', 'Você saiu da sala.');
@@ -189,11 +206,18 @@ async function carregarOverview() {
   if (classmatesList) classmatesList.innerHTML = '<li>Carregando colegas...</li>';
 
   try {
-    const data = await authFetch(
-      `/rooms/${encodeURIComponent(roomId)}/overview`,
+    const res = await authFetch(
+      `${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
+
+    if (!res.ok) {
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+      throw new Error(msg);
+    }
+
+    const data = await jsonSafe(res);
 
     if (roomNameEl) roomNameEl.textContent = data?.room?.name || 'Sala';
 
@@ -307,13 +331,21 @@ async function carregarOverview() {
 // Essay do aluno na tarefa
 // =====================
 async function getMyEssayByTask(taskIdValue) {
+  const url =
+    `${API_URL}/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student` +
+    `?studentId=${encodeURIComponent(studentId)}`;
+
   try {
-    const data = await authFetch(
-      `/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student?studentId=${encodeURIComponent(studentId)}`,
+    const res = await authFetch(
+      url,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
 
+    if (res.status === 404) return null;
+    if (!res.ok) return null;
+
+    const data = await jsonSafe(res);
     return data || null;
   } catch (e) {
     if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
@@ -340,9 +372,11 @@ function computeNewestTaskId(tasks) {
     ]);
     const dt = toDateSafe(createdAt)?.getTime?.() ?? NaN;
 
-    if (!Number.isNaN(dt) && dt > newestTime) {
-      newestTime = dt;
-      newestId = t.id;
+    if (!Number.isNaN(dt)) {
+      if (dt > newestTime) {
+        newestTime = dt;
+        newestId = t.id;
+      }
     }
   });
 
@@ -377,13 +411,19 @@ async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando...</li>';
 
   try {
-    const raw = await authFetch(
-      `/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
+    const res = await authFetch(
+      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
 
-    const arr = Array.isArray(raw) ? raw : raw?.tasks || [];
+    if (!res.ok) {
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+      throw new Error(msg);
+    }
+
+    const raw = await jsonSafe(res);
+    const arr = Array.isArray(raw) ? raw : [];
 
     tasksList.innerHTML = '';
 
@@ -438,9 +478,7 @@ async function carregarTarefas() {
       title.textContent = task.title || 'Tarefa';
       titleWrap.appendChild(title);
 
-      if (task.id === newestId) {
-        titleWrap.appendChild(makeNovaBadge());
-      }
+      if (task.id === newestId) titleWrap.appendChild(makeNovaBadge());
 
       const meta = document.createElement('div');
       meta.style.marginTop = '6px';
