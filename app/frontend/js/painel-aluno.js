@@ -1,5 +1,6 @@
+import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
-import { requireStudentSession, authFetch } from './auth.js';
+import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
 // -------------------- Toast helper --------------------
 function notify(type, title, message, duration) {
@@ -16,7 +17,6 @@ function notify(type, title, message, duration) {
   }
 }
 
-// -------------------- Sessão --------------------
 function safeJsonParse(s) {
   try {
     return s ? JSON.parse(s) : null;
@@ -24,8 +24,6 @@ function safeJsonParse(s) {
     return null;
   }
 }
-
-const session = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 function resolveStudentId(sessionValue) {
   if (typeof sessionValue === 'string' || typeof sessionValue === 'number') {
@@ -51,6 +49,8 @@ function resolveStudentId(sessionValue) {
   return lsStudentId || userId || '';
 }
 
+// -------------------- Guard --------------------
+const session = requireStudentSession({ redirectTo: 'login-aluno.html' });
 const studentId = resolveStudentId(session);
 
 // -------------------- Elementos --------------------
@@ -65,53 +65,34 @@ function renderEmpty(msg) {
   roomsList.appendChild(li);
 }
 
-function normalizeRoom(item) {
-  const room =
-    item?.room ||
-    item?.sala ||
-    item?.classroom ||
-    item?.enrollment?.room ||
-    item?.matricula?.room ||
-    null;
+function normalizeRoom(r) {
+  const nestedRoom = r?.room || r?.sala || null;
 
   const id = String(
-    room?.id ||
-      room?.roomId ||
-      item?.roomId ||
-      item?.room_id ||
-      item?.id ||
+    nestedRoom?.id ||
+      r?.roomId ||
+      r?.room_id ||
+      r?.id ||
       ''
   ).trim();
 
   const name = String(
-    room?.name ||
-      room?.roomName ||
-      room?.title ||
-      item?.roomName ||
-      item?.room_name ||
-      item?.name ||
-      item?.title ||
+    nestedRoom?.name ||
+      r?.roomName ||
+      r?.room_name ||
+      r?.name ||
       'Sala'
   ).trim();
 
   return { id, name };
 }
 
-function extractRooms(raw) {
-  const arr = Array.isArray(raw)
-    ? raw
-    : Array.isArray(raw?.rooms)
-      ? raw.rooms
-      : Array.isArray(raw?.enrollments)
-        ? raw.enrollments
-        : Array.isArray(raw?.data)
-          ? raw.data
-          : [];
-
-  return arr
-    .map(normalizeRoom)
-    .filter((r) => !!r.id)
-    .filter((r, index, self) => self.findIndex((x) => x.id === r.id) === index);
+async function jsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 function goToRoom(roomId) {
@@ -119,50 +100,40 @@ function goToRoom(roomId) {
 }
 
 // -------------------- Carregar salas --------------------
-async function fetchStudentRooms() {
-  const attempts = [];
-
-  if (studentId) {
-    attempts.push(`/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`);
-  }
-
-  attempts.push('/enrollments/by-student');
-
-  let lastRaw = null;
-
-  for (const path of attempts) {
-    try {
-      const raw = await authFetch(
-        path,
-        { method: 'GET' },
-        { redirectTo: 'login-aluno.html' }
-      );
-
-      console.log('[painel-aluno] tentativa =>', path, raw);
-
-      lastRaw = raw;
-      const rooms = extractRooms(raw);
-
-      if (rooms.length > 0) {
-        return rooms;
-      }
-    } catch (err) {
-      console.error('[painel-aluno] erro na tentativa', path, err);
-      lastRaw = null;
-    }
-  }
-
-  console.log('[painel-aluno] nenhuma sala encontrada. studentId=', studentId, 'lastRaw=', lastRaw);
-  return [];
-}
-
 async function carregarMinhasSalas() {
   if (!roomsList) return;
 
   renderEmpty('Carregando...');
 
   try {
-    const rooms = await fetchStudentRooms();
+    const res = await authFetch(
+      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
+      { method: 'GET' },
+      { redirectTo: 'login-aluno.html' }
+    );
+
+    if (!res.ok) {
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+      throw new Error(msg);
+    }
+
+    const raw = await jsonSafe(res);
+    console.log('[painel-aluno] raw =>', raw);
+
+    const arr = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.rooms)
+        ? raw.rooms
+        : Array.isArray(raw?.enrollments)
+          ? raw.enrollments
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : [];
+
+    const rooms = arr
+      .map(normalizeRoom)
+      .filter((r) => !!r.id)
+      .filter((r, index, self) => self.findIndex((x) => x.id === r.id) === index);
 
     roomsList.innerHTML = '';
 
