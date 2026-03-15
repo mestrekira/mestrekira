@@ -1,11 +1,5 @@
-// painel-aluno.js (final / prático)
-// - usa auth.js (requireStudentSession + authFetch + readErrorMessage)
-// - lista as salas do aluno e abre sala-aluno.html?roomId=...
-
-import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
-
-import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
+import { requireStudentSession, authFetch } from './auth.js';
 
 // -------------------- Toast helper --------------------
 function notify(type, title, message, duration) {
@@ -31,7 +25,7 @@ const roomsList = document.getElementById('roomsList');
 // -------------------- Utils --------------------
 function renderEmpty(msg) {
   if (!roomsList) return;
-  roomsList.innerHTML = ''; // limpa nós
+  roomsList.innerHTML = '';
   const li = document.createElement('li');
   li.textContent = msg || '';
   roomsList.appendChild(li);
@@ -41,14 +35,6 @@ function normalizeRoom(r) {
   const id = String(r?.id || r?.roomId || '').trim();
   const name = String(r?.name || r?.roomName || 'Sala').trim();
   return { id, name };
-}
-
-async function jsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
 }
 
 function goToRoom(roomId) {
@@ -62,19 +48,13 @@ async function carregarMinhasSalas() {
   renderEmpty('Carregando...');
 
   try {
-    const res = await authFetch(
-      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
+    const raw = await authFetch(
+      `/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
 
-    if (!res.ok) {
-      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
-      throw new Error(msg);
-    }
-
-    const raw = await jsonSafe(res);
-    const arr = Array.isArray(raw) ? raw : [];
+    const arr = Array.isArray(raw) ? raw : raw?.rooms || raw?.enrollments || [];
     const rooms = arr.map(normalizeRoom).filter((r) => !!r.id);
 
     roomsList.innerHTML = '';
@@ -90,7 +70,7 @@ async function carregarMinhasSalas() {
       li.title = 'Clique para abrir a sala';
 
       const nameText = document.createElement('span');
-      nameText.textContent = room.name + ' ';
+      nameText.textContent = `${room.name} `;
 
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -107,7 +87,6 @@ async function carregarMinhasSalas() {
       roomsList.appendChild(li);
     });
   } catch (err) {
-    // Se AUTH_401/403, authFetch já avisou e redirecionou
     if (!String(err?.message || '').startsWith('AUTH_')) {
       console.error(err);
       renderEmpty('Erro ao carregar suas salas.');
