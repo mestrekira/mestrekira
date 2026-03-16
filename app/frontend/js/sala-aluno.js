@@ -132,6 +132,7 @@ function formatDateBR(value) {
 function photoKeyStudent(id) {
   return id ? `mk_photo_student_${id}` : null;
 }
+
 function photoKeyProfessor(id) {
   return id ? `mk_photo_professor_${id}` : null;
 }
@@ -207,7 +208,7 @@ async function carregarOverview() {
 
   try {
     const res = await authFetch(
-      `${API_URL}/rooms/${encodeURIComponent(roomId)}/overview`,
+      `${API_URL}/rooms/${encodeURIComponent(roomId)}/overview-student`,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
@@ -246,7 +247,6 @@ async function carregarOverview() {
 
         const strong = document.createElement('strong');
         strong.textContent = name;
-
         text.appendChild(strong);
 
         if (email) {
