@@ -192,7 +192,17 @@ if (leaveBtn) {
       notify('success', 'Tudo certo', 'Você saiu da sala.');
       setTimeout(() => window.location.replace('painel-aluno.html'), 700);
     } catch (e) {
-      if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
+      const msg = String(e?.message || '');
+
+      if (msg === 'AUTH_401') return;
+
+      if (msg === 'AUTH_403') {
+        if (leaveStatus) leaveStatus.textContent = 'Você não tem permissão para sair desta sala.';
+        notify('warn', 'Acesso negado', 'Você não tem permissão para sair desta sala.');
+        return;
+      }
+
+      console.error(e);
       if (leaveStatus) leaveStatus.textContent = 'Erro ao sair da sala.';
       notify('error', 'Erro', 'Não foi possível sair da sala agora.');
     }
@@ -320,7 +330,18 @@ async function carregarOverview() {
       });
     }
   } catch (e) {
-    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
+    const msg = String(e?.message || '');
+
+    if (msg === 'AUTH_401') return;
+
+    if (msg === 'AUTH_403') {
+      if (roomNameEl) roomNameEl.textContent = 'Sala';
+      if (teacherInfo) teacherInfo.textContent = 'Você não tem permissão para visualizar esta sala.';
+      if (classmatesList) classmatesList.innerHTML = '<li>Acesso não autorizado.</li>';
+      return;
+    }
+
+    console.error(e);
     if (roomNameEl) roomNameEl.textContent = 'Sala';
     if (teacherInfo) teacherInfo.textContent = 'Erro ao carregar professor.';
     if (classmatesList) classmatesList.innerHTML = '<li>Erro ao carregar colegas.</li>';
@@ -348,7 +369,10 @@ async function getMyEssayByTask(taskIdValue) {
     const data = await jsonSafe(res);
     return data || null;
   } catch (e) {
-    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
+    const msg = String(e?.message || '');
+    if (msg !== 'AUTH_401' && msg !== 'AUTH_403') {
+      console.error(e);
+    }
     return null;
   }
 }
@@ -543,7 +567,19 @@ async function carregarTarefas() {
 
     setStatus('');
   } catch (e) {
-    if (!String(e?.message || '').startsWith('AUTH_')) console.error(e);
+    const msg = String(e?.message || '');
+
+    if (msg === 'AUTH_401') return;
+
+    if (msg === 'AUTH_403') {
+      setStatus('Você não tem permissão para visualizar as tarefas desta sala.');
+      if (tasksList) {
+        tasksList.innerHTML = '<li>Acesso não autorizado às tarefas.</li>';
+      }
+      return;
+    }
+
+    console.error(e);
     setStatus('Erro ao carregar tarefas.');
     if (tasksList) tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
