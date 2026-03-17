@@ -232,7 +232,6 @@ export async function authFetch(url, options = {}, cfg = {}) {
   const isFormData =
     typeof FormData !== 'undefined' && options.body instanceof FormData;
 
-  // evita duplicar Content-Type por casing diferente
   if (hasBody && !isFormData && !hasHeader(headers, 'content-type')) {
     headers['Content-Type'] = 'application/json';
   }
@@ -241,10 +240,11 @@ export async function authFetch(url, options = {}, cfg = {}) {
 
   const res = await fetch(url, { ...options, headers });
 
-  if (res.status === 401 || res.status === 403) {
+  // ✅ só 401 derruba a sessão
+  if (res.status === 401) {
     const justLoggedOut = sessionStorage.getItem('mk_just_logged_out') === '1';
 
-    clearAuth(); // mantém o flag por padrão
+    clearAuth();
 
     if (!isOnLoginPage()) {
       const redirectTo = cfg.redirectTo || inferLoginPage();
@@ -261,7 +261,12 @@ export async function authFetch(url, options = {}, cfg = {}) {
       setTimeout(() => window.location.replace(redirectTo), 600);
     }
 
-    throw new Error(`AUTH_${res.status}`);
+    throw new Error('AUTH_401');
+  }
+
+  // ✅ 403 NÃO desloga: devolve a resposta para a página tratar
+  if (res.status === 403) {
+    throw new Error('AUTH_403');
   }
 
   return res;
