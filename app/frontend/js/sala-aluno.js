@@ -197,7 +197,9 @@ if (leaveBtn) {
       if (msg === 'AUTH_401') return;
 
       if (msg === 'AUTH_403') {
-        if (leaveStatus) leaveStatus.textContent = 'Você não tem permissão para sair desta sala.';
+        if (leaveStatus) {
+          leaveStatus.textContent = 'Você não tem permissão para sair desta sala.';
+        }
         notify('warn', 'Acesso negado', 'Você não tem permissão para sair desta sala.');
         return;
       }
@@ -336,8 +338,12 @@ async function carregarOverview() {
 
     if (msg === 'AUTH_403') {
       if (roomNameEl) roomNameEl.textContent = 'Sala';
-      if (teacherInfo) teacherInfo.textContent = 'Você não tem permissão para visualizar esta sala.';
-      if (classmatesList) classmatesList.innerHTML = '<li>Acesso não autorizado.</li>';
+      if (teacherInfo) {
+        teacherInfo.textContent = 'Você não tem permissão para visualizar esta sala.';
+      }
+      if (classmatesList) {
+        classmatesList.innerHTML = '<li>Acesso não autorizado.</li>';
+      }
       return;
     }
 
@@ -436,7 +442,7 @@ async function carregarTarefas() {
 
   try {
     const res = await authFetch(
-      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
+      `${API_URL}/tasks/by-room-student?roomId=${encodeURIComponent(roomId)}`,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
