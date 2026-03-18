@@ -1,7 +1,7 @@
-// desempenho.js (final / prático com auth.js centralizado)
-// - usa requireStudentSession + authFetch + readErrorMessage do seu auth.js
-// - mantém lógica original (médias, donut, histórico, PDF)
-// - evita “body already used” no fluxo do PDF
+// desempenho.js (ajustado para fluxo do aluno)
+// - usa requireStudentSession + authFetch + readErrorMessage
+// - usa rota de tarefas do aluno: /tasks/by-room-student
+// - mantém médias, donut, histórico e PDF
 
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
@@ -24,7 +24,6 @@ function notify(type, title, message, duration) {
 }
 
 // ---------------- Guard ----------------
-// garante sessão + retorna studentId compat
 const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 // ---------------- Params ----------------
@@ -104,7 +103,7 @@ function clamp0to200(n) {
   return Math.max(0, Math.min(200, v));
 }
 
-// ---------------- DATAS (robusto) ----------------
+// ---------------- DATAS ----------------
 function pickDate(obj, keys) {
   for (const k of keys) {
     const v = obj?.[k];
@@ -129,7 +128,6 @@ function toDateSafe(value) {
   const s = String(value).trim();
   if (!s) return null;
 
-  // permite "YYYY-MM-DD HH:mm(:ss)"
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
     const d0 = new Date(s.replace(' ', 'T'));
     return Number.isNaN(d0.getTime()) ? null : d0;
@@ -323,11 +321,10 @@ function renderDonutWithLegend(
   targetLegendEl.appendChild(legend);
 }
 
-// ---------------- PDF DOWNLOAD (mais robusto) ----------------
+// ---------------- PDF DOWNLOAD ----------------
 function parseFilenameFromContentDisposition(cd, fallbackName) {
   const dispo = String(cd || '');
 
-  // 1) filename*=UTF-8''... (RFC 5987)
   const mStar = dispo.match(/filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i);
   if (mStar && mStar[1]) {
     const raw = mStar[1].trim().replace(/^"(.*)"$/, '$1');
@@ -338,11 +335,9 @@ function parseFilenameFromContentDisposition(cd, fallbackName) {
     }
   }
 
-  // 2) filename="..."
   const m = dispo.match(/filename\s*=\s*"([^"]+)"/i);
   if (m && m[1]) return m[1].trim();
 
-  // 3) filename=semAspas
   const m2 = dispo.match(/filename\s*=\s*([^;]+)/i);
   if (m2 && m2[1]) return m2[1].trim().replace(/^"(.*)"$/, '$1');
 
@@ -367,14 +362,12 @@ async function downloadStudentPerformancePdf(roomId) {
 
     const contentType = (res.headers.get('content-type') || '').toLowerCase();
 
-    // ✅ se NÃO for PDF, consome erro como texto/JSON e para aqui
     if (!contentType.includes('application/pdf') && !contentType.includes('pdf')) {
       const msg = await readErrorMessage(res, 'O servidor não retornou um PDF.');
       notify('error', 'Resposta inválida', msg);
       return;
     }
 
-    // ✅ PDF
     const blob = await res.blob();
 
     const cd = res.headers.get('content-disposition') || '';
@@ -383,17 +376,14 @@ async function downloadStudentPerformancePdf(roomId) {
 
     const blobUrl = window.URL.createObjectURL(blob);
 
-    // ✅ alguns browsers são chatos: melhor garantir que o link esteja no DOM
     const a = document.createElement('a');
     a.href = blobUrl;
     a.download = filename;
     a.style.display = 'none';
     document.body.appendChild(a);
 
-    // ✅ dispara download
     a.click();
 
-    // ✅ limpeza
     setTimeout(() => {
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
@@ -401,7 +391,6 @@ async function downloadStudentPerformancePdf(roomId) {
 
     notify('success', 'PDF pronto', 'Download iniciado.');
   } catch (e) {
-    // AUTH_401/403: authFetch já redireciona
     if (!String(e?.message || '').startsWith('AUTH_')) {
       console.error(e);
       notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
@@ -415,10 +404,11 @@ async function downloadStudentPerformancePdf(roomId) {
 async function fetchTasksMetaByRoom(roomId) {
   try {
     const res = await authFetch(
-      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
+      `${API_URL}/tasks/by-room-student?roomId=${encodeURIComponent(roomId)}`,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
+
     if (!res.ok) return [];
     const tasks = await jsonSafe(res);
     return Array.isArray(tasks) ? tasks : [];
@@ -475,7 +465,7 @@ function computeNewestTaskIdFromTasksMeta(tasksMeta) {
 }
 
 function computeNewestTaskIdFromEssays(essays) {
-  const mapMax = new Map(); // taskId -> maxTime
+  const mapMax = new Map();
 
   (Array.isArray(essays) ? essays : []).forEach((e) => {
     const tId = String(e?.taskId || '').trim();
@@ -676,9 +666,10 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
       const legend = panel.querySelector('#mkTaskPanelLegend');
 
       if (score === null) {
-        if (donut)
+        if (donut) {
           donut.innerHTML =
             '<div style="font-size:12px;opacity:.8;">Sem correção ainda.</div>';
+        }
         if (legend) legend.innerHTML = '';
       } else {
         const c1 = clamp0to200(essay?.c1);
@@ -703,7 +694,7 @@ function renderTasksHistory(essays, tasksMap, newestTaskId = null) {
         viewBtn.onclick = (ev) => {
           ev.stopPropagation();
           if (!eId) return;
-          window.location.href = `ver-redacao.html?essayId=${encodeURIComponent(
+          window.location.href = `feedback-aluno.html?essayId=${encodeURIComponent(
             eId
           )}`;
         };
@@ -904,4 +895,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (downloadPdfBtn) downloadPdfBtn.style.display = 'none';
   }
 });
-
