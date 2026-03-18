@@ -1,11 +1,3 @@
-Próxima página a ser atualizada é feedback-aluno.js que está com o mesmo problema da página de redação.
-
-// feedback-aluno.js (final / prático)
-// - usa auth.js (notify + requireStudentSession + authFetch + readErrorMessage)
-// - preserva parágrafos (redação + feedback)
-// - mostra meta: enviada/corrigida (quando fizer sentido)
-// - sem duplicar toast/notify/authFetch
-
 import { API_URL } from './config.js';
 import {
   notify,
