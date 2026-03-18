@@ -1,8 +1,3 @@
-// redacao.js (refatorado p/ padrão auth.js)
-// - sem duplicar authFetch/notify/readErrorMessage
-// - requireStudentSession roda 1x no topo
-// - 401/403 tratados apenas pelo authFetch
-
 import { API_URL } from './config.js';
 import { notify, requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
@@ -26,7 +21,6 @@ const taskGuidelinesEl = document.getElementById('taskGuidelines');
 const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
 
-// ✅ sessão do aluno (uma vez, no topo)
 const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 if (!taskId) {
@@ -60,7 +54,7 @@ function updateCount() {
 }
 
 // =====================
-// Pack / Unpack (título + corpo no content)
+// Pack / Unpack
 // =====================
 function packContent(title, body) {
   const t = String(title || '').trim();
@@ -70,8 +64,6 @@ function packContent(title, body) {
 
 function unpackContent(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
-
-  // aceita variações (compat com seu ecossistema)
   const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
   const m = text.match(re);
 
@@ -82,9 +74,6 @@ function unpackContent(raw) {
   return { title: '', body: text };
 }
 
-/**
- * ✅ Preserva parágrafos e linhas em branco.
- */
 function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
 
@@ -104,7 +93,7 @@ function setMultilinePreserve(el, value, fallback = '') {
 }
 
 // =====================
-// Anti-paste / anti-drop (com fallback mobile)
+// Anti-paste / anti-drop
 // =====================
 function antiPaste(el, fieldName, options = {}) {
   if (!el) return null;
@@ -147,13 +136,11 @@ function antiPaste(el, fieldName, options = {}) {
     }
   });
 
-  // fallback universal (mobile): salto grande de caracteres = provável cola
   el.addEventListener('input', () => {
     const cur = el.value || '';
     const curLen = cur.length;
     const diff = curLen - lastLen;
 
-    // só bloqueia saltos POSITIVOS grandes (evita falsos positivos em delete)
     if (diff > maxJump) {
       el.value = lastValue;
       try {
@@ -179,10 +166,8 @@ const antiTitle = antiPaste(titleInput, 'Título', { maxJump: 15 });
 const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
 
 // =====================
-// BACKEND (ESSAYS como rascunho)
+// BACKEND (ESSAYS)
 // =====================
-
-// Busca a redação do aluno naquela tarefa (rascunho ou enviada)
 async function getMyEssayByTask() {
   const url =
     `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student` +
@@ -197,7 +182,6 @@ async function getMyEssayByTask() {
   return data || null;
 }
 
-// Salva rascunho (upsert) no backend: POST /essays/draft
 async function saveDraftServerPacked(packedContent) {
   const res = await authFetch(
     `${API_URL}/essays/draft`,
@@ -225,22 +209,22 @@ async function clearDraftUXOnly() {
 }
 
 // =====================
-// CARREGAR TAREFA (tema + orientações)
+// CARREGAR TAREFA
+// ✅ agora usa rota do aluno
 // =====================
 async function carregarTarefa() {
   try {
     const res = await authFetch(
-      `${API_URL}/tasks/${encodeURIComponent(taskId)}`,
+      `${API_URL}/tasks/student/${encodeURIComponent(taskId)}`,
       {},
       { redirectTo: 'login-aluno.html' }
     );
+
     if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
 
     const task = await res.json().catch(() => null);
 
     if (taskTitleEl) taskTitleEl.textContent = task?.title || 'Tema da Redação';
-
-    // preserva parágrafos / linhas em branco
     setMultilinePreserve(taskGuidelinesEl, task?.guidelines, 'Sem orientações adicionais.');
   } catch (err) {
     console.error('Erro ao carregar tarefa:', err);
@@ -253,7 +237,7 @@ async function carregarTarefa() {
 }
 
 // =====================
-// CARREGAR RASCUNHO (via essays)
+// CARREGAR RASCUNHO
 // =====================
 async function carregarRascunho() {
   try {
@@ -264,7 +248,6 @@ async function carregarRascunho() {
       return;
     }
 
-    // já enviada -> redireciona
     if (essay.isDraft === false && essay.id) {
       setStatus('Você já enviou esta redação. Redirecionando para o feedback...');
       setDisabledAll(true);
@@ -295,7 +278,7 @@ async function carregarRascunho() {
 }
 
 // =====================
-// AUTOSAVE (debounce + proteção)
+// AUTOSAVE
 // =====================
 let autosaveTimer = null;
 let autosaveBusy = false;
@@ -307,17 +290,13 @@ function scheduleAutosave() {
     const title = (titleInput.value || '').trim();
     const text = textarea.value || '';
 
-    // não salva “vazio”
     if (!title && !text.trim()) return;
-
-    // evita concorrência
     if (autosaveBusy) return;
     autosaveBusy = true;
 
     try {
       await saveDraftServerPacked(packContent(title, text));
     } catch (err) {
-      // silencioso (não polui UX)
       console.error('Autosave falhou:', err);
     } finally {
       autosaveBusy = false;
@@ -335,13 +314,12 @@ textarea.addEventListener('input', () => {
 });
 
 // =====================
-// SALVAR RASCUNHO (manual)
+// SALVAR RASCUNHO
 // =====================
 saveBtn.addEventListener('click', async () => {
   const title = (titleInput.value || '').trim();
   const text = textarea.value || '';
 
-  // se estiver vazio, limpa só UX
   if (!title && !text.trim()) {
     await clearDraftUXOnly();
     setStatus('Nada para salvar.');
@@ -349,7 +327,6 @@ saveBtn.addEventListener('click', async () => {
     return;
   }
 
-  // evita spam de clique
   saveBtn.disabled = true;
 
   try {
@@ -367,7 +344,7 @@ saveBtn.addEventListener('click', async () => {
 });
 
 // =====================
-// VERIFICAR SE JÁ ENVIOU (servidor)
+// VERIFICAR SE JÁ ENVIOU
 // =====================
 async function checarJaEnviou() {
   try {
@@ -382,7 +359,7 @@ async function checarJaEnviou() {
 }
 
 // =====================
-// ENVIAR REDAÇÃO (envio final)
+// ENVIAR REDAÇÃO
 // =====================
 let sending = false;
 
@@ -405,12 +382,10 @@ sendBtn.addEventListener('click', async () => {
     return;
   }
 
-  // trava UI
   setDisabledAll(true);
   setStatus('Verificando envio...');
 
   try {
-    // revalida no servidor (evita reenviar por múltiplas abas)
     const ja = await checarJaEnviou();
     if (ja.sent) {
       setStatus('Você já enviou esta redação. Não é permitido reenviar.');
@@ -421,7 +396,6 @@ sendBtn.addEventListener('click', async () => {
       return;
     }
 
-    // tenta salvar rascunho antes do envio final (melhor chance de não perder)
     try {
       await saveDraftServerPacked(packContent(title, text));
     } catch (e) {
@@ -466,8 +440,6 @@ sendBtn.addEventListener('click', async () => {
     }, 600);
   } catch (err) {
     console.error(err);
-
-    // destrava UI
     setDisabledAll(false);
     setStatus('Erro ao enviar redação.');
     notify('error', 'Erro', String(err?.message || 'Erro ao enviar redação.'));
@@ -477,8 +449,7 @@ sendBtn.addEventListener('click', async () => {
 });
 
 // =====================
-// FLUSH do autosave ao sair da página
-// (melhora muito perda de texto ao fechar aba)
+// FLUSH do autosave
 // =====================
 async function flushAutosave() {
   try {
@@ -498,7 +469,6 @@ async function flushAutosave() {
 }
 
 window.addEventListener('pagehide', () => {
-  // não dá para "await" aqui; dispara tentativa final
   flushAutosave();
 });
 
