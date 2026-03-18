@@ -75,7 +75,7 @@ function toDateSafe(value) {
     return Number.isNaN(t) ? null : value;
   }
 
-if (typeof value === 'number') {
+  if (typeof value === 'number') {
     const d = new Date(value);
     return Number.isNaN(d.getTime()) ? null : d;
   }
@@ -83,7 +83,6 @@ if (typeof value === 'number') {
   const s = String(value).trim();
   if (!s) return null;
 
-  // permite "YYYY-MM-DD HH:mm(:ss)"
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
     const d0 = new Date(s.replace(' ', 'T'));
     return Number.isNaN(d0.getTime()) ? null : d0;
@@ -115,12 +114,10 @@ function formatDateBR(value) {
 }
 
 function getSentAt(essay) {
-  // enviada = createdAt (ou submittedAt se existir)
   return pickDate(essay, ['submittedAt', 'submitted_at', 'createdAt', 'created_at']);
 }
 
 function getCorrectedAt(essay) {
-  // corrigida = updatedAt (ou correctedAt)
   return pickDate(essay, ['correctedAt', 'corrected_at', 'updatedAt', 'updated_at']);
 }
 
@@ -132,8 +129,6 @@ function renderEssayMeta(metaEl, essay) {
 
   const hasScore = essay?.score !== null && essay?.score !== undefined;
   const hasFeedback = String(essay?.feedback || '').trim().length > 0;
-
-  // só exibe “Corrigida em” se houver indício real de correção
   const showCorrected = hasScore || hasFeedback;
 
   metaEl.textContent = '';
@@ -151,7 +146,6 @@ function renderEssayMeta(metaEl, essay) {
 function splitTitleAndBody(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
 
-  // padrão com marcador (variações)
   const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
   const m = text.match(re);
   if (m) {
@@ -161,7 +155,6 @@ function splitTitleAndBody(raw) {
     };
   }
 
-  // fallback: primeira linha não vazia como título
   const trimmed = text.trim();
   if (!trimmed) return { title: '—', body: '' };
 
@@ -240,7 +233,7 @@ function patchCompetencyLabels() {
     if (!strong) return;
 
     const base = strong.textContent || '';
-    if (base.includes('(')) return; // evita duplicar
+    if (base.includes('(')) return;
     strong.textContent = base.replace(':', ` (${name}):`);
   });
 }
@@ -248,7 +241,7 @@ function patchCompetencyLabels() {
 // ---------------- fetch helpers ----------------
 async function fetchEssayById(id) {
   const res = await authFetch(
-    `${API_URL}/essays/${encodeURIComponent(String(id))}`,
+    `${API_URL}/essays/student/${encodeURIComponent(String(id))}`,
     { method: 'GET' },
     { redirectTo: 'login-aluno.html' }
   );
@@ -266,7 +259,7 @@ async function fetchTaskTitle(taskId) {
 
   try {
     const res = await authFetch(
-      `${API_URL}/tasks/${encodeURIComponent(String(taskId))}`,
+      `${API_URL}/tasks/student/${encodeURIComponent(String(taskId))}`,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
@@ -287,36 +280,29 @@ async function carregarFeedback() {
     const essay = await fetchEssayById(essayId);
     if (!essay) throw new Error('Redação não encontrada');
 
-    // 🔐 checagem (front)
     if (String(essay.studentId) !== String(studentId)) {
       notify('error', 'Sem permissão', 'Você não pode ver esta redação.');
       window.location.replace('painel-aluno.html');
       return;
     }
 
-    // meta: enviada/corrigida
     renderEssayMeta(essayMetaEl, essay);
 
-    // tema (task)
     setText(taskTitleEl, '—');
     const taskTitle = await fetchTaskTitle(essay.taskId);
     if (taskTitle) setText(taskTitleEl, taskTitle);
 
-    // redação formatada
     renderEssayFormatted(essayContentEl, essay.content || '');
 
-    // nota
     const hasScore = essay.score !== null && essay.score !== undefined;
     setText(scoreEl, hasScore ? String(essay.score) : 'Ainda não corrigida', '—');
 
-    // feedback
     setMultilinePreserve(
       feedbackEl,
       essay?.feedback || '',
       'Aguardando correção do professor.'
     );
 
-    // competências
     setText(c1El, essay.c1 ?? '—', '—');
     setText(c2El, essay.c2 ?? '—', '—');
     setText(c3El, essay.c3 ?? '—', '—');
@@ -327,7 +313,6 @@ async function carregarFeedback() {
   } catch (err) {
     console.error(err);
 
-    // AUTH_* já redireciona
     if (String(err?.message || '').startsWith('AUTH_')) return;
 
     notify(
