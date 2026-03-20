@@ -202,7 +202,7 @@ const COLORS = {
 
 function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 18) {
   const safeTotal = Number.isFinite(Number(total)) ? Number(total) : null;
-  const margin = safeTotal === null ? 1000 : Math.max(0, 1000 - safeTotal);
+  const margin = safeTotal === null ? 1000 : Math.max(0, MAX - safeTotal);
 
   const values = [
     { key: 'c1', label: `C1 (${c1 ?? 0})`, value: Number(c1 || 0), color: COLORS.c1 },
@@ -374,7 +374,7 @@ function renderRoomInfo(payload) {
   setText(roomNameEl, room?.name);
   setText(roomCodeEl, room?.code);
   setText(teacherNameEl, room?.teacherNameSnapshot);
-  setText(yearNameEl, room?.schoolYearId || 'Ano vinculado');
+  setText(yearNameEl, room?.yearName || room?.schoolYearName || room?.schoolYearId || '—');
   setText(createdAtEl, fmtDateBR(room?.createdAt));
   setText(studentsCountEl, overview?.studentsCount ?? 0, '0');
 
