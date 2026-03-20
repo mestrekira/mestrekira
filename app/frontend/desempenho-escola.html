@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualização da Sala | Escola</title>
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/ui-feedback.css" />
+  <link rel="icon" href="logo1.png" type="image/png" />
+
+  <style>
+    .mk-page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .mk-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .mk-topbar h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .mk-back-btn {
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .mk-status {
+      min-height: 20px;
+      margin-bottom: 16px;
+      color: #475569;
+      font-size: 0.95rem;
+    }
+
+    .mk-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .mk-card {
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    }
+
+    .mk-card h2 {
+      margin: 0 0 14px;
+      font-size: 1.1rem;
+    }
+
+    .mk-room-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mk-meta-item {
+      background: rgba(248, 250, 252, 0.95);
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .mk-meta-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: #334155;
+    }
+
+    .mk-meta-item span {
+      display: block;
+      font-size: 1rem;
+      color: #0f172a;
+      word-break: break-word;
+    }
+
+    .mk-performance-wrap {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .mk-donut-box {
+      min-width: 170px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .mk-legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .mk-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.92rem;
+      color: #334155;
+    }
+
+    .mk-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      display: inline-block;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .mk-students-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .mk-students-count {
+      font-size: 0.95rem;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .mk-students-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .mk-student-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .mk-student-photo {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      flex: 0 0 auto;
+      background: #f1f5f9;
+    }
+
+    .mk-student-info strong {
+      display: block;
+      color: #0f172a;
+      margin-bottom: 3px;
+    }
+
+    .mk-student-info small {
+      color: #64748b;
+      word-break: break-word;
+    }
+
+    .mk-empty {
+      color: #64748b;
+      font-size: 0.95rem;
+      padding: 8px 0;
+    }
+
+    @media (max-width: 860px) {
+      .mk-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mk-room-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .mk-legend {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="mk-page">
+    <div class="mk-topbar">
+      <h1>Visualização da Sala</h1>
+      <button id="backBtn" class="mk-back-btn" type="button">Voltar</button>
+    </div>
+
+    <div id="status" class="mk-status"></div>
+
+    <section class="mk-grid">
+      <article class="mk-card">
+        <h2>Informações da sala</h2>
+
+        <div class="mk-room-meta">
+          <div class="mk-meta-item">
+            <strong>Nome da sala</strong>
+            <span id="roomName">—</span>
+          </div>
+
+          <div class="mk-meta-item">
+            <strong>Código da sala</strong>
+            <span id="roomCode">—</span>
+          </div>
+
+          <div class="mk-meta-item">
+            <strong>Professor</strong>
+            <span id="teacherName">—</span>
+          </div>
+
+          <div class="mk-meta-item">
+            <strong>Ano letivo</strong>
+            <span id="yearName">—</span>
+          </div>
+
+          <div class="mk-meta-item">
+            <strong>Criada em</strong>
+            <span id="createdAt">—</span>
+          </div>
+
+          <div class="mk-meta-item">
+            <strong>Quantidade de estudantes</strong>
+            <span id="studentsCount">—</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="mk-card">
+        <h2>Média geral da sala</h2>
+
+        <div class="mk-performance-wrap">
+          <div id="avgDonut" class="mk-donut-box"></div>
+          <div id="avgLegend" class="mk-legend"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="mk-card">
+      <div class="mk-students-head">
+        <h2>Estudantes matriculados</h2>
+        <div id="studentsCountLabel" class="mk-students-count">0 estudante(s)</div>
+      </div>
+
+      <ul id="studentsList" class="mk-students-list"></ul>
+    </section>
+  </main>
+
+  <script type="module" src="js/desempenho-escola.js"></script>
+  <script src="js/footer.js"></script>
+</body>
+</html>
