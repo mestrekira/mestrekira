@@ -25,9 +25,15 @@ function notify(type, title, message, duration) {
 
 function setStatus(msg) {
   const statusEl = document.getElementById('status');
-  if (statusEl) statusEl.textContent = msg || '';
-}
+  if (!statusEl) return;
 
+  if (!msg) {
+    statusEl.textContent = '';
+    return;
+  }
+
+  statusEl.textContent = msg;
+}
 function setText(el, value) {
   if (!el) return;
   el.textContent =
