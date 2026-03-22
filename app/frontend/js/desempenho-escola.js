@@ -4,9 +4,6 @@ import { toast } from './ui-feedback.js';
 const LS = {
   token: 'token',
   user: 'user',
-  schoolId: 'schoolId',
-  professorId: 'professorId',
-  studentId: 'studentId',
 };
 
 const params = new URLSearchParams(window.location.search);
@@ -141,17 +138,17 @@ function makeStudentAvatar(studentId, size = 42) {
 }
 
 // -------------------- Donut --------------------
-function createDonut({ c1, c2, c3, c4, c5, total }) {
-  const values = [
-    { label: `C1 (${c1 || 0})`, value: c1 || 0, color: '#4f46e5' },
-    { label: `C2 (${c2 || 0})`, value: c2 || 0, color: '#16a34a' },
-    { label: `C3 (${c3 || 0})`, value: c3 || 0, color: '#f59e0b' },
-    { label: `C4 (${c4 || 0})`, value: c4 || 0, color: '#0ea5e9' },
-    { label: `C5 (${c5 || 0})`, value: c5 || 0, color: '#ef4444' },
-  ];
-
+function createDonut({ c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0, total = null }) {
   avgDonutEl.innerHTML = `<strong>${total ?? '—'}</strong>`;
   avgLegendEl.innerHTML = '';
+
+  const values = [
+    { label: `C1 (${c1})`, color: '#4f46e5' },
+    { label: `C2 (${c2})`, color: '#16a34a' },
+    { label: `C3 (${c3})`, color: '#f59e0b' },
+    { label: `C4 (${c4})`, color: '#0ea5e9' },
+    { label: `C5 (${c5})`, color: '#ef4444' },
+  ];
 
   values.forEach((v) => {
     const div = document.createElement('div');
@@ -164,10 +161,13 @@ function createDonut({ c1, c2, c3, c4, c5, total }) {
 // -------------------- Render --------------------
 function renderStudents(students = []) {
   studentsListEl.innerHTML = '';
-  studentsCountEl.textContent = students.length;
-  studentsCountLabelEl.textContent = `${students.length} estudante(s)`;
 
-  if (!students.length) {
+  const count = Array.isArray(students) ? students.length : 0;
+
+  studentsCountEl.textContent = count;
+  studentsCountLabelEl.textContent = `${count} estudante(s)`;
+
+  if (!count) {
     studentsListEl.innerHTML = '<li class="mk-empty">Nenhum estudante.</li>';
     return;
   }
@@ -188,9 +188,11 @@ function renderStudents(students = []) {
 }
 
 function renderRoom(data) {
-  const room = data.room || {};
-  const overview = data.overview || {};
-  const perf = data.performance || {};
+  const room = data?.room || {};
+  const overview = data?.overview || {};
+  const perf = overview?.performance || {};
+
+  const avg = perf?.averages || {};
 
   setText(roomNameEl, room.name);
   setText(roomCodeEl, room.code);
@@ -198,10 +200,15 @@ function renderRoom(data) {
   setText(yearNameEl, room.schoolYearId);
   setText(createdAtEl, fmtDateBR(room.createdAt));
 
-  renderStudents(overview.students);
+  renderStudents(overview?.students || []);
 
   createDonut({
-    ...perf.averages,
+    c1: avg.c1,
+    c2: avg.c2,
+    c3: avg.c3,
+    c4: avg.c4,
+    c5: avg.c5,
+    total: avg.total,
   });
 }
 
