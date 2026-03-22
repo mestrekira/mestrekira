@@ -26,14 +26,9 @@ function notify(type, title, message, duration) {
 function setStatus(msg) {
   const statusEl = document.getElementById('status');
   if (!statusEl) return;
-
-  if (!msg) {
-    statusEl.textContent = '';
-    return;
-  }
-
-  statusEl.textContent = msg;
+  statusEl.textContent = msg || '';
 }
+
 function setText(el, value) {
   if (!el) return;
   el.textContent =
@@ -123,9 +118,8 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body) headers['Content-Type'] = 'application/json';
 
- const url = `${API_URL}${path}`;
-
-console.debug('[API]', method, path);
+  const url = `${API_URL}${path}`;
+  console.debug('[painel-escola][API]', method, path);
 
   const res = await fetch(url, {
     method,
@@ -139,7 +133,7 @@ console.debug('[API]', method, path);
     clearAuth();
     notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
     setTimeout(() => window.location.replace('login-escola.html'), 700);
-    throw new Error(`AUTH_${res.status}: ${JSON.stringify(data)}`);
+    throw new Error(`AUTH_${res.status}`);
   }
 
   if (!res.ok) {
@@ -613,7 +607,7 @@ function renderRoomsTable(session) {
 
 // ------------------- Loaders -------------------
 async function refreshYears(session, { keepStatus } = {}) {
-  if (!keepStatus) setStatus('Carregando anos letivos...');
+  if (!keepStatus) setStatus('');
 
   const res = await apiListYears(session);
   const years = unwrapList(res, ['years']);
@@ -641,7 +635,7 @@ async function refreshRooms(session, { keepStatus } = {}) {
     return;
   }
 
-  if (!keepStatus) setStatus('Carregando salas...');
+  if (!keepStatus) setStatus('');
 
   const yearId = roomsFilterYearSelectEl
     ? String(roomsFilterYearSelectEl.value || '').trim()
@@ -683,7 +677,7 @@ async function onCreateYear(session) {
   }
 
   try {
-    setStatus('Cadastrando ano letivo...');
+    setStatus('');
     await apiCreateYear(session, name);
 
     if (yearNameEl) yearNameEl.value = '';
@@ -751,7 +745,7 @@ async function onCreateRoom(session) {
   }
 
   try {
-    setStatus('Cadastrando sala...');
+    setStatus('');
 
     await apiCreateRoom(session, {
       name,
@@ -825,7 +819,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const msg = String(e?.message || e);
 
     if (msg.includes('Rota não encontrada')) {
-      setStatus('Erro ao carregar painel: rota do backend não encontrada.');
+      setStatus('Erro ao carregar painel.');
       notify(
         'error',
         'Backend desatualizado',
