@@ -1,88 +1,59 @@
-// professor-salas.js (final / padrão auth.js)
-// - lista/cria/exclui salas do professor
-// - usa auth.js (notify + requireProfessorSession + authFetch + readErrorMessage + getUser)
-// - compat: aceita endpoints que retornam { ok, result: [...] } ou { data: [...] } ou array direto
+// professor-salas.js (refatorado PRO)
 
+// ---------------- IMPORTS ----------------
 import { API_URL } from './config.js';
 import {
   notify,
   requireProfessorSession,
   authFetch,
   readErrorMessage,
-  getUser,
 } from './auth.js';
 
-// --------------------
-// Guard: sessão professor (1x no topo)
-// --------------------
-const professorIdCompat = requireProfessorSession({ redirectTo: 'login-professor.html' });
-const user = getUser() || null;
+// ---------------- GUARD ----------------
+requireProfessorSession({ redirectTo: 'login-professor.html' });
 
-// --------------------
-// Página
-// --------------------
+// ---------------- ELEMENTOS ----------------
 const roomsList = document.getElementById('roomsList');
 const createRoomBtn = document.getElementById('createRoomBtn');
 const roomNameInput = document.getElementById('roomName');
 
-function disable(btn, value) {
-  if (btn) btn.disabled = !!value;
+// ---------------- HELPERS ----------------
+function disable(el, state) {
+  if (el) el.disabled = !!state;
 }
 
 function unwrapResult(data) {
-  // suporta: [..] OU { ok:true, result:[..] } OU { data:[..] }
   if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') {
-    if (Array.isArray(data.result)) return data.result;
-    if (Array.isArray(data.data)) return data.data;
-  }
-  // fallback seguro para este arquivo (esperamos lista)
+  if (data?.result && Array.isArray(data.result)) return data.result;
+  if (data?.data && Array.isArray(data.data)) return data.data;
   return [];
 }
 
-// --------------------
-// API helpers (padrão authFetch)
-// --------------------
-async function apiGetJson(url) {
-  const res = await authFetch(url, { method: 'GET' }, { redirectTo: 'login-professor.html' });
-  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
+async function apiRequest(url, options = {}) {
+  const res = await authFetch(url, options, {
+    redirectTo: 'login-professor.html',
+  });
+
+  if (!res.ok) {
+    const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+    throw new Error(msg);
+  }
+
   return res.json().catch(() => null);
 }
 
-async function apiDelete(url) {
-  const res = await authFetch(url, { method: 'DELETE' }, { redirectTo: 'login-professor.html' });
-  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
-  return res.json().catch(() => null);
-}
-
-async function apiPostJson(url, body) {
-  const res = await authFetch(
-    url,
-    { method: 'POST', body: JSON.stringify(body ?? {}) },
-    { redirectTo: 'login-professor.html' }
-  );
-  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
-  return res.json().catch(() => null);
-}
-
-// --------------------
-// Carregar salas
-// --------------------
+// ---------------- CARREGAR SALAS ----------------
 async function carregarSalas() {
   if (!roomsList) return;
 
   roomsList.innerHTML = '<li>Carregando...</li>';
 
   try {
-    // ✅ ideal: backend lê professorId pelo token.
-    // Mantemos query por compatibilidade (se o endpoint ainda exige).
-    const professorId = String(user?.id || professorIdCompat || '').trim();
-
-    const data = await apiGetJson(
-      `${API_URL}/rooms/by-professor?professorId=${encodeURIComponent(professorId)}`
-    );
+    // ✅ AGORA SEM professorId
+    const data = await apiRequest(`${API_URL}/rooms/by-professor`);
 
     const rooms = unwrapResult(data);
+
     roomsList.innerHTML = '';
 
     if (!rooms.length) {
@@ -90,65 +61,64 @@ async function carregarSalas() {
       return;
     }
 
-    for (const room of rooms) {
+    rooms.forEach((room) => {
       const roomId = String(room?.id || '').trim();
 
       const li = document.createElement('li');
 
-      // nome
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = String(room?.name || 'Sala');
-      li.appendChild(nameSpan);
-      li.appendChild(document.createTextNode(' '));
+      const name = document.createElement('span');
+      name.textContent = room?.name || 'Sala';
 
-      // acessar
-      const btn = document.createElement('button');
-      btn.textContent = 'Acessar';
-      btn.addEventListener('click', () => {
+      const acessar = document.createElement('button');
+      acessar.textContent = 'Acessar';
+      acessar.onclick = () => {
         if (!roomId) return;
         window.location.href = `sala-professor.html?roomId=${encodeURIComponent(roomId)}`;
-      });
+      };
 
-      // excluir
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Excluir';
-      delBtn.addEventListener('click', async () => {
+      const excluir = document.createElement('button');
+      excluir.textContent = 'Excluir';
+
+      excluir.onclick = async () => {
         if (!roomId) return;
 
-        const ok = confirm(`Excluir a sala "${String(room?.name || '')}"?`);
+        const ok = confirm(`Excluir a sala "${room?.name || ''}"?`);
         if (!ok) return;
 
-        disable(delBtn, true);
+        disable(excluir, true);
 
         try {
-          await apiDelete(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
-          notify('success', 'Sala excluída', 'A sala foi excluída com sucesso.', 1800);
+          await apiRequest(`${API_URL}/rooms/${roomId}`, {
+            method: 'DELETE',
+          });
+
+          notify('success', 'Sala excluída', 'A sala foi removida.');
           await carregarSalas();
         } catch (e) {
-          const msg = String(e?.message || 'Falha ao excluir sala.');
-          notify('error', 'Erro ao excluir', msg);
+          notify('error', 'Erro', e.message);
         } finally {
-          disable(delBtn, false);
+          disable(excluir, false);
         }
-      });
+      };
 
-      li.appendChild(btn);
-      li.appendChild(delBtn);
+      li.appendChild(name);
+      li.appendChild(document.createTextNode(' '));
+      li.appendChild(acessar);
+      li.appendChild(excluir);
+
       roomsList.appendChild(li);
-    }
+    });
   } catch (e) {
     roomsList.innerHTML = '<li>Erro ao carregar salas.</li>';
-    const msg = String(e?.message || 'Não foi possível carregar as salas.');
-    notify('error', 'Erro', msg);
+    notify('error', 'Erro', e.message);
   }
 }
 
-// --------------------
-// Criar sala
-// --------------------
+// ---------------- CRIAR SALA ----------------
 if (createRoomBtn && roomNameInput) {
   createRoomBtn.addEventListener('click', async () => {
     const name = String(roomNameInput.value || '').trim();
+
     if (!name) {
       notify('warn', 'Nome obrigatório', 'Informe o nome da sala.');
       return;
@@ -157,23 +127,23 @@ if (createRoomBtn && roomNameInput) {
     disable(createRoomBtn, true);
 
     try {
-      // ✅ ideal: backend pega professorId pelo token.
-      // Mantemos professorId no body por compatibilidade caso seu endpoint exija.
-      const professorId = String(user?.id || professorIdCompat || '').trim();
-
-      await apiPostJson(`${API_URL}/rooms`, { name, professorId });
+      // ✅ SEM professorId
+      await apiRequest(`${API_URL}/rooms`, {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
 
       roomNameInput.value = '';
-      notify('success', 'Sala criada', 'Sua sala foi criada com sucesso.', 1600);
+
+      notify('success', 'Sala criada', 'Sua sala foi criada.');
       await carregarSalas();
     } catch (e) {
-      const msg = String(e?.message || 'Erro ao criar sala.');
-      notify('error', 'Erro ao criar', msg);
+      notify('error', 'Erro ao criar', e.message);
     } finally {
       disable(createRoomBtn, false);
     }
   });
 }
 
-// INIT
+// ---------------- INIT ----------------
 carregarSalas();
