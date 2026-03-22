@@ -117,10 +117,9 @@ async function authFetch(path, { token, method = 'GET', body } = {}) {
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body) headers['Content-Type'] = 'application/json';
 
-  const url = `${API_URL}${path}`;
-  setStatus(
-    `DEBUG → ${method} ${path} | token: ${token ? token.slice(0, 20) + '...' : '(ausente)'}`
-  );
+ const url = `${API_URL}${path}`;
+
+console.debug('[API]', method, path);
 
   const res = await fetch(url, {
     method,
