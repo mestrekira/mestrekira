@@ -188,27 +188,37 @@ function renderStudents(students = []) {
 }
 
 function renderRoom(data) {
-  const room = data?.room || {};
-  const overview = data?.overview || {};
-  const perf = overview?.performance || {};
+  const room = data.room || {};
+  const overview = data.overview || {};
+  const perf = data.performance || {};
+  const avg = perf.averages || {};
 
-  const avg = perf?.averages || {};
-
+  // infos
   setText(roomNameEl, room.name);
   setText(roomCodeEl, room.code);
-  setText(teacherNameEl, room.teacherNameSnapshot);
-  setText(yearNameEl, room.schoolYearId);
+
+  // ✅ fallback professor
+  setText(teacherNameEl, room.teacherNameSnapshot || '—');
+
+  // ✅ evitar UUID feio
+  setText(
+    yearNameEl,
+    room.yearName || room.schoolYearName || '—'
+  );
+
   setText(createdAtEl, fmtDateBR(room.createdAt));
 
-  renderStudents(overview?.students || []);
+  // alunos
+  renderStudents(overview.students || []);
 
+  // ✅ garantir dados corretos
   createDonut({
-    c1: avg.c1,
-    c2: avg.c2,
-    c3: avg.c3,
-    c4: avg.c4,
-    c5: avg.c5,
-    total: avg.total,
+    total: avg.total ?? null,
+    c1: avg.c1 ?? 0,
+    c2: avg.c2 ?? 0,
+    c3: avg.c3 ?? 0,
+    c4: avg.c4 ?? 0,
+    c5: avg.c5 ?? 0,
   });
 }
 
