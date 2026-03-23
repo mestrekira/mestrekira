@@ -1,11 +1,3 @@
-// feedback-professor.js (final / alinhado ao feedback-professor.html)
-// - usa auth.js (requireProfessorSession + authFetch + readErrorMessage + notify)
-// - aceita 2 modos:
-//   1) antigo: ?essayId=...
-//   2) novo:   ?taskId=...&studentId=...
-// - preserva parágrafos (redação + feedback)
-// - compatível com content empacotado __TITLE__:
-
 import { API_URL } from './config.js';
 import {
   notify,
@@ -16,9 +8,9 @@ import {
 
 // ---------------- PARAMS ----------------
 const params = new URLSearchParams(window.location.search);
-const essayId = params.get('essayId'); // modo antigo
-const taskId = params.get('taskId'); // modo novo
-const studentId = params.get('studentId'); // modo novo
+const essayId = params.get('essayId')?.trim() || '';
+const taskId = params.get('taskId')?.trim() || '';
+const studentId = params.get('studentId')?.trim() || '';
 
 // sessão obrigatória
 requireProfessorSession({ redirectTo: 'login-professor.html' });
@@ -29,7 +21,7 @@ if (!essayId && !(taskId && studentId)) {
   throw new Error('Parâmetros ausentes (essayId OU taskId+studentId)');
 }
 
-// ---------------- ELEMENTOS (IDs reais do HTML) ----------------
+// ---------------- ELEMENTOS ----------------
 const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
 
@@ -38,7 +30,7 @@ const essayMetaEl = document.getElementById('essayMeta');
 
 const essayTitleEl = document.getElementById('essayTitle');
 const essayBodyEl = document.getElementById('essayBody');
-const essayContentEl = document.getElementById('essayContent'); // fallback antigo (fica hidden no HTML)
+const essayContentEl = document.getElementById('essayContent');
 
 const scoreEl = document.getElementById('score');
 const feedbackEl = document.getElementById('feedback');
@@ -58,10 +50,6 @@ function setText(el, value, fallback = '—') {
   el.textContent = v ? v : fallback;
 }
 
-/**
- * Preserva parágrafos e linhas em branco.
- * (Aqui funciona em <div> via textContent)
- */
 function setMultilinePreserve(el, value, fallback = '') {
   if (!el) return;
 
@@ -80,13 +68,9 @@ function setMultilinePreserve(el, value, fallback = '') {
   el.style.setProperty('display', 'block', 'important');
 }
 
-/**
- * Remove marcador e separa título/corpo.
- */
 function splitTitleAndBody(raw) {
   const text = String(raw || '').replace(/\r\n/g, '\n');
 
-  // padrão com marcador (variações)
   const re = /^(?:__TITLE__|_TITLE_|TITLE)\s*:\s*(.*)\n\n([\s\S]*)$/i;
   const m = text.match(re);
   if (m) {
@@ -96,7 +80,6 @@ function splitTitleAndBody(raw) {
     };
   }
 
-  // fallback: primeira linha não vazia vira título
   const trimmed = text.trim();
   if (!trimmed) return { title: '—', body: '' };
 
@@ -109,10 +92,13 @@ function splitTitleAndBody(raw) {
       break;
     }
   }
+
   if (firstIdx === -1) return { title: '—', body: '' };
 
   let title = String(lines[firstIdx] || '').trim();
-  if (title.startsWith('__TITLE__:')) title = title.replace(/^__TITLE__:\s*/, '').trim();
+  if (title.startsWith('__TITLE__:')) {
+    title = title.replace(/^__TITLE__:\s*/, '').trim();
+  }
 
   const bodyLines = lines.slice(firstIdx + 1);
   while (bodyLines.length && !String(bodyLines[0] || '').trim()) bodyLines.shift();
@@ -124,11 +110,9 @@ function splitTitleAndBody(raw) {
 function renderEssayFormatted(rawContent) {
   const { title, body } = splitTitleAndBody(rawContent);
 
-  // seu HTML tem essayTitle + essayBody
   setText(essayTitleEl, title || '—', '—');
   setMultilinePreserve(essayBodyEl, String(body || '').trimEnd(), '');
 
-  // garante que o fallback antigo não apareça
   if (essayContentEl) {
     essayContentEl.style.display = 'none';
     essayContentEl.textContent = '';
@@ -161,7 +145,6 @@ function toDateSafe(value) {
   const s = String(value).trim();
   if (!s) return null;
 
-  // aceita "YYYY-MM-DD HH:mm(:ss)"
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
     const d0 = new Date(s.replace(' ', 'T'));
     return Number.isNaN(d0.getTime()) ? null : d0;
@@ -183,8 +166,12 @@ function toDateSafe(value) {
 function formatDateBR(value) {
   const d = toDateSafe(value);
   if (!d) return '—';
+
   try {
-    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(d);
   } catch {
     return '—';
   }
@@ -222,19 +209,29 @@ function renderMetaDates(essay) {
 // ---------------- fetch helpers ----------------
 function unwrapResult(data) {
   if (Array.isArray(data)) return data;
+
   if (data && typeof data === 'object') {
     if (Array.isArray(data.result)) return data.result;
     if (Array.isArray(data.data)) return data.data;
     if (data.result && typeof data.result === 'object') return data.result;
     if (data.data && typeof data.data === 'object') return data.data;
   }
+
   return data;
+}
+
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 async function apiJson(url, options) {
   const res = await authFetch(url, options || {}, { redirectTo: 'login-professor.html' });
   if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
-  return res.json().catch(() => null);
+  return readJsonSafe(res);
 }
 
 async function fetchEssayByIdWithStudent(id) {
@@ -247,22 +244,24 @@ async function fetchEssayByIdWithStudent(id) {
 async function fetchEssaysByTaskWithStudent(tId) {
   const data = await apiJson(
     `${API_URL}/essays/by-task/${encodeURIComponent(String(tId))}/with-student`,
-    { method: 'GET' }
+    { method: 'GET' },
   );
   return unwrapResult(data);
 }
 
 async function fetchEssayByTaskAndStudentFallback(tId, sId) {
   const res = await authFetch(
-    `${API_URL}/essays/by-task/${encodeURIComponent(String(tId))}/by-student?studentId=${encodeURIComponent(String(sId))}`,
+    `${API_URL}/essays/by-task/${encodeURIComponent(
+      String(tId),
+    )}/by-student?studentId=${encodeURIComponent(String(sId))}`,
     { method: 'GET' },
-    { redirectTo: 'login-professor.html' }
+    { redirectTo: 'login-professor.html' },
   );
 
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
 
-  const data = await res.json().catch(() => null);
+  const data = await readJsonSafe(res);
   return unwrapResult(data);
 }
 
@@ -311,7 +310,6 @@ async function carregar() {
   try {
     let essay = null;
 
-    // ✅ MODO NOVO: taskId + studentId
     if (taskId && studentId) {
       let list = null;
 
@@ -325,15 +323,15 @@ async function carregar() {
         essay = list.find((x) => String(x?.studentId) === String(studentId)) || null;
       }
 
-      // fallback: by-student (pode vir 404 se não enviou)
       if (!essay) {
         const fallbackEssay = await fetchEssayByTaskAndStudentFallback(taskId, studentId);
+
         if (!fallbackEssay) {
           notify(
             'warn',
             'Sem redação',
             'Não encontrei redação para este aluno nesta tarefa (talvez não tenha enviado).',
-            3600
+            3600,
           );
           window.location.replace(`correcao.html?taskId=${encodeURIComponent(String(taskId))}`);
           return;
@@ -341,7 +339,6 @@ async function carregar() {
 
         essay = fallbackEssay;
 
-        // tenta enriquecer com /with-student
         if (essay?.id) {
           try {
             const enriched = await fetchEssayByIdWithStudent(essay.id);
@@ -352,7 +349,6 @@ async function carregar() {
         }
       }
     } else {
-      // ✅ MODO ANTIGO: essayId
       essay = await fetchEssayByIdWithStudent(essayId);
     }
 
@@ -360,7 +356,6 @@ async function carregar() {
 
     renderEssay(essay);
 
-    // tema
     const effectiveTaskId = essay?.taskId || taskId;
     if (effectiveTaskId) {
       const task = await fetchTask(effectiveTaskId);
@@ -371,23 +366,30 @@ async function carregar() {
   } catch (err) {
     console.error(err);
 
-    // AUTH_* já redireciona
-    if (String(err?.message || '').startsWith('AUTH_')) return;
+    const msg = String(err?.message || '');
 
-    notify('error', 'Erro', 'Erro ao carregar redação/feedback.');
-    window.location.replace('professor-salas.html');
+    if (msg.startsWith('AUTH_')) return;
+
+    notify('error', 'Erro', msg || 'Erro ao carregar redação/feedback.');
+
+    const target = taskId
+      ? `correcao.html?taskId=${encodeURIComponent(String(taskId))}`
+      : 'professor-salas.html';
+
+    setTimeout(() => {
+      window.location.replace(target);
+    }, 900);
   }
 }
 
 // ---------------- VOLTAR ----------------
 if (backBtn) {
   backBtn.addEventListener('click', () => {
-    // fluxo novo: volta para a lista da tarefa
     if (taskId) {
       window.location.href = `correcao.html?taskId=${encodeURIComponent(String(taskId))}`;
       return;
     }
-    // caso contrário, histórico
+
     history.back();
   });
 }
