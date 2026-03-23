@@ -1,28 +1,22 @@
 import { API_URL } from './config.js';
-import { toast } from './ui-feedback.js';
+import {
+  requireSchoolSession,
+  authFetch,
+  readErrorMessage,
+  notify
+} from './auth.js';
 
-const LS = {
-  token: 'token',
-  user: 'user',
-  schoolId: 'schoolId',
-  professorId: 'professorId',
-  studentId: 'studentId',
-};
-
+// ---------------- PARAMS ----------------
 const params = new URLSearchParams(window.location.search);
 const roomId = String(params.get('roomId') || '').trim();
 
 if (!roomId) {
-  toast?.({
-    type: 'error',
-    title: 'Sala inválida',
-    message: 'roomId ausente.',
-  });
+  notify('error', 'Sala inválida', 'roomId ausente.');
   window.location.replace('painel-escola.html');
   throw new Error('roomId ausente');
 }
 
-// -------------------- Elements --------------------
+// ---------------- ELEMENTOS ----------------
 const backBtn = document.getElementById('backBtn');
 const statusEl = document.getElementById('status');
 
@@ -36,16 +30,9 @@ const studentsCountLabelEl = document.getElementById('studentsCountLabel');
 
 const avgDonutEl = document.getElementById('avgDonut');
 const avgLegendEl = document.getElementById('avgLegend');
-
 const studentsListEl = document.getElementById('studentsList');
 
-// -------------------- Helpers --------------------
-function notify(type, title, message) {
-  if (typeof toast === 'function') {
-    toast({ type, title, message });
-  }
-}
-
+// ---------------- HELPERS ----------------
 function setStatus(msg) {
   if (statusEl) statusEl.textContent = msg || '';
 }
@@ -56,36 +43,6 @@ function setText(el, value, fallback = '—') {
   el.textContent = v ? v : fallback;
 }
 
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
-}
-
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function clearAuth() {
-  Object.values(LS).forEach((k) => localStorage.removeItem(k));
-}
-
-function requireSchoolSession() {
-  const token = localStorage.getItem(LS.token);
-  const user = safeJsonParse(localStorage.getItem(LS.user));
-  const role = normRole(user?.role);
-
-  if (!token || (role !== 'SCHOOL' && role !== 'ESCOLA')) {
-    clearAuth();
-    window.location.replace('login-escola.html');
-    throw new Error('Sessão inválida');
-  }
-
-  return { token, user };
-}
-
 async function readJsonSafe(res) {
   try {
     return await res.json();
@@ -94,24 +51,15 @@ async function readJsonSafe(res) {
   }
 }
 
-async function authFetch(path, { token } = {}) {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const data = await readJsonSafe(res);
-
-  if (res.status === 401 || res.status === 403) {
-    clearAuth();
-    window.location.replace('login-escola.html');
-    throw new Error(`AUTH_${res.status}`);
-  }
+async function authFetchJson(url, options = {}) {
+  const res = await authFetch(url, options);
 
   if (!res.ok) {
-    throw new Error(data?.message || 'Erro na requisição');
+    const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+    throw new Error(msg);
   }
 
-  return data;
+  return readJsonSafe(res);
 }
 
 function fmtDateBR(value) {
@@ -120,13 +68,10 @@ function fmtDateBR(value) {
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
 }
 
-// -------------------- Avatar --------------------
+// ---------------- AVATAR ----------------
 function makeStudentAvatar(studentId, size = 42) {
   const img = document.createElement('img');
   img.className = 'mk-student-photo';
-  img.alt = 'Foto do estudante';
-  img.width = size;
-  img.height = size;
 
   const dataUrl = localStorage.getItem(`mk_photo_student_${studentId}`);
 
@@ -143,7 +88,7 @@ function makeStudentAvatar(studentId, size = 42) {
   return img;
 }
 
-// -------------------- Donut real --------------------
+// ---------------- DONUT ----------------
 const DONUT_COLORS = {
   c1: '#4f46e5',
   c2: '#16a34a',
@@ -168,14 +113,12 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
 
   values.push({
     key: 'margin',
-    label: `Margem de evolução (${margin})`,
+    label: `Margem (${margin})`,
     value: margin,
     color: DONUT_COLORS.margin,
-    isMargin: true,
   });
 
-  const sum =
-    values.reduce((acc, x) => acc + (Number.isFinite(x.value) ? x.value : 0), 0) || 1000;
+  const sum = values.reduce((a, b) => a + b.value, 0) || 1000;
 
   const r = (size - thickness) / 2;
   const cx = size / 2;
@@ -184,113 +127,35 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
 
   let offset = 0;
 
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(svgNS, 'svg');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-  svg.setAttribute('width', String(size));
-  svg.setAttribute('height', String(size));
-
-  const base = document.createElementNS(svgNS, 'circle');
-  base.setAttribute('cx', String(cx));
-  base.setAttribute('cy', String(cy));
-  base.setAttribute('r', String(r));
-  base.setAttribute('fill', 'none');
-  base.setAttribute('stroke', 'rgba(0,0,0,0.08)');
-  base.setAttribute('stroke-width', String(thickness));
-  svg.appendChild(base);
 
   values.forEach((seg) => {
-    const frac = seg.value / sum;
-    const segLen = Math.max(0, frac * C);
+    const len = (seg.value / sum) * C;
 
-    const circle = document.createElementNS(svgNS, 'circle');
-    circle.setAttribute('cx', String(cx));
-    circle.setAttribute('cy', String(cy));
-    circle.setAttribute('r', String(r));
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', r);
     circle.setAttribute('fill', 'none');
-    circle.setAttribute('stroke-width', String(thickness));
-    circle.setAttribute('stroke-linecap', 'butt');
-    circle.setAttribute('stroke', seg.isMargin ? DONUT_COLORS.margin : seg.color);
-    circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
-    circle.setAttribute('stroke-dashoffset', String(-offset));
+    circle.setAttribute('stroke', seg.color);
+    circle.setAttribute('stroke-width', thickness);
+    circle.setAttribute('stroke-dasharray', `${len} ${C - len}`);
+    circle.setAttribute('stroke-dashoffset', -offset);
     circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+
     svg.appendChild(circle);
-
-    if (seg.isMargin) {
-      const border = document.createElementNS(svgNS, 'circle');
-      border.setAttribute('cx', String(cx));
-      border.setAttribute('cy', String(cy));
-      border.setAttribute('r', String(r));
-      border.setAttribute('fill', 'none');
-      border.setAttribute('stroke', DONUT_COLORS.marginStroke);
-      border.setAttribute('stroke-width', '1');
-      svg.appendChild(border);
-    }
-
-    offset += segLen;
+    offset += len;
   });
 
-  const centerText = document.createElementNS(svgNS, 'text');
-  centerText.setAttribute('x', String(cx));
-  centerText.setAttribute('y', String(cy + 6));
-  centerText.setAttribute('text-anchor', 'middle');
-  centerText.setAttribute('font-size', '18');
-  centerText.setAttribute('font-weight', '700');
-  centerText.setAttribute('fill', '#111827');
-  centerText.textContent = safeTotal === null ? '—' : String(safeTotal);
-  svg.appendChild(centerText);
-
-  return { svg, legend: values };
+  return svg;
 }
 
-function buildLegendGrid(values) {
-  const legend = document.createElement('div');
-  legend.className = 'mk-legend';
-
-  (Array.isArray(values) ? values : []).forEach((v) => {
-    const item = document.createElement('div');
-    item.className = 'mk-legend-item';
-
-    const dot = document.createElement('span');
-    dot.className = 'mk-dot';
-    dot.style.background = v.color;
-
-    if (v.key === 'margin') {
-      dot.style.border = `1px solid ${DONUT_COLORS.marginStroke}`;
-    }
-
-    const label = document.createElement('span');
-    label.textContent = v.label;
-
-    item.appendChild(dot);
-    item.appendChild(label);
-    legend.appendChild(item);
-  });
-
-  return legend;
-}
-
-function renderAverageDonut({ total = null, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0 }) {
-  if (!avgDonutEl || !avgLegendEl) return;
-
-  avgDonutEl.innerHTML = '';
-  avgLegendEl.innerHTML = '';
-
-  const { svg, legend } = createDonutSVG(
-    { c1, c2, c3, c4, c5, total },
-    120,
-    18,
-  );
-
-  avgDonutEl.appendChild(svg);
-  avgLegendEl.appendChild(buildLegendGrid(legend));
-}
-
-// -------------------- Render --------------------
+// ---------------- RENDER ----------------
 function renderStudents(students = []) {
   studentsListEl.innerHTML = '';
 
-  const count = Array.isArray(students) ? students.length : 0;
+  const count = students.length;
   studentsCountEl.textContent = count;
   studentsCountLabelEl.textContent = `${count} estudante(s)`;
 
@@ -303,7 +168,7 @@ function renderStudents(students = []) {
     const li = document.createElement('li');
     li.className = 'mk-student-item';
 
-    li.appendChild(makeStudentAvatar(s.id, 42));
+    li.appendChild(makeStudentAvatar(s.id));
 
     const info = document.createElement('div');
     info.className = 'mk-student-info';
@@ -315,56 +180,49 @@ function renderStudents(students = []) {
 }
 
 function renderRoom(data) {
-  const room = data?.room || {};
-  const overview = data?.overview || {};
-  const perf = data?.performance || {};
-  const avg = perf?.averages || {};
+  const room = data.room || {};
+  const overview = data.overview || {};
+  const avg = data.performance?.averages || {};
 
   setText(roomNameEl, room.name);
   setText(roomCodeEl, room.code);
-  setText(teacherNameEl, room.teacherNameSnapshot || '—');
-  setText(yearNameEl, room.yearName || room.schoolYearName || room.schoolYearId || '—');
+  setText(teacherNameEl, room.teacherNameSnapshot);
+  setText(yearNameEl, room.yearName);
   setText(createdAtEl, fmtDateBR(room.createdAt));
 
   renderStudents(overview.students || []);
 
-  renderAverageDonut({
-    total: avg.total ?? null,
-    c1: avg.c1 ?? 0,
-    c2: avg.c2 ?? 0,
-    c3: avg.c3 ?? 0,
-    c4: avg.c4 ?? 0,
-    c5: avg.c5 ?? 0,
-  });
+  avgDonutEl.innerHTML = '';
+  avgDonutEl.appendChild(createDonutSVG(avg));
 }
 
-// -------------------- Load --------------------
-async function load(session) {
+// ---------------- LOAD ----------------
+async function load() {
   try {
     setStatus('Carregando...');
 
-    const data = await authFetch(
-      `/school-dashboard/rooms/${roomId}/overview`,
-      { token: session.token }
+    const data = await authFetchJson(
+      `${API_URL}/school-dashboard/rooms/${roomId}/overview`
     );
 
     renderRoom(data);
     setStatus('');
-  } catch (e) {
-    if (!String(e.message).startsWith('AUTH_')) {
+  } catch (err) {
+    const msg = String(err?.message || '');
+
+    if (!msg.startsWith('AUTH_')) {
       setStatus('Erro ao carregar');
-      notify('error', 'Erro', e.message);
+      notify('error', 'Erro', msg);
     }
   }
 }
 
-// -------------------- Events --------------------
+// ---------------- INIT ----------------
 backBtn?.addEventListener('click', () => {
   window.location.href = 'painel-escola.html';
 });
 
-// -------------------- Init --------------------
 (function init() {
-  const session = requireSchoolSession();
-  load(session);
+  requireSchoolSession();
+  load();
 })();
