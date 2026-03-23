@@ -50,6 +50,14 @@ function setText(el, value) {
   el.textContent = value === null || value === undefined ? '—' : String(value);
 }
 
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 function unwrapResult(data) {
   if (Array.isArray(data)) return data;
 
@@ -61,6 +69,17 @@ function unwrapResult(data) {
   }
 
   return data;
+}
+
+async function authFetchJson(url, options = {}, cfg = {}) {
+  const res = await authFetch(url, options, cfg);
+
+  if (!res.ok) {
+    const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+    throw new Error(msg);
+  }
+
+  return readJsonSafe(res);
 }
 
 function mean(nums) {
@@ -308,7 +327,7 @@ function renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal }) {
 
 async function getActiveStudentsSetAuth() {
   try {
-    const data = await authFetch(`/rooms/${encodeURIComponent(roomId)}/students`);
+    const data = await authFetchJson(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
     const list = unwrapResult(data);
     const arr = Array.isArray(list) ? list : [];
 
@@ -452,14 +471,11 @@ async function carregarSala() {
   if (!roomNameEl) return;
 
   try {
-    const data = await authFetch(`/rooms/${encodeURIComponent(roomId)}`);
+    const data = await authFetchJson(`${API_URL}/rooms/${encodeURIComponent(roomId)}`);
     const room = unwrapResult(data);
     roomNameEl.textContent = room?.name || 'Sala';
-  } catch (err) {
-    const msg = readErrorMessage(err);
-    if (!msg.startsWith('AUTH_')) {
-      roomNameEl.textContent = 'Sala';
-    }
+  } catch {
+    roomNameEl.textContent = 'Sala';
   }
 }
 
@@ -472,7 +488,9 @@ let cachedNewestTaskId = null;
 
 async function fetchTasksByRoomAuth() {
   try {
-    const data = await authFetch(`/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
+    const data = await authFetchJson(
+      `${API_URL}/tasks/by-room?roomId=${encodeURIComponent(roomId)}`,
+    );
     const raw = unwrapResult(data);
     return Array.isArray(raw) ? raw : [];
   } catch {
@@ -487,7 +505,13 @@ function normalizeTasksMeta(rawArr) {
     .map((t) => {
       const id = String(t?.id || t?.taskId || '').trim();
       const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
-      const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
+      const createdAt = pickDate(t, [
+        'createdAt',
+        'created_at',
+        'created',
+        'dateCreated',
+        'timestamp',
+      ]);
       const createdTime = toDateSafe(createdAt)?.getTime?.() ?? null;
 
       return { id, title, createdTime, _raw: t };
@@ -862,8 +886,8 @@ async function carregarDados() {
     cachedTasksMeta = normalizeTasksMeta(await fetchTasksByRoomAuth());
     cachedNewestTaskId = computeNewestTaskIdFromTasksMeta(cachedTasksMeta);
 
-    const dataRaw = await authFetch(
-      `/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`,
+    const dataRaw = await authFetchJson(
+      `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`,
     );
 
     let data = unwrapResult(dataRaw);
@@ -903,7 +927,7 @@ async function carregarDados() {
 
     if (!cachedNewestTaskId) {
       const anyTask = data.find((e) => e.taskId || e.task?.id);
-      cachedNewestTaskId = anyTask ? String(anyTask.taskId || anyTask.task?.id) : null;
+      cachedNewestTaskId = anyTask ? String(e.taskId || e.task?.id) : null;
     }
 
     const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
@@ -939,7 +963,8 @@ async function carregarDados() {
   } catch (err) {
     console.error(err);
 
-    const msg = readErrorMessage(err);
+    const msg = String(err?.message || '');
+
     if (!msg.startsWith('AUTH_')) {
       setStatus('Erro ao carregar dados de desempenho.');
       notify('error', 'Erro', msg || 'Erro ao carregar dados de desempenho.');
