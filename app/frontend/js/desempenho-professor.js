@@ -1,11 +1,16 @@
 import { API_URL } from './config.js';
-import { toast } from './ui-feedback.js';
+import {
+  requireProfessorSession,
+  authFetch,
+  readErrorMessage,
+  notify,
+} from './auth.js';
 
 const params = new URLSearchParams(window.location.search);
-const roomId = params.get('roomId');
+const roomId = params.get('roomId')?.trim() || '';
 
 if (!roomId) {
-  toast?.({ title: 'Sala inválida', message: 'roomId ausente.', type: 'error' });
+  notify('error', 'Sala inválida', 'roomId ausente.');
   window.location.replace('professor-salas.html');
   throw new Error('roomId ausente');
 }
@@ -33,22 +38,7 @@ const closeTaskPanelBtn = document.getElementById('closeTaskPanelBtn');
 
 const studentsList = document.getElementById('studentsList');
 
-// ---------------- Toast helpers ----------------
-
-function notify(type, title, message, duration) {
-  if (typeof toast === 'function') {
-    toast({
-      type,
-      title,
-      message,
-      duration:
-        duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
-    });
-  } else {
-    if (type === 'error') alert(`${title}\n\n${message}`);
-    else console.log(title, message);
-  }
-}
+// ---------------- Helpers ----------------
 
 function setStatus(msg) {
   if (!statusEl) return;
@@ -60,58 +50,7 @@ function setText(el, value) {
   el.textContent = value === null || value === undefined ? '—' : String(value);
 }
 
-// ---------------- Sessão (professor) + authFetch ----------------
-
-const LS = {
-  token: 'token',
-  user: 'user',
-  professorId: 'professorId',
-  studentId: 'studentId',
-};
-
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
-}
-
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
-}
-
-function clearAuth() {
-  localStorage.removeItem(LS.token);
-  localStorage.removeItem(LS.user);
-  localStorage.removeItem(LS.professorId);
-  localStorage.removeItem(LS.studentId);
-}
-
-function requireProfessorSession() {
-  const token = localStorage.getItem(LS.token);
-  const user = safeJsonParse(localStorage.getItem(LS.user));
-  const role = normRole(user?.role);
-
-  if (!token || role !== 'PROFESSOR') {
-    clearAuth();
-    window.location.replace('login-professor.html');
-    throw new Error('Sessão de professor ausente/inválida');
-  }
-
-  return { token, user };
-}
-
-async function readJsonSafe(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
 function unwrapResult(data) {
-  // suporta: array puro, objeto puro, {ok,result}, {data}
   if (Array.isArray(data)) return data;
 
   if (data && typeof data === 'object') {
@@ -124,42 +63,13 @@ function unwrapResult(data) {
   return data;
 }
 
-async function authFetch(path, { token, method = 'GET', body } = {}) {
-  const headers = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (body) headers['Content-Type'] = 'application/json';
-
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    clearAuth();
-    setTimeout(() => window.location.replace('login-professor.html'), 600);
-    throw new Error(`AUTH_${res.status}`);
-  }
-
-  const data = await readJsonSafe(res);
-
-  if (!res.ok) {
-    const msg = data?.message || data?.error || `Erro HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-
-  return data;
-}
-
-// ---------------- utils (médias/datas) ----------------
-
 function mean(nums) {
-  const v = (Array.isArray(nums) ? nums : [])
+  const values = (Array.isArray(nums) ? nums : [])
     .map((n) => (n === null || n === undefined ? null : Number(n)))
     .filter((n) => typeof n === 'number' && !Number.isNaN(n));
-  if (v.length === 0) return null;
-  return Math.round(v.reduce((a, b) => a + b, 0) / v.length);
+
+  if (values.length === 0) return null;
+  return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
 function pickDate(obj, keys) {
@@ -179,7 +89,7 @@ function toDateSafe(value) {
   }
 
   if (typeof value === 'number') {
-    const ms = value < 1e12 ? value * 1000 : value; // epoch s ou ms
+    const ms = value < 1e12 ? value * 1000 : value;
     const d = new Date(ms);
     return Number.isNaN(d.getTime()) ? null : d;
   }
@@ -187,11 +97,9 @@ function toDateSafe(value) {
   const s = String(value).trim();
   if (!s) return null;
 
-  // tenta parse direto
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) return d;
 
-  // tenta número em string
   const asNum = Number(s);
   if (!Number.isNaN(asNum)) {
     const ms = asNum < 1e12 ? asNum * 1000 : asNum;
@@ -252,9 +160,8 @@ function makeAvatar(studentId, size = 38) {
   return img;
 }
 
-// ---------------- donut (estilo sua imagem) ----------------
+// ---------------- donut ----------------
 
-// cores fixas para manter padrão
 const DONUT_COLORS = {
   c1: '#4f46e5',
   c2: '#16a34a',
@@ -320,12 +227,10 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
     circle.setAttribute('fill', 'none');
     circle.setAttribute('stroke-width', String(thickness));
     circle.setAttribute('stroke-linecap', 'butt');
-
     circle.setAttribute('stroke', seg.isMargin ? DONUT_COLORS.margin : seg.color);
     circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
     circle.setAttribute('stroke-dashoffset', String(-offset));
     circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
-
     svg.appendChild(circle);
 
     if (seg.isMargin) {
@@ -401,11 +306,9 @@ function renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal }) {
 
 // ---------------- alunos ativos ----------------
 
-async function getActiveStudentsSetAuth(session) {
+async function getActiveStudentsSetAuth() {
   try {
-    const data = await authFetch(`/rooms/${encodeURIComponent(roomId)}/students`, {
-      token: session.token,
-    });
+    const data = await authFetch(`/rooms/${encodeURIComponent(roomId)}/students`);
     const list = unwrapResult(data);
     const arr = Array.isArray(list) ? list : [];
 
@@ -419,12 +322,14 @@ async function getActiveStudentsSetAuth(session) {
   }
 }
 
-// ---------------- UI: inline panel (desempenho individual) ----------------
+// ---------------- UI: inline panel ----------------
 
 function closeAllInlinePanels() {
   if (!studentsList) return;
   const panels = studentsList.querySelectorAll('.mk-inline-panel');
-  panels.forEach((p) => (p.style.display = 'none'));
+  panels.forEach((p) => {
+    p.style.display = 'none';
+  });
 }
 
 function buildInlinePanel() {
@@ -491,12 +396,11 @@ function fillInlinePanel(panel, studentGroup, medias) {
 
   const essays = [...(studentGroup.essays || [])];
 
-  // ordena por título da tarefa e, em empate, por data de envio
   essays.sort((a, b) => {
-    const at = String(a.taskTitle || a.task?.title || '').localeCompare(
+    const byTitle = String(a.taskTitle || a.task?.title || '').localeCompare(
       String(b.taskTitle || b.task?.title || ''),
     );
-    if (at !== 0) return at;
+    if (byTitle !== 0) return byTitle;
 
     const da = toDateSafe(getEssaySentAt(a))?.getTime?.() ?? -Infinity;
     const db = toDateSafe(getEssaySentAt(b))?.getTime?.() ?? -Infinity;
@@ -526,6 +430,7 @@ function fillInlinePanel(panel, studentGroup, medias) {
         notify('error', 'Erro', 'Não encontrei o taskId desta redação no retorno do servidor.');
         return;
       }
+
       window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
         String(tId),
       )}&studentId=${encodeURIComponent(String(studentGroup.studentId))}`;
@@ -543,16 +448,18 @@ function fillInlinePanel(panel, studentGroup, medias) {
 
 // ---------------- carregar sala ----------------
 
-async function carregarSala(session) {
+async function carregarSala() {
   if (!roomNameEl) return;
+
   try {
-    const data = await authFetch(`/rooms/${encodeURIComponent(roomId)}`, {
-      token: session.token,
-    });
+    const data = await authFetch(`/rooms/${encodeURIComponent(roomId)}`);
     const room = unwrapResult(data);
     roomNameEl.textContent = room?.name || 'Sala';
-  } catch {
-    roomNameEl.textContent = 'Sala';
+  } catch (err) {
+    const msg = readErrorMessage(err);
+    if (!msg.startsWith('AUTH_')) {
+      roomNameEl.textContent = 'Sala';
+    }
   }
 }
 
@@ -560,16 +467,12 @@ async function carregarSala(session) {
 
 let cachedData = [];
 let cachedActiveSet = null;
-
-// cache de tasks da sala p/ “mais recente”
 let cachedTasksMeta = [];
 let cachedNewestTaskId = null;
 
-async function fetchTasksByRoomAuth(session) {
+async function fetchTasksByRoomAuth() {
   try {
-    const data = await authFetch(`/tasks/by-room?roomId=${encodeURIComponent(roomId)}`, {
-      token: session.token,
-    });
+    const data = await authFetch(`/tasks/by-room?roomId=${encodeURIComponent(roomId)}`);
     const raw = unwrapResult(data);
     return Array.isArray(raw) ? raw : [];
   } catch {
@@ -579,12 +482,14 @@ async function fetchTasksByRoomAuth(session) {
 
 function normalizeTasksMeta(rawArr) {
   const arr = Array.isArray(rawArr) ? rawArr : [];
+
   return arr
     .map((t) => {
       const id = String(t?.id || t?.taskId || '').trim();
       const title = String(t?.title || t?.taskTitle || t?.name || '').trim();
       const createdAt = pickDate(t, ['createdAt', 'created_at', 'created', 'dateCreated', 'timestamp']);
       const createdTime = toDateSafe(createdAt)?.getTime?.() ?? null;
+
       return { id, title, createdTime, _raw: t };
     })
     .filter((t) => !!t.id);
@@ -608,9 +513,8 @@ function computeNewestTaskIdFromTasksMeta(tasksMeta) {
   return newestId || tasksMeta[tasksMeta.length - 1].id;
 }
 
-// fallback: se tasks não tiverem createdAt, usa maior “enviado em” nas redações
 function computeNewestTaskIdFromEssays(data) {
-  const mapMax = new Map(); // taskId -> maxTime
+  const mapMax = new Map();
 
   (Array.isArray(data) ? data : []).forEach((e) => {
     const tId = String(e.taskId || e.task?.id || '').trim();
@@ -694,7 +598,6 @@ function renderTasksList(tasks) {
 
   const newestId = cachedNewestTaskId;
 
-  // ordena colocando a mais recente no topo
   const ordered = [...tasks].sort((a, b) => {
     if (newestId) {
       const aIs = String(a.taskId) === String(newestId) ? 1 : 0;
@@ -785,7 +688,7 @@ function computeStudentAverages(studentGroup) {
   return { mTotal, mC1, mC2, mC3, mC4, mC5, hasCorrected: correctedEssays.length > 0 };
 }
 
-function renderStudentsForTask(taskId, taskTitle) {
+function renderStudentsForTask(taskId) {
   if (!studentsList) return;
 
   closeAllInlinePanels();
@@ -933,10 +836,11 @@ function openTaskPanel(taskId, title) {
   taskPanelEl.style.display = 'block';
 
   if (taskPanelTitleEl) taskPanelTitleEl.textContent = title || 'Tarefa';
-  if (taskPanelMetaEl) taskPanelMetaEl.textContent = 'Gráfico em rosca: C1–C5 + margem até 1000.';
+  if (taskPanelMetaEl) {
+    taskPanelMetaEl.textContent = 'Gráfico em rosca: C1–C5 + margem até 1000.';
+  }
 
-  renderStudentsForTask(taskId, title);
-
+  renderStudentsForTask(taskId);
   taskPanelEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -949,25 +853,23 @@ function closeTaskPanel() {
 
 // ---------------- carregar dados sala ----------------
 
-async function carregarDados(session) {
+async function carregarDados() {
   try {
     setStatus('Carregando...');
 
-    cachedActiveSet = await getActiveStudentsSetAuth(session);
+    cachedActiveSet = await getActiveStudentsSetAuth();
 
-    // tenta carregar tasks para identificar “mais recente” com createdAt
-    cachedTasksMeta = normalizeTasksMeta(await fetchTasksByRoomAuth(session));
+    cachedTasksMeta = normalizeTasksMeta(await fetchTasksByRoomAuth());
     cachedNewestTaskId = computeNewestTaskIdFromTasksMeta(cachedTasksMeta);
 
     const dataRaw = await authFetch(
       `/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`,
-      { token: session.token },
     );
 
     let data = unwrapResult(dataRaw);
     if (!Array.isArray(data)) data = [];
 
-    if (!Array.isArray(data) || data.length === 0) {
+    if (data.length === 0) {
       setStatus('Ainda não há redações nesta sala.');
       setText(avgTotal, null);
       setText(avgC1, null);
@@ -976,31 +878,34 @@ async function carregarDados(session) {
       setText(avgC4, null);
       setText(avgC5, null);
 
-      renderRoomAverageDonut({ mC1: null, mC2: null, mC3: null, mC4: null, mC5: null, mTotal: null });
+      renderRoomAverageDonut({
+        mC1: null,
+        mC2: null,
+        mC3: null,
+        mC4: null,
+        mC5: null,
+        mTotal: null,
+      });
       renderTasksList([]);
       closeTaskPanel();
       return;
     }
 
-    // filtra apenas alunos ativos
     if (cachedActiveSet && cachedActiveSet.size > 0) {
       data = data.filter((e) => cachedActiveSet.has(String(e.studentId)));
     }
 
     cachedData = data;
 
-    // se tasks não tinham createdAt, tenta inferir pela data de envio das redações
     if (!cachedNewestTaskId) {
       cachedNewestTaskId = computeNewestTaskIdFromEssays(data);
     }
 
-    // fallback final
     if (!cachedNewestTaskId) {
       const anyTask = data.find((e) => e.taskId || e.task?.id);
       cachedNewestTaskId = anyTask ? String(anyTask.taskId || anyTask.task?.id) : null;
     }
 
-    // médias gerais da sala (somente corrigidas)
     const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
 
     const mTotal = mean(corrected.map((e) => e.score));
@@ -1019,10 +924,8 @@ async function carregarDados(session) {
 
     renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal });
 
-    // tarefas
     const tasks = buildTasksFromData(data);
 
-    // se a “mais recente” veio de /tasks/by-room mas não tem redações, não destaca
     if (cachedNewestTaskId && !tasks.some((t) => String(t.taskId) === String(cachedNewestTaskId))) {
       cachedNewestTaskId = null;
     }
@@ -1032,13 +935,17 @@ async function carregarDados(session) {
     }
 
     renderTasksList(tasks);
-
     setStatus('');
   } catch (err) {
     console.error(err);
-    setStatus('Erro ao carregar dados de desempenho.');
-    renderTasksList([]);
-    closeTaskPanel();
+
+    const msg = readErrorMessage(err);
+    if (!msg.startsWith('AUTH_')) {
+      setStatus('Erro ao carregar dados de desempenho.');
+      notify('error', 'Erro', msg || 'Erro ao carregar dados de desempenho.');
+      renderTasksList([]);
+      closeTaskPanel();
+    }
   }
 }
 
@@ -1049,7 +956,7 @@ if (closeTaskPanelBtn) {
 }
 
 (function init() {
-  const session = requireProfessorSession();
-  carregarSala(session);
-  carregarDados(session);
+  requireProfessorSession();
+  carregarSala();
+  carregarDados();
 })();
