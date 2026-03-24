@@ -1,49 +1,72 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Admin • Mestre Kira</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Admin | Mestre Kira</title>
 
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/ui-feedback.css">
-  <link rel="stylesheet" href="css/admin.css">
-
-  <link rel="icon" href="logo1.png" type="image/png">
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/ui-feedback.css" />
+  <link rel="stylesheet" href="css/auth-recovery.css" />
+  <link rel="icon" href="logo1.png" type="image/png" />
 </head>
 <body>
+  <main class="auth-page">
+    <section class="auth-card" aria-labelledby="pageTitle">
+      <div class="auth-card__header">
+        <h1 id="pageTitle">Administração</h1>
+        <p class="auth-card__subtitle">
+          Acesso restrito. Use sua conta administrativa, separada dos perfis de professor, estudante e escola.
+        </p>
+      </div>
 
-<h2>Administração</h2>
+      <form id="adminLoginForm" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label for="adminEmail">E-mail</label>
+          <input
+            id="adminEmail"
+            type="email"
+            placeholder="admin@..."
+            autocomplete="email"
+            inputmode="email"
+            required
+          />
+        </div>
 
-<section class="admin-wrap">
-  <div class="box">
-    <h3>Login do Administrador(a)</h3>
-    <p class="muted">
-      Acesso restrito. Use sua conta administrativa (separada de professor/estudante).
-    </p>
+        <div class="auth-field">
+          <label for="adminPass">Senha</label>
+          <input
+            id="adminPass"
+            type="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+        </div>
 
-    <div class="admin-login-grid">
-      <label>
-        E-mail
-        <input id="adminEmail" type="email" placeholder="admin@..." autocomplete="email">
-      </label>
+        <div class="auth-actions">
+          <button id="adminLoginBtn" class="auth-btn" type="submit">
+            Entrar
+          </button>
 
-      <label>
-        Senha
-        <input id="adminPass" type="password" placeholder="••••••••" autocomplete="current-password">
-      </label>
-    </div>
+          <button id="adminClearBtn" class="auth-link-btn auth-link-btn--ghost" type="button">
+            Limpar
+          </button>
+        </div>
 
-    <div class="admin-actions">
-      <button id="adminLoginBtn">Entrar</button>
-      <button id="adminClearBtn" class="ghost">Limpar</button>
-    </div>
+        <p id="adminStatus" class="auth-status" aria-live="polite"></p>
+      </form>
 
-    <p id="adminStatus" class="muted"></p>
-  </div>
-</section>
+      <div class="auth-links">
+        <a href="index.html">Voltar ao início</a>
+        <a href="login-professor.html">Login de professor</a>
+        <a href="login-aluno.html">Login de aluno</a>
+        <a href="login-escola.html">Login da escola</a>
+      </div>
+    </section>
+  </main>
 
-<script type="module" src="js/admin-auth.js"></script>
-<script src="js/footer.js"></script>
+  <script type="module" src="js/admin-auth.js"></script>
+  <script src="js/footer.js"></script>
 </body>
 </html>
