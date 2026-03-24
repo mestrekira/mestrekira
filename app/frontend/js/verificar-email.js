@@ -7,39 +7,78 @@ const goProfessor = document.getElementById('goProfessor');
 const goAluno = document.getElementById('goAluno');
 const goHome = document.getElementById('goHome');
 
-function setStatus(msg) {
-  if (statusEl) statusEl.textContent = msg || '';
-}
+function setStatus(message, type = 'info') {
+  if (!statusEl) return;
 
-function show(el, on) {
-  if (!el) return;
-  el.style.display = on ? 'inline-block' : 'none';
-}
+  statusEl.textContent = message || '';
 
-const ok = qs('ok'); // "1" ou "0"
-const msg = qs('msg');
-
-if (ok === '1') {
-  setStatus('✅ E-mail verificado com sucesso! Agora você já pode fazer login.');
-
-  // Mostra links (você pode ajustar para mostrar só o necessário)
-  show(goProfessor, true);
-  show(goAluno, true);
-  show(goHome, true);
-} else if (ok === '0') {
-  setStatus(
-    `❌ Não foi possível verificar seu e-mail. ${
-      msg ? `Motivo: ${decodeURIComponent(msg)}` : ''
-    }`,
+  statusEl.classList.remove(
+    'auth-status--success',
+    'auth-status--error',
+    'auth-status--info',
   );
 
-  show(goProfessor, true);
-  show(goAluno, true);
-  show(goHome, true);
-} else {
-  // caso alguém acesse direto a página
-  setStatus('Abra o link de verificação enviado para o seu e-mail.');
+  if (type === 'success') {
+    statusEl.classList.add('auth-status--success');
+    return;
+  }
+
+  if (type === 'error') {
+    statusEl.classList.add('auth-status--error');
+    return;
+  }
+
+  statusEl.classList.add('auth-status--info');
+}
+
+function show(el, visible) {
+  if (!el) return;
+  el.hidden = !visible;
+}
+
+function decodeMsg(value) {
+  if (!value) return '';
+  try {
+    return decodeURIComponent(value).trim();
+  } catch {
+    return String(value).trim();
+  }
+}
+
+function revealLinks() {
   show(goProfessor, true);
   show(goAluno, true);
   show(goHome, true);
 }
+
+function init() {
+  const ok = qs('ok');
+  const msg = decodeMsg(qs('msg'));
+
+  if (ok === '1') {
+    setStatus(
+      'E-mail verificado com sucesso. Agora você já pode fazer login na plataforma.',
+      'success',
+    );
+    revealLinks();
+    return;
+  }
+
+  if (ok === '0') {
+    const suffix = msg ? ` Motivo: ${msg}` : '';
+    setStatus(
+      `Não foi possível verificar seu e-mail.${suffix}`,
+      'error',
+    );
+    revealLinks();
+    return;
+  }
+
+  setStatus(
+    'Abra o link de verificação enviado para o seu e-mail para concluir esta etapa.',
+    'info',
+  );
+  revealLinks();
+}
+
+init();
