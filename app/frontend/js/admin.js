@@ -26,8 +26,6 @@ const btnDeleteUsers = $('btnDeleteUsers');
 
 const ADMIN_TOKEN_KEY = 'mk_admin_token';
 
-let lastPreview = { warnList: [], deleteList: [] };
-
 // --------------------------------------------------
 // Auth helpers
 // --------------------------------------------------
@@ -43,13 +41,19 @@ function clearAdminTokenAndGoLogin() {
 
 function setBusy(el, on, busyText = 'Processando...') {
   if (!el) return;
+
   if (on) {
-    if (!el.dataset.originalText) el.dataset.originalText = el.textContent || '';
+    if (!el.dataset.originalText) {
+      el.dataset.originalText = el.textContent || '';
+    }
     el.disabled = true;
     el.textContent = busyText;
-  } else {
-    el.disabled = false;
-    if (el.dataset.originalText) el.textContent = el.dataset.originalText;
+    return;
+  }
+
+  el.disabled = false;
+  if (el.dataset.originalText) {
+    el.textContent = el.dataset.originalText;
   }
 }
 
@@ -215,8 +219,6 @@ function renderTables(preview) {
   const warnList = normArray(preview?.warnList || preview?.warnCandidates).filter(isStudent);
   const deleteList = normArray(preview?.deleteList || preview?.deleteCandidates).filter(isStudent);
 
-  lastPreview = { warnList, deleteList };
-
   if (warnTableBody) {
     warnTableBody.innerHTML =
       warnList.length === 0
@@ -343,7 +345,7 @@ async function deleteUsers() {
   try {
     const result = await adminFetch('/admin/cleanup/delete-users', {
       method: 'POST',
-      body: { userIds: ids },
+      body: { userIds: ids, confirm: true },
     });
 
     const deleted = result?.deleted ?? ids.length;
