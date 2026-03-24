@@ -116,9 +116,7 @@ async function adminFetch(path, options = {}) {
 // --------------------------------------------------
 
 function isStudent(user) {
-  return String(user?.role || '')
-    .trim()
-    .toLowerCase() === 'student';
+  return String(user?.role || '').trim().toLowerCase() === 'student';
 }
 
 function normArray(value) {
@@ -146,13 +144,7 @@ function pickId(user) {
 }
 
 function pickName(user) {
-  return (
-    user?.name ||
-    user?.fullName ||
-    user?.studentName ||
-    user?.email ||
-    'Estudante'
-  );
+  return user?.name || user?.fullName || user?.studentName || user?.email || 'Estudante';
 }
 
 function pickEmail(user) {
@@ -161,6 +153,7 @@ function pickEmail(user) {
 
 function pickLastAccess(user) {
   return (
+    user?.lastActivityISO ||
     user?.lastAccessAt ||
     user?.lastLoginAt ||
     user?.lastSeenAt ||
@@ -171,6 +164,15 @@ function pickLastAccess(user) {
 }
 
 function pickInactiveDays(user) {
+  if (user?.lastActivityISO) {
+    const last = new Date(user.lastActivityISO);
+    if (!Number.isNaN(last.getTime())) {
+      const now = new Date();
+      const diff = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+      return String(Math.max(0, diff));
+    }
+  }
+
   const value =
     user?.inactiveDays ??
     user?.daysInactive ??
@@ -210,8 +212,8 @@ function rowTemplate(user, type) {
 }
 
 function renderTables(preview) {
-  const warnList = normArray(preview?.warnList).filter(isStudent);
-  const deleteList = normArray(preview?.deleteList).filter(isStudent);
+  const warnList = normArray(preview?.warnList || preview?.warnCandidates).filter(isStudent);
+  const deleteList = normArray(preview?.deleteList || preview?.deleteCandidates).filter(isStudent);
 
   lastPreview = { warnList, deleteList };
 
@@ -236,7 +238,6 @@ function renderTables(preview) {
 }
 
 function renderCounts(counts = {}) {
-  // compatível com payload antigo e novo
   setText(kpiUsers, counts.users ?? counts.totalUsers ?? counts.students ?? 0, '0');
   setText(kpiRooms, counts.rooms ?? 0, '0');
   setText(kpiTasks, counts.tasks ?? counts.professors ?? 0, '0');
@@ -282,13 +283,9 @@ async function loadPreview() {
   setStatus('Gerando prévia de inatividade...');
 
   try {
-    const query = new URLSearchParams({
-      days: String(days),
-      warnDays: String(warnDays),
-    });
-
-    const preview = await adminFetch(`/admin/inactive-users/preview?${query.toString()}`, {
-      method: 'GET',
+    const preview = await adminFetch('/admin/cleanup/preview', {
+      method: 'POST',
+      body: { days, warnDays },
     });
 
     renderTables(preview || {});
@@ -306,13 +303,16 @@ async function sendWarnings() {
     return;
   }
 
+  const days = Number(daysInput?.value || 90);
+  const warnDays = Number(warnDaysInput?.value || 7);
+
   setBusy(btnSendWarnings, true, 'Enviando avisos...');
   setStatus('Enviando avisos para estudantes...');
 
   try {
-    const result = await adminFetch('/admin/inactive-users/send-warnings', {
+    const result = await adminFetch('/admin/cleanup/send-warnings', {
       method: 'POST',
-      body: { userIds: ids },
+      body: { userIds: ids, days, warnDays },
     });
 
     const sent = result?.sent ?? ids.length;
@@ -341,7 +341,7 @@ async function deleteUsers() {
   setStatus('Excluindo estudantes selecionados...');
 
   try {
-    const result = await adminFetch('/admin/inactive-users/delete-users', {
+    const result = await adminFetch('/admin/cleanup/delete-users', {
       method: 'POST',
       body: { userIds: ids },
     });
@@ -424,7 +424,6 @@ btnDeleteUsers?.addEventListener('click', async () => {
     return;
   }
 
-  // se houver valores padrão nos inputs, já tenta gerar a prévia
   const hasDays = Number(daysInput?.value || 0) > 0;
   const hasWarnDays = Number(warnDaysInput?.value || 0) > 0;
 
