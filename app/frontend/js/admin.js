@@ -21,15 +21,16 @@ const previewInfo = $('previewInfo');
 const warnTableBody = $('warnTableBody');
 const deleteTableBody = $('deleteTableBody');
 
-const btnSelectAllWarn = $('btnSelectAllWarn');
-const btnClearWarn = $('btnClearWarn');
 const btnSendWarnings = $('btnSendWarnings');
-
-const btnSelectAllDelete = $('btnSelectAllDelete');
-const btnClearDelete = $('btnClearDelete');
 const btnDeleteUsers = $('btnDeleteUsers');
 
 const ADMIN_TOKEN_KEY = 'mk_admin_token';
+
+let lastPreview = { warnList: [], deleteList: [] };
+
+// --------------------------------------------------
+// Auth helpers
+// --------------------------------------------------
 
 function getAdminToken() {
   return localStorage.getItem(ADMIN_TOKEN_KEY) || '';
@@ -40,265 +41,401 @@ function clearAdminTokenAndGoLogin() {
   window.location.href = 'admin-login.html';
 }
 
-function setStatusChip(el, text, kind = 'muted') {
+function setBusy(el, on, busyText = 'Processando...') {
   if (!el) return;
-  el.textContent = text;
-  el.className = `chip chip-${kind}`;
+  if (on) {
+    if (!el.dataset.originalText) el.dataset.originalText = el.textContent || '';
+    el.disabled = true;
+    el.textContent = busyText;
+  } else {
+    el.disabled = false;
+    if (el.dataset.originalText) el.textContent = el.dataset.originalText;
+  }
 }
 
-function fmtDate(iso) {
-  if (!iso) return '—';
+function setText(el, value, fallback = '—') {
+  if (!el) return;
+  const v = value === null || value === undefined ? '' : String(value).trim();
+  el.textContent = v ? v : fallback;
+}
+
+function setStatus(message = '', isError = false) {
+  if (!diagStatus) return;
+  diagStatus.textContent = message;
+  diagStatus.style.color = isError ? '#b91c1c' : '';
+}
+
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function adminFetch(path, options = {}) {
+  const token = getAdminToken();
+
+  if (!token) {
+    clearAdminTokenAndGoLogin();
+    throw new Error('AUTH_NO_TOKEN');
+  }
+
+  const headers = {
+    ...(options.headers || {}),
+    Authorization: `Bearer ${token}`,
+  };
+
+  const body = options.body;
+  if (body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+    body: body && typeof body !== 'string' ? JSON.stringify(body) : body,
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    clearAdminTokenAndGoLogin();
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  const data = await readJsonSafe(res);
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+  }
+
+  return data;
+}
+
+// --------------------------------------------------
+// Domain helpers
+// --------------------------------------------------
+
+function isStudent(user) {
+  return String(user?.role || '')
+    .trim()
+    .toLowerCase() === 'student';
+}
+
+function normArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function fmtDateBR(value) {
+  if (!value) return '—';
+
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+
   try {
     return new Intl.DateTimeFormat('pt-BR', {
       dateStyle: 'short',
       timeStyle: 'short',
-    }).format(new Date(iso));
+    }).format(d);
   } catch {
-    return '—';
+    return d.toLocaleString('pt-BR');
   }
 }
 
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+function pickId(user) {
+  return user?.id ?? user?.userId ?? user?.studentId ?? '';
 }
 
-async function api(path, { method = 'GET', body } = {}) {
-  const token = getAdminToken();
-  if (!token) {
-    clearAdminTokenAndGoLogin();
-    return null;
-  }
-
-  const headers = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
-
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-
-  if (res.status === 401) {
-    // token inválido/expirado
-    clearAdminTokenAndGoLogin();
-    return null;
-  }
-
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    const msg = data?.message || 'Falha na requisição.';
-    throw new Error(msg);
-  }
-  return data;
+function pickName(user) {
+  return (
+    user?.name ||
+    user?.fullName ||
+    user?.studentName ||
+    user?.email ||
+    'Estudante'
+  );
 }
 
-async function validateTokenOrRedirect() {
-  // chama /admin/me pra garantir que token é válido
-  try {
-    const me = await api('/admin/me');
-    if (!me) return false;
-    return true;
-  } catch {
-    clearAdminTokenAndGoLogin();
-    return false;
-  }
+function pickEmail(user) {
+  return user?.email || user?.studentEmail || '—';
 }
 
-function rowTemplate(u, type) {
-  // type: 'warn' | 'delete'
-  const id = String(u?.id || '');
-  const name = String(u?.name || '');
-  const email = String(u?.email || '');
-  const role = String(u?.role || '').toLowerCase();
+function pickLastAccess(user) {
+  return (
+    user?.lastAccessAt ||
+    user?.lastLoginAt ||
+    user?.lastSeenAt ||
+    user?.updatedAt ||
+    user?.createdAt ||
+    null
+  );
+}
 
-  const lastActivity =
-    u?.lastActivityISO || u?.lastActivity || u?.last_activity || null;
+function pickInactiveDays(user) {
+  const value =
+    user?.inactiveDays ??
+    user?.daysInactive ??
+    user?.inactive_for_days ??
+    user?.days_without_access;
 
-  const deleteAt =
-    type === 'warn'
-      ? (u?.deleteAtISO || u?.computedDeleteAt || null)
-      : (u?.scheduledDeletionAtISO || u?.scheduledDeletionAt || u?.deleteAtISO || null);
+  if (value === null || value === undefined || value === '') return '—';
+  const num = Number(value);
+  return Number.isNaN(num) ? String(value) : String(num);
+}
 
-  const badge =
-    role === 'professor'
-      ? `<span class="pill pill-prof">Professor</span>`
-      : role === 'student'
-      ? `<span class="pill pill-stud">Estudante</span>`
-      : `<span class="pill">Outro</span>`;
+// --------------------------------------------------
+// Render
+// --------------------------------------------------
+
+function rowTemplate(user, type) {
+  const id = String(pickId(user));
+  const name = pickName(user);
+  const email = pickEmail(user);
+  const lastAccess = fmtDateBR(pickLastAccess(user));
+  const inactiveDays = pickInactiveDays(user);
+
+  const checkboxClass = type === 'warn' ? 'warn-check' : 'delete-check';
 
   return `
     <tr>
-      <td class="chk">
-        <input type="checkbox" data-id="${escapeHtml(id)}" />
+      <td>
+        <input type="checkbox" class="${checkboxClass}" value="${id}" checked />
       </td>
-      <td class="cell-strong">${escapeHtml(name)}</td>
-      <td class="cell-mono">${escapeHtml(email)}</td>
-      <td>${badge}</td>
-      <td class="cell-mono">${escapeHtml(fmtDate(lastActivity))}</td>
-      <td class="cell-mono">${escapeHtml(fmtDate(deleteAt))}</td>
+      <td>${name}</td>
+      <td>${email}</td>
+      <td><span class="pill pill-stud">Estudante</span></td>
+      <td>${inactiveDays}</td>
+      <td>${lastAccess}</td>
     </tr>
   `;
 }
 
-let lastPreview = { warnList: [], deleteList: [] };
-
 function renderTables(preview) {
-  const warnList = Array.isArray(preview?.warnList) ? preview.warnList : [];
-  const deleteList = Array.isArray(preview?.deleteList) ? preview.deleteList : [];
+  const warnList = normArray(preview?.warnList).filter(isStudent);
+  const deleteList = normArray(preview?.deleteList).filter(isStudent);
 
   lastPreview = { warnList, deleteList };
 
-  warnTableBody.innerHTML =
-    warnList.length === 0
-      ? `<tr><td colspan="6" class="tbl-empty">Nenhum candidato a aviso.</td></tr>`
-      : warnList.map((u) => rowTemplate(u, 'warn')).join('');
+  if (warnTableBody) {
+    warnTableBody.innerHTML =
+      warnList.length === 0
+        ? `<tr><td colspan="6" class="tbl-empty">Nenhum estudante candidato a aviso.</td></tr>`
+        : warnList.map((u) => rowTemplate(u, 'warn')).join('');
+  }
 
-  deleteTableBody.innerHTML =
-    deleteList.length === 0
-      ? `<tr><td colspan="6" class="tbl-empty">Nenhum candidato a exclusão.</td></tr>`
-      : deleteList.map((u) => rowTemplate(u, 'delete')).join('');
+  if (deleteTableBody) {
+    deleteTableBody.innerHTML =
+      deleteList.length === 0
+        ? `<tr><td colspan="6" class="tbl-empty">Nenhum estudante candidato a exclusão.</td></tr>`
+        : deleteList.map((u) => rowTemplate(u, 'delete')).join('');
+  }
+
+  if (previewInfo) {
+    previewInfo.textContent =
+      `Prévia carregada: ${warnList.length} estudante(s) para aviso e ${deleteList.length} estudante(s) para exclusão.`;
+  }
 }
 
-function getCheckedIds(tbodyEl) {
-  return Array.from(tbodyEl.querySelectorAll('input[type="checkbox"]:checked'))
-    .map((el) => el.getAttribute('data-id'))
+function renderCounts(counts = {}) {
+  // compatível com payload antigo e novo
+  setText(kpiUsers, counts.users ?? counts.totalUsers ?? counts.students ?? 0, '0');
+  setText(kpiRooms, counts.rooms ?? 0, '0');
+  setText(kpiTasks, counts.tasks ?? counts.professors ?? 0, '0');
+  setText(kpiEssays, counts.essays ?? counts.schools ?? 0, '0');
+  setText(kpiWarned, counts.warned ?? counts.studentsFlagged ?? 0, '0');
+  setText(kpiScheduled, counts.scheduled ?? counts.studentsScheduledForDeletion ?? 0, '0');
+}
+
+function getCheckedValues(selector) {
+  return Array.from(document.querySelectorAll(selector))
+    .filter((el) => el.checked)
+    .map((el) => String(el.value || '').trim())
     .filter(Boolean);
 }
 
-function setAllCheckboxes(tbodyEl, checked) {
-  Array.from(tbodyEl.querySelectorAll('input[type="checkbox"]')).forEach((el) => {
-    el.checked = checked;
-  });
-}
+// --------------------------------------------------
+// API actions
+// --------------------------------------------------
 
 async function loadDiagnostics() {
-  setStatusChip(diagStatus, 'Carregando…', 'muted');
+  setStatus('Carregando diagnóstico...');
 
-  const data = await api('/admin/diagnostics');
-  if (!data) return;
-
-  kpiUsers.textContent = data?.counts?.users ?? '—';
-  kpiRooms.textContent = data?.counts?.rooms ?? '—';
-  kpiTasks.textContent = data?.counts?.tasks ?? '—';
-  kpiEssays.textContent = data?.counts?.essays ?? '—';
-  kpiWarned.textContent = data?.inactivity?.warned ?? '—';
-  kpiScheduled.textContent = data?.inactivity?.scheduledForDeletion ?? '—';
-
-  setStatusChip(diagStatus, 'Online', 'ok');
+  const data = await adminFetch('/admin/diagnostics', { method: 'GET' });
+  renderCounts(data?.counts || {});
+  setStatus('Diagnóstico carregado.');
 }
 
-async function runPreview() {
-  const days = Number(daysInput.value || 90);
-  const warnDays = Number(warnDaysInput.value || 7);
+async function loadPreview() {
+  const days = Number(daysInput?.value || 0);
+  const warnDays = Number(warnDaysInput?.value || 0);
 
-  previewInfo.textContent = 'Gerando prévia…';
+  if (!days || days < 1) {
+    setStatus('Informe um valor válido para dias de exclusão.', true);
+    return;
+  }
 
-  const data = await api('/admin/cleanup/preview', {
-    method: 'POST',
-    body: { days, warnDays },
-  });
-  if (!data) return;
+  if (!warnDays || warnDays < 1) {
+    setStatus('Informe um valor válido para dias de aviso.', true);
+    return;
+  }
 
-  const w = data?.warnList?.length ?? 0;
-  const d = data?.deleteList?.length ?? 0;
-  previewInfo.textContent = `Prévia gerada em ${fmtDate(data?.now)} • Avisar: ${w} • Excluir: ${d}`;
+  setBusy(btnPreview, true, 'Gerando prévia...');
+  setStatus('Gerando prévia de inatividade...');
 
-  renderTables(data);
+  try {
+    const query = new URLSearchParams({
+      days: String(days),
+      warnDays: String(warnDays),
+    });
+
+    const preview = await adminFetch(`/admin/inactive-users/preview?${query.toString()}`, {
+      method: 'GET',
+    });
+
+    renderTables(preview || {});
+    setStatus('Prévia gerada com sucesso.');
+  } finally {
+    setBusy(btnPreview, false);
+  }
 }
 
 async function sendWarnings() {
-  const ids = getCheckedIds(warnTableBody);
+  const ids = getCheckedValues('.warn-check');
+
   if (ids.length === 0) {
-    alert('Selecione ao menos 1 usuário para enviar aviso.');
+    setStatus('Selecione pelo menos um estudante para aviso.', true);
     return;
   }
 
-  const days = Number(daysInput.value || 90);
-  const warnDays = Number(warnDaysInput.value || 7);
-
-  if (!confirm(`Enviar aviso de inatividade para ${ids.length} usuário(s)?`)) return;
-
-  btnSendWarnings.disabled = true;
-  btnSendWarnings.textContent = 'Enviando…';
+  setBusy(btnSendWarnings, true, 'Enviando avisos...');
+  setStatus('Enviando avisos para estudantes...');
 
   try {
-    await api('/admin/cleanup/send-warnings', {
-      method: 'POST',
-      body: { userIds: ids, days, warnDays },
-    });
-
-    alert('Ação concluída. Atualize a prévia.');
-    await loadDiagnostics();
-    await runPreview();
-  } catch (e) {
-    alert(e?.message || 'Falha ao enviar avisos.');
-  } finally {
-    btnSendWarnings.disabled = false;
-    btnSendWarnings.textContent = 'Enviar avisos';
-  }
-}
-
-async function deleteUsers() {
-  const ids = getCheckedIds(deleteTableBody);
-  if (ids.length === 0) {
-    alert('Selecione ao menos 1 usuário para excluir.');
-    return;
-  }
-
-  if (!confirm(`EXCLUIR ${ids.length} usuário(s)? Isso removerá dados vinculados.`)) return;
-
-  btnDeleteUsers.disabled = true;
-  btnDeleteUsers.textContent = 'Excluindo…';
-
-  try {
-    await api('/admin/cleanup/delete-users', {
+    const result = await adminFetch('/admin/inactive-users/send-warnings', {
       method: 'POST',
       body: { userIds: ids },
     });
 
-    alert('Exclusão concluída. Atualize a prévia.');
-    await loadDiagnostics();
-    await runPreview();
-  } catch (e) {
-    alert(e?.message || 'Falha ao excluir usuários.');
+    const sent = result?.sent ?? ids.length;
+    setStatus(`Avisos enviados para ${sent} estudante(s).`);
+    await Promise.allSettled([loadDiagnostics(), loadPreview()]);
   } finally {
-    btnDeleteUsers.disabled = false;
-    btnDeleteUsers.textContent = 'Excluir selecionados';
+    setBusy(btnSendWarnings, false);
   }
 }
 
-function logoutAdmin() {
-  clearAdminTokenAndGoLogin();
+async function deleteUsers() {
+  const ids = getCheckedValues('.delete-check');
+
+  if (ids.length === 0) {
+    setStatus('Selecione pelo menos um estudante para exclusão.', true);
+    return;
+  }
+
+  const ok = window.confirm(
+    `Tem certeza que deseja excluir ${ids.length} estudante(s) selecionado(s)? Esta ação não pode ser desfeita.`,
+  );
+
+  if (!ok) return;
+
+  setBusy(btnDeleteUsers, true, 'Excluindo...');
+  setStatus('Excluindo estudantes selecionados...');
+
+  try {
+    const result = await adminFetch('/admin/inactive-users/delete-users', {
+      method: 'POST',
+      body: { userIds: ids },
+    });
+
+    const deleted = result?.deleted ?? ids.length;
+    setStatus(`${deleted} estudante(s) excluído(s) com sucesso.`);
+    await Promise.allSettled([loadDiagnostics(), loadPreview()]);
+  } finally {
+    setBusy(btnDeleteUsers, false);
+  }
 }
 
-// eventos
+// --------------------------------------------------
+// Events
+// --------------------------------------------------
+
 btnRefresh?.addEventListener('click', async () => {
-  await loadDiagnostics();
+  try {
+    setBusy(btnRefresh, true, 'Atualizando...');
+    await Promise.allSettled([loadDiagnostics(), loadPreview()]);
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (!msg.startsWith('AUTH_')) {
+      setStatus(msg || 'Erro ao atualizar painel.', true);
+    }
+  } finally {
+    setBusy(btnRefresh, false);
+  }
 });
 
-btnLogout?.addEventListener('click', logoutAdmin);
+btnLogout?.addEventListener('click', () => {
+  clearAdminTokenAndGoLogin();
+});
 
 btnPreview?.addEventListener('click', async () => {
-  await runPreview();
+  try {
+    await loadPreview();
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (!msg.startsWith('AUTH_')) {
+      setStatus(msg || 'Erro ao gerar prévia.', true);
+    }
+  }
 });
 
-btnSelectAllWarn?.addEventListener('click', () => setAllCheckboxes(warnTableBody, true));
-btnClearWarn?.addEventListener('click', () => setAllCheckboxes(warnTableBody, false));
-btnSendWarnings?.addEventListener('click', sendWarnings);
+btnSendWarnings?.addEventListener('click', async () => {
+  try {
+    await sendWarnings();
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (!msg.startsWith('AUTH_')) {
+      setStatus(msg || 'Erro ao enviar avisos.', true);
+    }
+  }
+});
 
-btnSelectAllDelete?.addEventListener('click', () => setAllCheckboxes(deleteTableBody, true));
-btnClearDelete?.addEventListener('click', () => setAllCheckboxes(deleteTableBody, false));
-btnDeleteUsers?.addEventListener('click', deleteUsers);
+btnDeleteUsers?.addEventListener('click', async () => {
+  try {
+    await deleteUsers();
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (!msg.startsWith('AUTH_')) {
+      setStatus(msg || 'Erro ao excluir estudantes.', true);
+    }
+  }
+});
 
-// init
+// --------------------------------------------------
+// Init
+// --------------------------------------------------
+
 (async function init() {
-  const ok = await validateTokenOrRedirect();
-  if (!ok) return;
-  await loadDiagnostics();
+  try {
+    await loadDiagnostics();
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (!msg.startsWith('AUTH_')) {
+      setStatus(msg || 'Erro ao carregar diagnóstico.', true);
+    }
+    return;
+  }
+
+  // se houver valores padrão nos inputs, já tenta gerar a prévia
+  const hasDays = Number(daysInput?.value || 0) > 0;
+  const hasWarnDays = Number(warnDaysInput?.value || 0) > 0;
+
+  if (hasDays && hasWarnDays) {
+    try {
+      await loadPreview();
+    } catch (err) {
+      const msg = String(err?.message || '');
+      if (!msg.startsWith('AUTH_')) {
+        setStatus(msg || 'Erro ao carregar prévia.', true);
+      }
+    }
+  }
 })();
