@@ -1,45 +1,77 @@
-// esqueci-senha.js  (ou recuperar-senha.js / request-password-reset.js)
-// Página que envia o link de redefinição
 import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 
+const form = document.getElementById('recoverForm');
+const emailInput = document.getElementById('email');
+const sendBtn = document.getElementById('sendBtn');
+const statusEl = document.getElementById('status');
+
 function disable(btn, value) {
-  if (btn) btn.disabled = !!value;
+  if (!btn) return;
+  btn.disabled = !!value;
+}
+
+function setStatus(message = '') {
+  if (!statusEl) return;
+  statusEl.textContent = message;
 }
 
 function notify(type, title, message, duration) {
-  toast({
-    type,
-    title,
-    message,
-    duration:
-      duration ??
-      (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
-  });
+  if (typeof toast === 'function') {
+    toast({
+      type,
+      title,
+      message,
+      duration:
+        duration ??
+        (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    });
+    return;
+  }
+
+  if (type === 'error') {
+    alert(`${title}\n\n${message}`);
+  } else {
+    console.log(`[${type}] ${title}: ${message}`);
+  }
 }
 
 function getEmail() {
-  const el = document.getElementById('email');
-  return (el?.value || '').trim().toLowerCase();
+  return String(emailInput?.value || '').trim().toLowerCase();
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function getRoleFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  const role = (params.get('role') || '').trim().toLowerCase();
+  const role = String(params.get('role') || '').trim().toLowerCase();
   return role === 'professor' || role === 'student' ? role : undefined;
 }
 
-async function enviarLink() {
-  const btn = document.getElementById('sendBtn');
+async function enviarLink(event) {
+  event?.preventDefault();
+
   const email = getEmail();
   const role = getRoleFromUrl();
 
   if (!email) {
+    setStatus('Informe seu e-mail para continuar.');
     notify('warn', 'Digite seu e-mail', 'Informe o e-mail para receber o link.');
+    emailInput?.focus();
     return;
   }
 
-  disable(btn, true);
+  if (!isValidEmail(email)) {
+    setStatus('Digite um e-mail válido.');
+    notify('warn', 'E-mail inválido', 'Digite um endereço de e-mail válido.');
+    emailInput?.focus();
+    return;
+  }
+
+  disable(sendBtn, true);
+  setStatus('Enviando solicitação...');
   notify('info', 'Enviando...', 'Gerando seu link de redefinição...', 1800);
 
   try {
@@ -52,37 +84,41 @@ async function enviarLink() {
     const data = await res.json().catch(() => null);
 
     if (!res.ok || !data?.ok) {
-      notify(
-        'error',
-        'Não foi possível enviar',
-        data?.message || data?.error || 'Tente novamente em instantes.',
-      );
+      const message =
+        data?.message ||
+        data?.error ||
+        'Tente novamente em instantes.';
+
+      setStatus('Não foi possível concluir a solicitação.');
+      notify('error', 'Não foi possível enviar', message);
       return;
     }
 
-    // ✅ mensagem segura (não revela se existe)
+    setStatus('Se o e-mail existir, o link foi enviado.');
     notify(
       'success',
       'Se o e-mail existir…',
-      'Enviamos um link. Verifique a caixa de entrada e o Spam.',
+      'Enviamos um link. Verifique a caixa de entrada e também a pasta Spam.',
       4200,
     );
+
+    form?.reset();
+    emailInput?.focus();
   } catch {
+    setStatus('Erro de conexão com o servidor.');
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
   } finally {
-    disable(btn, false);
+    disable(sendBtn, false);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('sendBtn');
-  const email = document.getElementById('email');
+  form?.addEventListener('submit', enviarLink);
 
-  if (btn) btn.addEventListener('click', enviarLink);
-
-  if (email) {
-    email.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') enviarLink();
-    });
-  }
+  emailInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      enviarLink(e);
+    }
+  });
 });
