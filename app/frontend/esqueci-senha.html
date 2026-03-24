@@ -1,35 +1,54 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recuperar senha</title>
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="icon" href="logo1.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recuperar senha | Mestre Kira</title>
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/ui-feedback.css" />
+  <link rel="stylesheet" href="css/auth-recovery.css" />
+  <link rel="icon" href="logo1.png" type="image/png" />
 </head>
 <body>
+  <main class="auth-page">
+    <section class="auth-card" aria-labelledby="pageTitle">
+      <div class="auth-card__header">
+        <h1 id="pageTitle">Recuperar senha</h1>
+        <p class="auth-card__subtitle">
+          Digite seu e-mail. Se ele existir na plataforma, enviaremos um link para redefinir sua senha.
+        </p>
+      </div>
 
-<h2>Recuperar senha</h2>
+      <form id="recoverForm" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label for="email">E-mail</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Digite seu e-mail"
+            autocomplete="email"
+            inputmode="email"
+            required
+          />
+        </div>
 
-<section>
-  <p>Digite seu e-mail. Se ele existir na plataforma, enviaremos um link para redefinir sua senha.</p>
+        <button id="sendBtn" class="auth-btn" type="submit">
+          Enviar link
+        </button>
 
-  <input type="email" id="email" placeholder="E-mail" autocomplete="email" />
-  <button id="sendBtn">Enviar link</button>
+        <p id="status" class="auth-status" aria-live="polite"></p>
+      </form>
 
-  <p id="status"></p>
-</section>
+      <div class="auth-links">
+        <a href="login-aluno.html">Voltar ao login do aluno</a>
+        <a href="login-professor.html">Voltar ao login do professor</a>
+      </div>
+    </section>
+  </main>
 
-<hr>
-
-<section>
-  <a href="login-aluno.html">Voltar ao login do aluno</a>
-  <br>
-  <a href="login-professor.html">Voltar ao login do professor</a>
-</section>
-
-<script type="module" src="js/esqueci-senha.js"></script>
-<script src="js/footer.js"></script>
-
+  <script type="module" src="js/esqueci-senha.js"></script>
+  <script src="js/footer.js"></script>
 </body>
 </html>
