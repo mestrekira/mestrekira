@@ -5,6 +5,7 @@ function qs(name) {
 const statusEl = document.getElementById('status');
 const goProfessor = document.getElementById('goProfessor');
 const goAluno = document.getElementById('goAluno');
+const goEscola = document.getElementById('goEscola');
 const goHome = document.getElementById('goHome');
 
 function setStatus(message, type = 'info') {
@@ -48,6 +49,7 @@ function decodeMsg(value) {
 function revealLinks() {
   show(goProfessor, true);
   show(goAluno, true);
+  show(goEscola, true);
   show(goHome, true);
 }
 
