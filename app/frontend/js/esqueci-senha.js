@@ -47,7 +47,12 @@ function isValidEmail(email) {
 function getRoleFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const role = String(params.get('role') || '').trim().toLowerCase();
-  return role === 'professor' || role === 'student' ? role : undefined;
+
+  if (role === 'professor' || role === 'student' || role === 'school') {
+    return role;
+  }
+
+  return undefined;
 }
 
 async function enviarLink(event) {
