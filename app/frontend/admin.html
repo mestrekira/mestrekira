@@ -32,10 +32,7 @@
           <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
         </label>
 
-        <!-- opcional -->
-        <a href="suporte.html"
-           class="menu-photo-support"
-           title="Abrir página de suporte">
+        <a href="suporte.html" class="menu-photo-support" title="Abrir página de suporte">
           Suporte
         </a>
       </div>
@@ -48,8 +45,8 @@
     <hr>
 
     <h4>Atualizar dados</h4>
-    <input id="newEmail" type="email" placeholder="Novo e-mail (ENV no Render)" autocomplete="email" disabled />
-    <input id="newPass" type="password" placeholder="Nova senha (ENV no Render)" autocomplete="new-password" disabled />
+    <input id="newEmail" type="email" placeholder="Novo e-mail (ENV no Render)" disabled />
+    <input id="newPass" type="password" placeholder="Nova senha (ENV no Render)" disabled />
     <button id="saveProfileBtn" disabled>Salvar</button>
 
     <p class="muted" style="margin-top:8px;">
@@ -65,16 +62,20 @@
 <header class="admin-top">
   <div class="admin-top__title">
     <h2>Administração</h2>
-    <p class="muted">Diagnóstico do sistema e controle manual de inatividade (dia 83 / dia 90).</p>
+    <p class="muted">
+      Diagnóstico do sistema e controle manual de inatividade (dia 83 / dia 90).
+    </p>
   </div>
 
   <div class="admin-top__actions">
-    <button id="btnRefresh" class="btn-ghost" title="Atualizar dados">↻ Atualizar</button>
-    <button id="btnLogout" class="btn-danger" title="Sair do admin">Sair</button>
+    <button id="btnRefresh" class="btn-ghost">↻ Atualizar</button>
+    <button id="btnLogout" class="btn-danger">Sair</button>
   </div>
 </header>
 
 <main class="admin-wrap">
+
+  <!-- DIAGNÓSTICO -->
   <section class="admin-grid">
     <div class="admin-card">
       <div class="card-head">
@@ -87,14 +88,17 @@
           <div class="kpi__label">Usuários</div>
           <div id="kpiUsers" class="kpi__value">—</div>
         </div>
+
         <div class="kpi">
           <div class="kpi__label">Salas</div>
           <div id="kpiRooms" class="kpi__value">—</div>
         </div>
+
         <div class="kpi">
           <div class="kpi__label">Tarefas</div>
           <div id="kpiTasks" class="kpi__value">—</div>
         </div>
+
         <div class="kpi">
           <div class="kpi__label">Redações</div>
           <div id="kpiEssays" class="kpi__value">—</div>
@@ -103,11 +107,12 @@
 
       <div class="mini-grid">
         <div class="mini">
-          <div class="mini__label">Avisados (inactivityWarnedAt)</div>
+          <div class="mini__label">Avisados</div>
           <div id="kpiWarned" class="mini__value">—</div>
         </div>
+
         <div class="mini">
-          <div class="mini__label">Agendados (scheduledDeletionAt)</div>
+          <div class="mini__label">Agendados</div>
           <div id="kpiScheduled" class="mini__value">—</div>
         </div>
       </div>
@@ -122,27 +127,26 @@
       <div class="form-row">
         <label class="field">
           <span>Dias totais</span>
-          <input id="daysInput" type="number" min="30" max="3650" value="90" />
+          <input id="daysInput" type="number" min="30" value="90" />
         </label>
 
         <label class="field">
           <span>Dias de aviso</span>
-          <input id="warnDaysInput" type="number" min="1" max="89" value="7" />
+          <input id="warnDaysInput" type="number" min="1" value="7" />
         </label>
 
         <button id="btnPreview" class="btn-primary">Gerar prévia</button>
       </div>
 
-      <p id="previewInfo" class="muted" style="margin:8px 0 0;">—</p>
+      <p id="previewInfo" class="muted" style="margin-top:8px;">—</p>
     </div>
   </section>
 
+  <!-- AVISOS -->
   <section class="admin-card">
     <div class="card-head">
       <h3>Candidatos a aviso (dia 83)</h3>
       <div class="card-actions">
-        <button id="btnSelectAllWarn" class="btn-ghost">Selecionar tudo</button>
-        <button id="btnClearWarn" class="btn-ghost">Limpar</button>
         <button id="btnSendWarnings" class="btn-primary">Enviar avisos</button>
       </div>
     </div>
@@ -154,25 +158,31 @@
             <th style="width:46px;"></th>
             <th>Nome</th>
             <th>E-mail</th>
-            <th>Perfil</th>
-            <th>Última atividade</th>
-            <th>Excluir em</th>
+            <th>Perfil (Estudante)</th>
+            <th>Dias inativo</th>
+            <th>Último acesso</th>
           </tr>
         </thead>
+
         <tbody id="warnTableBody">
-          <tr><td colspan="6" class="tbl-empty">Gere a prévia para listar usuários.</td></tr>
+          <tr>
+            <td colspan="6" class="tbl-empty">
+              Gere a prévia para listar estudantes.
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
   </section>
 
+  <!-- EXCLUSÃO -->
   <section class="admin-card">
     <div class="card-head">
       <h3>Candidatos a exclusão (dia 90)</h3>
       <div class="card-actions">
-        <button id="btnSelectAllDelete" class="btn-ghost">Selecionar tudo</button>
-        <button id="btnClearDelete" class="btn-ghost">Limpar</button>
-        <button id="btnDeleteUsers" class="btn-danger">Excluir selecionados</button>
+        <button id="btnDeleteUsers" class="btn-danger">
+          Excluir selecionados
+        </button>
       </div>
     </div>
 
@@ -183,24 +193,29 @@
             <th style="width:46px;"></th>
             <th>Nome</th>
             <th>E-mail</th>
-            <th>Perfil</th>
-            <th>Última atividade</th>
-            <th>Agendado</th>
+            <th>Perfil (Estudante)</th>
+            <th>Dias inativo</th>
+            <th>Último acesso</th>
           </tr>
         </thead>
+
         <tbody id="deleteTableBody">
-          <tr><td colspan="6" class="tbl-empty">Gere a prévia para listar usuários.</td></tr>
+          <tr>
+            <td colspan="6" class="tbl-empty">
+              Gere a prévia para listar estudantes.
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
 
     <p class="muted" style="margin-top:10px;">
-      Atenção: excluir remove também dados vinculados (salas/tarefas/redações), conforme sua regra no backend.
+      Atenção: excluir remove também dados vinculados (salas, tarefas e redações).
     </p>
   </section>
+
 </main>
 
-<!-- ✅ MENU PERFIL ADMIN (correto) -->
 <script type="module">
   import { initMenuPerfilAdmin } from './js/menu-perfil-admin.js';
   initMenuPerfilAdmin({
@@ -210,5 +225,6 @@
 
 <script type="module" src="js/admin.js"></script>
 <script src="js/footer.js"></script>
+
 </body>
 </html>
