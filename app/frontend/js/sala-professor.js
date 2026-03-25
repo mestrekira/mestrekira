@@ -3,6 +3,7 @@
 // - destaca tarefa mais recente
 // - mostra data de criação das tarefas
 // - estudantes com foto, nome e e-mail
+// - bloqueia criação de tarefa quando a sala estiver desativada
 
 import { API_URL } from './config.js';
 import { confirmDialog as uiConfirmDialog } from './ui-feedback.js';
@@ -42,6 +43,11 @@ if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn ||
   console.error('Elementos da sala do professor não encontrados.');
   throw new Error('HTML incompleto');
 }
+
+// -----------------------
+// State
+// -----------------------
+let isRoomActive = true;
 
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
@@ -270,8 +276,33 @@ async function carregarSala() {
     });
 
     const room = unwrapResult(data);
+
     roomNameEl.textContent = room?.name || 'Sala';
     roomCodeEl.textContent = room?.code || '—';
+
+    isRoomActive = room?.isActive !== false;
+
+    if (!isRoomActive) {
+      disable(createTaskBtn, true);
+
+      roomNameEl.style.opacity = '0.75';
+      roomCodeEl.style.opacity = '0.75';
+
+      if (!String(roomNameEl.textContent || '').includes('(Desativada)')) {
+        roomNameEl.textContent = `${roomNameEl.textContent} (Desativada)`;
+      }
+
+      notify(
+        'warn',
+        'Sala desativada',
+        'Esta sala foi desativada pela escola. Não é possível criar novas tarefas.'
+      );
+    } else {
+      disable(createTaskBtn, false);
+      roomNameEl.style.opacity = '';
+      roomCodeEl.style.opacity = '';
+      roomNameEl.textContent = room?.name || 'Sala';
+    }
   } catch (err) {
     console.error(err);
     notify('error', 'Erro', String(err?.message || 'Erro ao carregar dados da sala.'));
@@ -520,6 +551,15 @@ async function carregarTarefas() {
 // Criar tarefa
 // -----------------------
 createTaskBtn.addEventListener('click', async () => {
+  if (!isRoomActive) {
+    notify(
+      'error',
+      'Ação bloqueada',
+      'Esta sala está desativada e não permite novas tarefas.'
+    );
+    return;
+  }
+
   const titleEl = document.getElementById('taskTitle');
   const guidelinesEl = document.getElementById('taskGuidelines');
 
@@ -554,6 +594,10 @@ createTaskBtn.addEventListener('click', async () => {
     notify('error', 'Erro', String(err?.message || 'Erro ao criar tarefa.'));
   } finally {
     disable(createTaskBtn, false);
+
+    if (!isRoomActive) {
+      disable(createTaskBtn, true);
+    }
   }
 });
 
