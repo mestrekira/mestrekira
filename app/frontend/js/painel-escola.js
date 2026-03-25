@@ -246,6 +246,15 @@ async function apiDeleteRoom(session, roomId) {
   });
 }
 
+// 🔥 NOVO: toggle de sala via /rooms
+async function apiToggleRoom(session, roomId, isActive) {
+  return authFetch(`/rooms/${encodeURIComponent(String(roomId))}/toggle-active`, {
+    token: session.token,
+    method: 'PATCH',
+    body: { isActive: !!isActive },
+  });
+}
+
 // ------------------- Estado UI -------------------
 let cachedYears = [];
 let cachedRooms = [];
@@ -283,6 +292,10 @@ function getDefaultYearId() {
 function getYearNameById(yearId) {
   const year = cachedYears.find((y) => String(y.id) === String(yearId));
   return year?.name || '—';
+}
+
+function roomStatusText(isActive) {
+  return isActive === false ? 'Inativa' : 'Ativa';
 }
 
 function updateRoomsAvailability() {
@@ -521,7 +534,8 @@ function renderRoomsTable(session) {
     const tdRoom = document.createElement('td');
     tdRoom.innerHTML =
       `<strong>${escapeHtml(r.name || 'Sala')}</strong><br>` +
-      `<small class="mk-muted">Código: ${escapeHtml(r.code || '—')}</small>`;
+      `<small class="mk-muted">Código: ${escapeHtml(r.code || '—')}</small><br>` +
+      `<small class="mk-muted">Status: ${escapeHtml(roomStatusText(r.isActive))}</small>`;
 
     const tdTeacher = document.createElement('td');
     tdTeacher.innerHTML =
@@ -571,6 +585,23 @@ function renderRoomsTable(session) {
       }
     };
 
+    const btnToggle = document.createElement('button');
+    btnToggle.type = 'button';
+    btnToggle.textContent = r.isActive === false ? 'Ativar' : 'Desativar';
+    btnToggle.onclick = async () => {
+      try {
+        await apiToggleRoom(session, r.id, !(r.isActive === false));
+        notify(
+          'success',
+          'Atualizado',
+          `Sala ${r.isActive === false ? 'ativada' : 'desativada'}.`,
+        );
+        await refreshRooms(session, { keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
     const btnDelete = document.createElement('button');
     btnDelete.type = 'button';
     btnDelete.className = 'danger';
@@ -592,6 +623,7 @@ function renderRoomsTable(session) {
 
     wrap.appendChild(btnView);
     wrap.appendChild(btnRename);
+    wrap.appendChild(btnToggle);
     wrap.appendChild(btnDelete);
     tdActions.appendChild(wrap);
 
@@ -653,6 +685,8 @@ async function refreshRooms(session, { keepStatus } = {}) {
     teacherEmail: r.teacherEmail || '',
     schoolYearId: r.schoolYearId || r.school_year_id || null,
     createdAt: r.createdAt || r.created_at || null,
+    isActive: r.isActive !== false,
+    deactivatedAt: r.deactivatedAt || r.deactivated_at || null,
   }));
 
   renderRoomsTable(session);
