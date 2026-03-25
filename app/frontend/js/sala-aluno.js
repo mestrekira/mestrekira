@@ -3,6 +3,11 @@ import { toast } from './ui-feedback.js';
 import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
 // =====================
+// Estado da sala
+// =====================
+let isRoomActive = true;
+
+// =====================
 // Toast helper
 // =====================
 function notify(type, title, message, duration) {
@@ -233,6 +238,24 @@ async function carregarOverview() {
     const data = await jsonSafe(res);
 
     if (roomNameEl) roomNameEl.textContent = data?.room?.name || 'Sala';
+
+    // status da sala
+    isRoomActive = data?.room?.isActive !== false;
+
+    if (!isRoomActive) {
+      if (roomNameEl) {
+        roomNameEl.style.opacity = '0.75';
+        if (!String(roomNameEl.textContent || '').includes('(Desativada)')) {
+          roomNameEl.textContent = `${roomNameEl.textContent} (Desativada)`;
+        }
+      }
+
+      notify(
+        'warn',
+        'Sala desativada',
+        'Esta sala foi desativada pela escola. Não é possível enviar novas redações.'
+      );
+    }
 
     if (teacherInfo) {
       const p = data?.professor;
@@ -524,8 +547,18 @@ async function carregarTarefas() {
 
       const btnWrite = document.createElement('button');
       btnWrite.type = 'button';
-      btnWrite.textContent = 'Escrever redação';
+      btnWrite.textContent = isRoomActive ? 'Escrever redação' : 'Sala desativada';
+      btnWrite.disabled = !isRoomActive;
       btnWrite.onclick = () => {
+        if (!isRoomActive) {
+          notify(
+            'error',
+            'Ação bloqueada',
+            'Esta sala está desativada e não permite envio de redações.'
+          );
+          return;
+        }
+
         window.location.href = `redacao.html?taskId=${encodeURIComponent(task.id)}`;
       };
 
@@ -568,6 +601,8 @@ async function carregarTarefas() {
       } else {
         ui.btnFeedback.style.display = 'none';
         ui.btnWrite.style.display = 'inline-block';
+        ui.btnWrite.disabled = !isRoomActive;
+        ui.btnWrite.textContent = isRoomActive ? 'Escrever redação' : 'Sala desativada';
       }
     });
 
