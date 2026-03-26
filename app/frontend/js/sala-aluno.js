@@ -73,6 +73,13 @@ function setStatus(msg) {
   if (statusEl) statusEl.textContent = msg || '';
 }
 
+function redirectRoomUnavailable(message = 'Esta sala não está mais disponível.') {
+  notify('warn', 'Sala indisponível', message);
+  setTimeout(() => {
+    window.location.replace('painel-aluno.html');
+  }, 900);
+}
+
 // =====================
 // Datas
 // =====================
@@ -189,6 +196,13 @@ if (leaveBtn) {
       );
 
       if (!res.ok) {
+        if (res.status === 404) {
+          if (leaveStatus) leaveStatus.textContent = 'A sala não existe mais.';
+          notify('info', 'Sala indisponível', 'Esta sala já foi removida.');
+          setTimeout(() => window.location.replace('painel-aluno.html'), 700);
+          return;
+        }
+
         const msg = await readErrorMessage(res, `HTTP ${res.status}`);
         throw new Error(msg);
       }
@@ -206,6 +220,16 @@ if (leaveBtn) {
           leaveStatus.textContent = 'Você não tem permissão para sair desta sala.';
         }
         notify('warn', 'Acesso negado', 'Você não tem permissão para sair desta sala.');
+        return;
+      }
+
+      if (
+        msg.toLowerCase().includes('não encontrada') ||
+        msg.toLowerCase().includes('not found')
+      ) {
+        if (leaveStatus) leaveStatus.textContent = 'A sala não existe mais.';
+        notify('info', 'Sala indisponível', 'Esta sala já foi removida.');
+        setTimeout(() => window.location.replace('painel-aluno.html'), 700);
         return;
       }
 
@@ -231,6 +255,15 @@ async function carregarOverview() {
     );
 
     if (!res.ok) {
+      if (res.status === 404) {
+        if (roomNameEl) roomNameEl.textContent = 'Sala indisponível';
+        if (teacherInfo) teacherInfo.textContent = 'Esta sala foi removida.';
+        if (classmatesList) classmatesList.innerHTML = '<li>Sala removida.</li>';
+        setStatus('Esta sala não está mais disponível.');
+        redirectRoomUnavailable('Esta sala foi removida pela escola.');
+        return;
+      }
+
       const msg = await readErrorMessage(res, `HTTP ${res.status}`);
       throw new Error(msg);
     }
@@ -370,6 +403,18 @@ async function carregarOverview() {
       return;
     }
 
+    if (
+      msg.toLowerCase().includes('não encontrada') ||
+      msg.toLowerCase().includes('not found')
+    ) {
+      if (roomNameEl) roomNameEl.textContent = 'Sala indisponível';
+      if (teacherInfo) teacherInfo.textContent = 'Esta sala foi removida.';
+      if (classmatesList) classmatesList.innerHTML = '<li>Sala removida.</li>';
+      setStatus('Esta sala não está mais disponível.');
+      redirectRoomUnavailable('Esta sala foi removida pela escola.');
+      return;
+    }
+
     console.error(e);
     if (roomNameEl) roomNameEl.textContent = 'Sala';
     if (teacherInfo) teacherInfo.textContent = 'Erro ao carregar professor.';
@@ -471,6 +516,13 @@ async function carregarTarefas() {
     );
 
     if (!res.ok) {
+      if (res.status === 404) {
+        setStatus('Esta sala não está mais disponível.');
+        if (tasksList) tasksList.innerHTML = '<li>Sala removida.</li>';
+        redirectRoomUnavailable('Esta sala foi removida pela escola.');
+        return;
+      }
+
       const msg = await readErrorMessage(res, `HTTP ${res.status}`);
       throw new Error(msg);
     }
@@ -617,6 +669,16 @@ async function carregarTarefas() {
       if (tasksList) {
         tasksList.innerHTML = '<li>Acesso não autorizado às tarefas.</li>';
       }
+      return;
+    }
+
+    if (
+      msg.toLowerCase().includes('não encontrada') ||
+      msg.toLowerCase().includes('not found')
+    ) {
+      setStatus('Esta sala não está mais disponível.');
+      if (tasksList) tasksList.innerHTML = '<li>Sala removida.</li>';
+      redirectRoomUnavailable('Esta sala foi removida pela escola.');
       return;
     }
 
