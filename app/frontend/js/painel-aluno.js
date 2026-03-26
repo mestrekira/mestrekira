@@ -62,8 +62,46 @@ async function jsonSafe(res) {
   }
 }
 
-function goToRoom(roomId) {
-  window.location.href = `sala-aluno.html?roomId=${encodeURIComponent(roomId)}`;
+// 🔥 NOVO: valida se sala ainda existe antes de entrar
+async function validateRoomExists(roomId) {
+  try {
+    const res = await authFetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`, {
+      method: 'GET',
+    });
+
+    if (!res.ok) {
+      if (res.status === 404) throw new Error('NOT_FOUND');
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+      throw new Error(msg);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function goToRoom(roomId) {
+  try {
+    await validateRoomExists(roomId);
+    window.location.href = `sala-aluno.html?roomId=${encodeURIComponent(roomId)}`;
+  } catch (e) {
+    const msg = String(e?.message || '');
+
+    if (msg === 'NOT_FOUND') {
+      notify(
+        'warn',
+        'Sala indisponível',
+        'Esta sala foi removida pela escola.'
+      );
+
+      // 🔥 Atualiza lista automaticamente
+      await carregarMinhasSalas();
+      return;
+    }
+
+    notify('error', 'Erro', msg || 'Não foi possível abrir a sala.');
+  }
 }
 
 // -------------------- Carregar salas --------------------
@@ -120,12 +158,15 @@ async function carregarMinhasSalas() {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = 'Abrir';
-      btn.addEventListener('click', (ev) => {
+
+      btn.addEventListener('click', async (ev) => {
         ev.stopPropagation();
-        goToRoom(room.id);
+        await goToRoom(room.id);
       });
 
-      li.addEventListener('click', () => goToRoom(room.id));
+      li.addEventListener('click', async () => {
+        await goToRoom(room.id);
+      });
 
       li.appendChild(nameText);
       li.appendChild(btn);
@@ -144,4 +185,5 @@ async function carregarMinhasSalas() {
   }
 }
 
+// -------------------- INIT --------------------
 carregarMinhasSalas();
