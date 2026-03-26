@@ -1,177 +1,189 @@
-// professor-salas.js (refatorado PRO)
-
-// ---------------- IMPORTS ----------------
 import { API_URL } from './config.js';
-import {
-  notify,
-  requireProfessorSession,
-  authFetch,
-  readErrorMessage,
-} from './auth.js';
+import { toast } from './ui-feedback.js';
+import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
-// ---------------- GUARD ----------------
-requireProfessorSession({ redirectTo: 'login-professor.html' });
-
-// ---------------- ELEMENTOS ----------------
-const roomsList = document.getElementById('roomsList');
-const createRoomBtn = document.getElementById('createRoomBtn');
-const roomNameInput = document.getElementById('roomName');
-
-// ---------------- HELPERS ----------------
-function disable(el, state) {
-  if (el) el.disabled = !!state;
-}
-
-function unwrapResult(data) {
-  if (Array.isArray(data)) return data;
-  if (data?.result && Array.isArray(data.result)) return data.result;
-  if (data?.data && Array.isArray(data.data)) return data.data;
-  return [];
-}
-
-async function apiRequest(url, options = {}) {
-  const res = await authFetch(url, options, {
-    redirectTo: 'login-professor.html',
-  });
-
-  if (!res.ok) {
-    const msg = await readErrorMessage(res, `HTTP ${res.status}`);
-    throw new Error(msg);
+// -------------------- Toast helper --------------------
+function notify(type, title, message, duration) {
+  try {
+    toast({
+      type,
+      title,
+      message,
+      duration:
+        duration ?? (type === 'error' ? 3600 : type === 'warn' ? 3000 : 2400),
+    });
+  } catch {
+    if (type === 'error') console.error(title, message);
   }
-
-  return res.json().catch(() => null);
 }
 
-// ---------------- CARREGAR SALAS ----------------
-async function carregarSalas() {
+// -------------------- Guard --------------------
+const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
+
+// -------------------- Elementos --------------------
+const roomsList = document.getElementById('roomsList');
+
+// -------------------- Utils --------------------
+function renderEmpty(msg) {
+  if (!roomsList) return;
+  roomsList.innerHTML = '';
+  const li = document.createElement('li');
+  li.textContent = msg || '';
+  roomsList.appendChild(li);
+}
+
+function normalizeRoom(r) {
+  const nestedRoom = r?.room || r?.sala || null;
+
+  const id = String(
+    nestedRoom?.id ||
+      r?.roomId ||
+      r?.room_id ||
+      r?.id ||
+      ''
+  ).trim();
+
+  const name = String(
+    nestedRoom?.name ||
+      r?.roomName ||
+      r?.room_name ||
+      r?.name ||
+      'Sala'
+  ).trim();
+
+  return { id, name };
+}
+
+async function jsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// 🔥 NOVO: valida se sala ainda existe antes de entrar
+async function validateRoomExists(roomId) {
+  try {
+    const res = await authFetch(`${API_URL}/rooms/${encodeURIComponent(roomId)}`, {
+      method: 'GET',
+    });
+
+    if (!res.ok) {
+      if (res.status === 404) throw new Error('NOT_FOUND');
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+      throw new Error(msg);
+    }
+
+    return true;
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function goToRoom(roomId) {
+  try {
+    await validateRoomExists(roomId);
+    window.location.href = `sala-aluno.html?roomId=${encodeURIComponent(roomId)}`;
+  } catch (e) {
+    const msg = String(e?.message || '');
+
+    if (msg === 'NOT_FOUND') {
+      notify(
+        'warn',
+        'Sala indisponível',
+        'Esta sala foi removida pela escola.'
+      );
+
+      // 🔥 Atualiza lista automaticamente
+      await carregarMinhasSalas();
+      return;
+    }
+
+    notify('error', 'Erro', msg || 'Não foi possível abrir a sala.');
+  }
+}
+
+// -------------------- Carregar salas --------------------
+async function carregarMinhasSalas() {
   if (!roomsList) return;
 
-  roomsList.innerHTML = '<li>Carregando...</li>';
+  renderEmpty('Carregando...');
 
   try {
-    const data = await apiRequest(`${API_URL}/rooms/by-professor`);
-    const rooms = unwrapResult(data);
+    const res = await authFetch(
+      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
+      { method: 'GET' },
+      { redirectTo: 'login-aluno.html' }
+    );
+
+    if (!res.ok) {
+      const msg = await readErrorMessage(res, `HTTP ${res.status}`);
+      throw new Error(msg);
+    }
+
+    const raw = await jsonSafe(res);
+    console.log('[painel-aluno] raw =>', raw);
+
+    const arr = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.rooms)
+        ? raw.rooms
+        : Array.isArray(raw?.enrollments)
+          ? raw.enrollments
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : [];
+
+    const rooms = arr
+      .map(normalizeRoom)
+      .filter((r) => !!r.id)
+      .filter((r, index, self) => self.findIndex((x) => x.id === r.id) === index);
 
     roomsList.innerHTML = '';
 
-    if (!rooms.length) {
-      roomsList.innerHTML = '<li>Você ainda não criou nenhuma sala.</li>';
+    if (rooms.length === 0) {
+      renderEmpty('Você ainda não está em nenhuma sala.');
       return;
     }
 
     rooms.forEach((room) => {
-      const roomId = String(room?.id || '').trim();
-
       const li = document.createElement('li');
+      li.style.cursor = 'pointer';
+      li.title = 'Clique para abrir a sala';
 
-      const name = document.createElement('span');
-      name.textContent = room?.name || 'Sala';
+      const nameText = document.createElement('span');
+      nameText.textContent = `${room.name} `;
 
-      // ---------------- ACESSAR ----------------
-      const acessar = document.createElement('button');
-      acessar.textContent = 'Acessar';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'Abrir';
 
-      acessar.onclick = async () => {
-        if (!roomId) return;
+      btn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        await goToRoom(room.id);
+      });
 
-        try {
-          // 🔥 Validação antes de entrar (evita sala excluída)
-          await apiRequest(`${API_URL}/rooms/${roomId}`);
+      li.addEventListener('click', async () => {
+        await goToRoom(room.id);
+      });
 
-          window.location.href = `sala-professor.html?roomId=${encodeURIComponent(roomId)}`;
-        } catch (e) {
-          notify(
-            'warn',
-            'Sala indisponível',
-            'Esta sala não existe mais ou foi removida.'
-          );
-
-          await carregarSalas();
-        }
-      };
-
-      // ---------------- EXCLUIR ----------------
-      const excluir = document.createElement('button');
-      excluir.textContent = 'Excluir';
-
-      excluir.onclick = async () => {
-        if (!roomId) return;
-
-        const ok = confirm(`Excluir a sala "${room?.name || ''}"?`);
-        if (!ok) return;
-
-        disable(excluir, true);
-
-        try {
-          await apiRequest(`${API_URL}/rooms/${roomId}`, {
-            method: 'DELETE',
-          });
-
-          notify('success', 'Sala excluída', 'A sala foi removida.');
-          await carregarSalas();
-        } catch (e) {
-          // 🔥 TRATAMENTO DE SALA JÁ REMOVIDA
-          if (
-            String(e.message).toLowerCase().includes('não encontrada') ||
-            String(e.message).toLowerCase().includes('not found')
-          ) {
-            notify(
-              'info',
-              'Sala já removida',
-              'Esta sala já não existe mais.'
-            );
-            await carregarSalas();
-            return;
-          }
-
-          notify('error', 'Erro', e.message);
-        } finally {
-          disable(excluir, false);
-        }
-      };
-
-      li.appendChild(name);
-      li.appendChild(document.createTextNode(' '));
-      li.appendChild(acessar);
-      li.appendChild(excluir);
-
+      li.appendChild(nameText);
+      li.appendChild(btn);
       roomsList.appendChild(li);
     });
-  } catch (e) {
-    roomsList.innerHTML = '<li>Erro ao carregar salas.</li>';
-    notify('error', 'Erro', e.message);
+  } catch (err) {
+    if (!String(err?.message || '').startsWith('AUTH_')) {
+      console.error(err);
+      renderEmpty('Erro ao carregar suas salas.');
+      notify(
+        'error',
+        'Erro',
+        'Não foi possível carregar suas salas agora. Tente novamente.'
+      );
+    }
   }
 }
 
-// ---------------- CRIAR SALA ----------------
-if (createRoomBtn && roomNameInput) {
-  createRoomBtn.addEventListener('click', async () => {
-    const name = String(roomNameInput.value || '').trim();
-
-    if (!name) {
-      notify('warn', 'Nome obrigatório', 'Informe o nome da sala.');
-      return;
-    }
-
-    disable(createRoomBtn, true);
-
-    try {
-      await apiRequest(`${API_URL}/rooms`, {
-        method: 'POST',
-        body: JSON.stringify({ name }),
-      });
-
-      roomNameInput.value = '';
-
-      notify('success', 'Sala criada', 'Sua sala foi criada.');
-      await carregarSalas();
-    } catch (e) {
-      notify('error', 'Erro ao criar', e.message);
-    } finally {
-      disable(createRoomBtn, false);
-    }
-  });
-}
-
-// ---------------- INIT ----------------
-carregarSalas();
+// -------------------- INIT --------------------
+carregarMinhasSalas();
