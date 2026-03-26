@@ -311,7 +311,8 @@ export function initMenuPerfil(options = {}) {
   loadPhoto(role, id);
 
   if (deleteBtn) {
-    deleteBtn.style.display = role === 'student' ? '' : 'none';
+    deleteBtn.style.display =
+      role === 'student' || role === 'school' ? '' : 'none';
   }
 
   const photoInput = $('menuPhotoInput');
@@ -500,25 +501,35 @@ export function initMenuPerfil(options = {}) {
 
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
-      if (role !== 'student') {
-        toast({
-          title: 'Ação indisponível',
-          message: 'A exclusão de conta está disponível apenas para estudantes.',
-          type: 'warn',
-        });
-        return;
-      }
-
       const ok = await confirmDialog({
         title: 'Excluir conta',
-        message: 'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
+        message:
+          'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
         okText: 'Sim, excluir',
         cancelText: 'Cancelar',
       });
+
       if (!ok) return;
 
       try {
-        await authFetchMenu('/users/me', { method: 'DELETE', token });
+        if (role === 'school') {
+          await authFetchMenu('/school-dashboard/account', {
+            method: 'DELETE',
+            token,
+          });
+        } else if (role === 'student') {
+          await authFetchMenu('/users/me', {
+            method: 'DELETE',
+            token,
+          });
+        } else {
+          toast({
+            title: 'Ação indisponível',
+            message: 'Este perfil não pode excluir a conta.',
+            type: 'warn',
+          });
+          return;
+        }
 
         localStorage.removeItem(photoKey(role, id));
         sessionStorage.setItem('mk_just_logged_out', '1');
@@ -539,6 +550,7 @@ export function initMenuPerfil(options = {}) {
         );
       } catch (e) {
         const msg = String(e?.message || 'Erro ao excluir conta.');
+
         if (msg.startsWith('AUTH_')) {
           toast({
             title: 'Sessão expirada',
