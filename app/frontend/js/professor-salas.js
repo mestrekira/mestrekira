@@ -49,9 +49,7 @@ async function carregarSalas() {
   roomsList.innerHTML = '<li>Carregando...</li>';
 
   try {
-    // ✅ AGORA SEM professorId
     const data = await apiRequest(`${API_URL}/rooms/by-professor`);
-
     const rooms = unwrapResult(data);
 
     roomsList.innerHTML = '';
@@ -69,13 +67,30 @@ async function carregarSalas() {
       const name = document.createElement('span');
       name.textContent = room?.name || 'Sala';
 
+      // ---------------- ACESSAR ----------------
       const acessar = document.createElement('button');
       acessar.textContent = 'Acessar';
-      acessar.onclick = () => {
+
+      acessar.onclick = async () => {
         if (!roomId) return;
-        window.location.href = `sala-professor.html?roomId=${encodeURIComponent(roomId)}`;
+
+        try {
+          // 🔥 Validação antes de entrar (evita sala excluída)
+          await apiRequest(`${API_URL}/rooms/${roomId}`);
+
+          window.location.href = `sala-professor.html?roomId=${encodeURIComponent(roomId)}`;
+        } catch (e) {
+          notify(
+            'warn',
+            'Sala indisponível',
+            'Esta sala não existe mais ou foi removida.'
+          );
+
+          await carregarSalas();
+        }
       };
 
+      // ---------------- EXCLUIR ----------------
       const excluir = document.createElement('button');
       excluir.textContent = 'Excluir';
 
@@ -95,6 +110,20 @@ async function carregarSalas() {
           notify('success', 'Sala excluída', 'A sala foi removida.');
           await carregarSalas();
         } catch (e) {
+          // 🔥 TRATAMENTO DE SALA JÁ REMOVIDA
+          if (
+            String(e.message).toLowerCase().includes('não encontrada') ||
+            String(e.message).toLowerCase().includes('not found')
+          ) {
+            notify(
+              'info',
+              'Sala já removida',
+              'Esta sala já não existe mais.'
+            );
+            await carregarSalas();
+            return;
+          }
+
           notify('error', 'Erro', e.message);
         } finally {
           disable(excluir, false);
@@ -127,7 +156,6 @@ if (createRoomBtn && roomNameInput) {
     disable(createRoomBtn, true);
 
     try {
-      // ✅ SEM professorId
       await apiRequest(`${API_URL}/rooms`, {
         method: 'POST',
         body: JSON.stringify({ name }),
