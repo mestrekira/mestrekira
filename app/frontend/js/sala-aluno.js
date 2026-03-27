@@ -47,7 +47,7 @@ if (!roomId) {
   throw new Error('roomId ausente');
 }
 
-const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
+requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 // =====================
 // Elements
@@ -73,11 +73,20 @@ function setStatus(msg) {
   if (statusEl) statusEl.textContent = msg || '';
 }
 
-function redirectRoomUnavailable(message = 'Esta sala não está mais disponível.') {
-  notify('warn', 'Sala indisponível', message);
+function redirectToPanel(delay = 900) {
   setTimeout(() => {
     window.location.replace('painel-aluno.html');
-  }, 900);
+  }, delay);
+}
+
+function redirectRoomUnavailable(message = 'Esta sala não está mais disponível.') {
+  notify('warn', 'Sala indisponível', message);
+  redirectToPanel(900);
+}
+
+function redirectForbidden(message = 'Você não tem permissão para acessar esta sala.') {
+  notify('warn', 'Acesso negado', message);
+  redirectToPanel(900);
 }
 
 // =====================
@@ -190,7 +199,7 @@ if (leaveBtn) {
         `${API_URL}/enrollments/leave`,
         {
           method: 'DELETE',
-          body: JSON.stringify({ roomId, studentId }),
+          body: JSON.stringify({ roomId }),
         },
         { redirectTo: 'login-aluno.html' }
       );
@@ -199,7 +208,7 @@ if (leaveBtn) {
         if (res.status === 404) {
           if (leaveStatus) leaveStatus.textContent = 'A sala não existe mais.';
           notify('info', 'Sala indisponível', 'Esta sala já foi removida.');
-          setTimeout(() => window.location.replace('painel-aluno.html'), 700);
+          redirectToPanel(700);
           return;
         }
 
@@ -209,7 +218,7 @@ if (leaveBtn) {
 
       if (leaveStatus) leaveStatus.textContent = 'Você saiu da sala.';
       notify('success', 'Tudo certo', 'Você saiu da sala.');
-      setTimeout(() => window.location.replace('painel-aluno.html'), 700);
+      redirectToPanel(700);
     } catch (e) {
       const msg = String(e?.message || '');
 
@@ -220,6 +229,7 @@ if (leaveBtn) {
           leaveStatus.textContent = 'Você não tem permissão para sair desta sala.';
         }
         notify('warn', 'Acesso negado', 'Você não tem permissão para sair desta sala.');
+        redirectToPanel(900);
         return;
       }
 
@@ -229,7 +239,7 @@ if (leaveBtn) {
       ) {
         if (leaveStatus) leaveStatus.textContent = 'A sala não existe mais.';
         notify('info', 'Sala indisponível', 'Esta sala já foi removida.');
-        setTimeout(() => window.location.replace('painel-aluno.html'), 700);
+        redirectToPanel(700);
         return;
       }
 
@@ -272,7 +282,6 @@ async function carregarOverview() {
 
     if (roomNameEl) roomNameEl.textContent = data?.room?.name || 'Sala';
 
-    // status da sala
     isRoomActive = data?.room?.isActive !== false;
 
     if (!isRoomActive) {
@@ -344,10 +353,10 @@ async function carregarOverview() {
         }))
         .filter((s) => !!s.id);
 
-      const classmates = students.filter((s) => String(s.id) !== String(studentId));
+      const classmates = students;
 
       if (classmates.length === 0) {
-        classmatesList.innerHTML = '<li>Nenhum colega ainda (só você na sala).</li>';
+        classmatesList.innerHTML = '<li>Nenhum colega ainda.</li>';
         return;
       }
 
@@ -400,6 +409,8 @@ async function carregarOverview() {
       if (classmatesList) {
         classmatesList.innerHTML = '<li>Acesso não autorizado.</li>';
       }
+      setStatus('Você não tem permissão para acessar esta sala.');
+      redirectForbidden('Você não tem permissão para acessar esta sala.');
       return;
     }
 
@@ -426,9 +437,7 @@ async function carregarOverview() {
 // Essay do aluno na tarefa
 // =====================
 async function getMyEssayByTask(taskIdValue) {
-  const url =
-    `${API_URL}/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student` +
-    `?studentId=${encodeURIComponent(studentId)}`;
+  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student`;
 
   try {
     const res = await authFetch(
@@ -669,6 +678,7 @@ async function carregarTarefas() {
       if (tasksList) {
         tasksList.innerHTML = '<li>Acesso não autorizado às tarefas.</li>';
       }
+      redirectForbidden('Você não tem permissão para acessar as tarefas desta sala.');
       return;
     }
 
