@@ -21,7 +21,8 @@ const taskGuidelinesEl = document.getElementById('taskGuidelines');
 const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
 
-const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
+// Mantém o guard, mas não usa mais studentId como parâmetro de negócio
+requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 if (!taskId) {
   notify('error', 'Acesso inválido', 'Você precisa acessar por uma tarefa válida.');
@@ -51,6 +52,12 @@ function setDisabledAll(disabled) {
 
 function updateCount() {
   charCount.textContent = String((textarea.value || '').length);
+}
+
+function redirectToPanel(delay = 700) {
+  setTimeout(() => {
+    window.location.replace('painel-aluno.html');
+  }, delay);
 }
 
 // =====================
@@ -169,9 +176,7 @@ const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
 // BACKEND (ESSAYS)
 // =====================
 async function getMyEssayByTask() {
-  const url =
-    `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student` +
-    `?studentId=${encodeURIComponent(studentId)}`;
+  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student`;
 
   const res = await authFetch(url, {}, { redirectTo: 'login-aluno.html' });
 
@@ -189,7 +194,6 @@ async function saveDraftServerPacked(packedContent) {
       method: 'POST',
       body: JSON.stringify({
         taskId,
-        studentId,
         content: String(packedContent || ''),
       }),
     },
@@ -210,7 +214,6 @@ async function clearDraftUXOnly() {
 
 // =====================
 // CARREGAR TAREFA
-// ✅ agora usa rota do aluno
 // =====================
 async function carregarTarefa() {
   try {
@@ -220,19 +223,42 @@ async function carregarTarefa() {
       { redirectTo: 'login-aluno.html' }
     );
 
+    if (res.status === 404) {
+      notify('warn', 'Tarefa indisponível', 'Esta tarefa não está mais disponível.');
+      redirectToPanel();
+      return false;
+    }
+
     if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
 
     const task = await res.json().catch(() => null);
 
     if (taskTitleEl) taskTitleEl.textContent = task?.title || 'Tema da Redação';
     setMultilinePreserve(taskGuidelinesEl, task?.guidelines, 'Sem orientações adicionais.');
+    return true;
   } catch (err) {
+    const msg = String(err?.message || '');
+
     console.error('Erro ao carregar tarefa:', err);
+
+    if (msg === 'AUTH_401') return false;
+
+    if (msg === 'AUTH_403') {
+      notify('warn', 'Acesso negado', 'Você não tem permissão para acessar esta tarefa.');
+      redirectToPanel();
+      return false;
+    }
+
+    if (msg.toLowerCase().includes('não encontrada') || msg.toLowerCase().includes('not found')) {
+      notify('warn', 'Tarefa indisponível', 'Esta tarefa não está mais disponível.');
+      redirectToPanel();
+      return false;
+    }
 
     if (taskTitleEl) taskTitleEl.textContent = 'Tema da Redação';
     setMultilinePreserve(taskGuidelinesEl, '', 'Não foi possível carregar as orientações.');
-
     notify('error', 'Erro', 'Erro ao carregar a tarefa.');
+    return false;
   }
 }
 
@@ -272,7 +298,24 @@ async function carregarRascunho() {
 
     setStatus('Rascunho carregado do servidor.');
   } catch (err) {
+    const msg = String(err?.message || '');
+
     console.error('Erro ao carregar rascunho:', err);
+
+    if (msg === 'AUTH_401') return;
+
+    if (msg === 'AUTH_403') {
+      notify('warn', 'Acesso negado', 'Você não tem permissão para acessar esta redação.');
+      redirectToPanel();
+      return;
+    }
+
+    if (msg.toLowerCase().includes('não encontrada') || msg.toLowerCase().includes('not found')) {
+      notify('warn', 'Indisponível', 'Esta redação ou tarefa não está mais disponível.');
+      redirectToPanel();
+      return;
+    }
+
     updateCount();
   }
 }
@@ -410,7 +453,6 @@ sendBtn.addEventListener('click', async () => {
         method: 'POST',
         body: JSON.stringify({
           taskId,
-          studentId,
           content: packContent(title, text),
         }),
       },
@@ -477,7 +519,8 @@ window.addEventListener('pagehide', () => {
 // =====================
 (async () => {
   try {
-    await carregarTarefa();
+    const okTask = await carregarTarefa();
+    if (!okTask) return;
 
     setStatus('Verificando envio...');
     const ja = await checarJaEnviou();
