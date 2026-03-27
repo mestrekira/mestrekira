@@ -32,6 +32,38 @@ function normalizeRole(role) {
   return null;
 }
 
+function normalizeProfessorType(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function isSchoolLinkedProfessor(userLike) {
+  const role = normalizeRole(userLike?.role);
+  if (role !== 'professor') return false;
+
+  const professorType = normalizeProfessorType(
+    userLike?.professorType ?? userLike?.professor_type
+  );
+
+  const schoolId = String(
+    userLike?.schoolId ?? userLike?.school_id ?? ''
+  ).trim();
+
+  return professorType === 'SCHOOL' || !!schoolId;
+}
+
+function canDeleteOwnAccount(userLike, fallbackRole = null) {
+  const role = normalizeRole(userLike?.role) || normalizeRole(fallbackRole);
+
+  if (role === 'student') return true;
+  if (role === 'school') return true;
+
+  if (role === 'professor') {
+    return !isSchoolLinkedProfessor(userLike);
+  }
+
+  return false;
+}
+
 function roleLabel(roleNormalized) {
   if (roleNormalized === 'professor') return 'Professor(a)';
   if (roleNormalized === 'student') return 'Estudante';
@@ -310,9 +342,9 @@ export function initMenuPerfil(options = {}) {
   safeText(meRoleEl, roleLabel(role), '');
   loadPhoto(role, id);
 
+  const initialDeleteAllowed = canDeleteOwnAccount(session.user || { role }, role);
   if (deleteBtn) {
-    deleteBtn.style.display =
-      role === 'student' || role === 'school' ? '' : 'none';
+    deleteBtn.style.display = initialDeleteAllowed ? '' : 'none';
   }
 
   const photoInput = $('menuPhotoInput');
@@ -383,6 +415,10 @@ export function initMenuPerfil(options = {}) {
 
       const merged = { ...(session.user || {}), ...me };
       localStorage.setItem(LS.user, JSON.stringify(merged));
+
+      if (deleteBtn) {
+        deleteBtn.style.display = canDeleteOwnAccount(merged, resolvedRole) ? '' : 'none';
+      }
     } else {
       const u = session.user;
       if (u) {
@@ -393,6 +429,10 @@ export function initMenuPerfil(options = {}) {
         safeText(meEmailEl, '—', '—');
       }
       safeText(meRoleEl, roleLabel(role), '');
+
+      if (deleteBtn) {
+        deleteBtn.style.display = canDeleteOwnAccount(u || { role }, role) ? '' : 'none';
+      }
     }
   })();
 
@@ -438,6 +478,10 @@ export function initMenuPerfil(options = {}) {
           const currentUser = safeJsonParse(localStorage.getItem(LS.user)) || {};
           const merged = { ...currentUser, ...updated };
           localStorage.setItem(LS.user, JSON.stringify(merged));
+
+          if (deleteBtn) {
+            deleteBtn.style.display = canDeleteOwnAccount(merged, role) ? '' : 'none';
+          }
         }
 
         if (statusEl) statusEl.textContent = 'Dados atualizados.';
@@ -501,6 +545,19 @@ export function initMenuPerfil(options = {}) {
 
   if (deleteBtn) {
     deleteBtn.addEventListener('click', async () => {
+      const currentUser = safeJsonParse(localStorage.getItem(LS.user)) || session.user || {};
+      const deleteAllowed = canDeleteOwnAccount(currentUser, role);
+
+      if (!deleteAllowed) {
+        toast({
+          title: 'Ação indisponível',
+          message:
+            'Professores cadastrados pela escola não podem excluir a conta por aqui.',
+          type: 'warn',
+        });
+        return;
+      }
+
       const ok = await confirmDialog({
         title: 'Excluir conta',
         message:
@@ -512,12 +569,14 @@ export function initMenuPerfil(options = {}) {
       if (!ok) return;
 
       try {
-        if (role === 'school') {
+        const currentRole = normalizeRole(currentUser?.role) || role;
+
+        if (currentRole === 'school') {
           await authFetchMenu('/school-dashboard/account', {
             method: 'DELETE',
             token,
           });
-        } else if (role === 'student') {
+        } else if (currentRole === 'student' || currentRole === 'professor') {
           await authFetchMenu('/users/me', {
             method: 'DELETE',
             token,
