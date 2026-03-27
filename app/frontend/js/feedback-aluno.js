@@ -10,7 +10,7 @@ import {
 const params = new URLSearchParams(window.location.search);
 const essayId = params.get('essayId');
 
-const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
+requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 if (!essayId) {
   notify('error', 'Acesso inválido', 'Você precisa acessar por uma redação válida.');
@@ -56,6 +56,12 @@ function setMultilinePreserve(el, value, fallback = '') {
   el.style.setProperty('overflow-wrap', 'anywhere', 'important');
   el.style.setProperty('word-break', 'break-word', 'important');
   el.style.setProperty('display', 'block', 'important');
+}
+
+function redirectToPanel(delay = 700) {
+  setTimeout(() => {
+    window.location.replace('painel-aluno.html');
+  }, delay);
 }
 
 // ---------------- datas ----------------
@@ -246,6 +252,8 @@ async function fetchEssayById(id) {
     { redirectTo: 'login-aluno.html' }
   );
 
+  if (res.status === 404) return null;
+
   if (!res.ok) {
     const msg = await readErrorMessage(res, `HTTP ${res.status}`);
     throw new Error(msg);
@@ -264,6 +272,7 @@ async function fetchTaskTitle(taskId) {
       { redirectTo: 'login-aluno.html' }
     );
 
+    if (res.status === 404) return null;
     if (!res.ok) return null;
 
     const task = await res.json().catch(() => null);
@@ -278,11 +287,9 @@ async function fetchTaskTitle(taskId) {
 async function carregarFeedback() {
   try {
     const essay = await fetchEssayById(essayId);
-    if (!essay) throw new Error('Redação não encontrada');
-
-    if (String(essay.studentId) !== String(studentId)) {
-      notify('error', 'Sem permissão', 'Você não pode ver esta redação.');
-      window.location.replace('painel-aluno.html');
+    if (!essay) {
+      notify('warn', 'Redação indisponível', 'Esta redação não está mais disponível.');
+      redirectToPanel();
       return;
     }
 
@@ -311,16 +318,30 @@ async function carregarFeedback() {
 
     patchCompetencyLabels();
   } catch (err) {
+    const msg = String(err?.message || '');
+
     console.error(err);
 
-    if (String(err?.message || '').startsWith('AUTH_')) return;
+    if (msg === 'AUTH_401') return;
+
+    if (msg === 'AUTH_403') {
+      notify('warn', 'Acesso negado', 'Você não tem permissão para ver esta redação.');
+      redirectToPanel();
+      return;
+    }
+
+    if (msg.toLowerCase().includes('não encontrada') || msg.toLowerCase().includes('not found')) {
+      notify('warn', 'Redação indisponível', 'Esta redação não está mais disponível.');
+      redirectToPanel();
+      return;
+    }
 
     notify(
       'error',
       'Erro',
       String(err?.message || 'Erro ao carregar feedback.')
     );
-    window.location.replace('painel-aluno.html');
+    redirectToPanel();
   }
 }
 
