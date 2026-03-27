@@ -630,4 +630,331 @@ main {
   margin: 14px 0;
 }
 
+/* =========================
+   PAINEL ESCOLA — RESPONSIVO
+   Cole ao final do CSS
+   ========================= */
 
+/* Base segura */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+canvas,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Containers gerais */
+main,
+.container,
+.page,
+.page-wrap,
+.content,
+.dashboard,
+.dashboard-wrap,
+.dashboard-grid,
+.section,
+.card,
+.panel,
+.box {
+  min-width: 0;
+}
+
+/* Inputs e botões */
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+}
+
+/* Tabelas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrap,
+.responsive-table {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Se existir tabela direta no painel */
+#yearsTable,
+#roomsTable,
+.years-table,
+.rooms-table,
+table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Ações */
+.mk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mk-actions button {
+  flex: 0 0 auto;
+}
+
+/* Badges */
+.mk-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Áreas comuns do painel */
+#createRoomArea,
+#createYearArea,
+.form-row,
+.form-grid,
+.filters,
+.toolbar,
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+/* Faz campos crescerem bem */
+#roomName,
+#teacherName,
+#teacherEmail,
+#roomYearSelect,
+#roomsFilterYearSelect,
+#yearName,
+.form-row > *,
+.form-grid > *,
+.filters > * {
+  min-width: 0;
+}
+
+/* Seções */
+section,
+.card,
+.panel,
+.box {
+  width: 100%;
+}
+
+/* Status/notas */
+#status,
+.mk-muted,
+.helper-text,
+.small-text {
+  word-break: break-word;
+}
+
+/* =========================
+   TABLET
+   ========================= */
+@media (max-width: 992px) {
+  #createRoomArea,
+  #createYearArea,
+  .form-row,
+  .form-grid,
+  .filters,
+  .toolbar,
+  .top-actions {
+    gap: 10px;
+  }
+
+  #createRoomBtn,
+  #createYearBtn,
+  #refreshBtn {
+    white-space: nowrap;
+  }
+}
+
+/* =========================
+   MOBILE
+   ========================= */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  main,
+  .container,
+  .page,
+  .page-wrap,
+  .content,
+  .dashboard,
+  .dashboard-wrap {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  section,
+  .card,
+  .panel,
+  .box {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  /* Formulários ficam empilhados */
+  #createRoomArea,
+  #createYearArea,
+  .form-row,
+  .form-grid,
+  .filters,
+  .toolbar,
+  .top-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #createRoomArea > *,
+  #createYearArea > *,
+  .form-row > *,
+  .form-grid > *,
+  .filters > *,
+  .toolbar > *,
+  .top-actions > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #createRoomBtn,
+  #createYearBtn,
+  #refreshBtn,
+  .mk-actions button,
+  button {
+    width: 100%;
+  }
+
+  /* Tabelas continuam utilizáveis no celular */
+  #yearsTbody,
+  #roomsTbody {
+    white-space: normal;
+  }
+
+  table,
+  #yearsTable,
+  #roomsTable,
+  .years-table,
+  .rooms-table {
+    font-size: 14px;
+  }
+
+  td,
+  th {
+    padding: 10px 8px;
+    vertical-align: top;
+  }
+
+  .mk-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mk-actions button {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  /* Células com textos longos */
+  td,
+  th,
+  .mk-muted,
+  small {
+    word-break: break-word;
+  }
+}
+
+/* =========================
+   MOBILE PEQUENO
+   ========================= */
+@media (max-width: 480px) {
+  main,
+  .container,
+  .page,
+  .page-wrap,
+  .content,
+  .dashboard,
+  .dashboard-wrap {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  section,
+  .card,
+  .panel,
+  .box {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+  }
+
+  h2 {
+    font-size: 1.15rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  td,
+  th {
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
+  .mk-badge {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    min-height: 42px;
+  }
+}
