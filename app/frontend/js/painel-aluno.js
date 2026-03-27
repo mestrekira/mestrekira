@@ -18,7 +18,7 @@ function notify(type, title, message, duration) {
 }
 
 // -------------------- Guard --------------------
-const studentId = requireStudentSession({ redirectTo: 'login-aluno.html' });
+requireStudentSession({ redirectTo: 'login-aluno.html' });
 
 // -------------------- Elementos --------------------
 const roomsList = document.getElementById('roomsList');
@@ -33,24 +33,8 @@ function renderEmpty(msg) {
 }
 
 function normalizeRoom(r) {
-  const nestedRoom = r?.room || r?.sala || null;
-
-  const id = String(
-    nestedRoom?.id ||
-      r?.roomId ||
-      r?.room_id ||
-      r?.id ||
-      ''
-  ).trim();
-
-  const name = String(
-    nestedRoom?.name ||
-      r?.roomName ||
-      r?.room_name ||
-      r?.name ||
-      'Sala'
-  ).trim();
-
+  const id = String(r?.id || '').trim();
+  const name = String(r?.name || 'Sala').trim();
   return { id, name };
 }
 
@@ -74,7 +58,7 @@ async function carregarMinhasSalas() {
 
   try {
     const res = await authFetch(
-      `${API_URL}/enrollments/by-student?studentId=${encodeURIComponent(studentId)}`,
+      `${API_URL}/enrollments/by-student`,
       { method: 'GET' },
       { redirectTo: 'login-aluno.html' }
     );
@@ -91,11 +75,9 @@ async function carregarMinhasSalas() {
       ? raw
       : Array.isArray(raw?.rooms)
         ? raw.rooms
-        : Array.isArray(raw?.enrollments)
-          ? raw.enrollments
-          : Array.isArray(raw?.data)
-            ? raw.data
-            : [];
+        : Array.isArray(raw?.data)
+          ? raw.data
+          : [];
 
     const rooms = arr
       .map(normalizeRoom)
@@ -137,7 +119,9 @@ async function carregarMinhasSalas() {
   } catch (err) {
     if (!String(err?.message || '').startsWith('AUTH_')) {
       console.error(err);
+
       renderEmpty('Erro ao carregar suas salas.');
+
       notify(
         'error',
         'Erro',
