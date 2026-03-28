@@ -724,8 +724,7 @@ async function carregarRedacoes() {
         ev.stopPropagation();
         if (corrected) {
           window.location.href =
-            `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}` +
-            `&studentId=${encodeURIComponent(String(item.studentId))}`;
+            `feedback-professor.html?essayId=${encodeURIComponent(String(item.id))}`;
         } else {
           abrirCorrecao(item, li);
         }
@@ -734,8 +733,7 @@ async function carregarRedacoes() {
       li.addEventListener('click', () => {
         if (corrected) {
           window.location.href =
-            `feedback-professor.html?taskId=${encodeURIComponent(String(taskId))}` +
-            `&studentId=${encodeURIComponent(String(item.studentId))}`;
+            `feedback-professor.html?essayId=${encodeURIComponent(String(item.id))}`;
         } else {
           abrirCorrecao(item, li);
         }
