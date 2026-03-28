@@ -1,5 +1,3 @@
-// search-index.js
-// Índice de busca do site (site estático não consegue varrer arquivos em produção)
 
 window.SEARCH_INDEX = [
   {
@@ -8,69 +6,69 @@ window.SEARCH_INDEX = [
     keywords: ["home", "inicio", "mestre kira", "portugues", "língua portuguesa"]
   },
 
-  // Seções principais
+
   {
     title: "Fonética — Conteúdos",
-    url: "conteudosfonetica.html",
-    keywords: ["fonetica", "sons", "fala", "alfabeto fonetico", "ipa"]
+    url: "conteudos-fonetica.html",
+    keywords: ["fonetica", "sons da fala", "alfabeto fonetico", "ipa", "pronuncia"]
   },
   {
     title: "Fonologia — Conteúdos",
-    url: "conteudosfonologia.html",
-    keywords: ["fonologia", "fonema", "sílaba", "prosodia"]
+    url: "conteudos-fonologia.html",
+    keywords: ["fonologia", "fonema", "sílaba", "prosodia", "estrutura sonora"]
   },
   {
     title: "Morfologia — Conteúdos",
-    url: "conteudosmorfologia.html",
-    keywords: ["morfologia", "classe de palavras", "verbo", "substantivo", "adjetivo"]
+    url: "conteudos-morfologia.html",
+    keywords: ["morfologia", "classe de palavras", "verbo", "substantivo", "adjetivo", "flexao"]
   },
   {
     title: "Sintaxe — Conteúdos",
-    url: "conteudossintaxe.html",
-    keywords: ["sintaxe", "oração", "periodo", "sujeito", "predicado"]
+    url: "conteudos-sintaxe.html",
+    keywords: ["sintaxe", "oração", "periodo", "sujeito", "predicado", "analise sintatica"]
   },
   {
     title: "Semântica — Conteúdos",
-    url: "conteudossemantica.html",
-    keywords: ["semantica", "significado", "sentido", "polissemia"]
+    url: "conteudos-semantica.html",
+    keywords: ["semantica", "significado", "sentido", "polissemia", "ambiguidade"]
   },
   {
     title: "Pragmática — Conteúdos",
-    url: "conteudospragmatica.html",
-    keywords: ["pragmatica", "contexto", "intencao", "atos de fala"]
+    url: "conteudos-pragmatica.html",
+    keywords: ["pragmatica", "contexto", "intencao", "atos de fala", "discurso"]
   },
   {
     title: "Literatura Brasileira — Conteúdos",
-    url: "conteudosliteratura-brasileira.html",
-    keywords: ["literatura brasileira", "romantismo", "realismo", "modernismo", "brasil"]
+    url: "conteudos-literatura-brasileira.html",
+    keywords: ["literatura brasileira", "romantismo", "realismo", "modernismo", "enem literatura"]
   },
   {
     title: "Literatura Portuguesa — Conteúdos",
-    url: "conteudosliteratura-portuguesa.html",
-    keywords: ["literatura portuguesa", "camões", "portugal"]
+    url: "conteudos-literatura-portuguesa.html",
+    keywords: ["literatura portuguesa", "camões", "portugal", "escolas literarias"]
   },
   {
     title: "Literatura Africana em Português — Conteúdos",
-    url: "conteudosliteratura-africana-portuguesa.html",
-    keywords: ["literatura africana", "angola", "moçambique", "cabo verde"]
+    url: "conteudos-literatura-africana-portuguesa.html",
+    keywords: ["literatura africana", "angola", "moçambique", "cabo verde", "lusofonia"]
   },
   {
     title: "Gramática — Conteúdos",
-    url: "conteudosgramatica.html",
-    keywords: ["gramatica", "norma culta", "classes", "concordancia", "regencia"]
+    url: "conteudos-gramatica.html",
+    keywords: ["gramatica", "norma culta", "concordancia", "regencia", "acentuacao"]
   },
   {
     title: "Redação / Produção Textual — Conteúdos",
-    url: "conteudosproducaotextual.html",
-    keywords: ["redacao", "produção textual", "texto", "dissertacao", "enem"]
+    url: "conteudos-producao-textual.html",
+    keywords: ["redacao", "produção textual", "dissertacao", "enem", "argumentacao"]
   },
   {
     title: "Interpretação Textual — Conteúdos",
-    url: "conteudosinterpretacaotextual.html",
-    keywords: ["interpretacao textual", "leitura", "inferência", "descritores"]
+    url: "conteudos-interpretacao-textual.html",
+    keywords: ["interpretacao textual", "leitura", "inferência", "descritores", "compreensao"]
   },
 
-  // Exemplo de página específica (adicione as suas)
+
   {
     title: "Orações coordenadas e subordinadas",
     url: "oracoes-coordenadas-e-subordinadas-como-conhecer-e-classificar.html",
