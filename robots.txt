@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Disallow: /app/
+
+Sitemap: https://www.mestrekira.com.br/sitemap.xml
