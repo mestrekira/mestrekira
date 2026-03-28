@@ -9,16 +9,14 @@ import {
 // ---------------- PARAMS ----------------
 const params = new URLSearchParams(window.location.search);
 const essayId = params.get('essayId')?.trim() || '';
-const taskId = params.get('taskId')?.trim() || '';
-const studentId = params.get('studentId')?.trim() || '';
 
 // sessão obrigatória
 requireProfessorSession({ redirectTo: 'login-professor.html' });
 
-if (!essayId && !(taskId && studentId)) {
-  notify('error', 'Acesso inválido', 'Parâmetros ausentes.');
+if (!essayId) {
+  notify('error', 'Acesso inválido', 'Parâmetro essayId ausente.');
   window.location.replace('professor-salas.html');
-  throw new Error('Parâmetros ausentes (essayId OU taskId+studentId)');
+  throw new Error('Parâmetro essayId ausente');
 }
 
 // ---------------- ELEMENTOS ----------------
@@ -117,6 +115,12 @@ function renderEssayFormatted(rawContent) {
     essayContentEl.style.display = 'none';
     essayContentEl.textContent = '';
   }
+}
+
+function redirectToTarget(target = 'professor-salas.html', delay = 700) {
+  setTimeout(() => {
+    window.location.replace(target);
+  }, delay);
 }
 
 // ---------------- datas ----------------
@@ -241,31 +245,9 @@ async function fetchEssayByIdWithStudent(id) {
   return unwrapResult(data);
 }
 
-async function fetchEssaysByTaskWithStudent(tId) {
-  const data = await apiJson(
-    `${API_URL}/essays/by-task/${encodeURIComponent(String(tId))}/with-student`,
-    { method: 'GET' },
-  );
-  return unwrapResult(data);
-}
-
-async function fetchEssayByTaskAndStudentFallback(tId, sId) {
-  const res = await authFetch(
-    `${API_URL}/essays/by-task/${encodeURIComponent(
-      String(tId),
-    )}/by-student?studentId=${encodeURIComponent(String(sId))}`,
-    { method: 'GET' },
-    { redirectTo: 'login-professor.html' },
-  );
-
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(await readErrorMessage(res, `HTTP ${res.status}`));
-
-  const data = await readJsonSafe(res);
-  return unwrapResult(data);
-}
-
 async function fetchTask(tId) {
+  if (!tId) return null;
+
   try {
     const data = await apiJson(`${API_URL}/tasks/${encodeURIComponent(String(tId))}`, {
       method: 'GET',
@@ -308,55 +290,17 @@ function renderEssay(essay) {
 // ---------------- main ----------------
 async function carregar() {
   try {
-    let essay = null;
+    const essay = await fetchEssayByIdWithStudent(essayId);
 
-    if (taskId && studentId) {
-      let list = null;
-
-      try {
-        list = await fetchEssaysByTaskWithStudent(taskId);
-      } catch (e) {
-        console.warn('[feedback-professor] falhou by-task/with-student:', e);
-      }
-
-      if (Array.isArray(list) && list.length) {
-        essay = list.find((x) => String(x?.studentId) === String(studentId)) || null;
-      }
-
-      if (!essay) {
-        const fallbackEssay = await fetchEssayByTaskAndStudentFallback(taskId, studentId);
-
-        if (!fallbackEssay) {
-          notify(
-            'warn',
-            'Sem redação',
-            'Não encontrei redação para este aluno nesta tarefa (talvez não tenha enviado).',
-            3600,
-          );
-          window.location.replace(`correcao.html?taskId=${encodeURIComponent(String(taskId))}`);
-          return;
-        }
-
-        essay = fallbackEssay;
-
-        if (essay?.id) {
-          try {
-            const enriched = await fetchEssayByIdWithStudent(essay.id);
-            if (enriched) essay = enriched;
-          } catch (e) {
-            console.warn('[feedback-professor] não consegui enriquecer por id:', e);
-          }
-        }
-      }
-    } else {
-      essay = await fetchEssayByIdWithStudent(essayId);
+    if (!essay) {
+      notify('warn', 'Redação indisponível', 'Esta redação não está mais disponível.');
+      redirectToTarget('professor-salas.html');
+      return;
     }
-
-    if (!essay) throw new Error('Redação não encontrada');
 
     renderEssay(essay);
 
-    const effectiveTaskId = essay?.taskId || taskId;
+    const effectiveTaskId = essay?.taskId || '';
     if (effectiveTaskId) {
       const task = await fetchTask(effectiveTaskId);
       setText(taskTitleEl, task?.title, '—');
@@ -368,27 +312,37 @@ async function carregar() {
 
     const msg = String(err?.message || '');
 
-    if (msg.startsWith('AUTH_')) return;
+    if (msg === 'AUTH_401') return;
+
+    if (msg === 'AUTH_403') {
+      notify('warn', 'Acesso negado', 'Você não tem permissão para ver esta redação.');
+      redirectToTarget('professor-salas.html');
+      return;
+    }
+
+    if (msg.toLowerCase().includes('não encontrada') || msg.toLowerCase().includes('not found')) {
+      notify('warn', 'Redação indisponível', 'Esta redação não está mais disponível.');
+      redirectToTarget('professor-salas.html');
+      return;
+    }
 
     notify('error', 'Erro', msg || 'Erro ao carregar redação/feedback.');
-
-    const target = taskId
-      ? `correcao.html?taskId=${encodeURIComponent(String(taskId))}`
-      : 'professor-salas.html';
-
-    setTimeout(() => {
-      window.location.replace(target);
-    }, 900);
+    redirectToTarget('professor-salas.html', 900);
   }
 }
 
 // ---------------- VOLTAR ----------------
 if (backBtn) {
-  backBtn.addEventListener('click', () => {
-    if (taskId) {
-      window.location.href = `correcao.html?taskId=${encodeURIComponent(String(taskId))}`;
-      return;
-    }
+  backBtn.addEventListener('click', async () => {
+    try {
+      const essay = await fetchEssayByIdWithStudent(essayId);
+      const effectiveTaskId = essay?.taskId ? String(essay.taskId) : '';
+
+      if (effectiveTaskId) {
+        window.location.href = `correcao.html?taskId=${encodeURIComponent(effectiveTaskId)}`;
+        return;
+      }
+    } catch {}
 
     history.back();
   });
