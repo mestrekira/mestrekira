@@ -1,28 +1,14 @@
 import { API_URL } from './config.js';
-import { toast } from './ui-feedback.js';
+import {
+  notify,
+  requireSchoolSession,
+  authFetch,
+  readErrorMessage,
+} from './auth.js';
 
 const SCHOOL_API_BASE = '/school-dashboard';
 
-// ------------------- Toast helpers -------------------
-function notify(type, title, message, duration) {
-  if (typeof toast === 'function') {
-    toast({
-      type,
-      title,
-      message,
-      duration:
-        duration ??
-        (type === 'error' ? 3600 : type === 'warn' ? 3200 : 2400),
-    });
-  } else {
-    if (type === 'error') {
-      alert(`${title}\n\n${message}`);
-    } else {
-      console.log(title, message);
-    }
-  }
-}
-
+// ------------------- Helpers -------------------
 function setStatus(msg) {
   const statusEl = document.getElementById('status');
   if (!statusEl) return;
@@ -33,18 +19,6 @@ function setText(el, value) {
   if (!el) return;
   el.textContent =
     value === null || value === undefined || value === '' ? '—' : String(value);
-}
-
-function safeJsonParse(s) {
-  try {
-    return s ? JSON.parse(s) : null;
-  } catch {
-    return null;
-  }
-}
-
-function normRole(role) {
-  return String(role || '').trim().toUpperCase();
 }
 
 function fmtDateBR(value) {
@@ -63,47 +37,6 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
-// ------------------- Sessão (escola) -------------------
-const LS = {
-  token: 'token',
-  user: 'user',
-  schoolId: 'schoolId',
-  professorId: 'professorId',
-  studentId: 'studentId',
-};
-
-function clearAuth() {
-  localStorage.removeItem(LS.token);
-  localStorage.removeItem(LS.user);
-  localStorage.removeItem(LS.schoolId);
-  localStorage.removeItem(LS.professorId);
-  localStorage.removeItem(LS.studentId);
-}
-
-function requireSchoolSession() {
-  const token = localStorage.getItem(LS.token);
-  const user = safeJsonParse(localStorage.getItem(LS.user));
-  const role = normRole(user?.role);
-
-  const isSchool = role === 'SCHOOL' || role === 'ESCOLA';
-
-  if (!token || !isSchool) {
-    clearAuth();
-    window.location.replace('login-escola.html');
-    throw new Error('Sessão de escola ausente/inválida');
-  }
-
-  const uid = String(user?.id || '').trim();
-  if (uid && !localStorage.getItem(LS.schoolId)) {
-    localStorage.setItem(LS.schoolId, uid);
-  }
-
-  localStorage.removeItem(LS.professorId);
-  localStorage.removeItem(LS.studentId);
-
-  return { token, user, schoolId: uid };
-}
-
 async function readJsonSafe(res) {
   try {
     return await res.json();
@@ -112,44 +45,22 @@ async function readJsonSafe(res) {
   }
 }
 
-async function authFetch(path, { token, method = 'GET', body } = {}) {
-  const headers = {};
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (body) headers['Content-Type'] = 'application/json';
-
-  const url = `${API_URL}${path}`;
-  console.debug('[painel-escola][API]', method, path);
-
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  const data = await readJsonSafe(res);
-
-  if (res.status === 401 || res.status === 403) {
-    clearAuth();
-    notify('warn', 'Sessão expirada', 'Faça login novamente para continuar.', 3200);
-    setTimeout(() => window.location.replace('login-escola.html'), 700);
-    throw new Error(`AUTH_${res.status}`);
-  }
+async function authFetchJson(path, { method = 'GET', body } = {}) {
+  const res = await authFetch(
+    `${API_URL}${path}`,
+    {
+      method,
+      body: body ? JSON.stringify(body) : undefined,
+    },
+    { redirectTo: 'login-escola.html' }
+  );
 
   if (!res.ok) {
-    if (res.status === 404) {
-      throw new Error(`HTTP 404 em ${method} ${path}`);
-    }
-
-    const msg =
-      Array.isArray(data?.message)
-        ? data.message.join(', ')
-        : data?.message || data?.error || `Erro HTTP ${res.status}`;
-
+    const msg = await readErrorMessage(res, `HTTP ${res.status}`);
     throw new Error(String(msg));
   }
 
-  return data;
+  return readJsonSafe(res);
 }
 
 function unwrapList(data, keys = []) {
@@ -186,70 +97,58 @@ const createRoomAreaEl = document.getElementById('createRoomArea');
 const roomsBlockedNoteEl = document.getElementById('roomsBlockedNote');
 
 // ------------------- API (anos) -------------------
-async function apiCreateYear(session, name) {
-  return authFetch(`${SCHOOL_API_BASE}/years`, {
-    token: session.token,
+async function apiCreateYear(name) {
+  return authFetchJson(`${SCHOOL_API_BASE}/years`, {
     method: 'POST',
     body: { name },
   });
 }
 
-async function apiListYears(session) {
-  return authFetch(`${SCHOOL_API_BASE}/years`, {
-    token: session.token,
-  });
+async function apiListYears() {
+  return authFetchJson(`${SCHOOL_API_BASE}/years`);
 }
 
-async function apiUpdateYear(session, yearId, patch) {
-  return authFetch(`${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`, {
-    token: session.token,
+async function apiUpdateYear(yearId, patch) {
+  return authFetchJson(`${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`, {
     method: 'PATCH',
     body: patch,
   });
 }
 
-async function apiDeleteYear(session, yearId) {
-  return authFetch(`${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`, {
-    token: session.token,
+async function apiDeleteYear(yearId) {
+  return authFetchJson(`${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`, {
     method: 'DELETE',
   });
 }
 
 // ------------------- API (salas) -------------------
-async function apiCreateRoom(session, payload) {
-  return authFetch(`${SCHOOL_API_BASE}/rooms`, {
-    token: session.token,
+async function apiCreateRoom(payload) {
+  return authFetchJson(`${SCHOOL_API_BASE}/rooms`, {
     method: 'POST',
     body: payload,
   });
 }
 
-async function apiListRooms(session, yearId) {
+async function apiListRooms(yearId) {
   const q = yearId ? `?yearId=${encodeURIComponent(String(yearId))}` : '';
-  return authFetch(`${SCHOOL_API_BASE}/rooms${q}`, {
-    token: session.token,
-  });
+  return authFetchJson(`${SCHOOL_API_BASE}/rooms${q}`);
 }
 
-async function apiUpdateRoom(session, roomId, patch) {
-  return authFetch(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
-    token: session.token,
+async function apiUpdateRoom(roomId, patch) {
+  return authFetchJson(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
     method: 'PATCH',
     body: patch,
   });
 }
 
-async function apiDeleteRoom(session, roomId) {
-  return authFetch(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
-    token: session.token,
+async function apiDeleteRoom(roomId) {
+  return authFetchJson(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
     method: 'DELETE',
   });
 }
 
-// 🔥 NOVO: toggle de sala via /rooms
-async function apiToggleRoom(session, roomId, isActive) {
-  return authFetch(`/rooms/${encodeURIComponent(String(roomId))}/toggle-active`, {
-    token: session.token,
+async function apiToggleRoom(roomId, isActive) {
+  return authFetchJson(`/rooms/${encodeURIComponent(String(roomId))}/toggle-active`, {
     method: 'PATCH',
     body: { isActive: !!isActive },
   });
@@ -405,7 +304,7 @@ function syncYearSelects() {
   }
 }
 
-function renderYearsTable(session) {
+function renderYearsTable() {
   if (!yearsTbody) return;
 
   yearsTbody.innerHTML = '';
@@ -452,9 +351,9 @@ function renderYearsTable(session) {
       }
 
       try {
-        await apiUpdateYear(session, y.id, { name: n });
+        await apiUpdateYear(y.id, { name: n });
         notify('success', 'Atualizado', 'Ano letivo renomeado.');
-        await refreshAll(session, { keepStatus: true });
+        await refreshAll({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
       }
@@ -465,13 +364,13 @@ function renderYearsTable(session) {
     btnToggle.textContent = on ? 'Desativar' : 'Ativar';
     btnToggle.onclick = async () => {
       try {
-        await apiUpdateYear(session, y.id, { isActive: !on });
+        await apiUpdateYear(y.id, { isActive: !on });
         notify(
           'success',
           'Atualizado',
           `Ano letivo ${!on ? 'ativado' : 'desativado'}.`,
         );
-        await refreshAll(session, { keepStatus: true });
+        await refreshAll({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
       }
@@ -488,9 +387,9 @@ function renderYearsTable(session) {
       if (!ok) return;
 
       try {
-        await apiDeleteYear(session, y.id);
+        await apiDeleteYear(y.id);
         notify('success', 'Excluído', 'Ano letivo removido.');
-        await refreshAll(session, { keepStatus: true });
+        await refreshAll({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
       }
@@ -511,7 +410,7 @@ function renderYearsTable(session) {
 }
 
 // ------------------- Render: salas -------------------
-function renderRoomsTable(session) {
+function renderRoomsTable() {
   if (!roomsTbody) return;
 
   roomsTbody.innerHTML = '';
@@ -577,9 +476,9 @@ function renderRoomsTable(session) {
       }
 
       try {
-        await apiUpdateRoom(session, r.id, { name: n });
+        await apiUpdateRoom(r.id, { name: n });
         notify('success', 'Atualizado', 'Sala renomeada.');
-        await refreshRooms(session, { keepStatus: true });
+        await refreshRooms({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
       }
@@ -590,13 +489,13 @@ function renderRoomsTable(session) {
     btnToggle.textContent = r.isActive === false ? 'Ativar' : 'Desativar';
     btnToggle.onclick = async () => {
       try {
-        await apiToggleRoom(session, r.id, !(r.isActive === false));
+        await apiToggleRoom(r.id, !(r.isActive === false));
         notify(
           'success',
           'Atualizado',
           `Sala ${r.isActive === false ? 'ativada' : 'desativada'}.`,
         );
-        await refreshRooms(session, { keepStatus: true });
+        await refreshRooms({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
       }
@@ -613,9 +512,9 @@ function renderRoomsTable(session) {
       if (!ok) return;
 
       try {
-        await apiDeleteRoom(session, r.id);
+        await apiDeleteRoom(r.id);
         notify('success', 'Excluída', 'Sala removida.');
-        await refreshRooms(session, { keepStatus: true });
+        await refreshRooms({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
       }
@@ -638,10 +537,10 @@ function renderRoomsTable(session) {
 }
 
 // ------------------- Loaders -------------------
-async function refreshYears(session, { keepStatus } = {}) {
+async function refreshYears({ keepStatus } = {}) {
   if (!keepStatus) setStatus('');
 
-  const res = await apiListYears(session);
+  const res = await apiListYears();
   const years = unwrapList(res, ['years']);
 
   cachedYears = (Array.isArray(years) ? years : [])
@@ -654,16 +553,16 @@ async function refreshYears(session, { keepStatus } = {}) {
     }));
 
   syncYearSelects();
-  renderYearsTable(session);
+  renderYearsTable();
   updateRoomsAvailability();
 
   if (!keepStatus) setStatus('');
 }
 
-async function refreshRooms(session, { keepStatus } = {}) {
+async function refreshRooms({ keepStatus } = {}) {
   if (!cachedYears.length) {
     cachedRooms = [];
-    renderRoomsTable(session);
+    renderRoomsTable();
     return;
   }
 
@@ -673,7 +572,7 @@ async function refreshRooms(session, { keepStatus } = {}) {
     ? String(roomsFilterYearSelectEl.value || '').trim()
     : '';
 
-  const res = await apiListRooms(session, yearId || null);
+  const res = await apiListRooms(yearId || null);
   const rooms = unwrapList(res, ['rooms']);
 
   cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
@@ -689,20 +588,20 @@ async function refreshRooms(session, { keepStatus } = {}) {
     deactivatedAt: r.deactivatedAt || r.deactivated_at || null,
   }));
 
-  renderRoomsTable(session);
+  renderRoomsTable();
 
   if (!keepStatus) setStatus('');
 }
 
-async function refreshAll(session, { keepStatus } = {}) {
-  await refreshYears(session, { keepStatus: true });
-  await refreshRooms(session, { keepStatus: true });
+async function refreshAll({ keepStatus } = {}) {
+  await refreshYears({ keepStatus: true });
+  await refreshRooms({ keepStatus: true });
 
   if (!keepStatus) setStatus('');
 }
 
 // ------------------- Actions -------------------
-async function onCreateYear(session) {
+async function onCreateYear() {
   const name = String(yearNameEl?.value || '').trim();
 
   if (!name) {
@@ -712,12 +611,12 @@ async function onCreateYear(session) {
 
   try {
     setStatus('');
-    await apiCreateYear(session, name);
+    await apiCreateYear(name);
 
     if (yearNameEl) yearNameEl.value = '';
 
     notify('success', 'Criado', 'Ano letivo cadastrado.');
-    await refreshAll(session, { keepStatus: true });
+    await refreshAll({ keepStatus: true });
 
     const defaultYearId = getDefaultYearId();
     if (roomYearSelectEl && defaultYearId) roomYearSelectEl.value = defaultYearId;
@@ -732,7 +631,7 @@ async function onCreateYear(session) {
   }
 }
 
-async function onCreateRoom(session) {
+async function onCreateRoom() {
   const name = String(roomNameEl?.value || '').trim();
   const teacherName = String(teacherNameEl?.value || '').trim();
   const teacherEmail = String(teacherEmailEl?.value || '').trim().toLowerCase();
@@ -781,7 +680,7 @@ async function onCreateRoom(session) {
   try {
     setStatus('');
 
-    await apiCreateRoom(session, {
+    await apiCreateRoom({
       name,
       teacherEmail,
       yearId,
@@ -798,7 +697,7 @@ async function onCreateRoom(session) {
       roomsFilterYearSelectEl.value = yearId;
     }
 
-    await refreshRooms(session, { keepStatus: true });
+    await refreshRooms({ keepStatus: true });
     setStatus('');
   } catch (e) {
     const msg = String(e?.message || e);
@@ -825,28 +724,28 @@ async function onCreateRoom(session) {
 
 // ------------------- Init -------------------
 document.addEventListener('DOMContentLoaded', async () => {
-  const session = requireSchoolSession();
+  const session = requireSchoolSession({ redirectTo: 'login-escola.html' });
 
-  setText(schoolNameEl, session.user?.name || 'Escola');
+  setText(schoolNameEl, session?.user?.name || 'Escola');
 
   if (createYearBtn) {
-    createYearBtn.addEventListener('click', () => onCreateYear(session));
+    createYearBtn.addEventListener('click', () => onCreateYear());
   }
 
   if (createRoomBtn) {
-    createRoomBtn.addEventListener('click', () => onCreateRoom(session));
+    createRoomBtn.addEventListener('click', () => onCreateRoom());
   }
 
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => refreshAll(session));
+    refreshBtn.addEventListener('click', () => refreshAll());
   }
 
   if (roomsFilterYearSelectEl) {
-    roomsFilterYearSelectEl.addEventListener('change', () => refreshRooms(session));
+    roomsFilterYearSelectEl.addEventListener('change', () => refreshRooms());
   }
 
   try {
-    await refreshAll(session);
+    await refreshAll();
   } catch (e) {
     console.error(e);
 
