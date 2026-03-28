@@ -444,16 +444,16 @@ function fillInlinePanel(panel, studentGroup, medias) {
     btn.type = 'button';
     btn.textContent = 'Ver redação/feedback';
     btn.onclick = () => {
-      const tId = e.taskId || e.task?.id || null;
-      if (!tId) {
-        notify('error', 'Erro', 'Não encontrei o taskId desta redação no retorno do servidor.');
-        return;
-      }
+  const essayId = e.id || e.essayId || null;
 
-      window.location.href = `feedback-professor.html?taskId=${encodeURIComponent(
-        String(tId),
-      )}&studentId=${encodeURIComponent(String(studentGroup.studentId))}`;
-    };
+  if (!essayId) {
+    notify('error', 'Erro', 'Não foi possível identificar a redação.');
+    return;
+  }
+
+  window.location.href =
+    `feedback-professor.html?essayId=${encodeURIComponent(String(essayId))}`;
+};
 
     li.appendChild(title);
     li.appendChild(document.createElement('br'));
