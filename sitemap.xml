@@ -1,2 +1,162 @@
-<?xml version='1.0' encoding='utf-8'?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://www.mestrekira.com.br/</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>1.0</priority></url><url><loc>https://www.mestrekira.com.br/index.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosfonetica.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosfonologia.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosmorfologia.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudossintaxe.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudossemantica.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudospragmatica.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosliteratura-portuguesa.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosliteratura-brasileira.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosliteratura-africana-portuguesa.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudoscritica.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosmidiatico.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosgramatica.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosproducaotextual.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url><url><loc>https://www.mestrekira.com.br/conteudosinterpretacaotextual.html</loc><lastmod>2025-11-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url></urlset>
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Página principal -->
+  <url>
+    <loc>https://www.mestrekira.com.br/</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  
+  <url>
+    <loc>https://www.mestrekira.com.br/plataforma-de-redacao-mestre-kira.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+ 
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-fonetica.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-fonologia.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-morfologia.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-sintaxe.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-semantica.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-pragmatica.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-literatura-portuguesa.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-literatura-brasileira.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-literatura-africana-portuguesa.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-critica.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-midiatico.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-gramatica.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-producao-textual.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-interpretacao-textual.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+ 
+  <url>
+    <loc>https://www.mestrekira.com.br/app/frontend/index.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/app/frontend/login-escola.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/app/frontend/cadastro-escola.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/app/frontend/login-professor.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/app/frontend/login-aluno.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/app/frontend/cadastro-aluno.html</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+</urlset>
