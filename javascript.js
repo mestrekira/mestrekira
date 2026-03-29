@@ -10,10 +10,10 @@ function incluirHTML(id, url, callback) {
     .catch((erro) => console.error("Erro ao carregar " + url, erro));
 }
 
-// Inclui partes fixas
 incluirHTML("header", "header.html", () => {
   configurarLinks();
   inicializarBuscaSite();
+  inicializarMenuMobile(); 
 });
 incluirHTML("aside", "aside.html");
 incluirHTML("footer", "footer.html");
@@ -58,9 +58,6 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarBotaoPlataformaRedacao();
 });
 
-/* =========================
-   Paginação
-========================= */
 function inicializarPaginacao() {
   const posts = Array.from(document.querySelectorAll(".publicacoes .post"));
   if (posts.length === 0) return;
@@ -123,9 +120,6 @@ function inicializarPaginacao() {
   mostrarPagina(paginaAtual);
 }
 
-/* =========================
-   Player de áudio
-========================= */
 function inicializarPlayerAudio() {
   const audio = document.getElementById("playerAudio");
   const speedSelect = document.getElementById("speedSelect");
@@ -167,9 +161,6 @@ function inicializarPlayerAudio() {
   downloadLink.href = audio.src;
 }
 
-/* =========================
-   FAQ
-========================= */
 function inicializarFAQ() {
   document.querySelectorAll(".faq-pergunta").forEach((pergunta) => {
     pergunta.onclick = () => {
@@ -179,9 +170,6 @@ function inicializarFAQ() {
   });
 }
 
-/* =========================
-   BOTÃO PLATAFORMA (CORRIGIDO)
-========================= */
 function inicializarBotaoPlataformaRedacao() {
   const btn = document.getElementById("btnPlataformaRedacao");
   if (!btn) return;
@@ -191,9 +179,6 @@ function inicializarBotaoPlataformaRedacao() {
   });
 }
 
-/* =========================
-   BUSCA
-========================= */
 function inicializarBuscaSite() {
   const input = document.getElementById("buscaSite");
   const sugestoes = document.getElementById("buscaSugestoes");
@@ -227,9 +212,6 @@ function configurarBusca(input, sugestoes) {
   });
 }
 
-/* =========================
-   MENU
-========================= */
 function mkToggleMenu() {
   document.getElementById("mkMenu").classList.toggle("active");
   document.querySelector(".menu-overlay").classList.toggle("active");
@@ -239,11 +221,7 @@ function mkCloseMenu() {
   document.getElementById("mkMenu").classList.remove("active");
   document.querySelector(".menu-overlay").classList.remove("active");
 }
-/* =========================
-   MENU MOBILE (ACORDEÃO)
-========================= */
 
-// Marca automaticamente quem tem submenu
 function inicializarMenuMobile() {
   document.querySelectorAll('.menu-fixo li').forEach((li) => {
     const submenu = li.querySelector(':scope > ul');
@@ -251,7 +229,6 @@ function inicializarMenuMobile() {
   });
 }
 
-// Acordeão no mobile
 document.addEventListener('click', (e) => {
   const link = e.target.closest('.menu-fixo li > a');
   if (!link) return;
