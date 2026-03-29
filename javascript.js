@@ -239,3 +239,36 @@ function mkCloseMenu() {
   document.getElementById("mkMenu").classList.remove("active");
   document.querySelector(".menu-overlay").classList.remove("active");
 }
+/* =========================
+   MENU MOBILE (ACORDEÃO)
+========================= */
+
+// Marca automaticamente quem tem submenu
+function inicializarMenuMobile() {
+  document.querySelectorAll('.menu-fixo li').forEach((li) => {
+    const submenu = li.querySelector(':scope > ul');
+    if (submenu) li.classList.add('has-submenu');
+  });
+}
+
+// Acordeão no mobile
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('.menu-fixo li > a');
+  if (!link) return;
+
+  const li = link.parentElement;
+  if (!li) return;
+
+  const submenu = li.querySelector(':scope > ul');
+
+  if (submenu && window.matchMedia('(max-width: 900px)').matches) {
+    e.preventDefault();
+
+    li.classList.toggle('open');
+
+    const siblings = li.parentElement.querySelectorAll(':scope > li.has-submenu.open');
+    siblings.forEach((sib) => {
+      if (sib !== li) sib.classList.remove('open');
+    });
+  }
+});
