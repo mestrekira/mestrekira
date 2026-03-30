@@ -17,8 +17,11 @@ function setStatus(msg) {
 
 function setText(el, value) {
   if (!el) return;
-  el.textContent =
-    value === null || value === undefined || value === '' ? '—' : String(value);
+  const text =
+    value === null || value === undefined || String(value).trim() === ''
+      ? '—'
+      : String(value).trim();
+  el.textContent = text;
 }
 
 function fmtDateBR(value) {
@@ -35,6 +38,64 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function safeJsonParse(value) {
+  try {
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getSchoolDisplayName(session) {
+  const fromSession =
+    session?.user?.schoolName ||
+    session?.user?.institutionName ||
+    session?.user?.school_name ||
+    session?.user?.institution_name ||
+    session?.user?.tradingName ||
+    session?.user?.fantasyName ||
+    session?.user?.name;
+
+  if (String(fromSession || '').trim()) {
+    return String(fromSession).trim();
+  }
+
+  const storedUser = safeJsonParse(localStorage.getItem('user'));
+
+  const fromStorage =
+    storedUser?.schoolName ||
+    storedUser?.institutionName ||
+    storedUser?.school_name ||
+    storedUser?.institution_name ||
+    storedUser?.tradingName ||
+    storedUser?.fantasyName ||
+    storedUser?.name;
+
+  if (String(fromStorage || '').trim()) {
+    return String(fromStorage).trim();
+  }
+
+  return 'Escola';
+}
+
+function setBusy(el, on, busyText = 'Atualizando...') {
+  if (!el) return;
+
+  if (on) {
+    if (!el.dataset.originalText) {
+      el.dataset.originalText = el.textContent || '';
+    }
+    el.disabled = true;
+    el.textContent = busyText;
+    return;
+  }
+
+  el.disabled = false;
+  if (el.dataset.originalText) {
+    el.textContent = el.dataset.originalText;
+  }
 }
 
 async function readJsonSafe(res) {
@@ -538,7 +599,7 @@ function renderRoomsTable() {
 
 // ------------------- Loaders -------------------
 async function refreshYears({ keepStatus } = {}) {
-  if (!keepStatus) setStatus('');
+  if (!keepStatus) setStatus('Carregando anos letivos...');
 
   const res = await apiListYears();
   const years = unwrapList(res, ['years']);
@@ -566,7 +627,7 @@ async function refreshRooms({ keepStatus } = {}) {
     return;
   }
 
-  if (!keepStatus) setStatus('');
+  if (!keepStatus) setStatus('Carregando salas...');
 
   const yearId = roomsFilterYearSelectEl
     ? String(roomsFilterYearSelectEl.value || '').trim()
@@ -678,7 +739,7 @@ async function onCreateRoom() {
   }
 
   try {
-    setStatus('');
+    setStatus('Criando sala...');
 
     await apiCreateRoom({
       name,
@@ -726,7 +787,7 @@ async function onCreateRoom() {
 document.addEventListener('DOMContentLoaded', async () => {
   const session = requireSchoolSession({ redirectTo: 'login-escola.html' });
 
-  setText(schoolNameEl, session?.user?.name || 'Escola');
+  setText(schoolNameEl, getSchoolDisplayName(session));
 
   if (createYearBtn) {
     createYearBtn.addEventListener('click', () => onCreateYear());
@@ -737,7 +798,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => refreshAll());
+    refreshBtn.addEventListener('click', async () => {
+      try {
+        setBusy(refreshBtn, true, 'Atualizando...');
+        setStatus('Atualizando painel...');
+        await refreshAll({ keepStatus: true });
+        setText(schoolNameEl, getSchoolDisplayName(session));
+        setStatus('Painel atualizado com sucesso.');
+      } catch (e) {
+        const msg = String(e?.message || e);
+        console.error(e);
+        setStatus('Erro ao atualizar painel.');
+        notify('error', 'Erro', msg || 'Falha ao atualizar painel.');
+      } finally {
+        setBusy(refreshBtn, false);
+      }
+    });
   }
 
   if (roomsFilterYearSelectEl) {
@@ -746,6 +822,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     await refreshAll();
+    setText(schoolNameEl, getSchoolDisplayName(session));
   } catch (e) {
     console.error(e);
 
