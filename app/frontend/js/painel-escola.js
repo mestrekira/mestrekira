@@ -209,7 +209,7 @@ async function apiDeleteRoom(roomId) {
 }
 
 async function apiToggleRoom(roomId, isActive) {
-  return authFetchJson(`/rooms/${encodeURIComponent(String(roomId))}/toggle-active`, {
+  return authFetchJson(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
     method: 'PATCH',
     body: { isActive: !!isActive },
   });
@@ -550,7 +550,7 @@ function renderRoomsTable() {
     btnToggle.textContent = r.isActive === false ? 'Ativar' : 'Desativar';
     btnToggle.onclick = async () => {
       try {
-        await apiToggleRoom(r.id, !(r.isActive === false));
+        await apiToggleRoom(r.id, !r.isActive);
         notify(
           'success',
           'Atualizado',
