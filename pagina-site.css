@@ -439,3 +439,60 @@ section { margin-bottom: 26px; }
     grid-template-columns: 1fr;
   }
 }
+
+
+.paginacao {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 40px 0;
+  flex-wrap: wrap;
+}
+
+
+.paginacao a {
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #333;
+  font-weight: 500;
+  border: 1px solid #e0e0e0;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+
+.paginacao a:hover {
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: #fff;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
+}
+
+
+.pagina-atual {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
+  cursor: default;
+}
+
+
+@media (max-width: 600px) {
+  .paginacao {
+    gap: 6px;
+    margin: 30px 0;
+  }
+
+  .paginacao a,
+  .pagina-atual {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
