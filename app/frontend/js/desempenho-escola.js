@@ -70,6 +70,12 @@ function fmtDateBR(value) {
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
 }
 
+function toNumberOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
+}
+
 // ---------------- AVATAR ----------------
 function makeStudentAvatar(studentId, size = 42) {
   const img = document.createElement('img');
@@ -93,7 +99,7 @@ function makeStudentAvatar(studentId, size = 42) {
   return img;
 }
 
-// ---------------- DONUT + LEGENDA ----------------
+// ---------------- DONUT + LEGENDA (MÉDIA GERAL DA TURMA) ----------------
 const DONUT_COLORS = {
   c1: '#4f46e5',
   c2: '#16a34a',
@@ -102,6 +108,8 @@ const DONUT_COLORS = {
   c5: '#ef4444',
   margin: '#ffffff',
   marginStroke: 'rgba(0,0,0,0.12)',
+  score: '#4f46e5',
+  studentMargin: '#e5e7eb',
 };
 
 function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 18) {
@@ -236,13 +244,97 @@ function renderAverageDonut({ total = null, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 =
   avgLegendEl.appendChild(buildLegendGrid(legend));
 }
 
+// ---------------- DONUT INDIVIDUAL DO ESTUDANTE ----------------
+function createStudentScoreDonutSVG(score, size = 64, thickness = 10) {
+  const safeScoreRaw = toNumberOrNull(score);
+  const safeScore =
+    safeScoreRaw === null ? null : Math.max(0, Math.min(1000, safeScoreRaw));
+
+  const obtained = safeScore === null ? 0 : safeScore;
+  const margin = safeScore === null ? 1000 : Math.max(0, 1000 - safeScore);
+
+  const segments = [
+    { value: obtained, color: DONUT_COLORS.score },
+    { value: margin, color: DONUT_COLORS.studentMargin },
+  ];
+
+  const sum = 1000;
+  const r = (size - thickness) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const C = 2 * Math.PI * r;
+
+  let offset = 0;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+
+  const base = document.createElementNS(svgNS, 'circle');
+  base.setAttribute('cx', String(cx));
+  base.setAttribute('cy', String(cy));
+  base.setAttribute('r', String(r));
+  base.setAttribute('fill', 'none');
+  base.setAttribute('stroke', 'rgba(0,0,0,0.08)');
+  base.setAttribute('stroke-width', String(thickness));
+  svg.appendChild(base);
+
+  segments.forEach((seg) => {
+    const segLen = Math.max(0, (seg.value / sum) * C);
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', String(cx));
+    circle.setAttribute('cy', String(cy));
+    circle.setAttribute('r', String(r));
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke-width', String(thickness));
+    circle.setAttribute('stroke-linecap', 'butt');
+    circle.setAttribute('stroke', seg.color);
+    circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
+    circle.setAttribute('stroke-dashoffset', String(-offset));
+    circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+    svg.appendChild(circle);
+
+    offset += segLen;
+  });
+
+  const centerText = document.createElementNS(svgNS, 'text');
+  centerText.setAttribute('x', String(cx));
+  centerText.setAttribute('y', String(cy + 4));
+  centerText.setAttribute('text-anchor', 'middle');
+  centerText.setAttribute('font-size', size <= 64 ? '11' : '14');
+  centerText.setAttribute('font-weight', '700');
+  centerText.setAttribute('fill', '#111827');
+  centerText.textContent = safeScore === null ? '—' : String(safeScore);
+  svg.appendChild(centerText);
+
+  return svg;
+}
+
 // ---------------- RENDER ----------------
 function renderStudents(students = []) {
   if (!studentsListEl) return;
 
   studentsListEl.innerHTML = '';
 
-  const count = Array.isArray(students) ? students.length : 0;
+  const normalized = (Array.isArray(students) ? students : []).map((s) => ({
+    ...s,
+    averageScore: toNumberOrNull(s?.averageScore),
+  }));
+
+  normalized.sort((a, b) => {
+    const av = a.averageScore;
+    const bv = b.averageScore;
+
+    if (av === null && bv === null) return 0;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    return bv - av;
+  });
+
+  const count = normalized.length;
 
   if (studentsCountEl) studentsCountEl.textContent = count;
   if (studentsCountLabelEl) studentsCountLabelEl.textContent = `${count} estudante(s)`;
@@ -252,17 +344,67 @@ function renderStudents(students = []) {
     return;
   }
 
-  students.forEach((s) => {
+  normalized.forEach((s, index) => {
     const li = document.createElement('li');
     li.className = 'mk-student-item';
 
-    li.appendChild(makeStudentAvatar(s.id, 42));
+    li.style.display = 'flex';
+    li.style.alignItems = 'center';
+    li.style.justifyContent = 'space-between';
+    li.style.gap = '12px';
+
+    const left = document.createElement('div');
+    left.style.display = 'flex';
+    left.style.alignItems = 'center';
+    left.style.gap = '12px';
+    left.style.minWidth = '0';
+    left.style.flex = '1';
+
+    left.appendChild(makeStudentAvatar(s.id, 42));
 
     const info = document.createElement('div');
     info.className = 'mk-student-info';
-    info.innerHTML = `<strong>${s.name || 'Estudante'}</strong><small>${s.email || ''}</small>`;
 
-    li.appendChild(info);
+    const position = index + 1;
+    const avgLabel =
+      s.averageScore === null ? 'Sem média' : `Média geral: ${s.averageScore}`;
+
+    info.innerHTML =
+      `<strong>#${position} ${s.name || 'Estudante'}</strong>` +
+      `<small>${s.email || ''}</small>` +
+      `<small>${avgLabel}</small>`;
+
+    left.appendChild(info);
+
+    const right = document.createElement('div');
+    right.style.display = 'flex';
+    right.style.alignItems = 'center';
+    right.style.gap = '10px';
+    right.style.flexShrink = '0';
+
+    const scoreWrap = document.createElement('div');
+    scoreWrap.style.display = 'flex';
+    scoreWrap.style.flexDirection = 'column';
+    scoreWrap.style.alignItems = 'center';
+    scoreWrap.style.justifyContent = 'center';
+    scoreWrap.style.minWidth = '72px';
+
+    const donut = createStudentScoreDonutSVG(s.averageScore, 64, 10);
+
+    const scoreText = document.createElement('small');
+    scoreText.textContent = s.averageScore === null ? 'Sem nota' : `${s.averageScore} pts`;
+    scoreText.style.marginTop = '4px';
+    scoreText.style.color = '#475569';
+    scoreText.style.fontWeight = '600';
+
+    scoreWrap.appendChild(donut);
+    scoreWrap.appendChild(scoreText);
+
+    right.appendChild(scoreWrap);
+
+    li.appendChild(left);
+    li.appendChild(right);
+
     studentsListEl.appendChild(li);
   });
 }
