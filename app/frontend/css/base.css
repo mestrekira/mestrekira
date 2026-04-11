@@ -958,3 +958,190 @@ section,
     min-height: 42px;
   }
 }
+
+/* =========================
+   DESEMPENHO ESCOLA — ESTUDANTES COM DONUT
+   Cole ao final do CSS
+   ========================= */
+
+#studentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.mk-student-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(11, 18, 32, 0.10);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.05);
+}
+
+.mk-student-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mk-student-photo {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(11, 18, 32, 0.10);
+  background: rgba(11, 18, 32, 0.04);
+  flex: 0 0 auto;
+}
+
+.mk-student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mk-student-info strong {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--navy);
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.mk-student-info small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.mk-student-performance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.mk-student-score-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+}
+
+.mk-student-score-wrap small {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  text-align: center;
+}
+
+.mk-student-score-donut {
+  width: 64px;
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mk-student-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(109, 40, 217, 0.10);
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(109, 40, 217, 0.18);
+  flex: 0 0 auto;
+}
+
+.mk-student-item.is-top-1 {
+  border-color: rgba(245, 158, 11, 0.30);
+  background: linear-gradient(0deg, rgba(245, 158, 11, 0.06), #ffffff);
+}
+
+.mk-student-item.is-top-2,
+.mk-student-item.is-top-3 {
+  border-color: rgba(14, 165, 233, 0.20);
+  background: linear-gradient(0deg, rgba(14, 165, 233, 0.04), #ffffff);
+}
+
+.mk-empty {
+  padding: 14px 16px;
+  border: 1px dashed rgba(11, 18, 32, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--muted);
+}
+
+/* responsivo */
+@media (max-width: 768px) {
+  .mk-student-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mk-student-main {
+    width: 100%;
+  }
+
+  .mk-student-performance {
+    width: 100%;
+    justify-content: space-between;
+    padding-left: 54px;
+  }
+
+  .mk-student-score-wrap {
+    min-width: 72px;
+  }
+
+  .mk-student-score-donut {
+    width: 58px;
+    height: 58px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mk-student-item {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .mk-student-info strong {
+    font-size: 14px;
+  }
+
+  .mk-student-info small {
+    font-size: 12px;
+  }
+
+  .mk-student-performance {
+    padding-left: 0;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .mk-student-rank {
+    min-width: 30px;
+    height: 30px;
+    font-size: 11px;
+  }
+}
