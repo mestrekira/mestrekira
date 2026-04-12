@@ -348,62 +348,63 @@ function renderStudents(students = []) {
     const li = document.createElement('li');
     li.className = 'mk-student-item';
 
-    li.style.display = 'flex';
-    li.style.alignItems = 'center';
-    li.style.justifyContent = 'space-between';
-    li.style.gap = '12px';
+    if (index === 0) li.classList.add('is-top-1');
+    if (index === 1) li.classList.add('is-top-2');
+    if (index === 2) li.classList.add('is-top-3');
 
-    const left = document.createElement('div');
-    left.style.display = 'flex';
-    left.style.alignItems = 'center';
-    left.style.gap = '12px';
-    left.style.minWidth = '0';
-    left.style.flex = '1';
+    const main = document.createElement('div');
+    main.className = 'mk-student-main';
 
-    left.appendChild(makeStudentAvatar(s.id, 42));
+    const avatar = makeStudentAvatar(s.id, 42);
+    main.appendChild(avatar);
 
     const info = document.createElement('div');
     info.className = 'mk-student-info';
 
-    const position = index + 1;
-    const avgLabel =
-      s.averageScore === null ? 'Sem média' : `Média geral: ${s.averageScore}`;
+    const title = document.createElement('strong');
+    title.textContent = s.name || 'Estudante';
 
-    info.innerHTML =
-      `<strong>#${position} ${s.name || 'Estudante'}</strong>` +
-      `<small>${s.email || ''}</small>` +
-      `<small>${avgLabel}</small>`;
+    const email = document.createElement('small');
+    email.textContent = s.email || '';
 
-    left.appendChild(info);
+    const avgLabel = document.createElement('small');
+    avgLabel.textContent =
+      s.averageScore === null
+        ? 'Sem média geral disponível'
+        : `Média geral: ${s.averageScore} pontos`;
 
-    const right = document.createElement('div');
-    right.style.display = 'flex';
-    right.style.alignItems = 'center';
-    right.style.gap = '10px';
-    right.style.flexShrink = '0';
+    info.appendChild(title);
+    info.appendChild(email);
+    info.appendChild(avgLabel);
+
+    main.appendChild(info);
+
+    const performance = document.createElement('div');
+    performance.className = 'mk-student-performance';
+
+    const rank = document.createElement('span');
+    rank.className = 'mk-student-rank';
+    rank.textContent = `#${index + 1}`;
 
     const scoreWrap = document.createElement('div');
-    scoreWrap.style.display = 'flex';
-    scoreWrap.style.flexDirection = 'column';
-    scoreWrap.style.alignItems = 'center';
-    scoreWrap.style.justifyContent = 'center';
-    scoreWrap.style.minWidth = '72px';
+    scoreWrap.className = 'mk-student-score-wrap';
 
-    const donut = createStudentScoreDonutSVG(s.averageScore, 64, 10);
+    const donutWrap = document.createElement('div');
+    donutWrap.className = 'mk-student-score-donut';
+    donutWrap.appendChild(createStudentScoreDonutSVG(s.averageScore, 64, 10));
 
     const scoreText = document.createElement('small');
-    scoreText.textContent = s.averageScore === null ? 'Sem nota' : `${s.averageScore} pts`;
-    scoreText.style.marginTop = '4px';
-    scoreText.style.color = '#475569';
-    scoreText.style.fontWeight = '600';
+    scoreText.textContent =
+      s.averageScore === null ? 'Sem nota' : `${s.averageScore} pts`;
 
-    scoreWrap.appendChild(donut);
+    scoreWrap.appendChild(donutWrap);
     scoreWrap.appendChild(scoreText);
 
-    right.appendChild(scoreWrap);
+    performance.appendChild(rank);
+    performance.appendChild(scoreWrap);
 
-    li.appendChild(left);
-    li.appendChild(right);
+    li.appendChild(main);
+    li.appendChild(performance);
 
     studentsListEl.appendChild(li);
   });
