@@ -346,10 +346,12 @@ async function cadastrarProfessor() {
     notify('warn', 'Campos obrigatórios', 'Preencha nome, e-mail e senha.');
     return;
   }
+
   if (!email.includes('@')) {
     notify('warn', 'E-mail inválido', 'Informe um e-mail válido.');
     return;
   }
+
   if (password.length < 8) {
     notify('warn', 'Senha fraca', 'A senha deve ter no mínimo 8 caracteres.');
     return;
@@ -359,22 +361,13 @@ async function cadastrarProfessor() {
   notify('info', 'Cadastrando...', 'Criando sua conta...', 1800);
 
   try {
-    let res = await fetch(`${API_URL}/auth/register-professor`, {
+    const res = await fetch(`${API_URL}/auth/register-professor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
     });
 
-    let data = await readJsonSafe(res);
-
-    if (res.status === 404) {
-      res = await fetch(`${API_URL}/users/professor`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-      data = await readJsonSafe(res);
-    }
+    const data = await readJsonSafe(res);
 
     if (!res.ok || !data?.ok) {
       const msg =
@@ -395,6 +388,10 @@ async function cadastrarProfessor() {
 
     const emailLogin = $('emailLogin');
     if (emailLogin) emailLogin.value = email;
+
+    if (nameEl) nameEl.value = '';
+    if (emailEl) emailEl.value = '';
+    if (passEl) passEl.value = '';
   } catch {
     notify('error', 'Erro de conexão', 'Não foi possível acessar o servidor agora.');
     setStatus('Erro de conexão.');
