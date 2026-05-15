@@ -385,6 +385,17 @@ const RUBRICS = {
   ],
 };
 
+const COMP_LABELS = {
+  c1: 'Competência 1 — Domínio da norma culta',
+  c2: 'Competência 2 — Compreensão do tema e repertório',
+  c3: 'Competência 3 — Argumentação',
+  c4: 'Competência 4 — Coesão e coerência',
+  c5: 'Competência 5 — Proposta de intervenção',
+};
+
+const AUTO_FEEDBACK_START = '=== FICHA DE CRITÉRIOS SELECIONADOS ===';
+const AUTO_FEEDBACK_END = '=== COMENTÁRIOS DO PROFESSOR ===';
+
 function getPanel(comp) {
   return document.getElementById(`rubric-${comp}`);
 }
@@ -399,6 +410,73 @@ function getButton(comp) {
 
 function getCompWrap(comp) {
   return document.getElementById(comp)?.closest('.comp-wrap') || null;
+}
+
+function getSelectedRubric(comp) {
+  const input = document.getElementById(comp);
+  const value = String(input?.value || '').trim();
+
+  if (!value) return null;
+
+  return (RUBRICS[comp] || []).find((item) => String(item.score) === value) || null;
+}
+
+function normalizeFeedbackText(value) {
+  return String(value || '').replace(/\r\n/g, '\n').trim();
+}
+
+function extractProfessorFeedback(current) {
+  const text = String(current || '').replace(/\r\n/g, '\n');
+
+  if (text.includes(AUTO_FEEDBACK_START) && text.includes(AUTO_FEEDBACK_END)) {
+    return text.split(AUTO_FEEDBACK_END).slice(1).join(AUTO_FEEDBACK_END).trim();
+  }
+
+  if (text.includes(AUTO_FEEDBACK_START) && !text.includes(AUTO_FEEDBACK_END)) {
+    return '';
+  }
+
+  return text.trim();
+}
+
+function buildAutoFeedbackText() {
+  const blocks = COMP_SEQUENCE.map((comp) => {
+    const rubric = getSelectedRubric(comp);
+
+    if (!rubric) return null;
+
+    return `${COMP_LABELS[comp]}: ${rubric.score} pontos.\n${rubric.text}`;
+  }).filter(Boolean);
+
+  if (blocks.length === 0) return '';
+
+  return `${AUTO_FEEDBACK_START}\n\n${blocks.join('\n\n')}\n\n${AUTO_FEEDBACK_END}`;
+}
+
+function updateFeedbackFromRubrics() {
+  if (!feedbackEl) return;
+
+  const professorText = extractProfessorFeedback(feedbackEl.value);
+  const autoText = buildAutoFeedbackText();
+
+  if (!autoText) {
+    feedbackEl.value = professorText;
+    return;
+  }
+
+  feedbackEl.value = professorText
+    ? `${autoText}\n\n${professorText}`
+    : `${autoText}\n\n`;
+}
+
+function refreshFeedbackAfterManualInput() {
+  if (!feedbackEl) return;
+
+  const current = normalizeFeedbackText(feedbackEl.value);
+
+  if (!current.includes(AUTO_FEEDBACK_START)) return;
+
+  updateFeedbackFromRubrics();
 }
 
 function closeRubric(comp) {
@@ -497,7 +575,7 @@ function openRubric(comp, options = {}) {
 
   items.forEach((it) => {
     const line = document.createElement('div');
-    line.dataset.rubricOption = 'true';
+        line.dataset.rubricOption = 'true';
 
     const isSelected = currentValue !== '' && String(it.score) === currentValue;
     line.dataset.selected = String(isSelected);
@@ -524,6 +602,7 @@ function openRubric(comp, options = {}) {
       markSelectedRubricOption(panel, line);
       hint.textContent = `Sugestão aplicada: ${it.score}`;
       updateTotalUI();
+      updateFeedbackFromRubrics();
 
       setTimeout(() => {
         closeRubric(comp);
@@ -564,6 +643,7 @@ function initRubricsUI() {
       if (v.length > 4) inp.value = v.slice(0, 4);
 
       updateTotalUI();
+      refreshFeedbackAfterManualInput();
     });
   });
 
@@ -796,8 +876,7 @@ function normalizeEssayItem(e) {
     e?.email ||
     ''
   ).trim();
-
-  return {
+    return {
     id,
     studentId,
     studentName,
