@@ -15,8 +15,6 @@ if (!roomId) {
   throw new Error('roomId ausente');
 }
 
-// ---------------- Elementos ----------------
-
 const roomNameEl = document.getElementById('roomName');
 const statusEl = document.getElementById('status');
 
@@ -30,6 +28,10 @@ const avgC5 = document.getElementById('avgC5');
 const roomAvgDonutEl = document.getElementById('roomAvgDonut');
 const roomAvgLegendEl = document.getElementById('roomAvgLegend');
 
+const studentRankingListEl = document.getElementById('studentRankingList');
+const studentRankingCountEl = document.getElementById('studentRankingCount');
+const toggleStudentRankingBtn = document.getElementById('toggleStudentRankingBtn');
+
 const tasksListEl = document.getElementById('tasksList');
 const taskPanelEl = document.getElementById('taskPanel');
 const taskPanelTitleEl = document.getElementById('taskPanelTitle');
@@ -38,7 +40,11 @@ const closeTaskPanelBtn = document.getElementById('closeTaskPanelBtn');
 
 const studentsList = document.getElementById('studentsList');
 
-// ---------------- Helpers ----------------
+let cachedData = [];
+let cachedActiveSet = null;
+let cachedTasksMeta = [];
+let cachedNewestTaskId = null;
+let showAllStudentRanking = false;
 
 function setStatus(msg) {
   if (!statusEl) return;
@@ -91,6 +97,12 @@ function mean(nums) {
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
+function toNumberOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
+}
+
 function pickDate(obj, keys) {
   for (const k of keys) {
     const v = obj?.[k];
@@ -140,8 +152,6 @@ function getEssaySentAt(e) {
   ]);
 }
 
-// ---------------- Fotos (localStorage) ----------------
-
 function studentPhotoKey(studentId) {
   return studentId ? `mk_photo_student_${studentId}` : null;
 }
@@ -179,8 +189,6 @@ function makeAvatar(studentId, size = 38) {
   return img;
 }
 
-// ---------------- donut ----------------
-
 const DONUT_COLORS = {
   c1: '#4f46e5',
   c2: '#16a34a',
@@ -189,6 +197,8 @@ const DONUT_COLORS = {
   c5: '#ef4444',
   margin: '#ffffff',
   marginStroke: 'rgba(0,0,0,0.12)',
+  score: '#4f46e5',
+  studentMargin: '#e5e7eb',
 };
 
 function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 18) {
@@ -279,6 +289,74 @@ function createDonutSVG({ c1, c2, c3, c4, c5, total }, size = 120, thickness = 1
   return { svg, legend: values };
 }
 
+function createStudentScoreDonutSVG(score, size = 64, thickness = 10) {
+  const safeScoreRaw = toNumberOrNull(score);
+  const safeScore =
+    safeScoreRaw === null ? null : Math.max(0, Math.min(1000, safeScoreRaw));
+
+  const obtained = safeScore === null ? 0 : safeScore;
+  const margin = safeScore === null ? 1000 : Math.max(0, 1000 - safeScore);
+
+  const segments = [
+    { value: obtained, color: DONUT_COLORS.score },
+    { value: margin, color: DONUT_COLORS.studentMargin },
+  ];
+
+  const sum = 1000;
+  const r = (size - thickness) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const C = 2 * Math.PI * r;
+
+  let offset = 0;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+
+  const base = document.createElementNS(svgNS, 'circle');
+  base.setAttribute('cx', String(cx));
+  base.setAttribute('cy', String(cy));
+  base.setAttribute('r', String(r));
+  base.setAttribute('fill', 'none');
+  base.setAttribute('stroke', 'rgba(0,0,0,0.08)');
+  base.setAttribute('stroke-width', String(thickness));
+  svg.appendChild(base);
+
+  segments.forEach((seg) => {
+    const segLen = Math.max(0, (seg.value / sum) * C);
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', String(cx));
+    circle.setAttribute('cy', String(cy));
+    circle.setAttribute('r', String(r));
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke-width', String(thickness));
+    circle.setAttribute('stroke-linecap', 'butt');
+    circle.setAttribute('stroke', seg.color);
+    circle.setAttribute('stroke-dasharray', `${segLen} ${C - segLen}`);
+    circle.setAttribute('stroke-dashoffset', String(-offset));
+    circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+    svg.appendChild(circle);
+
+    offset += segLen;
+  });
+
+  const centerText = document.createElementNS(svgNS, 'text');
+  centerText.setAttribute('x', String(cx));
+  centerText.setAttribute('y', String(cy + 4));
+  centerText.setAttribute('text-anchor', 'middle');
+  centerText.setAttribute('font-size', size <= 64 ? '11' : '14');
+  centerText.setAttribute('font-weight', '700');
+  centerText.setAttribute('fill', '#111827');
+  centerText.textContent = safeScore === null ? '—' : String(safeScore);
+  svg.appendChild(centerText);
+
+  return svg;
+}
+
 function buildLegendGrid(values) {
   const legend = document.createElement('div');
   legend.className = 'mk-legend';
@@ -323,8 +401,6 @@ function renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal }) {
   roomAvgLegendEl.appendChild(buildLegendGrid(legend));
 }
 
-// ---------------- alunos ativos ----------------
-
 async function getActiveStudentsSetAuth() {
   try {
     const data = await authFetchJson(`${API_URL}/rooms/${encodeURIComponent(roomId)}/students`);
@@ -340,8 +416,6 @@ async function getActiveStudentsSetAuth() {
     return null;
   }
 }
-
-// ---------------- UI: inline panel ----------------
 
 function closeAllInlinePanels() {
   if (!studentsList) return;
@@ -444,16 +518,16 @@ function fillInlinePanel(panel, studentGroup, medias) {
     btn.type = 'button';
     btn.textContent = 'Ver redação/feedback';
     btn.onclick = () => {
-  const essayId = e.id || e.essayId || null;
+      const essayId = e.id || e.essayId || null;
 
-  if (!essayId) {
-    notify('error', 'Erro', 'Não foi possível identificar a redação.');
-    return;
-  }
+      if (!essayId) {
+        notify('error', 'Erro', 'Não foi possível identificar a redação.');
+        return;
+      }
 
-  window.location.href =
-    `feedback-professor.html?essayId=${encodeURIComponent(String(essayId))}`;
-};
+      window.location.href =
+        `feedback-professor.html?essayId=${encodeURIComponent(String(essayId))}`;
+    };
 
     li.appendChild(title);
     li.appendChild(document.createElement('br'));
@@ -464,8 +538,6 @@ function fillInlinePanel(panel, studentGroup, medias) {
     essaysUl.appendChild(li);
   });
 }
-
-// ---------------- carregar sala ----------------
 
 async function carregarSala() {
   if (!roomNameEl) return;
@@ -478,13 +550,6 @@ async function carregarSala() {
     roomNameEl.textContent = 'Sala';
   }
 }
-
-// ---------------- dados e render ----------------
-
-let cachedData = [];
-let cachedActiveSet = null;
-let cachedTasksMeta = [];
-let cachedNewestTaskId = null;
 
 async function fetchTasksByRoomAuth() {
   try {
@@ -712,6 +777,138 @@ function computeStudentAverages(studentGroup) {
   return { mTotal, mC1, mC2, mC3, mC4, mC5, hasCorrected: correctedEssays.length > 0 };
 }
 
+function buildStudentRanking(data) {
+  const students = groupByStudent(data);
+
+  return students.map((s) => {
+    const medias = computeStudentAverages(s);
+    return {
+      ...s,
+      medias,
+      averageScore: medias.mTotal,
+    };
+  }).sort((a, b) => {
+    const av = a.averageScore;
+    const bv = b.averageScore;
+
+    if (av === null && bv === null) {
+      return (a.studentName || '').localeCompare(b.studentName || '');
+    }
+
+    if (av === null) return 1;
+    if (bv === null) return -1;
+
+    if (bv !== av) return bv - av;
+
+    return (a.studentName || '').localeCompare(b.studentName || '');
+  });
+}
+
+function renderStudentRanking(data) {
+  if (!studentRankingListEl) return;
+
+  const ranking = buildStudentRanking(data);
+  const total = ranking.length;
+  const visible = showAllStudentRanking ? ranking : ranking.slice(0, 5);
+
+  studentRankingListEl.innerHTML = '';
+
+  if (studentRankingCountEl) {
+    studentRankingCountEl.textContent = `${total} estudante(s)`;
+  }
+
+  if (!total) {
+    studentRankingListEl.innerHTML =
+      '<li class="mk-ranking-empty mk-muted">Nenhum estudante com redação enviada ainda.</li>';
+
+    if (toggleStudentRankingBtn) {
+      toggleStudentRankingBtn.style.display = 'none';
+    }
+
+    return;
+  }
+
+  visible.forEach((s, index) => {
+    const realIndex = ranking.findIndex((item) => item.studentId === s.studentId);
+    const rankNumber = realIndex >= 0 ? realIndex + 1 : index + 1;
+
+    const li = document.createElement('li');
+    li.className = 'mk-ranking-item';
+
+    if (rankNumber === 1) li.classList.add('is-top-1');
+    if (rankNumber === 2) li.classList.add('is-top-2');
+    if (rankNumber === 3) li.classList.add('is-top-3');
+
+    const main = document.createElement('div');
+    main.className = 'mk-ranking-main';
+
+    const position = document.createElement('span');
+    position.className = 'mk-ranking-position';
+    position.textContent = `#${rankNumber}`;
+
+    const info = document.createElement('div');
+    info.className = 'mk-ranking-info';
+
+    const name = document.createElement('strong');
+    name.textContent = s.studentName || 'Aluno';
+
+    const email = document.createElement('small');
+    email.className = 'mk-muted';
+    email.textContent = s.studentEmail || '';
+
+    const detail = document.createElement('small');
+    detail.className = 'mk-muted';
+    detail.textContent =
+      s.averageScore === null
+        ? 'Sem média disponível'
+        : `Média geral: ${s.averageScore} pontos`;
+
+    info.appendChild(name);
+    if (s.studentEmail) info.appendChild(email);
+    info.appendChild(detail);
+
+    main.appendChild(position);
+    main.appendChild(info);
+
+    const performance = document.createElement('div');
+    performance.className = 'mk-ranking-performance';
+
+    const donut = document.createElement('div');
+    donut.className = 'mk-ranking-donut';
+    donut.appendChild(createStudentScoreDonutSVG(s.averageScore, 64, 10));
+
+    const score = document.createElement('div');
+    score.className = 'mk-ranking-score';
+
+    const scoreStrong = document.createElement('strong');
+    scoreStrong.textContent = s.averageScore === null ? '—' : String(s.averageScore);
+
+    const scoreSmall = document.createElement('small');
+    scoreSmall.className = 'mk-muted';
+    scoreSmall.textContent = s.averageScore === null ? 'Sem nota' : 'pts';
+
+    score.appendChild(scoreStrong);
+    score.appendChild(scoreSmall);
+
+    performance.appendChild(donut);
+    performance.appendChild(score);
+
+    li.appendChild(main);
+    li.appendChild(performance);
+
+    studentRankingListEl.appendChild(li);
+  });
+
+  if (toggleStudentRankingBtn) {
+    if (total > 5) {
+      toggleStudentRankingBtn.style.display = '';
+      toggleStudentRankingBtn.textContent = showAllStudentRanking ? 'Ver menos' : 'Ver todos';
+    } else {
+      toggleStudentRankingBtn.style.display = 'none';
+    }
+  }
+}
+
 function renderStudentsForTask(taskId) {
   if (!studentsList) return;
 
@@ -875,8 +1072,6 @@ function closeTaskPanel() {
   if (studentsList) studentsList.innerHTML = '';
 }
 
-// ---------------- carregar dados sala ----------------
-
 async function carregarDados() {
   try {
     setStatus('Carregando...');
@@ -892,6 +1087,12 @@ async function carregarDados() {
 
     let data = unwrapResult(dataRaw);
     if (!Array.isArray(data)) data = [];
+
+    if (cachedActiveSet && cachedActiveSet.size > 0) {
+      data = data.filter((e) => cachedActiveSet.has(String(e.studentId)));
+    }
+
+    cachedData = data;
 
     if (data.length === 0) {
       setStatus('Ainda não há redações nesta sala.');
@@ -910,24 +1111,20 @@ async function carregarDados() {
         mC5: null,
         mTotal: null,
       });
+
+      renderStudentRanking([]);
       renderTasksList([]);
       closeTaskPanel();
       return;
     }
-
-    if (cachedActiveSet && cachedActiveSet.size > 0) {
-      data = data.filter((e) => cachedActiveSet.has(String(e.studentId)));
-    }
-
-    cachedData = data;
 
     if (!cachedNewestTaskId) {
       cachedNewestTaskId = computeNewestTaskIdFromEssays(data);
     }
 
     if (!cachedNewestTaskId) {
-      const anyTask = data.find((e) => e.taskId || e.task?.id);
-      cachedNewestTaskId = anyTask ? String(e.taskId || e.task?.id) : null;
+      const anyTask = data.find((item) => item.taskId || item.task?.id);
+      cachedNewestTaskId = anyTask ? String(anyTask.taskId || anyTask.task?.id) : null;
     }
 
     const corrected = data.filter((e) => e.score !== null && e.score !== undefined);
@@ -947,6 +1144,7 @@ async function carregarDados() {
     setText(avgC5, mC5);
 
     renderRoomAverageDonut({ mC1, mC2, mC3, mC4, mC5, mTotal });
+    renderStudentRanking(data);
 
     const tasks = buildTasksFromData(data);
 
@@ -968,16 +1166,22 @@ async function carregarDados() {
     if (!msg.startsWith('AUTH_')) {
       setStatus('Erro ao carregar dados de desempenho.');
       notify('error', 'Erro', msg || 'Erro ao carregar dados de desempenho.');
+      renderStudentRanking([]);
       renderTasksList([]);
       closeTaskPanel();
     }
   }
 }
 
-// ---------------- init ----------------
-
 if (closeTaskPanelBtn) {
   closeTaskPanelBtn.addEventListener('click', () => closeTaskPanel());
+}
+
+if (toggleStudentRankingBtn) {
+  toggleStudentRankingBtn.addEventListener('click', () => {
+    showAllStudentRanking = !showAllStudentRanking;
+    renderStudentRanking(cachedData);
+  });
 }
 
 (function init() {
