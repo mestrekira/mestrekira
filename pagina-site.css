@@ -555,3 +555,75 @@ section { margin-bottom: 26px; }
     }
 
 }
+
+.autor-secao{
+    margin-top: 60px;
+    padding: 32px;
+    background: linear-gradient(135deg, #f8f7f3, #f1ede3);
+    border: 1px solid rgba(11, 31, 75, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+}
+
+.autor-secao h2{
+    font-size: 2rem;
+    color: #0b1f4b;
+    margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.autor-secao h2::after{
+    content: "";
+    width: 70px;
+    height: 4px;
+    background: #c59b42;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    border-radius: 999px;
+}
+
+.autor-secao p{
+    font-size: 1.05rem;
+    line-height: 1.9;
+    color: #333;
+    margin-bottom: 18px;
+    text-align: justify;
+    text-indent: 1.5em;
+}
+
+.autor-secao strong{
+    color: #0b1f4b;
+}
+
+.autor-secao a{
+    color: #6d28d9;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s ease;
+}
+
+.autor-secao a:hover{
+    color: #4c1bb1;
+    text-decoration: underline;
+}
+
+@media (max-width: 768px){
+
+    .autor-secao{
+        padding: 24px;
+        margin-top: 40px;
+    }
+
+    .autor-secao h2{
+        font-size: 1.6rem;
+    }
+
+    .autor-secao p{
+        font-size: 1rem;
+        line-height: 1.8;
+        text-indent: 1em;
+    }
+
+}
