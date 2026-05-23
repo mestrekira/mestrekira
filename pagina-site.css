@@ -330,6 +330,10 @@ section { margin-bottom: 26px; }
   margin: 0.4rem 0;
 }
 
+.explorar p {
+  text-algin: center;
+  }
+
 .explorar a {
   color: #007bff;
   font-weight: 500;
