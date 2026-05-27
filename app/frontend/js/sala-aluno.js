@@ -2,14 +2,8 @@ import { API_URL } from './config.js';
 import { toast } from './ui-feedback.js';
 import { requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
-// =====================
-// Estado da sala
-// =====================
 let isRoomActive = true;
 
-// =====================
-// Toast helper
-// =====================
 function notify(type, title, message, duration) {
   try {
     toast({
@@ -24,9 +18,6 @@ function notify(type, title, message, duration) {
   }
 }
 
-// =====================
-// jsonSafe
-// =====================
 async function jsonSafe(res) {
   try {
     return await res.json();
@@ -35,9 +26,6 @@ async function jsonSafe(res) {
   }
 }
 
-// =====================
-// Params + Guard
-// =====================
 const params = new URLSearchParams(window.location.search);
 const roomId = params.get('roomId');
 
@@ -49,9 +37,6 @@ if (!roomId) {
 
 requireStudentSession({ redirectTo: 'login-aluno.html' });
 
-// =====================
-// Elements
-// =====================
 const roomNameEl = document.getElementById('roomName');
 const tasksList = document.getElementById('tasksList');
 const statusEl = document.getElementById('status');
@@ -63,6 +48,7 @@ const leaveBtn = document.getElementById('leaveRoomBtn');
 const leaveStatus = document.getElementById('leaveStatus');
 
 const performanceBtn = document.getElementById('performanceBtn');
+
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
     window.location.href = `desempenho.html?roomId=${encodeURIComponent(roomId)}`;
@@ -89,9 +75,6 @@ function redirectForbidden(message = 'Você não tem permissão para acessar est
   redirectToPanel(900);
 }
 
-// =====================
-// Datas
-// =====================
 function pickDate(obj, keys) {
   for (const k of keys) {
     const v = obj?.[k];
@@ -137,6 +120,7 @@ function toDateSafe(value) {
 function formatDateBR(value) {
   const d = toDateSafe(value);
   if (!d) return '—';
+
   try {
     return new Intl.DateTimeFormat('pt-BR', {
       dateStyle: 'short',
@@ -147,9 +131,6 @@ function formatDateBR(value) {
   }
 }
 
-// =====================
-// Fotos
-// =====================
 function photoKeyStudent(id) {
   return id ? `mk_photo_student_${id}` : null;
 }
@@ -160,6 +141,7 @@ function photoKeyProfessor(id) {
 
 function makeAvatarFromLocalStorage(key, size = 34, alt = 'Foto') {
   const img = document.createElement('img');
+
   img.alt = alt;
   img.width = size;
   img.height = size;
@@ -184,9 +166,6 @@ function makeAvatarFromLocalStorage(key, size = 34, alt = 'Foto') {
   return img;
 }
 
-// =====================
-// Sair da sala
-// =====================
 if (leaveBtn) {
   leaveBtn.addEventListener('click', async () => {
     const ok = confirm('Tem certeza que deseja sair desta sala?');
@@ -228,6 +207,7 @@ if (leaveBtn) {
         if (leaveStatus) {
           leaveStatus.textContent = 'Você não tem permissão para sair desta sala.';
         }
+
         notify('warn', 'Acesso negado', 'Você não tem permissão para sair desta sala.');
         redirectToPanel(900);
         return;
@@ -250,9 +230,6 @@ if (leaveBtn) {
   });
 }
 
-// =====================
-// Sala + professor + colegas
-// =====================
 async function carregarOverview() {
   if (teacherInfo) teacherInfo.textContent = 'Carregando...';
   if (classmatesList) classmatesList.innerHTML = '<li>Carregando colegas...</li>';
@@ -287,6 +264,7 @@ async function carregarOverview() {
     if (!isRoomActive) {
       if (roomNameEl) {
         roomNameEl.style.opacity = '0.75';
+
         if (!String(roomNameEl.textContent || '').includes('(Desativada)')) {
           roomNameEl.textContent = `${roomNameEl.textContent} (Desativada)`;
         }
@@ -307,6 +285,7 @@ async function carregarOverview() {
         teacherInfo.textContent = 'Professor não identificado.';
       } else {
         const wrap = document.createElement('div');
+
         wrap.style.display = 'flex';
         wrap.style.alignItems = 'center';
         wrap.style.gap = '10px';
@@ -320,19 +299,11 @@ async function carregarOverview() {
         const text = document.createElement('div');
 
         const name = String(p.name || 'Professor').trim();
-        const email = String(p.email || '').trim();
 
         const strong = document.createElement('strong');
         strong.textContent = name;
-        text.appendChild(strong);
 
-        if (email) {
-          const br = document.createElement('br');
-          const small = document.createElement('small');
-          small.textContent = email;
-          text.appendChild(br);
-          text.appendChild(small);
-        }
+        text.appendChild(strong);
 
         wrap.appendChild(avatar);
         wrap.appendChild(text);
@@ -345,11 +316,11 @@ async function carregarOverview() {
       classmatesList.innerHTML = '';
 
       const studentsRaw = Array.isArray(data?.students) ? data.students : [];
+
       const students = studentsRaw
         .map((s) => ({
           id: String(s?.id || s?.studentId || '').trim(),
           name: String(s?.name || s?.studentName || '').trim(),
-          email: String(s?.email || s?.studentEmail || '').trim(),
         }))
         .filter((s) => !!s.id);
 
@@ -364,6 +335,7 @@ async function carregarOverview() {
 
       classmates.forEach((s) => {
         const li = document.createElement('li');
+
         li.style.display = 'flex';
         li.style.alignItems = 'center';
         li.style.gap = '10px';
@@ -377,22 +349,15 @@ async function carregarOverview() {
         const text = document.createElement('div');
 
         const name = s.name && s.name.trim() ? s.name : 'Aluno';
-        const email = s.email && s.email.trim() ? s.email : '';
 
         const strong = document.createElement('strong');
         strong.textContent = name;
-        text.appendChild(strong);
 
-        if (email) {
-          const br = document.createElement('br');
-          const small = document.createElement('small');
-          small.textContent = email;
-          text.appendChild(br);
-          text.appendChild(small);
-        }
+        text.appendChild(strong);
 
         li.appendChild(avatar);
         li.appendChild(text);
+
         classmatesList.appendChild(li);
       });
     }
@@ -403,12 +368,15 @@ async function carregarOverview() {
 
     if (msg === 'AUTH_403') {
       if (roomNameEl) roomNameEl.textContent = 'Sala';
+
       if (teacherInfo) {
         teacherInfo.textContent = 'Você não tem permissão para visualizar esta sala.';
       }
+
       if (classmatesList) {
         classmatesList.innerHTML = '<li>Acesso não autorizado.</li>';
       }
+
       setStatus('Você não tem permissão para acessar esta sala.');
       redirectForbidden('Você não tem permissão para acessar esta sala.');
       return;
@@ -433,9 +401,6 @@ async function carregarOverview() {
   }
 }
 
-// =====================
-// Essay do aluno na tarefa
-// =====================
 async function getMyEssayByTask(taskIdValue) {
   const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskIdValue)}/by-student`;
 
@@ -453,16 +418,15 @@ async function getMyEssayByTask(taskIdValue) {
     return data || null;
   } catch (e) {
     const msg = String(e?.message || '');
+
     if (msg !== 'AUTH_401' && msg !== 'AUTH_403') {
       console.error(e);
     }
+
     return null;
   }
 }
 
-// =====================
-// Destaque da tarefa mais recente
-// =====================
 function computeNewestTaskId(tasks) {
   if (!Array.isArray(tasks) || tasks.length === 0) return null;
 
@@ -477,6 +441,7 @@ function computeNewestTaskId(tasks) {
       'dateCreated',
       'timestamp',
     ]);
+
     const dt = toDateSafe(createdAt)?.getTime?.() ?? NaN;
 
     if (!Number.isNaN(dt)) {
@@ -488,11 +453,13 @@ function computeNewestTaskId(tasks) {
   });
 
   if (!newestId) newestId = tasks[tasks.length - 1]?.id || null;
+
   return newestId;
 }
 
 function makeNovaBadge() {
   const badge = document.createElement('span');
+
   badge.textContent = 'Nova';
   badge.style.display = 'inline-flex';
   badge.style.alignItems = 'center';
@@ -505,12 +472,10 @@ function makeNovaBadge() {
   badge.style.background = 'rgba(109,40,217,.12)';
   badge.style.border = '1px solid rgba(109,40,217,.35)';
   badge.style.color = '#0b1f4b';
+
   return badge;
 }
 
-// =====================
-// Tarefas
-// =====================
 async function carregarTarefas() {
   if (!tasksList) return;
 
@@ -527,7 +492,9 @@ async function carregarTarefas() {
     if (!res.ok) {
       if (res.status === 404) {
         setStatus('Esta sala não está mais disponível.');
+
         if (tasksList) tasksList.innerHTML = '<li>Sala removida.</li>';
+
         redirectRoomUnavailable('Esta sala foi removida pela escola.');
         return;
       }
@@ -558,6 +525,7 @@ async function carregarTarefas() {
           'dateCreated',
           'timestamp',
         ]);
+
         return { id, title, createdAt, _raw: t };
       })
       .filter((t) => !!t.id);
@@ -583,6 +551,7 @@ async function carregarTarefas() {
       }
 
       const titleWrap = document.createElement('div');
+
       titleWrap.style.display = 'flex';
       titleWrap.style.alignItems = 'center';
       titleWrap.style.flexWrap = 'wrap';
@@ -590,26 +559,31 @@ async function carregarTarefas() {
 
       const title = document.createElement('strong');
       title.textContent = task.title || 'Tarefa';
+
       titleWrap.appendChild(title);
 
       if (task.id === newestId) titleWrap.appendChild(makeNovaBadge());
 
       const meta = document.createElement('div');
+
       meta.style.marginTop = '6px';
       meta.style.fontSize = '12px';
       meta.style.opacity = '0.85';
       meta.textContent = `Criada em: ${formatDateBR(task.createdAt)}`;
 
       const actions = document.createElement('div');
+
       actions.style.display = 'flex';
       actions.style.gap = '10px';
       actions.style.marginTop = '8px';
       actions.style.flexWrap = 'wrap';
 
       const btnWrite = document.createElement('button');
+
       btnWrite.type = 'button';
       btnWrite.textContent = isRoomActive ? 'Escrever redação' : 'Sala desativada';
       btnWrite.disabled = !isRoomActive;
+
       btnWrite.onclick = () => {
         if (!isRoomActive) {
           notify(
@@ -624,6 +598,7 @@ async function carregarTarefas() {
       };
 
       const btnFeedback = document.createElement('button');
+
       btnFeedback.type = 'button';
       btnFeedback.textContent = 'Feedback';
       btnFeedback.style.display = 'none';
@@ -651,6 +626,7 @@ async function carregarTarefas() {
 
       const { taskId, essay } = r.value;
       const ui = uiByTaskId.get(taskId);
+
       if (!ui) return;
 
       if (essay && essay.id && essay.isDraft === false) {
@@ -675,9 +651,11 @@ async function carregarTarefas() {
 
     if (msg === 'AUTH_403') {
       setStatus('Você não tem permissão para visualizar as tarefas desta sala.');
+
       if (tasksList) {
         tasksList.innerHTML = '<li>Acesso não autorizado às tarefas.</li>';
       }
+
       redirectForbidden('Você não tem permissão para acessar as tarefas desta sala.');
       return;
     }
@@ -687,17 +665,19 @@ async function carregarTarefas() {
       msg.toLowerCase().includes('not found')
     ) {
       setStatus('Esta sala não está mais disponível.');
+
       if (tasksList) tasksList.innerHTML = '<li>Sala removida.</li>';
+
       redirectRoomUnavailable('Esta sala foi removida pela escola.');
       return;
     }
 
     console.error(e);
     setStatus('Erro ao carregar tarefas.');
+
     if (tasksList) tasksList.innerHTML = '<li>Erro ao carregar tarefas.</li>';
   }
 }
 
-// INIT
 carregarOverview();
 carregarTarefas();
