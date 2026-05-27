@@ -6,7 +6,6 @@ import {
   notify
 } from './auth.js';
 
-// ---------------- PARAMS ----------------
 const params = new URLSearchParams(window.location.search);
 const roomId = String(params.get('roomId') || '').trim();
 
@@ -16,7 +15,6 @@ if (!roomId) {
   throw new Error('roomId ausente');
 }
 
-// ---------------- ELEMENTOS ----------------
 const backBtn = document.getElementById('backBtn');
 const statusEl = document.getElementById('status');
 
@@ -32,7 +30,6 @@ const avgDonutEl = document.getElementById('avgDonut');
 const avgLegendEl = document.getElementById('avgLegend');
 const studentsListEl = document.getElementById('studentsList');
 
-// ---------------- HELPERS ----------------
 function setStatus(msg) {
   if (statusEl) statusEl.textContent = msg || '';
 }
@@ -76,7 +73,6 @@ function toNumberOrNull(value) {
   return Number.isNaN(n) ? null : n;
 }
 
-// ---------------- AVATAR ----------------
 function makeStudentAvatar(studentId, size = 42) {
   const img = document.createElement('img');
   img.className = 'mk-student-photo';
@@ -99,7 +95,6 @@ function makeStudentAvatar(studentId, size = 42) {
   return img;
 }
 
-// ---------------- DONUT + LEGENDA (MÉDIA GERAL DA TURMA) ----------------
 const DONUT_COLORS = {
   c1: '#4f46e5',
   c2: '#16a34a',
@@ -244,7 +239,6 @@ function renderAverageDonut({ total = null, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 =
   avgLegendEl.appendChild(buildLegendGrid(legend));
 }
 
-// ---------------- DONUT INDIVIDUAL DO ESTUDANTE ----------------
 function createStudentScoreDonutSVG(score, size = 64, thickness = 10) {
   const safeScoreRaw = toNumberOrNull(score);
   const safeScore =
@@ -313,7 +307,6 @@ function createStudentScoreDonutSVG(score, size = 64, thickness = 10) {
   return svg;
 }
 
-// ---------------- RENDER ----------------
 function renderStudents(students = []) {
   if (!studentsListEl) return;
 
@@ -430,7 +423,6 @@ function renderRoom(data) {
   });
 }
 
-// ---------------- LOAD ----------------
 async function load() {
   try {
     setStatus('Carregando...');
@@ -470,7 +462,6 @@ async function load() {
   }
 }
 
-// ---------------- INIT ----------------
 backBtn?.addEventListener('click', () => {
   window.location.href = 'painel-escola.html';
 });
