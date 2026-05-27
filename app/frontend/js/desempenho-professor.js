@@ -856,16 +856,18 @@ function renderStudentRanking(data) {
     email.className = 'mk-muted';
     email.textContent = s.studentEmail || '';
 
-    const detail = document.createElement('small');
-    detail.className = 'mk-muted';
-    detail.textContent =
-      s.averageScore === null
-        ? 'Sem média disponível'
-        : `Média geral: ${s.averageScore} pontos`;
+    const name = document.createElement('strong');
+name.textContent = s.studentName || 'Aluno';
 
-    info.appendChild(name);
-    if (s.studentEmail) info.appendChild(email);
-    info.appendChild(detail);
+const detail = document.createElement('small');
+detail.className = 'mk-muted';
+detail.textContent =
+  s.averageScore === null
+    ? 'Sem média disponível'
+    : `Média geral: ${s.averageScore} pontos`;
+
+info.appendChild(name);
+info.appendChild(detail);
 
     main.appendChild(position);
     main.appendChild(info);
@@ -941,10 +943,8 @@ function renderStudentsForTask(taskId) {
     const nome = s.studentName && String(s.studentName).trim() ? s.studentName : 'Aluno';
     const email = s.studentEmail && String(s.studentEmail).trim() ? s.studentEmail : '';
 
-    const header = document.createElement('div');
-    header.innerHTML = `<strong>${nome}</strong>${
-      email ? `<br><small class="mk-muted">${email}</small>` : ''
-    }`;
+   const header = document.createElement('div');
+header.innerHTML = `<strong>${nome}</strong>`;
 
     const medias = computeStudentAverages(s);
 
