@@ -361,21 +361,17 @@ function renderStudents(students = []) {
     const info = document.createElement('div');
     info.className = 'mk-student-info';
 
-    const title = document.createElement('strong');
-    title.textContent = s.name || 'Estudante';
+const title = document.createElement('strong');
+title.textContent = s.name || 'Estudante';
 
-    const email = document.createElement('small');
-    email.textContent = s.email || '';
+const avgLabel = document.createElement('small');
+avgLabel.textContent =
+  s.averageScore === null
+    ? 'Sem média geral disponível'
+    : `Média geral: ${s.averageScore} pontos`;
 
-    const avgLabel = document.createElement('small');
-    avgLabel.textContent =
-      s.averageScore === null
-        ? 'Sem média geral disponível'
-        : `Média geral: ${s.averageScore} pontos`;
-
-    info.appendChild(title);
-    info.appendChild(email);
-    info.appendChild(avgLabel);
+info.appendChild(title);
+info.appendChild(avgLabel);
 
     main.appendChild(info);
 
