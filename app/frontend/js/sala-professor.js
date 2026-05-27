@@ -1,10 +1,3 @@
-// sala-professor.js
-// - padrão auth.js
-// - destaca tarefa mais recente
-// - mostra data de criação das tarefas
-// - estudantes com foto, nome e e-mail
-// - bloqueia criação de tarefa quando a sala estiver desativada
-
 import { API_URL } from './config.js';
 import { confirmDialog as uiConfirmDialog } from './ui-feedback.js';
 import {
@@ -14,9 +7,6 @@ import {
   readErrorMessage,
 } from './auth.js';
 
-// -----------------------
-// Params + Guard
-// -----------------------
 const params = new URLSearchParams(window.location.search);
 const roomId = params.get('roomId');
 
@@ -28,9 +18,6 @@ if (!roomId) {
 
 requireProfessorSession({ redirectTo: 'login-professor.html' });
 
-// -----------------------
-// Elements
-// -----------------------
 const roomNameEl = document.getElementById('roomName');
 const roomCodeEl = document.getElementById('roomCode');
 const studentsList = document.getElementById('studentsList');
@@ -39,15 +26,19 @@ const copyCodeBtn = document.getElementById('copyCodeBtn');
 const createTaskBtn = document.getElementById('createTaskBtn');
 const performanceBtn = document.getElementById('performanceBtn');
 
+const editTaskOverlay = document.getElementById('editTaskOverlay');
+const editTaskTitleEl = document.getElementById('editTaskTitle');
+const editTaskGuidelinesEl = document.getElementById('editTaskGuidelines');
+const cancelEditTaskBtn = document.getElementById('cancelEditTaskBtn');
+const saveEditTaskBtn = document.getElementById('saveEditTaskBtn');
+
 if (!roomNameEl || !roomCodeEl || !studentsList || !tasksList || !copyCodeBtn || !createTaskBtn) {
   console.error('Elementos da sala do professor não encontrados.');
   throw new Error('HTML incompleto');
 }
 
-// -----------------------
-// State
-// -----------------------
 let isRoomActive = true;
+let taskBeingEdited = null;
 
 if (performanceBtn) {
   performanceBtn.addEventListener('click', () => {
@@ -55,9 +46,6 @@ if (performanceBtn) {
   });
 }
 
-// -----------------------
-// Helpers
-// -----------------------
 function disable(el, state) {
   if (el) el.disabled = !!state;
 }
@@ -99,11 +87,34 @@ async function apiJson(url, options) {
   return res.json().catch(() => null);
 }
 
+async function apiJsonWithMethodFallback(url, payload, methods = ['PATCH', 'PUT']) {
+  let lastError = null;
+
+  for (const method of methods) {
+    try {
+      return await apiJson(url, {
+        method,
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      lastError = err;
+      const msg = String(err?.message || '').toLowerCase();
+
+      if (!msg.includes('404') && !msg.includes('405') && !msg.includes('cannot') && !msg.includes('not found')) {
+        throw err;
+      }
+    }
+  }
+
+  throw lastError || new Error('Não foi possível atualizar os dados.');
+}
+
 function pickDate(obj, keys) {
   for (const k of keys) {
     const v = obj?.[k];
     if (v !== null && v !== undefined && String(v).trim() !== '') return v;
   }
+
   return null;
 }
 
@@ -121,6 +132,7 @@ function normalizeDateInput(value) {
   }
 
   const s = String(value).trim();
+
   if (!s) return null;
 
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
@@ -129,9 +141,11 @@ function normalizeDateInput(value) {
   }
 
   const d = new Date(s);
+
   if (!Number.isNaN(d.getTime())) return d;
 
   const asNum = Number(s);
+
   if (!Number.isNaN(asNum)) {
     const ms = asNum < 1e12 ? asNum * 1000 : asNum;
     const d2 = new Date(ms);
@@ -143,6 +157,7 @@ function normalizeDateInput(value) {
 
 function formatDateBR(value) {
   const d = normalizeDateInput(value);
+
   if (!d) return '—';
 
   try {
@@ -177,9 +192,6 @@ function getStudentPhoto(studentId, size = 36) {
   return dataUrl || placeholderAvatar(size);
 }
 
-// -----------------------
-// Normalizers
-// -----------------------
 function normalizeStudent(s) {
   return {
     id: String(s?.id || s?.studentId || '').trim(),
@@ -205,9 +217,6 @@ function normalizeTask(t) {
   };
 }
 
-// -----------------------
-// Mais recente
-// -----------------------
 function getLastCreatedTaskKey() {
   return `mk_last_created_task_${roomId}`;
 }
@@ -230,6 +239,7 @@ function computeNewestTaskId(tasksNormalized) {
   if (!Array.isArray(tasksNormalized) || tasksNormalized.length === 0) return null;
 
   const lastCreated = getLastCreatedTaskId();
+
   if (lastCreated && tasksNormalized.some((t) => String(t.id) === String(lastCreated))) {
     return lastCreated;
   }
@@ -239,6 +249,7 @@ function computeNewestTaskId(tasksNormalized) {
 
   tasksNormalized.forEach((t) => {
     const time = normalizeDateInput(t.createdAt)?.getTime?.() ?? NaN;
+
     if (!Number.isNaN(time) && time > newestTime) {
       newestTime = time;
       newestId = t.id;
@@ -246,11 +257,13 @@ function computeNewestTaskId(tasksNormalized) {
   });
 
   if (!newestId) newestId = tasksNormalized[tasksNormalized.length - 1]?.id || null;
+
   return newestId;
 }
 
 function makeMaisRecenteBadge() {
   const badge = document.createElement('span');
+
   badge.textContent = 'Mais recente';
   badge.style.display = 'inline-flex';
   badge.style.alignItems = 'center';
@@ -263,12 +276,96 @@ function makeMaisRecenteBadge() {
   badge.style.background = 'rgba(16,185,129,.12)';
   badge.style.border = '1px solid rgba(16,185,129,.35)';
   badge.style.color = '#0b1f4b';
+
   return badge;
 }
 
-// -----------------------
-// Sala
-// -----------------------
+function openEditTaskModal(task) {
+  if (!editTaskOverlay || !editTaskTitleEl || !editTaskGuidelinesEl) {
+    notify('error', 'Erro', 'Modal de edição não encontrado no HTML.');
+    return;
+  }
+
+  if (!isRoomActive) {
+    notify(
+      'error',
+      'Ação bloqueada',
+      'Esta sala está desativada e não permite editar tarefas.'
+    );
+    return;
+  }
+
+  taskBeingEdited = task;
+
+  editTaskTitleEl.value = task?.title || '';
+  editTaskGuidelinesEl.value = task?.guidelines || '';
+
+  editTaskOverlay.hidden = false;
+
+  setTimeout(() => {
+    editTaskTitleEl.focus();
+    editTaskTitleEl.select();
+  }, 60);
+}
+
+function closeEditTaskModal() {
+  if (editTaskOverlay) editTaskOverlay.hidden = true;
+
+  taskBeingEdited = null;
+
+  if (editTaskTitleEl) editTaskTitleEl.value = '';
+  if (editTaskGuidelinesEl) editTaskGuidelinesEl.value = '';
+}
+
+async function saveTaskEdition() {
+  if (!taskBeingEdited?.id) {
+    notify('error', 'Erro', 'Não foi possível identificar a tarefa.');
+    return;
+  }
+
+  if (!isRoomActive) {
+    notify(
+      'error',
+      'Ação bloqueada',
+      'Esta sala está desativada e não permite editar tarefas.'
+    );
+    closeEditTaskModal();
+    return;
+  }
+
+  const title = String(editTaskTitleEl?.value || '').trim();
+  const guidelines = String(editTaskGuidelinesEl?.value || '');
+
+  if (!title) {
+    notify('warn', 'Campo obrigatório', 'Informe o tema da redação.');
+    editTaskTitleEl?.focus();
+    return;
+  }
+
+  disable(saveEditTaskBtn, true);
+  disable(cancelEditTaskBtn, true);
+
+  try {
+    await apiJsonWithMethodFallback(
+      `${API_URL}/tasks/${encodeURIComponent(taskBeingEdited.id)}`,
+      { title, guidelines },
+      ['PATCH', 'PUT']
+    );
+
+    notify('success', 'Atualizada!', 'Tarefa atualizada com sucesso.');
+
+    closeEditTaskModal();
+
+    await carregarTarefas();
+  } catch (err) {
+    console.error(err);
+    notify('error', 'Erro', String(err?.message || 'Erro ao editar tarefa.'));
+  } finally {
+    disable(saveEditTaskBtn, false);
+    disable(cancelEditTaskBtn, false);
+  }
+}
+
 async function carregarSala() {
   try {
     const data = await apiJson(`${API_URL}/rooms/${encodeURIComponent(roomId)}`, {
@@ -309,9 +406,6 @@ async function carregarSala() {
   }
 }
 
-// -----------------------
-// Copiar código
-// -----------------------
 copyCodeBtn.addEventListener('click', async () => {
   const code = (roomCodeEl.textContent || '').trim();
 
@@ -337,9 +431,6 @@ copyCodeBtn.addEventListener('click', async () => {
   }
 });
 
-// -----------------------
-// Alunos
-// -----------------------
 async function removerAluno(studentId, studentName = 'este estudante', btnRef) {
   const ok = await confirmDialog({
     title: 'Remover estudante',
@@ -347,6 +438,7 @@ async function removerAluno(studentId, studentName = 'este estudante', btnRef) {
     okText: 'Remover',
     cancelText: 'Cancelar',
   });
+
   if (!ok) return;
 
   disable(btnRef, true);
@@ -388,6 +480,7 @@ async function carregarAlunos() {
 
     students.forEach((student) => {
       const li = document.createElement('li');
+
       li.style.display = 'flex';
       li.style.alignItems = 'center';
       li.style.justifyContent = 'space-between';
@@ -413,16 +506,13 @@ async function carregarAlunos() {
 
       const nameEl = document.createElement('strong');
       nameEl.textContent = student.name || 'Estudante';
-
-      const emailEl = document.createElement('small');
-      emailEl.textContent = student.email || 'Sem e-mail cadastrado';
-      emailEl.style.display = 'block';
+      nameEl.style.display = 'block';
 
       text.appendChild(nameEl);
-      text.appendChild(emailEl);
 
       const removeBtn = document.createElement('button');
       removeBtn.textContent = 'Remover';
+
       removeBtn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         removerAluno(student.id, student.name || 'este estudante', removeBtn);
@@ -430,6 +520,7 @@ async function carregarAlunos() {
 
       left.appendChild(img);
       left.appendChild(text);
+
       li.appendChild(left);
       li.appendChild(removeBtn);
 
@@ -441,9 +532,6 @@ async function carregarAlunos() {
   }
 }
 
-// -----------------------
-// Tarefas
-// -----------------------
 async function carregarTarefas() {
   tasksList.innerHTML = '<li>Carregando tarefas...</li>';
 
@@ -483,6 +571,7 @@ async function carregarTarefas() {
 
       const title = document.createElement('strong');
       title.textContent = task.title || 'Tarefa';
+
       titleWrap.appendChild(title);
 
       if (task.id === newestId) {
@@ -495,15 +584,42 @@ async function carregarTarefas() {
       meta.style.opacity = '0.85';
       meta.textContent = `Criada em: ${formatDateBR(task.createdAt)}`;
 
+      const actions = document.createElement('div');
+      actions.style.display = 'flex';
+      actions.style.alignItems = 'center';
+      actions.style.flexWrap = 'wrap';
+      actions.style.gap = '10px';
+      actions.style.marginTop = '18px';
+
       const btnView = document.createElement('button');
       btnView.textContent = 'Ver redações';
+
       btnView.addEventListener('click', () => {
         window.location.href = `correcao.html?taskId=${encodeURIComponent(task.id)}`;
+      });
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Editar';
+
+      editBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+
+        if (!isRoomActive) {
+          notify(
+            'error',
+            'Ação bloqueada',
+            'Esta sala está desativada e não permite editar tarefas.'
+          );
+          return;
+        }
+
+        openEditTaskModal(task);
       });
 
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Excluir';
       delBtn.className = 'danger';
+
       delBtn.addEventListener('click', async () => {
         const ok = await confirmDialog({
           title: 'Excluir tarefa',
@@ -511,6 +627,7 @@ async function carregarTarefas() {
           okText: 'Excluir',
           cancelText: 'Cancelar',
         });
+
         if (!ok) return;
 
         disable(delBtn, true);
@@ -533,11 +650,13 @@ async function carregarTarefas() {
         }
       });
 
+      actions.appendChild(btnView);
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
       li.appendChild(titleWrap);
       li.appendChild(meta);
-      li.appendChild(document.createElement('br'));
-      li.appendChild(btnView);
-      li.appendChild(delBtn);
+      li.appendChild(actions);
 
       tasksList.appendChild(li);
     });
@@ -547,9 +666,6 @@ async function carregarTarefas() {
   }
 }
 
-// -----------------------
-// Criar tarefa
-// -----------------------
 createTaskBtn.addEventListener('click', async () => {
   if (!isRoomActive) {
     notify(
@@ -581,6 +697,7 @@ createTaskBtn.addEventListener('click', async () => {
 
     const created = unwrapResult(data);
     const createdId = String(created?.id || created?.taskId || '').trim();
+
     if (createdId) setLastCreatedTaskId(createdId);
 
     notify('success', 'Criada!', 'Tarefa criada com sucesso.');
@@ -601,9 +718,32 @@ createTaskBtn.addEventListener('click', async () => {
   }
 });
 
-// -----------------------
-// Init
-// -----------------------
+if (cancelEditTaskBtn) {
+  cancelEditTaskBtn.addEventListener('click', () => {
+    closeEditTaskModal();
+  });
+}
+
+if (saveEditTaskBtn) {
+  saveEditTaskBtn.addEventListener('click', () => {
+    saveTaskEdition();
+  });
+}
+
+if (editTaskOverlay) {
+  editTaskOverlay.addEventListener('click', (ev) => {
+    if (ev.target === editTaskOverlay) {
+      closeEditTaskModal();
+    }
+  });
+}
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && editTaskOverlay && !editTaskOverlay.hidden) {
+    closeEditTaskModal();
+  }
+});
+
 carregarSala();
 carregarAlunos();
 carregarTarefas();
