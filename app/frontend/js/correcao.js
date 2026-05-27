@@ -24,7 +24,6 @@ const closeBtn = document.getElementById('closeCorrectionBtn');
 
 const studentPhotoImg = document.getElementById('studentPhotoImg');
 const studentNameEl = document.getElementById('studentName');
-const studentEmailEl = document.getElementById('studentEmail');
 
 const essayContentEl = document.getElementById('essayContent');
 
@@ -792,15 +791,13 @@ async function abrirCorrecao(item, anchorLi) {
       'Aluno'
     ).trim();
 
-    const email = String(
-      item?.studentEmail ||
-      full?.studentEmail ||
-      full?.student?.email ||
-      '—'
-    ).trim();
+    if (studentNameEl) {
+  studentNameEl.textContent = name || 'Aluno';
+}
 
-    if (studentNameEl) studentNameEl.textContent = name || 'Aluno';
-    if (studentEmailEl) studentEmailEl.textContent = email || '—';
+if (studentEmailEl) {
+  studentEmailEl.style.display = 'none';
+}
 
     const sid = String(
       item?.studentId ||
@@ -1032,17 +1029,6 @@ async function carregarRedacoes() {
         `${correctedAt ? ` • Corrigida em: ${correctedAt}` : ''}`;
 
       left.appendChild(nameLine);
-
-      if (item.studentEmail) {
-        const small = document.createElement('small');
-
-        small.textContent = item.studentEmail;
-        small.style.display = 'block';
-        small.style.opacity = '0.8';
-        small.style.marginTop = '2px';
-
-        left.appendChild(small);
-      }
 
       left.appendChild(meta);
 
