@@ -236,19 +236,16 @@ function getLastCreatedTaskId() {
 }
 
 function computeNewestTaskId(tasksNormalized) {
-  if (!Array.isArray(tasksNormalized) || tasksNormalized.length === 0) return null;
-
-  const lastCreated = getLastCreatedTaskId();
-
-  if (lastCreated && tasksNormalized.some((t) => String(t.id) === String(lastCreated))) {
-    return lastCreated;
+  if (!Array.isArray(tasksNormalized) || tasksNormalized.length === 0) {
+    return null;
   }
 
   let newestId = null;
   let newestTime = -Infinity;
 
   tasksNormalized.forEach((t) => {
-    const time = normalizeDateInput(t.createdAt)?.getTime?.() ?? NaN;
+    const time =
+      normalizeDateInput(t.createdAt)?.getTime?.() ?? NaN;
 
     if (!Number.isNaN(time) && time > newestTime) {
       newestTime = time;
@@ -256,9 +253,7 @@ function computeNewestTaskId(tasksNormalized) {
     }
   });
 
-  if (!newestId) newestId = tasksNormalized[tasksNormalized.length - 1]?.id || null;
-
-  return newestId;
+  return newestId || tasksNormalized[0]?.id || null;
 }
 
 function makeMaisRecenteBadge() {
