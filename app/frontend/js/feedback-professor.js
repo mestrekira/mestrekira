@@ -6,11 +6,9 @@ import {
   readErrorMessage,
 } from './auth.js';
 
-// ---------------- PARAMS ----------------
 const params = new URLSearchParams(window.location.search);
 const essayId = params.get('essayId')?.trim() || '';
 
-// sessão obrigatória
 requireProfessorSession({ redirectTo: 'login-professor.html' });
 
 if (!essayId) {
@@ -19,7 +17,6 @@ if (!essayId) {
   throw new Error('Parâmetro essayId ausente');
 }
 
-// ---------------- ELEMENTOS ----------------
 const studentNameEl = document.getElementById('studentName');
 const studentEmailEl = document.getElementById('studentEmail');
 
@@ -41,7 +38,6 @@ const c5El = document.getElementById('c5');
 
 const backBtn = document.getElementById('backBtn');
 
-// ---------------- util render ----------------
 function setText(el, value, fallback = '—') {
   if (!el) return;
   const v = value === null || value === undefined ? '' : String(value).trim();
@@ -123,7 +119,6 @@ function redirectToTarget(target = 'professor-salas.html', delay = 700) {
   }, delay);
 }
 
-// ---------------- datas ----------------
 function pickDate(obj, keys) {
   for (const k of keys) {
     const v = obj?.[k];
@@ -267,10 +262,11 @@ function renderEssay(essay) {
     essay?.name ??
     '';
 
-  const email = essay?.studentEmail ?? essay?.student?.email ?? '';
+ setText(studentNameEl, name, 'Aluno');
 
-  setText(studentNameEl, name, 'Aluno');
-  setText(studentEmailEl, email, '');
+if (studentEmailEl) {
+  studentEmailEl.style.display = 'none';
+}
 
   renderEssayFormatted(essay?.content || '');
   renderMetaDates(essay);
@@ -287,7 +283,6 @@ function renderEssay(essay) {
   setText(c5El, essay?.c5 ?? '—', '—');
 }
 
-// ---------------- main ----------------
 async function carregar() {
   try {
     const essay = await fetchEssayByIdWithStudent(essayId);
@@ -331,7 +326,6 @@ async function carregar() {
   }
 }
 
-// ---------------- VOLTAR ----------------
 if (backBtn) {
   backBtn.addEventListener('click', async () => {
     try {
