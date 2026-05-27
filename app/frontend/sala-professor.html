@@ -89,13 +89,73 @@
   <ul id="tasksList" class="lista"></ul>
 
   <h4>Criar nova tarefa</h4>
-  <input type="text" id="taskTitle" placeholder="Tema da redação" />
-  <textarea id="taskGuidelines" placeholder="Orientações para a redação"></textarea>
-  <button id="createTaskBtn">Criar tarefa</button>
+
+  <input
+    type="text"
+    id="taskTitle"
+    placeholder="Tema da redação"
+  />
+
+  <textarea
+    id="taskGuidelines"
+    placeholder="Orientações para a redação"
+  ></textarea>
+
+  <button id="createTaskBtn">
+    Criar tarefa
+  </button>
+
+  <div id="editTaskOverlay" class="confirm-overlay" hidden>
+    <div class="confirm-modal">
+      <h3>Editar tarefa</h3>
+
+      <div style="margin-top:14px;">
+        <label for="editTaskTitle">
+          <strong>Tema da redação</strong>
+        </label>
+
+        <input
+          id="editTaskTitle"
+          type="text"
+          placeholder="Tema da redação"
+          style="margin-top:6px;"
+        />
+      </div>
+
+      <div style="margin-top:14px;">
+        <label for="editTaskGuidelines">
+          <strong>Orientações</strong>
+        </label>
+
+        <textarea
+          id="editTaskGuidelines"
+          placeholder="Orientações para a redação"
+          style="margin-top:6px; min-height:160px;"
+        ></textarea>
+      </div>
+
+      <div class="confirm-actions">
+        <button
+          id="cancelEditTaskBtn"
+          class="btn-outline"
+          type="button"
+        >
+          Cancelar
+        </button>
+
+        <button
+          id="saveEditTaskBtn"
+          class="btn-danger"
+          type="button"
+        >
+          Salvar alterações
+        </button>
+      </div>
+    </div>
+  </div>
 </section>
 
 <script type="module" src="js/sala-professor.js"></script>
-
   <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
   initMenuPerfil({
