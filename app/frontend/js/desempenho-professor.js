@@ -846,18 +846,11 @@ function renderStudentRanking(data) {
     position.className = 'mk-ranking-position';
     position.textContent = `#${rankNumber}`;
 
-    const info = document.createElement('div');
-    info.className = 'mk-ranking-info';
+const info = document.createElement('div');
+info.className = 'mk-ranking-info';
 
-    const name = document.createElement('strong');
-    name.textContent = s.studentName || 'Aluno';
-
-    const email = document.createElement('small');
-    email.className = 'mk-muted';
-    email.textContent = s.studentEmail || '';
-
-    const name = document.createElement('strong');
-name.textContent = s.studentName || 'Aluno';
+const studentName = document.createElement('strong');
+studentName.textContent = s.studentName || 'Aluno';
 
 const detail = document.createElement('small');
 detail.className = 'mk-muted';
@@ -866,7 +859,7 @@ detail.textContent =
     ? 'Sem média disponível'
     : `Média geral: ${s.averageScore} pontos`;
 
-info.appendChild(name);
+info.appendChild(studentName);
 info.appendChild(detail);
 
     main.appendChild(position);
@@ -940,10 +933,13 @@ function renderStudentsForTask(taskId) {
     const info = document.createElement('div');
     info.className = 'mk-student-info';
 
-    const nome = s.studentName && String(s.studentName).trim() ? s.studentName : 'Aluno';
-    const email = s.studentEmail && String(s.studentEmail).trim() ? s.studentEmail : '';
+    const nome =
+  s.studentName &&
+  String(s.studentName).trim()
+    ? s.studentName
+    : 'Aluno';
 
-   const header = document.createElement('div');
+const header = document.createElement('div');
 header.innerHTML = `<strong>${nome}</strong>`;
 
     const medias = computeStudentAverages(s);
