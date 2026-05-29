@@ -2,234 +2,453 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Painel da Escola</title>
 
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/ui-feedback.css">
-  <link rel="icon" href="logo1.png" type="image/png">
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/ui-feedback.css" />
 
   <style>
-    .mk-card {
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 14px;
-      padding: 16px;
-      background: #fff;
+    .mk-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
     }
 
-    .mk-muted { opacity: .85; }
-
-    .mk-row {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      flex-wrap: wrap;
+    .mk-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
     }
 
-    .mk-col {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .mk-badge.on{
+      background:#dcfce7;
+      color:#166534;
     }
 
-    .mk-space {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+    .mk-badge.off{
+      background:#fee2e2;
+      color:#991b1b;
     }
 
-    .mk-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+    .mk-muted{
+      opacity:.75;
     }
 
-    .mk-note {
-      margin-top: 12px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: rgba(129, 19, 235, 0.07);
-      border: 1px solid rgba(129, 19, 235, 0.14);
+    .mk-note{
+      padding:14px;
+      border-radius:12px;
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      margin-top:12px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .mk-grid{
+      display:grid;
+      gap:14px;
     }
 
-    th, td {
-      text-align: left;
-      padding: 10px;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      vertical-align: top;
+    .mk-grid-2{
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
     }
 
-    th {
-      font-size: 13px;
-      opacity: .85;
+    .mk-toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:18px;
     }
 
-    .mk-sep {
-      margin: 20px 0;
-      border: none;
-      border-top: 1px solid rgba(0,0,0,0.08);
+    .mk-toolbar-left{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .mk-table-wrap{
+      overflow:auto;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+
+    th, td{
+      padding:12px;
+      border-bottom:1px solid #e5e7eb;
+      text-align:left;
+      vertical-align:top;
+    }
+
+    .confirm-modal input,
+    .confirm-modal select{
+      width:100%;
     }
   </style>
 </head>
 
 <body>
 
-<button id="menuBtn" class="menu-btn">☰</button>
+<button id="menuBtn" class="menu-btn" title="Menu do perfil">
+  ☰
+</button>
 
 <aside id="menuPanel" class="menu-panel">
   <div class="menu-header">
     <strong>Meu perfil</strong>
-    <button id="menuCloseBtn" class="menu-close">✕</button>
+
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">
+      ✕
+    </button>
   </div>
 
   <div class="menu-body">
+
     <div class="menu-photo">
-      <img id="menuPhotoImg" class="menu-photo-img" />
+      <img
+        id="menuPhotoImg"
+        class="menu-photo-img"
+        alt="Foto do perfil"
+      />
 
       <div class="menu-photo-actions">
-        <label class="menu-photo-label">
+
+        <label
+          class="menu-photo-label"
+          title="Alterar foto do perfil"
+        >
           Alterar foto
-          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+
+          <input
+            id="menuPhotoInput"
+            type="file"
+            accept="image/png,image/jpeg"
+          />
         </label>
 
-        <a href="suporte.html">Suporte</a>
+        <a
+          href="suporte.html"
+          class="menu-photo-support"
+          title="Abrir página de suporte"
+        >
+          Suporte
+        </a>
+
       </div>
     </div>
 
-    <p><strong>Nome:</strong> <span id="meName">...</span></p>
-    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
-    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+    <p>
+      <strong>Nome:</strong>
+      <span id="meName">...</span>
+    </p>
+
+    <p>
+      <strong>E-mail:</strong>
+      <span id="meEmail">...</span>
+    </p>
+
+    <p>
+      <strong>Perfil:</strong>
+      <span id="meRole">...</span>
+    </p>
 
     <hr>
 
     <h4>Atualizar dados</h4>
-    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" />
-    <input id="newPass" type="password" placeholder="Nova senha (mín. 8)" />
-    <button id="saveProfileBtn">Salvar</button>
+
+    <input
+      id="newEmail"
+      type="email"
+      placeholder="Novo e-mail (opcional)"
+      autocomplete="email"
+    />
+
+    <input
+      id="newPass"
+      type="password"
+      placeholder="Nova senha (mín. 8) (opcional)"
+      autocomplete="new-password"
+    />
+
+    <button id="saveProfileBtn">
+      Salvar
+    </button>
 
     <p id="menuStatus"></p>
 
     <hr>
 
-    <button id="logoutMenuBtn">Sair</button>
-    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+    <button id="logoutMenuBtn">
+      Sair
+    </button>
+
+    <button id="deleteAccountBtn" class="danger">
+      Excluir conta
+    </button>
+
   </div>
 </aside>
 
-<h2>Painel da Escola</h2>
-<p><strong>Escola:</strong> <span id="schoolName">Escola</span></p>
-<p id="status" class="mk-muted"></p>
+<main class="container">
 
-<hr class="mk-sep">
+  <div class="mk-toolbar">
 
-<section class="mk-card">
-  <div class="mk-space">
+    <div class="mk-toolbar-left">
+      <h2>
+        Painel da Escola —
+        <span id="schoolName">Escola</span>
+      </h2>
+    </div>
+
+    <button id="refreshBtn" type="button">
+      Atualizar painel
+    </button>
+
+  </div>
+
+  <p id="status"></p>
+
+  <section>
+
     <h3>Anos letivos</h3>
-    <button id="refreshBtn">Atualizar</button>
-  </div>
 
-  <div class="mk-row" style="margin-top: 12px;">
-    <div class="mk-col" style="flex:1;">
-      <label>Nome do ano letivo</label>
-      <input id="yearName" placeholder="Ex.: 2026">
-      <button id="createYearBtn">Cadastrar ano letivo</button>
-    </div>
-  </div>
+    <div class="mk-grid mk-grid-2">
 
-  <div class="mk-note">
-    Cadastre o ano letivo antes de criar salas.
-  </div>
+      <div>
 
-  <table style="margin-top: 16px;">
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Criado em</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="yearsTbody"></tbody>
-  </table>
-</section>
+        <input
+          id="yearName"
+          type="text"
+          placeholder="Ex.: 2026"
+        />
 
-<hr class="mk-sep">
+      </div>
 
-<section class="mk-card">
-  <h3>Cadastrar sala</h3>
+      <div>
 
-  <div id="roomsBlockedNote" class="mk-note" style="display:none;">
-    Cadastre um ano letivo primeiro.
-  </div>
+        <button id="createYearBtn" type="button">
+          Criar ano letivo
+        </button>
 
-  <div id="createRoomArea" class="mk-row" style="margin-top: 12px;">
-    <div class="mk-col" style="flex:1;">
-      <label>Nome da sala</label>
-      <input id="roomName" placeholder="Ex.: 3º Ano A">
+      </div>
+
     </div>
 
-    <div class="mk-col" style="flex:1;">
-      <label>Professor(a)</label>
-      <input id="teacherName">
+    <div class="mk-table-wrap" style="margin-top:18px;">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Status</th>
+            <th>Criado em</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+
+        <tbody id="yearsTbody">
+          <tr>
+            <td colspan="4">
+              Carregando...
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+
     </div>
 
-    <div class="mk-col" style="flex:1;">
-      <label>E-mail do(a) professor(a)</label>
-      <input id="teacherEmail">
+  </section>
+
+  <hr>
+
+  <section id="roomsSection">
+
+    <h3>Salas</h3>
+
+    <div
+      id="roomsBlockedNote"
+      class="mk-note"
+      style="display:none;"
+    >
+      Cadastre ao menos um ano letivo para liberar o cadastro e gerenciamento de salas.
     </div>
 
-    <div class="mk-col" style="flex:1;">
-      <label>Ano letivo</label>
-      <select id="roomYearSelect"></select>
+    <div
+      id="createRoomArea"
+      class="mk-grid mk-grid-2"
+    >
+
+      <div>
+
+        <input
+          id="roomName"
+          type="text"
+          placeholder="Nome da sala"
+        />
+
+      </div>
+
+      <div>
+
+        <input
+          id="teacherName"
+          type="text"
+          placeholder="Nome do professor"
+        />
+
+      </div>
+
+      <div>
+
+        <input
+          id="teacherEmail"
+          type="email"
+          placeholder="E-mail do professor"
+        />
+
+      </div>
+
+      <div>
+
+        <select id="roomYearSelect">
+          <option value="">
+            Selecione um ano letivo
+          </option>
+        </select>
+
+      </div>
+
+      <div>
+
+        <button id="createRoomBtn" type="button">
+          Criar sala
+        </button>
+
+      </div>
+
     </div>
 
-    <div class="mk-col">
-      <label>&nbsp;</label>
-      <button id="createRoomBtn">Cadastrar sala</button>
+    <div
+      class="mk-toolbar"
+      style="margin-top:26px;"
+    >
+
+      <div class="mk-toolbar-left">
+
+        <strong>
+          Filtrar salas
+        </strong>
+
+        <select id="roomsFilterYearSelect">
+          <option value="">
+            Todos os anos
+          </option>
+        </select>
+
+      </div>
+
     </div>
+
+    <div class="mk-table-wrap">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Sala</th>
+            <th>Professor</th>
+            <th>Ano letivo</th>
+            <th>Criada em</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+
+        <tbody id="roomsTbody">
+          <tr>
+            <td colspan="5">
+              Carregando...
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</main>
+
+<div id="editRoomOverlay" class="confirm-overlay" hidden>
+
+  <div class="confirm-modal">
+
+    <h3>
+      Editar sala
+    </h3>
+
+    <div style="margin-top:16px;">
+
+      <label for="editRoomName">
+        <strong>Nome da sala</strong>
+      </label>
+
+      <input
+        id="editRoomName"
+        type="text"
+        placeholder="Nome da sala"
+        style="margin-top:6px;"
+      />
+
+    </div>
+
+    <div class="confirm-actions">
+
+      <button
+        id="cancelEditRoomBtn"
+        class="btn-danger"
+        type="button"
+      >
+        Cancelar
+      </button>
+
+      <button
+        id="saveEditRoomBtn"
+        class="btn-outline"
+        type="button"
+      >
+        Salvar alterações
+      </button>
+
+    </div>
+
   </div>
-</section>
 
-<hr class="mk-sep">
+</div>
 
-<section class="mk-card">
-  <h3>Salas cadastradas</h3>
-
-  <div class="mk-col" style="margin-top:12px;">
-    <label>Filtrar por ano letivo</label>
-    <select id="roomsFilterYearSelect"></select>
-  </div>
-
-  <table style="margin-top:16px;">
-    <thead>
-      <tr>
-        <th>Sala</th>
-        <th>Professor(a)</th>
-        <th>Ano letivo</th>
-        <th>Criado em</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="roomsTbody"></tbody>
-  </table>
-</section>
+<script type="module" src="js/painel-escola.js"></script>
 
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
 
   initMenuPerfil({
-    loginRedirect: 'login-escola.html',
-    logoutRedirectSchool: 'login-escola.html'
+    loginRedirect: 'index.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html',
+    logoutRedirectSchool: 'login-escola.html',
   });
 </script>
 
-<script type="module" src="js/painel-escola.js"></script>
 <script src="js/footer.js"></script>
 
 </body>
