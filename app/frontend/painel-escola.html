@@ -393,44 +393,86 @@
 
   <div class="confirm-modal">
 
-    <h3>
-      Editar sala
-    </h3>
+<h3>
+  Editar sala
+</h3>
 
-    <div style="margin-top:16px;">
+<div style="margin-top:16px;">
 
-      <label for="editRoomName">
-        <strong>Nome da sala</strong>
-      </label>
+  <label for="editRoomName">
+    <strong>Nome da sala</strong>
+  </label>
 
-      <input
-        id="editRoomName"
-        type="text"
-        placeholder="Nome da sala"
-        style="margin-top:6px;"
-      />
+  <input
+    id="editRoomName"
+    type="text"
+    placeholder="Nome da sala"
+    style="margin-top:6px;"
+  />
 
-    </div>
+</div>
 
-    <div class="confirm-actions">
+<div style="margin-top:14px;">
 
-      <button
-        id="cancelEditRoomBtn"
-        class="btn-danger"
-        type="button"
-      >
-        Cancelar
-      </button>
+  <label for="editTeacherName">
+    <strong>Professor responsável</strong>
+  </label>
 
-      <button
-        id="saveEditRoomBtn"
-        class="btn-outline"
-        type="button"
-      >
-        Salvar alterações
-      </button>
+  <input
+    id="editTeacherName"
+    type="text"
+    placeholder="Nome do professor"
+    style="margin-top:6px;"
+  />
 
-    </div>
+</div>
+
+<div style="margin-top:14px;">
+
+  <label for="editTeacherEmail">
+    <strong>E-mail do professor</strong>
+  </label>
+
+  <input
+    id="editTeacherEmail"
+    type="email"
+    placeholder="professor@escola.com"
+    style="margin-top:6px;"
+  />
+
+  <small
+    style="
+      display:block;
+      margin-top:6px;
+      opacity:.75;
+    "
+  >
+    Ao alterar o e-mail, a sala será transferida para o professor informado.
+    Caso o professor não exista, uma conta será criada automaticamente
+    e uma senha temporária será enviada por e-mail.
+  </small>
+
+</div>
+
+<div class="confirm-actions">
+
+  <button
+    id="cancelEditRoomBtn"
+    class="btn-danger"
+    type="button"
+  >
+    Cancelar
+  </button>
+
+  <button
+    id="saveEditRoomBtn"
+    class="btn-outline"
+    type="button"
+  >
+    Salvar alterações
+  </button>
+
+</div>
 
   </div>
 
