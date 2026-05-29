@@ -179,6 +179,8 @@ const roomsBlockedNoteEl = document.getElementById('roomsBlockedNote');
 
 const editRoomOverlay = document.getElementById('editRoomOverlay');
 const editRoomNameEl = document.getElementById('editRoomName');
+const editTeacherNameEl = document.getElementById('editTeacherName');
+const editTeacherEmailEl = document.getElementById('editTeacherEmail');
 const cancelEditRoomBtn = document.getElementById('cancelEditRoomBtn');
 const saveEditRoomBtn = document.getElementById('saveEditRoomBtn');
 
@@ -268,6 +270,16 @@ function openEditRoomModal(room) {
     editRoomNameEl.value = room?.name || '';
   }
 
+  if (editTeacherNameEl) {
+    editTeacherNameEl.value =
+      room?.teacherNameSnapshot || '';
+  }
+
+  if (editTeacherEmailEl) {
+    editTeacherEmailEl.value =
+      room?.teacherEmail || '';
+  }
+
   if (editRoomOverlay) {
     editRoomOverlay.hidden = false;
   }
@@ -288,6 +300,14 @@ function closeEditRoomModal() {
   if (editRoomNameEl) {
     editRoomNameEl.value = '';
   }
+
+  if (editTeacherNameEl) {
+    editTeacherNameEl.value = '';
+  }
+
+  if (editTeacherEmailEl) {
+    editTeacherEmailEl.value = '';
+  }
 }
 
 async function saveRoomEdition() {
@@ -296,21 +316,51 @@ async function saveRoomEdition() {
     return;
   }
 
-  const name = String(editRoomNameEl?.value || '').trim();
+const name = String(
+  editRoomNameEl?.value || ''
+).trim();
 
-  if (!name) {
-    notify('warn', 'Nome inválido', 'Informe um nome válido.');
-    editRoomNameEl?.focus();
-    return;
-  }
+const teacherName = String(
+  editTeacherNameEl?.value || ''
+).trim();
+
+const teacherEmail = String(
+  editTeacherEmailEl?.value || ''
+)
+.trim()
+.toLowerCase();
+
+if (!name) {
+  notify(
+    'warn',
+    'Nome inválido',
+    'Informe um nome válido.'
+  );
+
+  editRoomNameEl?.focus();
+  return;
+}
+
+if (!teacherEmail) {
+  notify(
+    'warn',
+    'E-mail obrigatório',
+    'Informe o e-mail do professor.'
+  );
+
+  editTeacherEmailEl?.focus();
+  return;
+}
 
   try {
     setBusy(saveEditRoomBtn, true, 'Salvando...');
 
     await apiUpdateRoom(roomBeingEdited.id, {
-      name,
-    });
-
+  name,
+  teacherName,
+  teacherEmail,
+});
+    
     notify('success', 'Atualizado', 'Sala atualizada.');
 
     closeEditRoomModal();
@@ -842,18 +892,18 @@ async function refreshRooms({ keepStatus } = {}) {
   const res = await apiListRooms(yearId || null);
   const rooms = unwrapList(res, ['rooms']);
 
-  cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
-    id: r.id,
-    name: r.name,
-    code: r.code,
-    teacherId: r.teacherId || r.teacher_id || null,
-    teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
-    teacherEmail: r.teacherEmail || '',
-    schoolYearId: r.schoolYearId || r.school_year_id || null,
-    createdAt: r.createdAt || r.created_at || null,
-    isActive: r.isActive !== false,
-    deactivatedAt: r.deactivatedAt || r.deactivated_at || null,
-  }));
+ cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
+  id: r.id,
+  name: r.name,
+  code: r.code,
+  teacherId: r.teacherId || r.teacher_id || null,
+  teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
+  teacherEmail: r.teacherEmail || r.teacher_email || '',
+  schoolYearId: r.schoolYearId || r.school_year_id || null,
+  createdAt: r.createdAt || r.created_at || null,
+  isActive: r.isActive !== false,
+  deactivatedAt: r.deactivatedAt || r.deactivated_at || null,
+}));
 
   renderRoomsTable();
 
