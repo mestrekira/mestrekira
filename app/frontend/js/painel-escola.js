@@ -8,7 +8,6 @@ import {
 
 const SCHOOL_API_BASE = '/school-dashboard';
 
-// ------------------- Helpers -------------------
 function setStatus(msg) {
   const statusEl = document.getElementById('status');
   if (!statusEl) return;
@@ -17,17 +16,22 @@ function setStatus(msg) {
 
 function setText(el, value) {
   if (!el) return;
+
   const text =
     value === null || value === undefined || String(value).trim() === ''
       ? '—'
       : String(value).trim();
+
   el.textContent = text;
 }
 
 function fmtDateBR(value) {
   if (!value) return '—';
+
   const d = new Date(value);
+
   if (Number.isNaN(d.getTime())) return '—';
+
   return d.toLocaleDateString('pt-BR');
 }
 
@@ -50,10 +54,12 @@ function safeJsonParse(value) {
 
 function toBool(value, fallback = true) {
   if (value === true || value === false) return value;
+
   if (value === 1 || value === '1') return true;
   if (value === 0 || value === '0') return false;
 
   const text = String(value ?? '').trim().toLowerCase();
+
   if (text === 'true') return true;
   if (text === 'false') return false;
 
@@ -99,12 +105,14 @@ function setBusy(el, on, busyText = 'Atualizando...') {
     if (!el.dataset.originalText) {
       el.dataset.originalText = el.textContent || '';
     }
+
     el.disabled = true;
     el.textContent = busyText;
     return;
   }
 
   el.disabled = false;
+
   if (el.dataset.originalText) {
     el.textContent = el.dataset.originalText;
   }
@@ -138,6 +146,7 @@ async function authFetchJson(path, { method = 'GET', body } = {}) {
 
 function unwrapList(data, keys = []) {
   if (!data) return [];
+
   if (Array.isArray(data)) return data;
 
   for (const k of keys) {
@@ -147,7 +156,6 @@ function unwrapList(data, keys = []) {
   return [];
 }
 
-// ------------------- Elementos -------------------
 const schoolNameEl = document.getElementById('schoolName');
 
 const yearNameEl = document.getElementById('yearName');
@@ -169,7 +177,11 @@ const roomsSectionEl = document.getElementById('roomsSection');
 const createRoomAreaEl = document.getElementById('createRoomArea');
 const roomsBlockedNoteEl = document.getElementById('roomsBlockedNote');
 
-// ------------------- API (anos) -------------------
+const editRoomOverlay = document.getElementById('editRoomOverlay');
+const editRoomNameEl = document.getElementById('editRoomName');
+const cancelEditRoomBtn = document.getElementById('cancelEditRoomBtn');
+const saveEditRoomBtn = document.getElementById('saveEditRoomBtn');
+
 async function apiCreateYear(name) {
   return authFetchJson(`${SCHOOL_API_BASE}/years`, {
     method: 'POST',
@@ -182,19 +194,24 @@ async function apiListYears() {
 }
 
 async function apiUpdateYear(yearId, patch) {
-  return authFetchJson(`${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`, {
-    method: 'PATCH',
-    body: patch,
-  });
+  return authFetchJson(
+    `${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`,
+    {
+      method: 'PATCH',
+      body: patch,
+    }
+  );
 }
 
 async function apiDeleteYear(yearId) {
-  return authFetchJson(`${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`, {
-    method: 'DELETE',
-  });
+  return authFetchJson(
+    `${SCHOOL_API_BASE}/years/${encodeURIComponent(String(yearId))}`,
+    {
+      method: 'DELETE',
+    }
+  );
 }
 
-// ------------------- API (salas) -------------------
 async function apiCreateRoom(payload) {
   return authFetchJson(`${SCHOOL_API_BASE}/rooms`, {
     method: 'POST',
@@ -203,33 +220,134 @@ async function apiCreateRoom(payload) {
 }
 
 async function apiListRooms(yearId) {
-  const q = yearId ? `?yearId=${encodeURIComponent(String(yearId))}` : '';
+  const q = yearId
+    ? `?yearId=${encodeURIComponent(String(yearId))}`
+    : '';
+
   return authFetchJson(`${SCHOOL_API_BASE}/rooms${q}`);
 }
 
 async function apiUpdateRoom(roomId, patch) {
-  return authFetchJson(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
-    method: 'PATCH',
-    body: patch,
-  });
+  return authFetchJson(
+    `${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`,
+    {
+      method: 'PATCH',
+      body: patch,
+    }
+  );
 }
 
 async function apiDeleteRoom(roomId) {
-  return authFetchJson(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
-    method: 'DELETE',
-  });
+  return authFetchJson(
+    `${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`,
+    {
+      method: 'DELETE',
+    }
+  );
 }
 
 async function apiToggleRoom(roomId, isActive) {
-  return authFetchJson(`${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`, {
-    method: 'PATCH',
-    body: { isActive: !!isActive },
+  return authFetchJson(
+    `${SCHOOL_API_BASE}/rooms/${encodeURIComponent(String(roomId))}`,
+    {
+      method: 'PATCH',
+      body: { isActive: !!isActive },
+    }
+  );
+}
+
+let cachedYears = [];
+let cachedRooms = [];
+
+let roomBeingEdited = null;
+
+function openEditRoomModal(room) {
+  roomBeingEdited = room;
+
+  if (editRoomNameEl) {
+    editRoomNameEl.value = room?.name || '';
+  }
+
+  if (editRoomOverlay) {
+    editRoomOverlay.hidden = false;
+  }
+
+  setTimeout(() => {
+    editRoomNameEl?.focus();
+    editRoomNameEl?.select();
+  }, 60);
+}
+
+function closeEditRoomModal() {
+  roomBeingEdited = null;
+
+  if (editRoomOverlay) {
+    editRoomOverlay.hidden = true;
+  }
+
+  if (editRoomNameEl) {
+    editRoomNameEl.value = '';
+  }
+}
+
+async function saveRoomEdition() {
+  if (!roomBeingEdited?.id) {
+    notify('error', 'Erro', 'Sala inválida.');
+    return;
+  }
+
+  const name = String(editRoomNameEl?.value || '').trim();
+
+  if (!name) {
+    notify('warn', 'Nome inválido', 'Informe um nome válido.');
+    editRoomNameEl?.focus();
+    return;
+  }
+
+  try {
+    setBusy(saveEditRoomBtn, true, 'Salvando...');
+
+    await apiUpdateRoom(roomBeingEdited.id, {
+      name,
+    });
+
+    notify('success', 'Atualizado', 'Sala atualizada.');
+
+    closeEditRoomModal();
+
+    await refreshRooms({ keepStatus: true });
+  } catch (e) {
+    notify('error', 'Erro', String(e?.message || e));
+  } finally {
+    setBusy(saveEditRoomBtn, false);
+  }
+}
+
+if (cancelEditRoomBtn) {
+  cancelEditRoomBtn.addEventListener('click', () => {
+    closeEditRoomModal();
   });
 }
 
-// ------------------- Estado UI -------------------
-let cachedYears = [];
-let cachedRooms = [];
+if (saveEditRoomBtn) {
+  saveEditRoomBtn.addEventListener('click', () => {
+    saveRoomEdition();
+  });
+}
+
+if (editRoomOverlay) {
+  editRoomOverlay.addEventListener('click', (ev) => {
+    if (ev.target === editRoomOverlay) {
+      closeEditRoomModal();
+    }
+  });
+}
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && editRoomOverlay && !editRoomOverlay.hidden) {
+    closeEditRoomModal();
+  }
+});
 
 function sortYearsMostRecentFirst(years) {
   return [...(Array.isArray(years) ? years : [])].sort((a, b) => {
@@ -241,8 +359,13 @@ function sortYearsMostRecentFirst(years) {
 
     if (numA !== numB) return numB - numA;
 
-    const dateA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const dateB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+    const dateA = a?.createdAt
+      ? new Date(a.createdAt).getTime()
+      : 0;
+
+    const dateB = b?.createdAt
+      ? new Date(b.createdAt).getTime()
+      : 0;
 
     return dateB - dateA;
   });
@@ -252,7 +375,10 @@ function getDefaultYearId() {
   if (!cachedYears.length) return '';
 
   const ordered = sortYearsMostRecentFirst(cachedYears);
-  const activeOrdered = ordered.filter((y) => y.isActive === true);
+
+  const activeOrdered = ordered.filter(
+    (y) => y.isActive === true
+  );
 
   if (activeOrdered.length) {
     return String(activeOrdered[0].id);
@@ -262,7 +388,10 @@ function getDefaultYearId() {
 }
 
 function getYearNameById(yearId) {
-  const year = cachedYears.find((y) => String(y.id) === String(yearId));
+  const year = cachedYears.find(
+    (y) => String(y.id) === String(yearId)
+  );
+
   return year?.name || '—';
 }
 
@@ -278,16 +407,22 @@ function updateRoomsAvailability() {
   }
 
   if (roomsBlockedNoteEl) {
-    roomsBlockedNoteEl.style.display = hasYears ? 'none' : '';
+    roomsBlockedNoteEl.style.display = hasYears
+      ? 'none'
+      : '';
   }
 
   if (createRoomAreaEl) {
-    createRoomAreaEl.style.display = hasYears ? 'flex' : 'none';
+    createRoomAreaEl.style.display = hasYears
+      ? 'flex'
+      : 'none';
   }
 
   if (createRoomBtn) createRoomBtn.disabled = !hasYears;
   if (roomYearSelectEl) roomYearSelectEl.disabled = !hasYears;
-  if (roomsFilterYearSelectEl) roomsFilterYearSelectEl.disabled = !hasYears;
+  if (roomsFilterYearSelectEl) {
+    roomsFilterYearSelectEl.disabled = !hasYears;
+  }
 
   if (!hasYears && roomsTbody) {
     roomsTbody.innerHTML =
@@ -295,7 +430,6 @@ function updateRoomsAvailability() {
   }
 }
 
-// ------------------- Render: anos -------------------
 function renderYearSelectOptions(
   selectEl,
   {
@@ -308,30 +442,40 @@ function renderYearSelectOptions(
   if (!selectEl) return;
 
   const years = sortYearsMostRecentFirst(cachedYears);
-  const validIds = new Set(years.map((y) => String(y.id)));
+
+  const validIds = new Set(
+    years.map((y) => String(y.id))
+  );
 
   selectEl.innerHTML = '';
 
   if (includeAllOption) {
     const optAll = document.createElement('option');
+
     optAll.value = '';
     optAll.textContent = allLabel;
+
     selectEl.appendChild(optAll);
   } else {
     const optPlaceholder = document.createElement('option');
+
     optPlaceholder.value = '';
     optPlaceholder.textContent = placeholder;
+
     selectEl.appendChild(optPlaceholder);
   }
 
   years.forEach((y) => {
     const opt = document.createElement('option');
+
     opt.value = String(y.id);
     opt.textContent = y.name || 'Ano letivo';
+
     selectEl.appendChild(opt);
   });
 
   const fallbackId = getDefaultYearId();
+
   const desired =
     selectedValue && validIds.has(String(selectedValue))
       ? String(selectedValue)
@@ -347,8 +491,13 @@ function renderYearSelectOptions(
 }
 
 function syncYearSelects() {
-  const currentCreateValue = String(roomYearSelectEl?.value || '').trim();
-  const currentFilterValue = String(roomsFilterYearSelectEl?.value || '').trim();
+  const currentCreateValue = String(
+    roomYearSelectEl?.value || ''
+  ).trim();
+
+  const currentFilterValue = String(
+    roomsFilterYearSelectEl?.value || ''
+  ).trim();
 
   renderYearSelectOptions(roomYearSelectEl, {
     includeAllOption: false,
@@ -364,7 +513,11 @@ function syncYearSelects() {
 
   const defaultYearId = getDefaultYearId();
 
-  if (roomYearSelectEl && !String(roomYearSelectEl.value || '').trim() && defaultYearId) {
+  if (
+    roomYearSelectEl &&
+    !String(roomYearSelectEl.value || '').trim() &&
+    defaultYearId
+  ) {
     roomYearSelectEl.value = defaultYearId;
   }
 
@@ -377,112 +530,6 @@ function syncYearSelects() {
   }
 }
 
-function renderYearsTable() {
-  if (!yearsTbody) return;
-
-  yearsTbody.innerHTML = '';
-
-  if (!cachedYears.length) {
-    yearsTbody.innerHTML =
-      '<tr><td colspan="4" class="mk-muted">Nenhum ano letivo cadastrado.</td></tr>';
-    return;
-  }
-
-  const years = sortYearsMostRecentFirst(cachedYears);
-
-  years.forEach((y) => {
-    const tr = document.createElement('tr');
-
-    const tdName = document.createElement('td');
-    tdName.textContent = y.name || '—';
-
-    const tdStatus = document.createElement('td');
-    const badge = document.createElement('span');
-    const on = y.isActive === true;
-    badge.className = `mk-badge ${on ? 'on' : 'off'}`;
-    badge.textContent = on ? 'Ativo' : 'Inativo';
-    tdStatus.appendChild(badge);
-
-    const tdCreated = document.createElement('td');
-    tdCreated.textContent = fmtDateBR(y.createdAt);
-
-    const tdActions = document.createElement('td');
-    const wrap = document.createElement('div');
-    wrap.className = 'mk-actions';
-
-    const btnRename = document.createElement('button');
-    btnRename.type = 'button';
-    btnRename.textContent = 'Renomear';
-    btnRename.onclick = async () => {
-      const name = prompt('Novo nome do ano letivo:', y.name || '');
-      if (name == null) return;
-
-      const n = String(name).trim();
-      if (!n) {
-        notify('warn', 'Nome inválido', 'Informe um nome válido.');
-        return;
-      }
-
-      try {
-        await apiUpdateYear(y.id, { name: n });
-        notify('success', 'Atualizado', 'Ano letivo renomeado.');
-        await refreshAll({ keepStatus: true });
-      } catch (e) {
-        notify('error', 'Erro', String(e?.message || e));
-      }
-    };
-
-    const btnToggle = document.createElement('button');
-    btnToggle.type = 'button';
-    btnToggle.textContent = on ? 'Desativar' : 'Ativar';
-    btnToggle.onclick = async () => {
-      try {
-        await apiUpdateYear(y.id, { isActive: !on });
-        notify(
-          'success',
-          'Atualizado',
-          `Ano letivo ${!on ? 'ativado' : 'desativado'}.`,
-        );
-        await refreshAll({ keepStatus: true });
-      } catch (e) {
-        notify('error', 'Erro', String(e?.message || e));
-      }
-    };
-
-    const btnDelete = document.createElement('button');
-    btnDelete.type = 'button';
-    btnDelete.className = 'danger';
-    btnDelete.textContent = 'Excluir';
-    btnDelete.onclick = async () => {
-      const ok = confirm(
-        `Excluir o ano letivo "${y.name}"?\n\nAs salas desse ano serão mantidas, mas ficarão sem ano letivo.`,
-      );
-      if (!ok) return;
-
-      try {
-        await apiDeleteYear(y.id);
-        notify('success', 'Excluído', 'Ano letivo removido.');
-        await refreshAll({ keepStatus: true });
-      } catch (e) {
-        notify('error', 'Erro', String(e?.message || e));
-      }
-    };
-
-    wrap.appendChild(btnRename);
-    wrap.appendChild(btnToggle);
-    wrap.appendChild(btnDelete);
-    tdActions.appendChild(wrap);
-
-    tr.appendChild(tdName);
-    tr.appendChild(tdStatus);
-    tr.appendChild(tdCreated);
-    tr.appendChild(tdActions);
-
-    yearsTbody.appendChild(tr);
-  });
-}
-
-// ------------------- Render: salas -------------------
 function renderRoomsTable() {
   if (!roomsTbody) return;
 
@@ -491,12 +538,14 @@ function renderRoomsTable() {
   if (!cachedYears.length) {
     roomsTbody.innerHTML =
       '<tr><td colspan="5" class="mk-muted">Cadastre ao menos um ano letivo para liberar o cadastro de salas.</td></tr>';
+
     return;
   }
 
   if (!cachedRooms.length) {
     roomsTbody.innerHTML =
       '<tr><td colspan="5" class="mk-muted">Nenhuma sala cadastrada ainda.</td></tr>';
+
     return;
   }
 
@@ -504,16 +553,24 @@ function renderRoomsTable() {
     const tr = document.createElement('tr');
 
     const tdRoom = document.createElement('td');
+
     tdRoom.innerHTML =
       `<strong>${escapeHtml(r.name || 'Sala')}</strong><br>` +
       `<small class="mk-muted">Código: ${escapeHtml(r.code || '—')}</small><br>` +
-      `<small class="mk-muted">Status: ${escapeHtml(roomStatusText(r.isActive))}</small>`;
+      `<small class="mk-muted">Status: ${escapeHtml(
+        roomStatusText(r.isActive)
+      )}</small>`;
 
     const tdTeacher = document.createElement('td');
+
     tdTeacher.innerHTML =
-      `<strong>${escapeHtml(r.teacherNameSnapshot || 'Professor')}</strong>` +
+      `<strong>${escapeHtml(
+        r.teacherNameSnapshot || 'Professor'
+      )}</strong>` +
       (r.teacherEmail
-        ? `<br><small class="mk-muted">${escapeHtml(r.teacherEmail)}</small>`
+        ? `<br><small class="mk-muted">${escapeHtml(
+            r.teacherEmail
+          )}</small>`
         : '');
 
     const tdYear = document.createElement('td');
@@ -523,51 +580,54 @@ function renderRoomsTable() {
     tdCreated.textContent = fmtDateBR(r.createdAt);
 
     const tdActions = document.createElement('td');
+
     const wrap = document.createElement('div');
     wrap.className = 'mk-actions';
 
     const btnView = document.createElement('button');
+
     btnView.type = 'button';
     btnView.textContent = 'Visualizar';
+
     btnView.onclick = () => {
-      window.location.href = `desempenho-escola.html?roomId=${encodeURIComponent(
-        String(r.id),
-      )}`;
+      window.location.href =
+        `desempenho-escola.html?roomId=${encodeURIComponent(
+          String(r.id)
+        )}`;
     };
 
-    const btnRename = document.createElement('button');
-    btnRename.type = 'button';
-    btnRename.textContent = 'Renomear';
-    btnRename.onclick = async () => {
-      const name = prompt('Novo nome da sala:', r.name || '');
-      if (name == null) return;
+    const btnEdit = document.createElement('button');
 
-      const n = String(name).trim();
-      if (!n) {
-        notify('warn', 'Nome inválido', 'Informe um nome válido.');
-        return;
-      }
+    btnEdit.type = 'button';
+    btnEdit.textContent = 'Editar sala';
 
-      try {
-        await apiUpdateRoom(r.id, { name: n });
-        notify('success', 'Atualizado', 'Sala renomeada.');
-        await refreshRooms({ keepStatus: true });
-      } catch (e) {
-        notify('error', 'Erro', String(e?.message || e));
-      }
+    btnEdit.onclick = () => {
+      openEditRoomModal(r);
     };
 
     const btnToggle = document.createElement('button');
+
     btnToggle.type = 'button';
-    btnToggle.textContent = r.isActive === false ? 'Ativar' : 'Desativar';
+
+    btnToggle.textContent =
+      r.isActive === false
+        ? 'Ativar'
+        : 'Desativar';
+
     btnToggle.onclick = async () => {
       try {
         await apiToggleRoom(r.id, !r.isActive);
+
         notify(
           'success',
           'Atualizado',
-          `Sala ${r.isActive === false ? 'ativada' : 'desativada'}.`,
+          `Sala ${
+            r.isActive === false
+              ? 'ativada'
+              : 'desativada'
+          }.`,
         );
+
         await refreshRooms({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
@@ -575,18 +635,23 @@ function renderRoomsTable() {
     };
 
     const btnDelete = document.createElement('button');
+
     btnDelete.type = 'button';
     btnDelete.className = 'danger';
     btnDelete.textContent = 'Excluir';
+
     btnDelete.onclick = async () => {
       const ok = confirm(
         `Excluir a sala "${r.name}"?\n\nAtenção: isso pode falhar se o backend não permitir deletar com tarefas ou matrículas.`,
       );
+
       if (!ok) return;
 
       try {
         await apiDeleteRoom(r.id);
+
         notify('success', 'Excluída', 'Sala removida.');
+
         await refreshRooms({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
@@ -594,9 +659,10 @@ function renderRoomsTable() {
     };
 
     wrap.appendChild(btnView);
-    wrap.appendChild(btnRename);
+    wrap.appendChild(btnEdit);
     wrap.appendChild(btnToggle);
     wrap.appendChild(btnDelete);
+
     tdActions.appendChild(wrap);
 
     tr.appendChild(tdRoom);
@@ -608,248 +674,3 @@ function renderRoomsTable() {
     roomsTbody.appendChild(tr);
   });
 }
-
-// ------------------- Loaders -------------------
-async function refreshYears({ keepStatus } = {}) {
-  if (!keepStatus) setStatus('Carregando anos letivos...');
-
-  const res = await apiListYears();
-  const years = unwrapList(res, ['years']);
-
-  cachedYears = (Array.isArray(years) ? years : [])
-    .filter((y) => y && y.id)
-    .map((y) => ({
-      id: String(y.id),
-      name: String(y.name || '').trim(),
-      isActive: toBool(y.isActive, true),
-      createdAt: y.createdAt || y.created_at || null,
-    }));
-
-  syncYearSelects();
-  renderYearsTable();
-  updateRoomsAvailability();
-
-  if (!keepStatus) setStatus('');
-}
-
-async function refreshRooms({ keepStatus } = {}) {
-  if (!cachedYears.length) {
-    cachedRooms = [];
-    renderRoomsTable();
-    return;
-  }
-
-  if (!keepStatus) setStatus('Carregando salas...');
-
-  const yearId = roomsFilterYearSelectEl
-    ? String(roomsFilterYearSelectEl.value || '').trim()
-    : '';
-
-  const res = await apiListRooms(yearId || null);
-  const rooms = unwrapList(res, ['rooms']);
-
-  cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
-    id: r.id,
-    name: r.name,
-    code: r.code,
-    teacherId: r.teacherId || r.teacher_id || null,
-    teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
-    teacherEmail: r.teacherEmail || '',
-    schoolYearId: r.schoolYearId || r.school_year_id || null,
-    createdAt: r.createdAt || r.created_at || null,
-    isActive: r.isActive !== false,
-    deactivatedAt: r.deactivatedAt || r.deactivated_at || null,
-  }));
-
-  renderRoomsTable();
-
-  if (!keepStatus) setStatus('');
-}
-
-async function refreshAll({ keepStatus } = {}) {
-  await refreshYears({ keepStatus: true });
-  await refreshRooms({ keepStatus: true });
-
-  if (!keepStatus) setStatus('');
-}
-
-// ------------------- Actions -------------------
-async function onCreateYear() {
-  const name = String(yearNameEl?.value || '').trim();
-
-  if (!name) {
-    notify('warn', 'Campos obrigatórios', 'Informe o nome do ano letivo.');
-    return;
-  }
-
-  try {
-    setStatus('');
-    await apiCreateYear(name);
-
-    if (yearNameEl) yearNameEl.value = '';
-
-    notify('success', 'Criado', 'Ano letivo cadastrado.');
-    await refreshAll({ keepStatus: true });
-
-    const defaultYearId = getDefaultYearId();
-    if (roomYearSelectEl && defaultYearId) roomYearSelectEl.value = defaultYearId;
-    if (roomsFilterYearSelectEl && defaultYearId) {
-      roomsFilterYearSelectEl.value = defaultYearId;
-    }
-
-    setStatus('');
-  } catch (e) {
-    notify('error', 'Erro', String(e?.message || e));
-    setStatus('');
-  }
-}
-
-async function onCreateRoom() {
-  const name = String(roomNameEl?.value || '').trim();
-  const teacherName = String(teacherNameEl?.value || '').trim();
-  const teacherEmail = String(teacherEmailEl?.value || '').trim().toLowerCase();
-
-  let yearId = roomYearSelectEl ? String(roomYearSelectEl.value || '').trim() : '';
-
-  if (!yearId) {
-    yearId = getDefaultYearId();
-    if (roomYearSelectEl && yearId) {
-      roomYearSelectEl.value = yearId;
-    }
-  }
-
-  if (!cachedYears.length) {
-    notify(
-      'warn',
-      'Ano letivo obrigatório',
-      'Cadastre primeiro um ano letivo para liberar o cadastro de salas.',
-    );
-    return;
-  }
-
-  if (!yearId) {
-    notify(
-      'warn',
-      'Ano letivo obrigatório',
-      'Selecione o ano letivo da sala antes de cadastrar.',
-    );
-    return;
-  }
-
-  if (!name || !teacherEmail) {
-    notify(
-      'warn',
-      'Campos obrigatórios',
-      'Informe o nome da sala e o e-mail do professor.',
-    );
-    return;
-  }
-
-  if (!teacherEmail.includes('@')) {
-    notify('warn', 'E-mail inválido', 'Informe um e-mail válido do professor.');
-    return;
-  }
-
-  try {
-    setStatus('Criando sala...');
-
-    await apiCreateRoom({
-      name,
-      teacherEmail,
-      yearId,
-      teacherName,
-    });
-
-    if (roomNameEl) roomNameEl.value = '';
-    if (teacherNameEl) teacherNameEl.value = '';
-    if (teacherEmailEl) teacherEmailEl.value = '';
-
-    notify('success', 'Criada', 'Sala cadastrada com sucesso.');
-
-    if (roomsFilterYearSelectEl && yearId) {
-      roomsFilterYearSelectEl.value = yearId;
-    }
-
-    await refreshRooms({ keepStatus: true });
-    setStatus('');
-  } catch (e) {
-    const msg = String(e?.message || e);
-
-    if (msg.includes('Professor não encontrado')) {
-      notify(
-        'error',
-        'Professor não encontrado',
-        'O e-mail informado precisa ser de um professor já cadastrado e vinculado a esta escola.',
-      );
-    } else if (msg.includes('Rota não encontrada')) {
-      notify(
-        'error',
-        'Rota não encontrada',
-        'O backend publicado não está reconhecendo a rota de salas. Verifique se o deploy mais recente foi publicado no Render.',
-      );
-    } else {
-      notify('error', 'Erro', msg);
-    }
-
-    setStatus('');
-  }
-}
-
-// ------------------- Init -------------------
-document.addEventListener('DOMContentLoaded', async () => {
-  const session = requireSchoolSession({ redirectTo: 'login-escola.html' });
-
-  setText(schoolNameEl, getSchoolDisplayName(session));
-
-  if (createYearBtn) {
-    createYearBtn.addEventListener('click', () => onCreateYear());
-  }
-
-  if (createRoomBtn) {
-    createRoomBtn.addEventListener('click', () => onCreateRoom());
-  }
-
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', async () => {
-      try {
-        setBusy(refreshBtn, true, 'Atualizando...');
-        setStatus('Atualizando painel...');
-        await refreshAll({ keepStatus: true });
-        setText(schoolNameEl, getSchoolDisplayName(session));
-        setStatus('Painel atualizado com sucesso.');
-      } catch (e) {
-        const msg = String(e?.message || e);
-        console.error(e);
-        setStatus('Erro ao atualizar painel.');
-        notify('error', 'Erro', msg || 'Falha ao atualizar painel.');
-      } finally {
-        setBusy(refreshBtn, false);
-      }
-    });
-  }
-
-  if (roomsFilterYearSelectEl) {
-    roomsFilterYearSelectEl.addEventListener('change', () => refreshRooms());
-  }
-
-  try {
-    await refreshAll();
-    setText(schoolNameEl, getSchoolDisplayName(session));
-  } catch (e) {
-    console.error(e);
-
-    const msg = String(e?.message || e);
-
-    if (msg.includes('Rota não encontrada')) {
-      setStatus('Erro ao carregar painel.');
-      notify(
-        'error',
-        'Backend desatualizado',
-        'A rota do painel escolar não foi encontrada no servidor. Verifique se o último deploy foi publicado.',
-      );
-    } else {
-      setStatus('Erro ao carregar painel.');
-      notify('error', 'Erro', msg);
-    }
-  }
-});
