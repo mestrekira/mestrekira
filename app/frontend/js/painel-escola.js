@@ -173,6 +173,8 @@ const createRoomBtn = document.getElementById('createRoomBtn');
 const roomsFilterYearSelectEl = document.getElementById('roomsFilterYearSelect');
 const roomsTbody = document.getElementById('roomsTbody');
 
+const teachersTbody = document.getElementById('teachersTbody');
+
 const roomsSectionEl = document.getElementById('roomsSection');
 const createRoomAreaEl = document.getElementById('createRoomArea');
 const roomsBlockedNoteEl = document.getElementById('roomsBlockedNote');
@@ -258,8 +260,31 @@ async function apiToggleRoom(roomId, isActive) {
   );
 }
 
+async function apiListTeachers() {
+  return authFetchJson(`${SCHOOL_API_BASE}/teachers`);
+}
+
+async function apiDeactivateTeacher(id) {
+  return authFetchJson(
+    `${SCHOOL_API_BASE}/teachers/${encodeURIComponent(String(id))}/deactivate`,
+    {
+      method: 'PATCH',
+    }
+  );
+}
+
+async function apiDeleteTeacher(id) {
+  return authFetchJson(
+    `${SCHOOL_API_BASE}/teachers/${encodeURIComponent(String(id))}`,
+    {
+      method: 'DELETE',
+    }
+  );
+}
+
 let cachedYears = [];
 let cachedRooms = [];
+let cachedTeachers = [];
 
 let roomBeingEdited = null;
 
@@ -316,56 +341,57 @@ async function saveRoomEdition() {
     return;
   }
 
-const name = String(
-  editRoomNameEl?.value || ''
-).trim();
+  const name = String(
+    editRoomNameEl?.value || ''
+  ).trim();
 
-const teacherName = String(
-  editTeacherNameEl?.value || ''
-).trim();
+  const teacherName = String(
+    editTeacherNameEl?.value || ''
+  ).trim();
 
-const teacherEmail = String(
-  editTeacherEmailEl?.value || ''
-)
-.trim()
-.toLowerCase();
+  const teacherEmail = String(
+    editTeacherEmailEl?.value || ''
+  )
+    .trim()
+    .toLowerCase();
 
-if (!name) {
-  notify(
-    'warn',
-    'Nome inválido',
-    'Informe um nome válido.'
-  );
+  if (!name) {
+    notify(
+      'warn',
+      'Nome inválido',
+      'Informe um nome válido.'
+    );
 
-  editRoomNameEl?.focus();
-  return;
-}
+    editRoomNameEl?.focus();
+    return;
+  }
 
-if (!teacherEmail) {
-  notify(
-    'warn',
-    'E-mail obrigatório',
-    'Informe o e-mail do professor.'
-  );
+  if (!teacherEmail) {
+    notify(
+      'warn',
+      'E-mail obrigatório',
+      'Informe o e-mail do professor.'
+    );
 
-  editTeacherEmailEl?.focus();
-  return;
-}
+    editTeacherEmailEl?.focus();
+    return;
+  }
 
   try {
     setBusy(saveEditRoomBtn, true, 'Salvando...');
 
     await apiUpdateRoom(roomBeingEdited.id, {
-  name,
-  teacherName,
-  teacherEmail,
-});
-    
+      name,
+      teacherName,
+      teacherEmail,
+    });
+
     notify('success', 'Atualizado', 'Sala atualizada.');
 
     closeEditRoomModal();
 
     await refreshRooms({ keepStatus: true });
+    await refreshTeachers({ keepStatus: true });
   } catch (e) {
     notify('error', 'Erro', String(e?.message || e));
   } finally {
@@ -447,6 +473,10 @@ function getYearNameById(yearId) {
 
 function roomStatusText(isActive) {
   return isActive === false ? 'Inativa' : 'Ativa';
+}
+
+function teacherStatusText(isActive) {
+  return isActive === false ? 'Inativo' : 'Ativo';
 }
 
 function updateRoomsAvailability() {
@@ -679,6 +709,7 @@ function renderRoomsTable() {
         );
 
         await refreshRooms({ keepStatus: true });
+        await refreshTeachers({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
       }
@@ -703,6 +734,7 @@ function renderRoomsTable() {
         notify('success', 'Excluída', 'Sala removida.');
 
         await refreshRooms({ keepStatus: true });
+        await refreshTeachers({ keepStatus: true });
       } catch (e) {
         notify('error', 'Erro', String(e?.message || e));
       }
@@ -722,6 +754,145 @@ function renderRoomsTable() {
     tr.appendChild(tdActions);
 
     roomsTbody.appendChild(tr);
+  });
+}
+
+function renderTeachersTable() {
+  if (!teachersTbody) return;
+
+  teachersTbody.innerHTML = '';
+
+  if (!cachedTeachers.length) {
+    teachersTbody.innerHTML =
+      '<tr><td colspan="5" class="mk-muted">Nenhum professor vinculado à escola ainda.</td></tr>';
+
+    return;
+  }
+
+  cachedTeachers.forEach((teacher) => {
+    const tr = document.createElement('tr');
+
+    const tdTeacher = document.createElement('td');
+    tdTeacher.innerHTML =
+      `<strong>${escapeHtml(teacher.name || 'Professor')}</strong>` +
+      (teacher.mustChangePassword
+        ? '<br><small class="mk-muted">Senha temporária pendente de troca</small>'
+        : '');
+
+    const tdEmail = document.createElement('td');
+    tdEmail.textContent = teacher.email || '—';
+
+    const tdRooms = document.createElement('td');
+    tdRooms.innerHTML =
+      `<strong>Salas: ${Number(teacher.roomsTotal || 0)}</strong><br>` +
+      `<small class="mk-muted">Ativas: ${Number(teacher.activeRooms || 0)} | Inativas: ${Number(teacher.inactiveRooms || 0)}</small>`;
+
+    if (Array.isArray(teacher.rooms) && teacher.rooms.length) {
+      const roomsText = teacher.rooms
+        .map((room) => `${room.name || 'Sala'} (${room.isActive === false ? 'inativa' : 'ativa'})`)
+        .join(', ');
+
+      tdRooms.innerHTML += `<br><small class="mk-muted">${escapeHtml(roomsText)}</small>`;
+    }
+
+    const tdStatus = document.createElement('td');
+
+    const badge = document.createElement('span');
+    const active = teacher.isActive !== false;
+
+    badge.className = `mk-badge ${active ? 'on' : 'off'}`;
+    badge.textContent = teacherStatusText(active);
+
+    tdStatus.appendChild(badge);
+
+    const tdActions = document.createElement('td');
+
+    const wrap = document.createElement('div');
+    wrap.className = 'mk-actions';
+
+    const btnDeactivate = document.createElement('button');
+    btnDeactivate.type = 'button';
+    btnDeactivate.textContent = 'Desativar';
+
+    const canDeactivate = teacher.canDeactivate === true && active;
+
+    btnDeactivate.disabled = !canDeactivate;
+    btnDeactivate.title = canDeactivate
+      ? 'Desativar professor'
+      : 'O professor só pode ser desativado se estiver ativo e não possuir salas ativas.';
+
+    btnDeactivate.onclick = async () => {
+      if (!canDeactivate) return;
+
+      const ok = confirm(
+        `Desativar o professor "${teacher.name}"?\n\nA conta não será apagada e o histórico será preservado.`,
+      );
+
+      if (!ok) return;
+
+      try {
+        await apiDeactivateTeacher(teacher.id);
+
+        notify(
+          'success',
+          'Professor desativado',
+          'O professor foi marcado como inativo.',
+        );
+
+        await refreshTeachers({ keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.className = 'danger';
+    btnDelete.textContent = 'Excluir';
+
+    const canDelete = teacher.canDelete === true;
+
+    btnDelete.disabled = !canDelete;
+    btnDelete.title = canDelete
+      ? 'Excluir professor'
+      : 'O professor só pode ser excluído se não possuir nenhuma sala vinculada.';
+
+    btnDelete.onclick = async () => {
+      if (!canDelete) return;
+
+      const ok = confirm(
+        `Excluir definitivamente o professor "${teacher.name}"?\n\nUse essa opção somente se ele não tiver nenhuma sala vinculada.`,
+      );
+
+      if (!ok) return;
+
+      try {
+        await apiDeleteTeacher(teacher.id);
+
+        notify(
+          'success',
+          'Professor excluído',
+          'A conta do professor foi removida.',
+        );
+
+        await refreshTeachers({ keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    wrap.appendChild(btnDeactivate);
+    wrap.appendChild(btnDelete);
+
+    tdActions.appendChild(wrap);
+
+    tr.appendChild(tdTeacher);
+    tr.appendChild(tdEmail);
+    tr.appendChild(tdRooms);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdActions);
+
+    teachersTbody.appendChild(tr);
   });
 }
 
@@ -892,20 +1063,61 @@ async function refreshRooms({ keepStatus } = {}) {
   const res = await apiListRooms(yearId || null);
   const rooms = unwrapList(res, ['rooms']);
 
- cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
-  id: r.id,
-  name: r.name,
-  code: r.code,
-  teacherId: r.teacherId || r.teacher_id || null,
-  teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
-  teacherEmail: r.teacherEmail || r.teacher_email || '',
-  schoolYearId: r.schoolYearId || r.school_year_id || null,
-  createdAt: r.createdAt || r.created_at || null,
-  isActive: r.isActive !== false,
-  deactivatedAt: r.deactivatedAt || r.deactivated_at || null,
-}));
+  cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    code: r.code,
+    teacherId: r.teacherId || r.teacher_id || null,
+    teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
+    teacherEmail: r.teacherEmail || r.teacher_email || '',
+    schoolYearId: r.schoolYearId || r.school_year_id || null,
+    createdAt: r.createdAt || r.created_at || null,
+    isActive: r.isActive !== false,
+    deactivatedAt: r.deactivatedAt || r.deactivated_at || null,
+  }));
 
   renderRoomsTable();
+
+  if (!keepStatus) {
+    setStatus('');
+  }
+}
+
+async function refreshTeachers({ keepStatus } = {}) {
+  if (!teachersTbody) return;
+
+  if (!keepStatus) {
+    setStatus('Carregando professores...');
+  }
+
+  const res = await apiListTeachers();
+  const teachers = unwrapList(res, ['teachers']);
+
+  cachedTeachers = (Array.isArray(teachers) ? teachers : [])
+    .filter((teacher) => teacher && teacher.id)
+    .map((teacher) => ({
+      id: String(teacher.id),
+      name: String(teacher.name || '').trim(),
+      email: String(teacher.email || '').trim(),
+      isActive: teacher.isActive !== false,
+      professorType: teacher.professorType || teacher.professor_type || null,
+      schoolId: teacher.schoolId || teacher.school_id || null,
+      mustChangePassword: teacher.mustChangePassword === true || teacher.must_change_password === true,
+      roomsTotal: Number(teacher.roomsTotal ?? teacher.rooms_total ?? 0),
+      activeRooms: Number(teacher.activeRooms ?? teacher.active_rooms ?? 0),
+      inactiveRooms: Number(teacher.inactiveRooms ?? teacher.inactive_rooms ?? 0),
+      canDeactivate: teacher.canDeactivate === true || teacher.can_deactivate === true,
+      canDelete: teacher.canDelete === true || teacher.can_delete === true,
+      rooms: Array.isArray(teacher.rooms)
+        ? teacher.rooms.map((room) => ({
+            id: String(room.id || ''),
+            name: String(room.name || '').trim(),
+            isActive: room.isActive !== false,
+          }))
+        : [],
+    }));
+
+  renderTeachersTable();
 
   if (!keepStatus) {
     setStatus('');
@@ -915,6 +1127,7 @@ async function refreshRooms({ keepStatus } = {}) {
 async function refreshAll({ keepStatus } = {}) {
   await refreshYears({ keepStatus: true });
   await refreshRooms({ keepStatus: true });
+  await refreshTeachers({ keepStatus: true });
 
   if (!keepStatus) {
     setStatus('');
@@ -1029,6 +1242,7 @@ async function onCreateRoom() {
     }
 
     await refreshRooms({ keepStatus: true });
+    await refreshTeachers({ keepStatus: true });
 
     setStatus('');
   } catch (e) {
@@ -1119,3 +1333,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
