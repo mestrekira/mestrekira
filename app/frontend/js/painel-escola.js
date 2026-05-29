@@ -674,3 +674,398 @@ function renderRoomsTable() {
     roomsTbody.appendChild(tr);
   });
 }
+
+function renderYearsTable() {
+  if (!yearsTbody) return;
+
+  yearsTbody.innerHTML = '';
+
+  if (!cachedYears.length) {
+    yearsTbody.innerHTML =
+      '<tr><td colspan="4" class="mk-muted">Nenhum ano letivo cadastrado.</td></tr>';
+
+    return;
+  }
+
+  const years = sortYearsMostRecentFirst(cachedYears);
+
+  years.forEach((y) => {
+    const tr = document.createElement('tr');
+
+    const tdName = document.createElement('td');
+    tdName.textContent = y.name || '—';
+
+    const tdStatus = document.createElement('td');
+
+    const badge = document.createElement('span');
+    const on = y.isActive === true;
+
+    badge.className = `mk-badge ${on ? 'on' : 'off'}`;
+    badge.textContent = on ? 'Ativo' : 'Inativo';
+
+    tdStatus.appendChild(badge);
+
+    const tdCreated = document.createElement('td');
+    tdCreated.textContent = fmtDateBR(y.createdAt);
+
+    const tdActions = document.createElement('td');
+
+    const wrap = document.createElement('div');
+    wrap.className = 'mk-actions';
+
+    const btnRename = document.createElement('button');
+    btnRename.type = 'button';
+    btnRename.textContent = 'Renomear';
+
+    btnRename.onclick = async () => {
+      const name = prompt('Novo nome do ano letivo:', y.name || '');
+
+      if (name == null) return;
+
+      const n = String(name).trim();
+
+      if (!n) {
+        notify('warn', 'Nome inválido', 'Informe um nome válido.');
+        return;
+      }
+
+      try {
+        await apiUpdateYear(y.id, { name: n });
+
+        notify('success', 'Atualizado', 'Ano letivo renomeado.');
+
+        await refreshAll({ keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    const btnToggle = document.createElement('button');
+    btnToggle.type = 'button';
+    btnToggle.textContent = on ? 'Desativar' : 'Ativar';
+
+    btnToggle.onclick = async () => {
+      try {
+        await apiUpdateYear(y.id, { isActive: !on });
+
+        notify(
+          'success',
+          'Atualizado',
+          `Ano letivo ${!on ? 'ativado' : 'desativado'}.`,
+        );
+
+        await refreshAll({ keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.className = 'danger';
+    btnDelete.textContent = 'Excluir';
+
+    btnDelete.onclick = async () => {
+      const ok = confirm(
+        `Excluir o ano letivo "${y.name}"?\n\nAs salas desse ano serão mantidas, mas ficarão sem ano letivo.`,
+      );
+
+      if (!ok) return;
+
+      try {
+        await apiDeleteYear(y.id);
+
+        notify('success', 'Excluído', 'Ano letivo removido.');
+
+        await refreshAll({ keepStatus: true });
+      } catch (e) {
+        notify('error', 'Erro', String(e?.message || e));
+      }
+    };
+
+    wrap.appendChild(btnRename);
+    wrap.appendChild(btnToggle);
+    wrap.appendChild(btnDelete);
+
+    tdActions.appendChild(wrap);
+
+    tr.appendChild(tdName);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdCreated);
+    tr.appendChild(tdActions);
+
+    yearsTbody.appendChild(tr);
+  });
+}
+
+async function refreshYears({ keepStatus } = {}) {
+  if (!keepStatus) {
+    setStatus('Carregando anos letivos...');
+  }
+
+  const res = await apiListYears();
+  const years = unwrapList(res, ['years']);
+
+  cachedYears = (Array.isArray(years) ? years : [])
+    .filter((y) => y && y.id)
+    .map((y) => ({
+      id: String(y.id),
+      name: String(y.name || '').trim(),
+      isActive: toBool(y.isActive, true),
+      createdAt: y.createdAt || y.created_at || null,
+    }));
+
+  syncYearSelects();
+  renderYearsTable();
+  updateRoomsAvailability();
+
+  if (!keepStatus) {
+    setStatus('');
+  }
+}
+
+async function refreshRooms({ keepStatus } = {}) {
+  if (!cachedYears.length) {
+    cachedRooms = [];
+    renderRoomsTable();
+    return;
+  }
+
+  if (!keepStatus) {
+    setStatus('Carregando salas...');
+  }
+
+  const yearId = roomsFilterYearSelectEl
+    ? String(roomsFilterYearSelectEl.value || '').trim()
+    : '';
+
+  const res = await apiListRooms(yearId || null);
+  const rooms = unwrapList(res, ['rooms']);
+
+  cachedRooms = (Array.isArray(rooms) ? rooms : []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    code: r.code,
+    teacherId: r.teacherId || r.teacher_id || null,
+    teacherNameSnapshot: r.teacherNameSnapshot || r.teacher_name_snapshot || '',
+    teacherEmail: r.teacherEmail || '',
+    schoolYearId: r.schoolYearId || r.school_year_id || null,
+    createdAt: r.createdAt || r.created_at || null,
+    isActive: r.isActive !== false,
+    deactivatedAt: r.deactivatedAt || r.deactivated_at || null,
+  }));
+
+  renderRoomsTable();
+
+  if (!keepStatus) {
+    setStatus('');
+  }
+}
+
+async function refreshAll({ keepStatus } = {}) {
+  await refreshYears({ keepStatus: true });
+  await refreshRooms({ keepStatus: true });
+
+  if (!keepStatus) {
+    setStatus('');
+  }
+}
+
+async function onCreateYear() {
+  const name = String(yearNameEl?.value || '').trim();
+
+  if (!name) {
+    notify('warn', 'Campos obrigatórios', 'Informe o nome do ano letivo.');
+    return;
+  }
+
+  try {
+    setStatus('');
+
+    await apiCreateYear(name);
+
+    if (yearNameEl) {
+      yearNameEl.value = '';
+    }
+
+    notify('success', 'Criado', 'Ano letivo cadastrado.');
+
+    await refreshAll({ keepStatus: true });
+
+    const defaultYearId = getDefaultYearId();
+
+    if (roomYearSelectEl && defaultYearId) {
+      roomYearSelectEl.value = defaultYearId;
+    }
+
+    if (roomsFilterYearSelectEl && defaultYearId) {
+      roomsFilterYearSelectEl.value = defaultYearId;
+    }
+
+    setStatus('');
+  } catch (e) {
+    notify('error', 'Erro', String(e?.message || e));
+    setStatus('');
+  }
+}
+
+async function onCreateRoom() {
+  const name = String(roomNameEl?.value || '').trim();
+  const teacherName = String(teacherNameEl?.value || '').trim();
+  const teacherEmail = String(teacherEmailEl?.value || '').trim().toLowerCase();
+
+  let yearId = roomYearSelectEl
+    ? String(roomYearSelectEl.value || '').trim()
+    : '';
+
+  if (!yearId) {
+    yearId = getDefaultYearId();
+
+    if (roomYearSelectEl && yearId) {
+      roomYearSelectEl.value = yearId;
+    }
+  }
+
+  if (!cachedYears.length) {
+    notify(
+      'warn',
+      'Ano letivo obrigatório',
+      'Cadastre primeiro um ano letivo para liberar o cadastro de salas.',
+    );
+    return;
+  }
+
+  if (!yearId) {
+    notify(
+      'warn',
+      'Ano letivo obrigatório',
+      'Selecione o ano letivo da sala antes de cadastrar.',
+    );
+    return;
+  }
+
+  if (!name || !teacherEmail) {
+    notify(
+      'warn',
+      'Campos obrigatórios',
+      'Informe o nome da sala e o e-mail do professor.',
+    );
+    return;
+  }
+
+  if (!teacherEmail.includes('@')) {
+    notify('warn', 'E-mail inválido', 'Informe um e-mail válido do professor.');
+    return;
+  }
+
+  try {
+    setStatus('Criando sala...');
+
+    await apiCreateRoom({
+      name,
+      teacherEmail,
+      yearId,
+      teacherName,
+    });
+
+    if (roomNameEl) roomNameEl.value = '';
+    if (teacherNameEl) teacherNameEl.value = '';
+    if (teacherEmailEl) teacherEmailEl.value = '';
+
+    notify('success', 'Criada', 'Sala cadastrada com sucesso.');
+
+    if (roomsFilterYearSelectEl && yearId) {
+      roomsFilterYearSelectEl.value = yearId;
+    }
+
+    await refreshRooms({ keepStatus: true });
+
+    setStatus('');
+  } catch (e) {
+    const msg = String(e?.message || e);
+
+    if (msg.includes('Professor não encontrado')) {
+      notify(
+        'error',
+        'Professor não encontrado',
+        'O e-mail informado precisa ser de um professor já cadastrado e vinculado a esta escola.',
+      );
+    } else if (msg.includes('Rota não encontrada')) {
+      notify(
+        'error',
+        'Rota não encontrada',
+        'O backend publicado não está reconhecendo a rota de salas. Verifique se o deploy mais recente foi publicado no Render.',
+      );
+    } else {
+      notify('error', 'Erro', msg);
+    }
+
+    setStatus('');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const session = requireSchoolSession({
+    redirectTo: 'login-escola.html',
+  });
+
+  setText(schoolNameEl, getSchoolDisplayName(session));
+
+  if (createYearBtn) {
+    createYearBtn.addEventListener('click', () => onCreateYear());
+  }
+
+  if (createRoomBtn) {
+    createRoomBtn.addEventListener('click', () => onCreateRoom());
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      try {
+        setBusy(refreshBtn, true, 'Atualizando...');
+        setStatus('Atualizando painel...');
+
+        await refreshAll({ keepStatus: true });
+
+        setText(schoolNameEl, getSchoolDisplayName(session));
+        setStatus('Painel atualizado com sucesso.');
+      } catch (e) {
+        const msg = String(e?.message || e);
+
+        console.error(e);
+
+        setStatus('Erro ao atualizar painel.');
+        notify('error', 'Erro', msg || 'Falha ao atualizar painel.');
+      } finally {
+        setBusy(refreshBtn, false);
+      }
+    });
+  }
+
+  if (roomsFilterYearSelectEl) {
+    roomsFilterYearSelectEl.addEventListener('change', () => refreshRooms());
+  }
+
+  try {
+    await refreshAll();
+
+    setText(schoolNameEl, getSchoolDisplayName(session));
+  } catch (e) {
+    console.error(e);
+
+    const msg = String(e?.message || e);
+
+    if (msg.includes('Rota não encontrada')) {
+      setStatus('Erro ao carregar painel.');
+
+      notify(
+        'error',
+        'Backend desatualizado',
+        'A rota do painel escolar não foi encontrada no servidor. Verifique se o último deploy foi publicado.',
+      );
+    } else {
+      setStatus('Erro ao carregar painel.');
+      notify('error', 'Erro', msg);
+    }
+  }
+});
