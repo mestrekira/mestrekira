@@ -342,11 +342,14 @@ async function reenviarVerificacao() {
   notify('info', 'Reenviando...', 'Enviando novo link de verificação...', 1800);
 
   try {
-    const res = await fetch(`${API_URL}/auth/request-verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
+   const res = await fetch(`${API_URL}/auth/request-verify`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email,
+    expectedRole: 'school',
+  }),
+});
 
     const data = await readJsonSafe(res);
 
