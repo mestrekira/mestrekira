@@ -118,6 +118,78 @@ function setBusy(el, on, busyText = 'Atualizando...') {
   }
 }
 
+function confirmDialog({
+  title = 'Confirmar ação',
+  message = '',
+  confirmText = 'Confirmar',
+  cancelText = 'Cancelar',
+  danger = false,
+} = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal';
+
+    const h3 = document.createElement('h3');
+    h3.textContent = title;
+
+    const p = document.createElement('p');
+    p.textContent = message;
+
+    const actions = document.createElement('div');
+    actions.className = 'confirm-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-outline';
+    cancelBtn.textContent = cancelText;
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = danger ? 'btn-danger' : 'btn-outline';
+    confirmBtn.textContent = confirmText;
+
+    function close(value) {
+      overlay.remove();
+      document.removeEventListener('keydown', onKeyDown);
+      resolve(value);
+    }
+
+    function onKeyDown(ev) {
+      if (ev.key === 'Escape') {
+        close(false);
+      }
+    }
+
+    cancelBtn.addEventListener('click', () => close(false));
+    confirmBtn.addEventListener('click', () => close(true));
+
+    overlay.addEventListener('click', (ev) => {
+      if (ev.target === overlay) {
+        close(false);
+      }
+    });
+
+    document.addEventListener('keydown', onKeyDown);
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+
+    modal.appendChild(h3);
+    modal.appendChild(p);
+    modal.appendChild(actions);
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      confirmBtn.focus();
+    }, 60);
+  });
+}
+
 async function readJsonSafe(res) {
   try {
     return await res.json();
@@ -722,9 +794,13 @@ function renderRoomsTable() {
     btnDelete.textContent = 'Excluir';
 
     btnDelete.onclick = async () => {
-      const ok = confirm(
-        `Excluir a sala "${r.name}"?\n\nAtenção: isso pode falhar se o backend não permitir deletar com tarefas ou matrículas.`,
-      );
+      const ok = await confirmDialog({
+        title: 'Excluir sala',
+        message: `Deseja excluir a sala "${r.name}"? Essa ação pode falhar se o backend não permitir deletar salas com tarefas ou matrículas.`,
+        confirmText: 'Excluir sala',
+        cancelText: 'Cancelar',
+        danger: true,
+      });
 
       if (!ok) return;
 
@@ -824,9 +900,13 @@ function renderTeachersTable() {
     btnDeactivate.onclick = async () => {
       if (!canDeactivate) return;
 
-      const ok = confirm(
-        `Desativar o professor "${teacher.name}"?\n\nA conta não será apagada e o histórico será preservado.`,
-      );
+      const ok = await confirmDialog({
+        title: 'Desativar professor',
+        message: `Deseja desativar o professor "${teacher.name}"? A conta não será apagada e o histórico será preservado.`,
+        confirmText: 'Desativar',
+        cancelText: 'Cancelar',
+        danger: true,
+      });
 
       if (!ok) return;
 
@@ -860,9 +940,13 @@ function renderTeachersTable() {
     btnDelete.onclick = async () => {
       if (!canDelete) return;
 
-      const ok = confirm(
-        `Excluir definitivamente o professor "${teacher.name}"?\n\nUse essa opção somente se ele não tiver nenhuma sala vinculada.`,
-      );
+      const ok = await confirmDialog({
+        title: 'Excluir professor',
+        message: `Deseja excluir definitivamente o professor "${teacher.name}"? Use essa opção somente se ele não tiver nenhuma sala vinculada.`,
+        confirmText: 'Excluir',
+        cancelText: 'Cancelar',
+        danger: true,
+      });
 
       if (!ok) return;
 
@@ -987,9 +1071,13 @@ function renderYearsTable() {
     btnDelete.textContent = 'Excluir';
 
     btnDelete.onclick = async () => {
-      const ok = confirm(
-        `Excluir o ano letivo "${y.name}"?\n\nAs salas desse ano serão mantidas, mas ficarão sem ano letivo.`,
-      );
+      const ok = await confirmDialog({
+        title: 'Excluir ano letivo',
+        message: `Deseja excluir o ano letivo "${y.name}"? As salas desse ano serão mantidas, mas ficarão sem ano letivo.`,
+        confirmText: 'Excluir ano',
+        cancelText: 'Cancelar',
+        danger: true,
+      });
 
       if (!ok) return;
 
@@ -1333,4 +1421,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
 
