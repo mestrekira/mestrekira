@@ -8,7 +8,6 @@ const LS = {
   professorId: 'professorId',
   schoolId: 'schoolId',
 
-  // legados
   professorName: 'professorName',
   professorEmail: 'professorEmail',
 };
@@ -238,11 +237,9 @@ async function fazerLogin() {
       return;
     }
 
-    // evita conflito entre perfis
     localStorage.removeItem(LS.studentId);
     localStorage.removeItem(LS.schoolId);
 
-    // grava auth limpa
     localStorage.setItem(LS.token, token);
     localStorage.setItem(LS.user, JSON.stringify(data.user));
     localStorage.setItem(LS.professorId, userId);
@@ -304,10 +301,13 @@ async function reenviarVerificacao() {
 
   try {
     const res = await fetch(`${API_URL}/auth/request-verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email,
+    expectedRole: 'professor',
+  }),
+});
 
     const data = await readJsonSafe(res);
 
