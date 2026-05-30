@@ -8,7 +8,6 @@ const LS = {
   professorId: 'professorId',
   schoolId: 'schoolId',
 
-  // legados
   studentName: 'studentName',
   studentEmail: 'studentEmail',
 };
@@ -185,16 +184,12 @@ async function fazerLogin() {
       return;
     }
 
-    // evita conflito de papéis
     localStorage.removeItem(LS.professorId);
     localStorage.removeItem(LS.schoolId);
 
-    // grava auth limpo
     localStorage.setItem(LS.token, token);
     localStorage.setItem(LS.user, JSON.stringify(data.user));
     localStorage.setItem(LS.studentId, userId);
-
-    // valida sessão protegida antes de redirecionar
     try {
       const me = await fetchMe(token);
       const meRole = normRole(me?.role || data?.user?.role);
@@ -245,10 +240,13 @@ async function reenviarVerificacao() {
 
   try {
     const res = await fetch(`${API_URL}/auth/request-verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email,
+    expectedRole: 'student',
+  }),
+});
 
     const data = await readJsonSafe(res);
 
