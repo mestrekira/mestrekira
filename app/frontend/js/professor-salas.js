@@ -1,4 +1,3 @@
-```js
 import { API_URL } from './config.js';
 import {
   notify,
@@ -305,4 +304,4 @@ if (createRoomBtn && roomNameInput) {
 }
 
 carregarSalas();
-```
+
