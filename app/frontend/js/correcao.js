@@ -460,7 +460,9 @@ function buildAutoFeedbackText() {
 
     if (!rubric) return null;
 
-   return `${COMP_LABELS[comp]}: ${rubric.actualScore ?? rubric.score} pontos.\n${rubric.text}`;
+    return `${COMP_LABELS[comp]}: ${rubric.actualScore ?? rubric.score} pontos.\n${rubric.text}`;
+  }).filter(Boolean);
+
   if (blocks.length === 0) return '';
 
   return `${AUTO_FEEDBACK_START}\n\n${blocks.join('\n\n')}\n\n${AUTO_FEEDBACK_END}`;
@@ -588,7 +590,7 @@ function openRubric(comp, options = {}) {
 
   items.forEach((it) => {
     const line = document.createElement('div');
-        line.dataset.rubricOption = 'true';
+    line.dataset.rubricOption = 'true';
 
     const isSelected = currentValue !== '' && String(it.score) === currentValue;
     line.dataset.selected = String(isSelected);
@@ -656,7 +658,7 @@ function initRubricsUI() {
       if (v.length > 4) inp.value = v.slice(0, 4);
 
       updateTotalUI();
-      refreshFeedbackAfterManualInput();
+      updateFeedbackFromRubrics();
     });
   });
 
