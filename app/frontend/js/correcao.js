@@ -652,6 +652,12 @@ function initRubricsUI() {
   [c1Input, c2Input, c3Input, c4Input, c5Input].forEach((inp) => {
     if (!inp) return;
 
+  inp.addEventListener('focus', () => {
+  const comp = inp.id;
+
+  closeAllRubrics(comp);
+});
+    
     inp.addEventListener('input', () => {
       const v = String(inp.value || '');
 
@@ -686,6 +692,19 @@ function initRubricsUI() {
       openRubric(comp, { scroll: true });
     });
   });
+
+  document.addEventListener('click', (event) => {
+  const target = event.target;
+
+  const clickedRubricPanel = target.closest('.rubric-panel');
+  const clickedRubricButton = target.closest('.rubric-btn');
+
+  if (clickedRubricPanel || clickedRubricButton) {
+    return;
+  }
+
+  closeAllRubrics();
+});
 }
 
 function parseComp(inputEl) {
