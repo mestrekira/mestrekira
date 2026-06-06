@@ -418,7 +418,22 @@ function getSelectedRubric(comp) {
 
   if (!value) return null;
 
-  return (RUBRICS[comp] || []).find((item) => String(item.score) === value) || null;
+  const score = Number(value);
+  if (Number.isNaN(score)) return null;
+
+  const items = RUBRICS[comp] || [];
+
+  const rubric =
+    [...items]
+      .filter((item) => Number(item.score) <= score)
+      .sort((a, b) => Number(b.score) - Number(a.score))[0] || null;
+
+  if (!rubric) return null;
+
+  return {
+    ...rubric,
+    actualScore: Math.round(score),
+  };
 }
 
 function normalizeFeedbackText(value) {
@@ -445,9 +460,7 @@ function buildAutoFeedbackText() {
 
     if (!rubric) return null;
 
-    return `${COMP_LABELS[comp]}: ${rubric.score} pontos.\n${rubric.text}`;
-  }).filter(Boolean);
-
+   return `${COMP_LABELS[comp]}: ${rubric.actualScore ?? rubric.score} pontos.\n${rubric.text}`;
   if (blocks.length === 0) return '';
 
   return `${AUTO_FEEDBACK_START}\n\n${blocks.join('\n\n')}\n\n${AUTO_FEEDBACK_END}`;
