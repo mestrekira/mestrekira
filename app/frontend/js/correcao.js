@@ -23,6 +23,7 @@ const correctionSection = document.getElementById('correctionSection');
 const closeBtn = document.getElementById('closeCorrectionBtn');
 
 const studentPhotoImg = document.getElementById('studentPhotoImg');
+const studentEmailEl = document.getElementById('studentEmail');
 const studentNameEl = document.getElementById('studentName');
 
 const essayContentEl = document.getElementById('essayContent');
