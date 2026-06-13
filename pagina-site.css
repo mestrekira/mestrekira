@@ -20,8 +20,17 @@ section { margin-bottom: 26px; }
   margin: 20px 0;
 }
 
-.referencias {
-  text-indent: 0;
+.referencias{
+    margin-top: 20px;
+}
+
+.referencias p{
+    margin-bottom: 15px;
+    text-align: justify;
+    line-height: 1.8;
+    font-size: 1rem;
+    text-indent: -3em;
+    padding-left: 3em;
 }
 
 .imagem-conceitual{
