@@ -636,3 +636,46 @@ section { margin-bottom: 26px; }
     }
 
 }
+
+.kira-tooltip{
+    position:relative;
+    display:inline-block;
+    cursor:help;
+    color:#0d47a1;
+}
+
+.kira-tooltip strong{
+    border-bottom:1px dotted #0d47a1;
+}
+
+.kira-info{
+    visibility:hidden;
+    opacity:0;
+
+    position:absolute;
+    top:130%;
+    left:0;
+
+    width:420px;
+    max-width:90vw;
+
+    background:#fff;
+    color:#333;
+
+    padding:18px;
+    border-radius:10px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.18);
+
+    line-height:1.6;
+    font-size:.95rem;
+
+    transition:.25s;
+    z-index:999;
+}
+
+.kira-tooltip:hover .kira-info,
+.kira-tooltip:focus-within .kira-info{
+    visibility:visible;
+    opacity:1;
+}
