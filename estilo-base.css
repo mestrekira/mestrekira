@@ -1,346 +1,851 @@
-:root {
-  --navy: #151a2e;
-  --navy-2: #222a46;
-  --cream: #f6f2e8;
-  --purple: #8113eb;
+/* =========================================================
+   MESTRE KIRA
+   CSS Base
+   ========================================================= */
 
-  --bg: #f4f6fb;
-  --surface: #ffffff;
-  --text: #0f172a;
-  --muted: #475569;
-  --border: rgba(15, 23, 42, 0.12);
+:root{
 
-  --radius: 14px;
-  --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 14px 34px rgba(15, 23, 42, 0.12);
-  --transition: 220ms ease;
+  --navy:#151a2e;
+  --navy-2:#222a46;
+  --cream:#f6f2e8;
+  --purple:#8113eb;
 
-  --container: 1200px;
+  --bg:#f4f6fb;
+  --surface:#ffffff;
 
-  /* Mobile menu */
-  --drawer-w: 300px;
+  --text:#0f172a;
+  --muted:#475569;
+
+  --border:rgba(15,23,42,.12);
+
+  --radius:14px;
+
+  --shadow-sm:0 4px 14px rgba(15,23,42,.08);
+  --shadow-md:0 14px 34px rgba(15,23,42,.12);
+
+  --transition:220ms ease;
+
+  --container:1200px;
+
+  --drawer-w:300px;
+
 }
 
-* { box-sizing: border-box; }
+/* =========================================================
+   RESET
+   ========================================================= */
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-  background: var(--bg);
-  color: var(--text);
+*{
+
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+
 }
 
-a { color: var(--purple); text-decoration: none; }
-a:hover { text-decoration: underline; }
+html{
 
-a:focus-visible {
-  outline: 3px solid rgba(129, 19, 235, 0.35);
-  outline-offset: 3px;
-  border-radius: 6px;
+    scroll-behavior:smooth;
+
 }
 
-/* =========================
+body{
+
+    background:var(--bg);
+
+    color:var(--text);
+
+    font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+
+    font-size:16px;
+
+    line-height:1.6;
+
+}
+
+img{
+
+    display:block;
+
+    max-width:100%;
+
+}
+
+a{
+
+    color:var(--purple);
+
+    text-decoration:none;
+
+    transition:all var(--transition);
+
+}
+
+a:hover{
+
+    text-decoration:underline;
+
+}
+
+a:focus-visible{
+
+    outline:3px solid rgba(129,19,235,.35);
+
+    outline-offset:3px;
+
+    border-radius:8px;
+
+}
+
+/* =========================================================
    HEADER
-   ========================= */
+   ========================================================= */
 
-header {
-  position: sticky;
-  top: 0;
-  z-index: 1500;
-  background: linear-gradient(90deg, var(--navy), var(--navy-2));
-  box-shadow: var(--shadow-sm);
+header{
+
+    position:sticky;
+
+    top:0;
+
+    z-index:1500;
+
+    background:linear-gradient(
+        90deg,
+        var(--navy),
+        var(--navy-2)
+    );
+
+    box-shadow:var(--shadow-sm);
+
 }
 
-.logo-container {
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 14px 20px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+.logo-container{
+
+    max-width:var(--container);
+
+    margin:auto;
+
+    padding:
+
+        14px
+        20px
+        8px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:18px;
+
 }
 
-.logo-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
+.logo-wrapper{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    min-width:0;
+
 }
 
-.logo {
-  height: 64px;
-  width: auto;
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+.logo{
+
+    width:auto;
+
+    height:64px;
+
+    padding:6px 10px;
+
+    background:rgba(255,255,255,.94);
+
+    border-radius:12px;
+
+    box-shadow:
+
+    0 6px 18px rgba(0,0,0,.18);
+
 }
 
-.titulo {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 800;
-  color: white;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.titulo{
+
+    color:#fff;
+
+    font-size:28px;
+
+    font-weight:800;
+
+    letter-spacing:.2px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
 }
 
-/* =========================
-   BOTÃO HAMBURGER (só mobile)
-   ========================= */
+/* =========================================================
+   BOTÃO HAMBÚRGUER
+   ========================================================= */
 
-.menu-toggle {
-  display: none;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  cursor: pointer;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
-  transition: transform var(--transition), background var(--transition);
+.menu-toggle{
+
+    display:none;
+
+    width:44px;
+
+    height:44px;
+
+    border:none;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    color:#fff;
+
+    background:rgba(255,255,255,.08);
+
+    border:1px solid rgba(255,255,255,.15);
+
+    transition:
+
+    background var(--transition),
+
+    transform var(--transition);
+
 }
 
-.menu-toggle:hover { background: rgba(255,255,255,0.12); }
-.menu-toggle:active { transform: translateY(1px); }
+.menu-toggle:hover{
+
+    background:rgba(255,255,255,.14);
+
+}
+
+.menu-toggle:active{
+
+    transform:translateY(1px);
+
+}
 
 .menu-toggle .bars{
-  display: inline-block;
-  width: 18px;
-  height: 12px;
-  position: relative;
+
+    position:relative;
+
+    display:inline-block;
+
+    width:18px;
+
+    height:12px;
+
 }
 
 .menu-toggle .bars::before,
+
 .menu-toggle .bars::after,
+
 .menu-toggle .bars span{
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: #fff;
-  border-radius: 999px;
-}
 
-.menu-toggle .bars::before{ top: 0; }
-.menu-toggle .bars span{ top: 5px; }
-.menu-toggle .bars::after{ bottom: 0; }
-
-/* =========================
-   MENU DESKTOP/TABLET
-   ========================= */
-
-.menu-fixo {
-  padding: 0 20px 14px;
-}
-
-.menu-fixo ul {
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 8px;
-  list-style: none;
-
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-
-  border-radius: 999px;
-  background: var(--navy-2);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: none;
-}
-
-.menu-fixo ul li { position: relative; }
-
-.menu-fixo ul li > a {
-  display: block;
-  padding: 10px 14px;
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.92);
-  font-weight: 650;
-  transition: background var(--transition), transform var(--transition);
-}
-
-.menu-fixo ul li > a:hover {
-  background: rgba(255, 255, 255, 0.15);
-  text-decoration: none;
-}
-
-.menu-fixo ul li > a.active {
-  background: var(--purple);
-  color: white;
-}
-
-/* ===== Submenu desktop (mais fácil clicar) =====
-   - animação suave
-   - não “some” tão rápido visualmente
-*/
-.menu-fixo ul li ul {
-  display: block;               /* mantemos no layout mas escondemos por visibilidade */
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translateY(10px);
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease,
-    visibility 0ms linear 180ms; /* visibility muda depois (ajuda a não fechar “nervoso”) */
-
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-
-  min-width: 240px;
-  padding: 8px;
-  margin: 0;
-  list-style: none;
-
-  border-radius: 14px;
-  background: rgba(21, 26, 46, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: var(--shadow-md);
-}
-
-/* mantém aberto enquanto o mouse está no LI (inclui submenu) */
-.menu-fixo ul li:hover > ul,
-.menu-fixo ul li:focus-within > ul {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: translateY(0);
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease,
-    visibility 0ms;
-}
-
-/* “área de tolerância” invisível para não fechar ao mover o mouse (desktop) */
-@media (hover: hover) and (pointer: fine) {
-  .menu-fixo ul li ul::before{
     content:"";
+
     position:absolute;
+
     left:0;
+
     right:0;
+
+    height:2px;
+
+    background:#fff;
+
+    border-radius:999px;
+
+}
+
+.menu-toggle .bars::before{
+
+    top:0;
+
+}
+
+.menu-toggle .bars span{
+
+    top:5px;
+
+}
+
+.menu-toggle .bars::after{
+
+    bottom:0;
+
+}
+
+/* =========================================================
+   MENU DESKTOP / TABLET
+   ========================================================= */
+
+.menu-fixo{
+
+    padding:
+        0
+        20px
+        10px;
+
+}
+
+/* Barra principal */
+
+.menu-fixo>ul{
+
+    width:fit-content;
+
+    max-width:100%;
+
+    margin:auto;
+
+    padding:6px;
+
+    display:flex;
+
+    flex-wrap:nowrap;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:4px;
+
+    list-style:none;
+
+    border-radius:18px;
+
+    background:rgba(34,42,70,.96);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+
+        0 8px 20px rgba(0,0,0,.12);
+
+}
+
+/* Cada item */
+
+.menu-fixo>ul>li{
+
+    position:relative;
+
+    flex-shrink:0;
+
+}
+
+/* Link principal */
+
+.menu-fixo>ul>li>a{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:
+
+        9px
+        14px;
+
+    border-radius:12px;
+
+    font-weight:650;
+
+    color:
+
+    rgba(255,255,255,.92);
+
+    transition:
+
+    background var(--transition),
+
+    color var(--transition);
+
+}
+
+/* Hover */
+
+.menu-fixo>ul>li>a:hover{
+
+    background:
+
+    rgba(255,255,255,.12);
+
+    text-decoration:none;
+
+}
+
+/* Página ativa */
+
+.menu-fixo>ul>li>a.active{
+
+    background:var(--purple);
+
+    color:#fff;
+
+}
+
+/* =========================================================
+   SUBMENU DESKTOP
+   ========================================================= */
+
+.menu-fixo ul li ul{
+
+    position:absolute;
+
+    top:calc(100% + 8px);
+
+    left:0;
+
+    min-width:240px;
+
+    padding:8px;
+
+    list-style:none;
+
+    border-radius:14px;
+
+    background:
+
+    rgba(21,26,46,.98);
+
+    border:
+
+    1px solid rgba(255,255,255,.08);
+
+    box-shadow:var(--shadow-md);
+
+    opacity:0;
+
+    visibility:hidden;
+
+    pointer-events:none;
+
+    transform:
+
+    translateY(8px);
+
+    transition:
+
+    opacity .18s ease,
+
+    transform .18s ease,
+
+    visibility 0s linear .18s;
+
+}
+
+/* Abre submenu */
+
+.menu-fixo ul li:hover>ul,
+
+.menu-fixo ul li:focus-within>ul{
+
+    opacity:1;
+
+    visibility:visible;
+
+    pointer-events:auto;
+
+    transform:translateY(0);
+
+    transition:
+
+    opacity .18s,
+
+    transform .18s;
+
+}
+
+/* Área de tolerância */
+
+@media (hover:hover) and (pointer:fine){
+
+.menu-fixo ul li ul::before{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    right:0;
+
     top:-14px;
+
     height:14px;
-  }
+
 }
 
-.menu-fixo ul li ul li a {
-  display: block;
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
-  transition: background var(--transition), color var(--transition);
 }
 
-.menu-fixo ul li ul li a:hover {
-  background: var(--purple);
-  color: white;
-  text-decoration: none;
+/* Links internos */
+
+.menu-fixo ul li ul li a{
+
+    display:block;
+
+    padding:
+
+        10px
+        12px;
+
+    border-radius:10px;
+
+    color:
+
+    rgba(255,255,255,.92);
+
+    font-weight:600;
+
+    transition:
+
+    background var(--transition),
+
+    color var(--transition);
+
 }
 
-.menu-fixo ul li ul li a.active {
-  background: var(--purple);
-  color: white;
+.menu-fixo ul li ul li a:hover{
+
+    background:var(--purple);
+
+    color:#fff;
+
+    text-decoration:none;
+
 }
 
-/* =========================
+.menu-fixo ul li ul li a.active{
+
+    background:var(--purple);
+
+    color:#fff;
+
+}
+
+/* Evita quebra no desktop */
+
+@media (min-width:901px){
+
+.menu-fixo>ul{
+
+    flex-wrap:nowrap;
+
+    overflow-x:auto;
+
+    scrollbar-width:none;
+
+}
+
+.menu-fixo>ul::-webkit-scrollbar{
+
+    display:none;
+
+}
+
+}
+
+/* =========================================================
    LAYOUT
-   ========================= */
+   ========================================================= */
 
-main {
-  max-width: var(--container);
-  margin: 26px auto 0;
-  padding: 0 20px;
-  display: flex;
-  gap: 18px;
+main{
+
+    max-width:var(--container);
+
+    margin:24px auto 0;
+
+    padding:0 20px;
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:20px;
+
 }
 
-.barra-lateral {
-  width: 280px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  padding: 18px;
+/* =========================================================
+   BARRA LATERAL
+   ========================================================= */
+
+.barra-lateral{
+
+    width:280px;
+
+    flex-shrink:0;
+
+    background:var(--surface);
+
+    border:1px solid var(--border);
+
+    border-radius:var(--radius);
+
+    box-shadow:var(--shadow-sm);
+
+    padding:20px;
+
 }
 
 .barra-lateral h2,
-.barra-lateral h3 {
-  margin: 0 0 10px;
-  color: var(--navy);
+.barra-lateral h3{
+
+    color:var(--navy);
+
+    margin-bottom:12px;
+
+    line-height:1.3;
+
 }
 
-.barra-lateral ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.barra-lateral ul{
+
+    list-style:none;
+
 }
 
-.barra-lateral ul li a {
-  display: block;
-  padding: 10px 10px;
-  border-radius: 12px;
-  color: var(--text);
-  transition: background var(--transition);
+.barra-lateral ul li{
+
+    margin-bottom:4px;
+
 }
 
-.barra-lateral ul li a:hover {
-  background: rgba(21, 26, 46, 0.06);
-  text-decoration: none;
+.barra-lateral ul li:last-child{
+
+    margin-bottom:0;
+
 }
 
-.conteudo-principal {
-  flex: 1;
-  min-width: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  padding: 22px;
+.barra-lateral ul li a{
+
+    display:block;
+
+    padding:10px 12px;
+
+    border-radius:12px;
+
+    color:var(--text);
+
+    transition:
+
+        background var(--transition),
+
+        color var(--transition);
+
 }
 
-.conteudo-principal h1,
-.conteudo-principal h2,
-.conteudo-principal h3 {
-  color: var(--navy);
-}
+.barra-lateral ul li a:hover{
 
-.curriculo {
-  color: var(--purple);
-  font-weight: 800;
-}
+    background:rgba(21,26,46,.06);
 
-footer {
-  margin-top: 34px;
-  padding: 18px 20px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.92);
-  background: linear-gradient(90deg, var(--navy), var(--navy-2));
+    text-decoration:none;
+
 }
 
 /* =========================================================
-   RESPONSIVO — LAYOUT
+   CONTEÚDO
    ========================================================= */
 
-@media (max-width: 900px) {
-  main { flex-direction: column; }
-  .barra-lateral { width: 100%; }
-  .titulo { font-size: 22px; }
-  .logo { height: 56px; }
+.conteudo-principal{
+
+    flex:1;
+
+    min-width:0;
+
+    background:var(--surface);
+
+    border:1px solid var(--border);
+
+    border-radius:var(--radius);
+
+    box-shadow:var(--shadow-sm);
+
+    padding:24px;
+
+}
+
+.conteudo-principal h1{
+
+    color:var(--navy);
+
+    margin-bottom:20px;
+
+    line-height:1.2;
+
+}
+
+.conteudo-principal h2{
+
+    color:var(--navy);
+
+    margin:
+
+        34px
+        0
+        14px;
+
+    line-height:1.25;
+
+}
+
+.conteudo-principal h3{
+
+    color:var(--navy);
+
+    margin:
+
+        26px
+        0
+        12px;
+
+}
+
+.conteudo-principal p{
+
+    margin-bottom:18px;
+
+}
+
+.conteudo-principal ul,
+
+.conteudo-principal ol{
+
+    margin:
+
+        18px
+        0
+        18px
+        22px;
+
+}
+
+.conteudo-principal li{
+
+    margin-bottom:8px;
+
+}
+
+.conteudo-principal img{
+
+    margin:
+
+        26px auto;
+
+    border-radius:12px;
+
+    height:auto;
+
 }
 
 /* =========================================================
+   LINKS ESPECIAIS
+   ========================================================= */
+
+.curriculo{
+
+    color:var(--purple);
+
+    font-weight:700;
+
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+footer{
+
+    margin-top:40px;
+
+    padding:
+
+        20px;
+
+    text-align:center;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            var(--navy),
+            var(--navy-2)
+        );
+
+    color:
+
+    rgba(255,255,255,.92);
+
+}
+
+/* =========================================================
+   RESPONSIVO DO LAYOUT
+   ========================================================= */
+
+@media (max-width:900px){
+
+    main{
+
+        flex-direction:column;
+
+        padding:0 16px;
+
+    }
+
+    .barra-lateral{
+
+        width:100%;
+
+        order:2;
+
+    }
+
+    .conteudo-principal{
+
+        order:1;
+
+        padding:20px;
+
+    }
+
+    .titulo{
+
+        font-size:22px;
+
+    }
+
+    .logo{
+
+        height:56px;
+
+    }
+
+}
+
+      /* =========================================================
    OFF-CANVAS MOBILE (Hambúrguer + acordeão)
    - menu vira drawer lateral rolável
    - submenu abre/fecha (acordeão)
@@ -426,12 +931,13 @@ footer {
   /* área rolável (lista) */
   .menu-fixo nav{
     overflow: auto;
-    padding-right: 4px; /* espaço pro scroll */
+    padding-right: 4px;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* scrollbar (opcional, fica discreto) */
+  /* scrollbar */
   .menu-fixo nav::-webkit-scrollbar{ width: 10px; }
+
   .menu-fixo nav::-webkit-scrollbar-thumb{
     background: rgba(255,255,255,0.18);
     border-radius: 999px;
@@ -453,7 +959,6 @@ footer {
     margin-bottom: 8px;
   }
 
-  /* item principal vira “cabeçalho” */
   .menu-fixo ul li > a{
     width: 100%;
     border-radius: 14px;
@@ -466,7 +971,6 @@ footer {
     background: rgba(255,255,255,0.10);
   }
 
-  /* seta do acordeão (apenas quando há submenu) */
   .menu-fixo ul li.has-submenu > a{
     position: relative;
     padding-right: 42px;
@@ -483,12 +987,10 @@ footer {
     transition: transform var(--transition);
   }
 
-  /* quando aberto, gira seta */
   .menu-fixo ul li.has-submenu.open > a::after{
     transform: translateY(-50%) rotate(180deg);
   }
 
-  /* SUBMENU: acordeão colapsável */
   .menu-fixo ul li ul{
     position: static;
     min-width: 0;
@@ -500,7 +1002,6 @@ footer {
     box-shadow: none;
     background: transparent;
 
-    /* colapsável */
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -511,9 +1012,8 @@ footer {
     transition: max-height 280ms ease;
   }
 
-  /* aberto */
   .menu-fixo ul li.open > ul{
-    max-height: 520px; /* suficiente para várias subseções; é rolável no drawer */
+    max-height: 520px;
   }
 
   .menu-fixo ul li ul li a{
@@ -533,6 +1033,7 @@ footer {
 /* =========================================================
    HOTFIX (anti-sobrescrita)
    ========================================================= */
+
 .menu-fixo ul{
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -544,16 +1045,14 @@ footer {
 
 @media (max-width: 900px) {
 
-  /* Submenu container */
   .menu-fixo ul li ul{
     margin-top: 10px;
     padding: 8px 0 8px 14px;
-    border-left: 3px solid rgba(129, 19, 235, 0.65); /* linha roxa */
+    border-left: 3px solid rgba(129, 19, 235, 0.65);
     background: rgba(255, 255, 255, 0.04);
     border-radius: 12px;
   }
 
-  /* Links das subseções */
   .menu-fixo ul li ul li a{
     background: rgba(255, 255, 255, 0.08);
     font-weight: 500;
@@ -565,14 +1064,12 @@ footer {
     transition: all 0.25s ease;
   }
 
-  /* Hover */
   .menu-fixo ul li ul li a:hover{
     background: var(--purple);
     color: #fff;
     transform: translateX(4px);
   }
 
-  /* Quando submenu estiver aberto */
   .menu-fixo ul li.open > a{
     background: rgba(129, 19, 235, 0.20);
     border-color: rgba(129, 19, 235, 0.35);
@@ -584,8 +1081,8 @@ footer {
    FIX DESKTOP
    ========================= */
 
-/* 1) No desktop, esconder cabeçalho do drawer e botão fechar */
 @media (min-width: 901px){
+
   .menu-drawer-header,
   .menu-close,
   .menu-overlay{
@@ -593,11 +1090,10 @@ footer {
   }
 }
 
-/* 2) Barra de seções mais curta/compacta no desktop */
 @media (min-width: 901px){
+
   .menu-fixo ul{
-    /* reduz a largura aparente e evita “barra gigante” */
-    max-width: 980px;                 /* ajuste fino: 920–1040 */
+    max-width: 980px;
     padding: 6px 10px;
     gap: 4px;
   }
@@ -607,6 +1103,7 @@ footer {
     font-weight: 650;
   }
 }
+
 /* =========================================================
    MOBILE — ROLAGEM COMPLETA DO MENU LATERAL
    ========================================================= */
@@ -617,21 +1114,19 @@ footer {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    overflow: hidden; /* impede scroll externo */
+    overflow: hidden;
   }
 
-  /* Container interno rolável */
   .menu-scroll{
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 6px;
 
-    -webkit-overflow-scrolling: touch; /* iOS */
-    overscroll-behavior: contain;      /* evita scroll da página atrás */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
-  /* Barra de rolagem discreta */
   .menu-scroll::-webkit-scrollbar{
     width: 8px;
   }
