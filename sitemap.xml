@@ -245,6 +245,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.95</priority>
   </url>
+ <url>
+    <loc>https://www.mestrekira.com.br/conteudos-gramatica-4.html</loc>
+    <lastmod>2026-07-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
 
 
   <url>
@@ -306,7 +312,27 @@
     <changefreq>monthly</changefreq>
     <priority>0.95</priority>
   </url>
+
+   <url>
+    <loc>https://www.mestrekira.com.br/conteudos-enem.html</loc>
+    <lastmod>2026-07-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
   
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-enem-2.html</loc>
+    <lastmod>2026-07-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/conteudos-enem-3.html</loc>
+    <lastmod>2026-07-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.95</priority>
+  </url>
   <url>
     <loc>https://www.mestrekira.com.br/app/frontend/index.html</loc>
     <lastmod>2026-03-28</lastmod>
