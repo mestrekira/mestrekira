@@ -35,7 +35,7 @@ function configurarLinks() {
     producaotextual: "conteudos-producao-textual.html",
     interpretacaotextual: "conteudos-interpretacao-textual.html",
     ENEM: "conteudos-enem.html",
-    UEMA: "Conteudos-paes-uema.html",
+    UEMA: "conteudos-paes-uema.html",
   };
 
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
