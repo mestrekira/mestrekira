@@ -34,8 +34,8 @@ function configurarLinks() {
     gramatica: "conteudos-gramatica.html",
     producaotextual: "conteudos-producao-textual.html",
     interpretacaotextual: "conteudos-interpretacao-textual.html",
-    ENEM: "conteudos-enem.html",
-    UEMA: "conteudos-paes-uema.html",
+    enem: "conteudos-enem.html",
+    uema: "conteudos-paes-uema.html",
   };
 
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
