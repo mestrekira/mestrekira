@@ -1263,3 +1263,387 @@ transition: none;
     }
 
 }
+
+.esquema {
+    margin: 30px 0;
+    padding: 22px 25px;
+    background-color: #f1f7ff;
+    border: 1px solid #c9def7;
+    border-left: 5px solid #1565c0;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.esquema h3 {
+    margin: 0 0 15px;
+    color: #0d47a1;
+    font-size: 1.25rem;
+    line-height: 1.4;
+}
+
+.esquema p {
+    margin: 10px 0;
+    line-height: 1.7;
+}
+
+.esquema p:first-child {
+    margin-top: 0;
+}
+
+.esquema p:last-child {
+    margin-bottom: 0;
+}
+
+.esquema ul,
+.esquema ol {
+    margin: 12px 0 0;
+    padding-left: 22px;
+}
+
+.esquema li {
+    margin-bottom: 9px;
+    line-height: 1.65;
+}
+
+.esquema li:last-child {
+    margin-bottom: 0;
+}
+
+.comparacao {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin: 30px 0;
+}
+
+.comparacao > div {
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #d9e2ec;
+    border-top: 4px solid #1565c0;
+    border-radius: 10px;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+    box-sizing: border-box;
+}
+
+.comparacao h3,
+.comparacao h4 {
+    margin: 0 0 12px;
+    color: #0d47a1;
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+
+.comparacao p {
+    margin: 8px 0;
+    line-height: 1.7;
+}
+
+.comparacao p:last-child {
+    margin-bottom: 0;
+}
+
+.comparacao ul,
+.comparacao ol {
+    margin: 10px 0 0;
+    padding-left: 21px;
+}
+
+.comparacao li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.comparacao li:last-child {
+    margin-bottom: 0;
+}
+
+
+.dica-prova {
+    position: relative;
+    margin: 30px 0;
+    padding: 22px 25px 22px 58px;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 5px solid #16a34a;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.dica-prova::before {
+    content: "✓";
+    position: absolute;
+    top: 22px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 27px;
+    height: 27px;
+    color: #ffffff;
+    background-color: #16a34a;
+    border-radius: 50%;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.dica-prova h3 {
+    margin: 0 0 12px;
+    color: #166534;
+    font-size: 1.2rem;
+    line-height: 1.4;
+}
+
+.dica-prova p {
+    margin: 9px 0;
+    line-height: 1.7;
+}
+
+.dica-prova p:last-child {
+    margin-bottom: 0;
+}
+
+.dica-prova ul,
+.dica-prova ol {
+    margin: 12px 0 0;
+    padding-left: 22px;
+}
+
+.dica-prova li {
+    margin-bottom: 8px;
+    line-height: 1.65;
+}
+
+.dica-prova li:last-child {
+    margin-bottom: 0;
+}
+
+
+.atencao {
+    position: relative;
+    margin: 30px 0;
+    padding: 22px 25px 22px 58px;
+    background-color: #fff8e6;
+    border: 1px solid #f4d58d;
+    border-left: 5px solid #e69500;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.atencao::before {
+    content: "!";
+    position: absolute;
+    top: 22px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 27px;
+    height: 27px;
+    color: #ffffff;
+    background-color: #e69500;
+    border-radius: 50%;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.atencao h3 {
+    margin: 0 0 12px;
+    color: #8a5200;
+    font-size: 1.2rem;
+    line-height: 1.4;
+}
+
+.atencao p {
+    margin: 9px 0;
+    line-height: 1.7;
+}
+
+.atencao p:last-child {
+    margin-bottom: 0;
+}
+
+.atencao ul,
+.atencao ol {
+    margin: 12px 0 0;
+    padding-left: 22px;
+}
+
+.atencao li {
+    margin-bottom: 8px;
+    line-height: 1.65;
+}
+
+.atencao li:last-child {
+    margin-bottom: 0;
+}
+
+
+.conteudos-relacionados {
+    margin: 45px 0;
+    padding: 28px;
+    background-color: #f7faff;
+    border: 1px solid #d7e5f5;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.conteudos-relacionados h2 {
+    margin: 0 0 22px;
+    padding-bottom: 12px;
+    color: #0d47a1;
+    border-bottom: 2px solid #d7e5f5;
+    font-size: 1.55rem;
+    line-height: 1.4;
+}
+
+.conteudos-relacionados ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.conteudos-relacionados li {
+    margin: 0;
+}
+
+.conteudos-relacionados a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 100%;
+    padding: 15px 18px 15px 42px;
+    color: #174f91;
+    background-color: #ffffff;
+    border: 1px solid #d6e2f0;
+    border-radius: 9px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    font-weight: 600;
+    line-height: 1.5;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.conteudos-relacionados a::before {
+    content: "›";
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    color: #1565c0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+    transform: translateY(-52%);
+    transition:
+        color 0.25s ease,
+        transform 0.25s ease;
+}
+
+.conteudos-relacionados a:hover,
+.conteudos-relacionados a:focus {
+    color: #ffffff;
+    background-color: #1565c0;
+    border-color: #1565c0;
+    box-shadow: 0 6px 16px rgba(21, 101, 192, 0.18);
+    transform: translateY(-2px);
+}
+
+.conteudos-relacionados a:hover::before,
+.conteudos-relacionados a:focus::before {
+    color: #ffffff;
+    transform: translate(3px, -52%);
+}
+
+.conteudos-relacionados a:focus-visible {
+    outline: 3px solid rgba(21, 101, 192, 0.28);
+    outline-offset: 3px;
+}
+
+
+@media (max-width: 768px) {
+
+    .comparacao {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .conteudos-relacionados {
+        margin: 35px 0;
+        padding: 22px;
+    }
+
+    .conteudos-relacionados ul {
+        grid-template-columns: 1fr;
+    }
+
+    .conteudos-relacionados h2 {
+        font-size: 1.4rem;
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .esquema,
+    .comparacao > div {
+        padding: 18px;
+        border-radius: 8px;
+    }
+
+    .dica-prova,
+    .atencao {
+        padding: 58px 18px 18px;
+        border-radius: 8px;
+    }
+
+    .dica-prova::before,
+    .atencao::before {
+        top: 17px;
+        left: 18px;
+    }
+
+    .conteudos-relacionados {
+        padding: 18px;
+        border-radius: 9px;
+    }
+
+    .conteudos-relacionados h2 {
+        margin-bottom: 17px;
+        font-size: 1.3rem;
+    }
+
+    .conteudos-relacionados a {
+        padding: 14px 15px 14px 38px;
+        font-size: 0.96rem;
+    }
+
+    .conteudos-relacionados a::before {
+        left: 15px;
+    }
+
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+    .conteudos-relacionados a,
+    .conteudos-relacionados a::before {
+        transition: none;
+    }
+
+    .conteudos-relacionados a:hover,
+    .conteudos-relacionados a:focus {
+        transform: none;
+    }
+
+}
