@@ -536,13 +536,15 @@ export function initMenuPerfil(options = {}) {
     }
   })();
 
-    if (saveBtn) {
+     if (saveBtn) {
     saveBtn.addEventListener('click', async () => {
       const email = String(newEmailEl?.value || '').trim();
       const password = String(newPassEl?.value || '');
 
       if (!email && !password) {
-        if (statusEl) statusEl.textContent = 'Nada para salvar.';
+        if (statusEl) {
+          statusEl.textContent = 'Nada para salvar.';
+        }
 
         toast({
           title: 'Nada a fazer',
@@ -553,7 +555,6 @@ export function initMenuPerfil(options = {}) {
         return;
       }
 
-      // Evita que uma operação seja concluída e a outra falhe
       if (email && password) {
         if (statusEl) {
           statusEl.textContent =
@@ -587,7 +588,6 @@ export function initMenuPerfil(options = {}) {
 
       let currentPassword = '';
 
-      // A senha atual é obrigatória para autorizar uma nova senha
       if (password) {
         const confirmedPassword =
           await passwordConfirmationDialog({
@@ -610,13 +610,15 @@ export function initMenuPerfil(options = {}) {
       }
 
       try {
-        if (statusEl) statusEl.textContent = 'Salvando...';
+        if (statusEl) {
+          statusEl.textContent = 'Salvando...';
+        }
 
         saveBtn.disabled = true;
 
         let updated = null;
+        let verificationEmailSent = false;
 
-        // Troca segura de senha com confirmação da senha atual
         if (password) {
           updated = await authFetchMenu(
             '/auth/change-password',
@@ -630,16 +632,37 @@ export function initMenuPerfil(options = {}) {
             }
           );
         } else if (email) {
-          // A atualização de e-mail permanece separada
           updated = await authFetchMenu('/users/me', {
             method: 'PATCH',
             token,
             body: { email },
           });
+
+          if (updated?.emailChanged) {
+            try {
+              await authFetchMenu(
+                '/auth/request-verify',
+                {
+                  method: 'POST',
+                  token,
+                  body: {
+                    email,
+                    expectedRole: role,
+                  },
+                }
+              );
+
+              verificationEmailSent = true;
+            } catch {
+              verificationEmailSent = false;
+            }
+          }
         }
 
         const currentUser =
-          safeJsonParse(localStorage.getItem(LS.user)) || {};
+          safeJsonParse(
+            localStorage.getItem(LS.user)
+          ) || {};
 
         const merged = { ...currentUser };
 
@@ -664,7 +687,9 @@ export function initMenuPerfil(options = {}) {
 
         if (deleteBtn) {
           deleteBtn.style.display =
-            canDeleteOwnAccount(merged, role) ? '' : 'none';
+            canDeleteOwnAccount(merged, role)
+              ? ''
+              : 'none';
         }
 
         const successMessage = password
@@ -673,7 +698,9 @@ export function initMenuPerfil(options = {}) {
                 'Senha alterada com sucesso.'
             )
           : updated?.emailChanged
-            ? 'E-mail atualizado. Confirme o novo endereço antes do próximo login.'
+            ? verificationEmailSent
+              ? 'E-mail atualizado. Enviamos um link de confirmação para o novo endereço.'
+              : 'E-mail atualizado. Reenvie o link de confirmação pela tela de login.'
             : 'Nenhuma alteração de e-mail foi necessária.';
 
         if (statusEl) {
@@ -686,8 +713,32 @@ export function initMenuPerfil(options = {}) {
           type: 'success',
         });
 
-        if (newEmailEl) newEmailEl.value = '';
-        if (newPassEl) newPassEl.value = '';
+        if (newEmailEl) {
+          newEmailEl.value = '';
+        }
+
+        if (newPassEl) {
+          newPassEl.value = '';
+        }
+
+        if (updated?.emailChanged) {
+          sessionStorage.setItem(
+            'mk_just_logged_out',
+            '1'
+          );
+
+          clearAuthStorage();
+
+          window.setTimeout(() => {
+            redirectAfterLogout(
+              role,
+              logoutRedirectProfessor,
+              logoutRedirectStudent,
+              logoutRedirectSchool,
+              loginRedirect
+            );
+          }, 1800);
+        }
       } catch (e) {
         const msg = String(
           e?.message || 'Erro ao atualizar dados.'
