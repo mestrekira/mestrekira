@@ -52,7 +52,7 @@ export function clearAuth({ keepJustLoggedOutFlag = true } = {}) {
   localStorage.removeItem('user');
   localStorage.removeItem('professorId');
   localStorage.removeItem('studentId');
-  // (opcional futuro) localStorage.removeItem('schoolId');
+  localStorage.removeItem('schoolId');
 
   // por padrão mantém, para evitar loop de toast/redirect
   if (!keepJustLoggedOutFlag) {
@@ -193,7 +193,7 @@ export function requireProfessorSession({ redirectTo = 'login-professor.html' } 
   // ✅ Se professor for gerenciado e precisa trocar senha, bloqueia navegação
   const user = getUser();
   if (user?.mustChangePassword) {
-    window.location.replace('professor-atualizar-senha.html');
+    window.location.replace('trocar-senha.html');
     throw new Error('MUST_CHANGE_PASSWORD');
   }
 
