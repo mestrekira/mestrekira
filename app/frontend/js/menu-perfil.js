@@ -297,7 +297,6 @@ function passwordConfirmationDialog({
   });
 }
 
-// ---------------- Auth fetch helper ----------------
 function redirectAfterLogout(
   role,
   logoutRedirectProfessor,
@@ -588,26 +587,23 @@ export function initMenuPerfil(options = {}) {
 
       let currentPassword = '';
 
-      if (password) {
-        const confirmedPassword =
-          await passwordConfirmationDialog({
-            title: 'Confirme sua senha atual',
-            message:
-              'Digite sua senha atual para autorizar a alteração.',
-            okText: 'Alterar senha',
-            cancelText: 'Cancelar',
-          });
+     if (password || email) {
+  const confirmedPassword = await passwordConfirmationDialog({
+    title: 'Confirme sua senha atual',
+    message: password
+      ? 'Digite sua senha atual para autorizar a alteração da senha.'
+      : 'Digite sua senha atual para autorizar a alteração do e-mail.',
+    okText: password ? 'Alterar senha' : 'Alterar e-mail',
+    cancelText: 'Cancelar',
+  });
 
-        if (confirmedPassword === null) {
-          if (statusEl) {
-            statusEl.textContent = 'Alteração cancelada.';
-          }
+  if (confirmedPassword === null) {
+    if (statusEl) statusEl.textContent = 'Alteração cancelada.';
+    return;
+  }
 
-          return;
-        }
-
-        currentPassword = String(confirmedPassword);
-      }
+  currentPassword = String(confirmedPassword);
+}
 
       try {
         if (statusEl) {
@@ -631,12 +627,15 @@ export function initMenuPerfil(options = {}) {
               },
             }
           );
-        } else if (email) {
-          updated = await authFetchMenu('/users/me', {
-            method: 'PATCH',
-            token,
-            body: { email },
-          });
+       } else if (email) {
+  updated = await authFetchMenu('/users/me', {
+    method: 'PATCH',
+    token,
+    body: {
+      email,
+      currentPassword,
+    },
+  });
 
           if (updated?.emailChanged) {
             try {
