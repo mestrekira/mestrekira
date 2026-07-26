@@ -193,7 +193,7 @@ export function requireProfessorSession({ redirectTo = 'login-professor.html' } 
   // ✅ Se professor for gerenciado e precisa trocar senha, bloqueia navegação
   const user = getUser();
   if (user?.mustChangePassword) {
-    window.location.replace('trocar-senha.html');
+    window.location.replace('professor-atualizar-senha.html');
     throw new Error('MUST_CHANGE_PASSWORD');
   }
 
