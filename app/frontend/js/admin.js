@@ -188,16 +188,25 @@ function pickInactiveDays(user) {
   return Number.isNaN(num) ? String(value) : String(num);
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 // --------------------------------------------------
 // Render
 // --------------------------------------------------
 
 function rowTemplate(user, type) {
-  const id = String(pickId(user));
-  const name = pickName(user);
-  const email = pickEmail(user);
-  const lastAccess = fmtDateBR(pickLastAccess(user));
-  const inactiveDays = pickInactiveDays(user);
+  const id = escapeHtml(pickId(user));
+  const name = escapeHtml(pickName(user));
+  const email = escapeHtml(pickEmail(user));
+  const lastAccess = escapeHtml(fmtDateBR(pickLastAccess(user)));
+  const inactiveDays = escapeHtml(pickInactiveDays(user));
 
   const checkboxClass = type === 'warn' ? 'warn-check' : 'delete-check';
 
