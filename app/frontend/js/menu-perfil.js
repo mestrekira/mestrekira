@@ -1,9 +1,7 @@
 import { API_URL } from './config.js';
 import { toast, confirmDialog } from './ui-feedback.js';
 
-/**
- * Enquanto a plataforma for grátis, não mostrar "Gerenciar conta".
- */
+
 const BILLING_ENABLED = false;
 
 function $(id) {
@@ -195,6 +193,108 @@ function loadPhoto(role, id) {
   const dataUrl = localStorage.getItem(photoKey(role, id));
   img.src = dataUrl || placeholderAvatar(84);
   img.style.display = 'inline-block';
+}
+
+function passwordConfirmationDialog({
+  title = 'Confirmar exclusão',
+  message = 'Digite sua senha para continuar.',
+  okText = 'Excluir conta',
+  cancelText = 'Cancelar',
+} = {}) {
+  if (document.getElementById('mk-password-confirm-overlay')) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.id = 'mk-password-confirm-overlay';
+    overlay.className = 'confirm-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'mk-password-confirm-title');
+
+    const heading = document.createElement('h3');
+    heading.id = 'mk-password-confirm-title';
+    heading.textContent = title;
+
+    const description = document.createElement('p');
+    description.textContent = message;
+
+    const label = document.createElement('label');
+    label.htmlFor = 'mk-password-confirm-input';
+    label.textContent = 'Senha atual';
+    label.style.cssText =
+      'display:block;margin-top:14px;margin-bottom:6px;font-weight:700;';
+
+    const input = document.createElement('input');
+    input.id = 'mk-password-confirm-input';
+    input.type = 'password';
+    input.autocomplete = 'current-password';
+    input.placeholder = 'Digite sua senha atual';
+    input.style.cssText =
+      'width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;';
+
+    const error = document.createElement('p');
+    error.setAttribute('role', 'alert');
+    error.style.cssText =
+      'min-height:20px;margin-top:6px;color:#b91c1c;font-size:.9rem;';
+
+    const actions = document.createElement('div');
+    actions.className = 'confirm-actions';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'btn-outline';
+    cancelButton.textContent = cancelText;
+
+    const confirmButton = document.createElement('button');
+    confirmButton.type = 'button';
+    confirmButton.className = 'btn-danger';
+    confirmButton.textContent = okText;
+
+    actions.append(cancelButton, confirmButton);
+    modal.append(heading, description, label, input, error, actions);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const finish = (value) => {
+      document.removeEventListener('keydown', onKeydown);
+      overlay.remove();
+      resolve(value);
+    };
+
+    const confirm = () => {
+      const password = String(input.value || '');
+
+      if (!password) {
+        error.textContent = 'Digite sua senha atual.';
+        input.focus();
+        return;
+      }
+
+      finish(password);
+    };
+
+    const onKeydown = (event) => {
+      if (event.key === 'Escape') finish(null);
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        confirm();
+      }
+    };
+
+    cancelButton.addEventListener('click', () => finish(null));
+    confirmButton.addEventListener('click', confirm);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) finish(null);
+    });
+    document.addEventListener('keydown', onKeydown);
+
+    requestAnimationFrame(() => input.focus());
+  });
 }
 
 // ---------------- Auth fetch helper ----------------
@@ -568,18 +668,30 @@ export function initMenuPerfil(options = {}) {
 
       if (!ok) return;
 
+      const password = await passwordConfirmationDialog({
+        title: 'Confirme sua senha',
+        message:
+          'A exclusão é permanente. Digite sua senha atual para confirmar.',
+        okText: 'Excluir definitivamente',
+        cancelText: 'Cancelar',
+      });
+
+      if (!password) return;
+
       try {
         const currentRole = normalizeRole(currentUser?.role) || role;
 
         if (currentRole === 'school') {
-          await authFetchMenu('/school-dashboard/account', {
+          await authFetchMenu('/school-dashboard/account/confirm', {
             method: 'DELETE',
             token,
+            body: { password },
           });
         } else if (currentRole === 'student' || currentRole === 'professor') {
-          await authFetchMenu('/users/me', {
+          await authFetchMenu('/users/me/confirm', {
             method: 'DELETE',
             token,
+            body: { password },
           });
         } else {
           toast({
