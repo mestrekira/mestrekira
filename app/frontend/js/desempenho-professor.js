@@ -934,13 +934,12 @@ function renderStudentsForTask(taskId) {
     info.className = 'mk-student-info';
 
     const nome =
-  s.studentName &&
-  String(s.studentName).trim()
-    ? s.studentName
-    : 'Aluno';
+      s.studentName && String(s.studentName).trim() ? s.studentName : 'Aluno';
 
-const header = document.createElement('div');
-header.innerHTML = `<strong>${nome}</strong>`;
+    const header = document.createElement('div');
+    const strong = document.createElement('strong');
+    strong.textContent = String(nome);
+    header.appendChild(strong);
 
     const medias = computeStudentAverages(s);
 
