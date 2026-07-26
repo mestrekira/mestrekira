@@ -167,7 +167,7 @@ function getSession() {
   return { role: null, id: null, token: '', user: null };
 }
 
-// ---------------- Foto ----------------
+
 function photoKey(role, id) {
   return role && id ? `mk_photo_${role}_${id}` : 'mk_photo_guest';
 }
@@ -536,73 +536,177 @@ export function initMenuPerfil(options = {}) {
     }
   })();
 
-  if (saveBtn) {
+    if (saveBtn) {
     saveBtn.addEventListener('click', async () => {
       const email = String(newEmailEl?.value || '').trim();
       const password = String(newPassEl?.value || '');
 
       if (!email && !password) {
         if (statusEl) statusEl.textContent = 'Nada para salvar.';
+
         toast({
           title: 'Nada a fazer',
           message: 'Preencha e-mail ou senha para atualizar.',
           type: 'info',
         });
+
+        return;
+      }
+
+      // Evita que uma operação seja concluída e a outra falhe
+      if (email && password) {
+        if (statusEl) {
+          statusEl.textContent =
+            'Altere o e-mail e a senha separadamente.';
+        }
+
+        toast({
+          title: 'Uma alteração por vez',
+          message:
+            'Salve primeiro o e-mail ou a senha. Depois faça a outra alteração.',
+          type: 'info',
+        });
+
         return;
       }
 
       if (password && password.length < 8) {
-        if (statusEl) statusEl.textContent = 'Senha deve ter no mínimo 8 caracteres.';
+        if (statusEl) {
+          statusEl.textContent =
+            'Senha deve ter no mínimo 8 caracteres.';
+        }
+
         toast({
           title: 'Senha inválida',
           message: 'A senha deve ter no mínimo 8 caracteres.',
           type: 'warn',
         });
+
         return;
       }
 
-      const payload = {};
-      if (email) payload.email = email;
-      if (password) payload.password = password;
+      let currentPassword = '';
+
+      // A senha atual é obrigatória para autorizar uma nova senha
+      if (password) {
+        const confirmedPassword =
+          await passwordConfirmationDialog({
+            title: 'Confirme sua senha atual',
+            message:
+              'Digite sua senha atual para autorizar a alteração.',
+            okText: 'Alterar senha',
+            cancelText: 'Cancelar',
+          });
+
+        if (confirmedPassword === null) {
+          if (statusEl) {
+            statusEl.textContent = 'Alteração cancelada.';
+          }
+
+          return;
+        }
+
+        currentPassword = String(confirmedPassword);
+      }
 
       try {
         if (statusEl) statusEl.textContent = 'Salvando...';
 
-        const updated = await authFetchMenu('/users/me', {
-          method: 'PATCH',
-          token,
-          body: payload,
-        });
+        saveBtn.disabled = true;
 
-        if (updated && typeof updated === 'object') {
-          const currentUser = safeJsonParse(localStorage.getItem(LS.user)) || {};
-          const merged = { ...currentUser, ...updated };
-          localStorage.setItem(LS.user, JSON.stringify(merged));
+        let updated = null;
 
-          if (deleteBtn) {
-            deleteBtn.style.display = canDeleteOwnAccount(merged, role) ? '' : 'none';
-          }
+        // Troca segura de senha com confirmação da senha atual
+        if (password) {
+          updated = await authFetchMenu(
+            '/auth/change-password',
+            {
+              method: 'POST',
+              token,
+              body: {
+                currentPassword,
+                newPassword: password,
+              },
+            }
+          );
+        } else if (email) {
+          // A atualização de e-mail permanece separada
+          updated = await authFetchMenu('/users/me', {
+            method: 'PATCH',
+            token,
+            body: { email },
+          });
         }
 
-        if (statusEl) statusEl.textContent = 'Dados atualizados.';
+        const currentUser =
+          safeJsonParse(localStorage.getItem(LS.user)) || {};
+
+        const merged = { ...currentUser };
+
+        if (email) {
+          merged.email = email;
+
+          if (updated?.emailChanged) {
+            merged.emailVerified = false;
+          }
+
+          safeText(meEmailEl, email);
+        }
+
+        if (password) {
+          merged.mustChangePassword = false;
+        }
+
+        localStorage.setItem(
+          LS.user,
+          JSON.stringify(merged)
+        );
+
+        if (deleteBtn) {
+          deleteBtn.style.display =
+            canDeleteOwnAccount(merged, role) ? '' : 'none';
+        }
+
+        const successMessage = password
+          ? String(
+              updated?.message ||
+                'Senha alterada com sucesso.'
+            )
+          : updated?.emailChanged
+            ? 'E-mail atualizado. Confirme o novo endereço antes do próximo login.'
+            : 'Nenhuma alteração de e-mail foi necessária.';
+
+        if (statusEl) {
+          statusEl.textContent = successMessage;
+        }
+
         toast({
           title: 'Atualizado',
-          message: 'Seus dados foram atualizados.',
+          message: successMessage,
           type: 'success',
         });
 
         if (newEmailEl) newEmailEl.value = '';
         if (newPassEl) newPassEl.value = '';
       } catch (e) {
-        const msg = String(e?.message || 'Erro ao atualizar dados.');
+        const msg = String(
+          e?.message || 'Erro ao atualizar dados.'
+        );
+
         if (msg.startsWith('AUTH_')) {
           toast({
             title: 'Sessão expirada',
             message: 'Faça login novamente.',
             type: 'warn',
           });
-          sessionStorage.setItem('mk_just_logged_out', '1');
+
+          sessionStorage.setItem(
+            'mk_just_logged_out',
+            '1'
+          );
+
           clearAuthStorage();
+
           redirectAfterLogout(
             role,
             logoutRedirectProfessor,
@@ -610,11 +714,22 @@ export function initMenuPerfil(options = {}) {
             logoutRedirectSchool,
             loginRedirect
           );
+
           return;
         }
 
-        if (statusEl) statusEl.textContent = 'Erro ao atualizar dados.';
-        toast({ title: 'Erro', message: msg, type: 'error' });
+        if (statusEl) {
+          statusEl.textContent =
+            'Erro ao atualizar dados.';
+        }
+
+        toast({
+          title: 'Erro',
+          message: msg,
+          type: 'error',
+        });
+      } finally {
+        saveBtn.disabled = false;
       }
     });
   }
