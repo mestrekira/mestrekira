@@ -22,33 +22,9 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-fonetica-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-fonetica-3.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
 
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-fonologia.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-fonologia-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-fonologia-3.html</loc>
     <lastmod>2026-03-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -60,33 +36,9 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-morfologia-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-morfologia-3.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
 
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-sintaxe.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-sintaxe-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-sintaxe-3.html</loc>
     <lastmod>2026-03-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -98,18 +50,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-semantica-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-semantica-3.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
 
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-pragmatica.html</loc>
@@ -117,33 +57,9 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-pragmatica-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-pragmatica-3.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
 
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-literatura-portuguesa.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-literatura-portuguesa-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-literatura-portuguesa-3.html</loc>
     <lastmod>2026-03-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -161,27 +77,9 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-literatura-brasileira-3.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
 
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-literatura-africana-portuguesa.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-literatura-africana-portuguesa-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-literatura-africana-portuguesa-3.html</loc>
     <lastmod>2026-03-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -193,19 +91,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-critica-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-critica-3.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
 
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-midiatico.html</loc>
@@ -213,20 +98,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-midiatico-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-midiatico-3.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
 
- 
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-gramatica.html</loc>
     <lastmod>2026-03-28</lastmod>
@@ -245,12 +117,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.95</priority>
   </url>
- <url>
-    <loc>https://www.mestrekira.com.br/conteudos-gramatica-4.html</loc>
-    <lastmod>2026-07-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.95</priority>
-  </url>
 
 
   <url>
@@ -265,13 +131,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.95</priority>
   </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-producao-textual-3.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.95</priority>
-  </url>
-
   
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-interpretacao-textual.html</loc>
@@ -281,12 +140,6 @@
   </url>
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-interpretacao-textual-2.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-interpretacao-textual-3.html</loc>
     <lastmod>2026-03-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.95</priority>
@@ -306,13 +159,6 @@
     <priority>0.95</priority>
   </url>
 
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-paes-uema-3.html</loc>
-    <lastmod>2026-07-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.95</priority>
-  </url>
-
    <url>
     <loc>https://www.mestrekira.com.br/conteudos-enem.html</loc>
     <lastmod>2026-07-10</lastmod>
@@ -327,12 +173,6 @@
     <priority>0.95</priority>
   </url>
 
-  <url>
-    <loc>https://www.mestrekira.com.br/conteudos-enem-3.html</loc>
-    <lastmod>2026-07-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.95</priority>
-  </url>
   <url>
     <loc>https://www.mestrekira.com.br/app/frontend/index.html</loc>
     <lastmod>2026-03-28</lastmod>
