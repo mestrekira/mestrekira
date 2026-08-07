@@ -76,64 +76,130 @@ section { margin-bottom: 26px; }
 
 .conteudo-principal li{ margin: 6px 0; }
 
-.publicacoes{
+.publicacoes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+  width: 100%;
+  max-width: 100%;
   margin-top: 12px;
+  box-sizing: border-box;
 }
 
-.post{
+.publicacoes > .post {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.post {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
   background: var(--surface);
   border: 1px solid rgba(15, 23, 42, 0.10);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition),
+    border-color var(--transition);
 }
 
-.post:hover{
+.post:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
   border-color: rgba(129, 19, 235, 0.25);
 }
 
-.link-post{
+.link-post {
   display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+
   color: inherit;
   text-decoration: none;
 }
 
-.link-post:hover{ text-decoration: none; }
+.link-post:hover {
+  text-decoration: none;
+}
 
-.post img{
+.post img {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  height: auto;
   aspect-ratio: 16 / 9;
   object-fit: cover;
-  display: block;
+  box-sizing: border-box;
+
   background: rgba(21, 26, 46, 0.06);
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-.post p{
+.post p {
   margin: 0;
   padding: 14px 16px 18px;
+  box-sizing: border-box;
+
   color: var(--muted);
   line-height: 1.55;
   text-align: left;
   text-indent: 0;
+
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
 }
 
-.post p strong{
+.post p strong {
   display: inline;
   font-weight: 900;
   color: var(--navy);
 }
 
-.post p strong::after{
+.post p strong::after {
   content: " — ";
   color: rgba(15, 23, 42, 0.35);
   font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .publicacoes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .publicacoes {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    width: 100%;
+  }
+
+  .post {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .post p {
+    padding: 13px 14px 16px;
+    font-size: 0.96rem;
+    line-height: 1.5;
+  }
+
+  .post:hover {
+    transform: none;
+  }
 }
 
 .destaque,
