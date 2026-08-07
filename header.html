@@ -7,7 +7,14 @@
     </div>
 
   
-    <button class="menu-toggle" type="button" aria-label="Abrir menu" onclick="mkToggleMenu()">
+    <button
+      class="menu-toggle"
+      type="button"
+      aria-label="Abrir menu"
+      aria-controls="mkMenu"
+      aria-expanded="false"
+      onclick="mkToggleMenu()"
+    >
       <span class="bars"><span></span></span>
     </button>
   </div>
@@ -30,44 +37,72 @@
         <li><a href="index.html">Início</a></li>
 
         <li>
-          <a href="#Linguistica">Linguística</a>
-          <ul>
-            <li><a href="#Fonetica">Fonética</a></li>
-            <li><a href="#Fonologia">Fonologia</a></li>
-            <li><a href="#Morfologia">Morfologia</a></li>
-            <li><a href="#Sintaxe">Sintaxe</a></li>
-            <li><a href="#Semantica">Semântica</a></li>
-            <li><a href="#Pragmatica">Pragmática</a></li>
-            <li><a href="#critica">Análise Crítica do Discurso</a></li>
-            <li><a href="#Midiatico">Análise do Discurso Midiático</a></li>
+          <a
+            href="#"
+            class="submenu-toggle"
+            role="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="submenu-linguistica"
+          >Linguística</a>
+          <ul id="submenu-linguistica">
+            <li><a href="conteudos-fonetica.html">Fonética</a></li>
+            <li><a href="conteudos-fonologia.html">Fonologia</a></li>
+            <li><a href="conteudos-morfologia.html">Morfologia</a></li>
+            <li><a href="conteudos-sintaxe.html">Sintaxe</a></li>
+            <li><a href="conteudos-semantica.html">Semântica</a></li>
+            <li><a href="conteudos-pragmatica.html">Pragmática</a></li>
+            <li><a href="conteudos-critica.html">Análise Crítica do Discurso</a></li>
+            <li><a href="conteudos-midiatico.html">Análise do Discurso Midiático</a></li>
           </ul>
         </li>
 
         <li>
-          <a href="#Literatura">Literatura</a>
-          <ul>
-            <li><a href="#literatura-portuguesa">Literatura Portuguesa</a></li>
-            <li><a href="#literatura-brasileira">Literatura Brasileira</a></li>
-            <li><a href="#literatura-africana-portuguesa">Literatura Africana em Português</a></li>
+          <a
+            href="#"
+            class="submenu-toggle"
+            role="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="submenu-literatura"
+          >Literatura</a>
+          <ul id="submenu-literatura">
+            <li><a href="conteudos-literatura-portuguesa.html">Literatura Portuguesa</a></li>
+            <li><a href="conteudos-literatura-brasileira.html">Literatura Brasileira</a></li>
+            <li><a href="conteudos-literatura-africana-portuguesa.html">Literatura Africana em Português</a></li>
           </ul>
         </li>
 
         <li>
-          <a href="#LinguaPortuguesa">Língua Portuguesa</a>
-          <ul>
-            <li><a href="#Gramatica">Gramática</a></li>
-            <li><a href="#ProducaoTextual">Redação/Produção Textual</a></li>
-            <li><a href="#InterpretacaoTextual">Interpretação Textual</a></li>
+          <a
+            href="#"
+            class="submenu-toggle"
+            role="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="submenu-lingua-portuguesa"
+          >Língua Portuguesa</a>
+          <ul id="submenu-lingua-portuguesa">
+            <li><a href="conteudos-gramatica.html">Gramática</a></li>
+            <li><a href="conteudos-producao-textual.html">Redação/Produção Textual</a></li>
+            <li><a href="conteudos-interpretacao-textual.html">Interpretação Textual</a></li>
           </ul>
         </li>
 
-          <li>
-             <a href="#Vestibulares">ENEM|UEMA</a>
-            <ul>
-                <li><a href="#ENEM">ENEM </a></li>
-               <li><a href="#UEMA">Paes UEMA </a></li>
-              </ul>
-         </li>
+        <li>
+          <a
+            href="#"
+            class="submenu-toggle"
+            role="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="submenu-vestibulares"
+          >ENEM | UEMA</a>
+          <ul id="submenu-vestibulares">
+            <li><a href="conteudos-enem.html">ENEM</a></li>
+            <li><a href="conteudos-paes-uema.html">PAES UEMA</a></li>
+          </ul>
+        </li>
         
         <li>
           <a href="plataforma-de-redacao-mestre-kira.html">
@@ -76,8 +111,15 @@
         </li>
 
         <li>
-          <a href="#Siga-nos">Siga-nos</a>
-          <ul>
+          <a
+            href="#"
+            class="submenu-toggle"
+            role="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="submenu-redes-sociais"
+          >Siga-nos</a>
+          <ul id="submenu-redes-sociais">
             <li>
               <a href="https://www.instagram.com/mestrekiraoficial" target="_blank" rel="noopener">
                 Instagram
