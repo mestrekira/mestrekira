@@ -37,97 +37,10 @@ function inicializarPaginacao() {
   );
 
   if (posts.length === 0) return;
-
-  const porPagina = 20;
-  const totalPaginas = Math.max(
-    1,
-    Math.ceil(posts.length / porPagina)
-  );
-
-  let paginaAtual = 1;
-
-  function mostrarPagina(pagina) {
-    paginaAtual = Math.min(
-      Math.max(pagina, 1),
-      totalPaginas
-    );
-
-    posts.forEach((post) => {
-      post.style.display = "none";
-    });
-
-    const inicio = (paginaAtual - 1) * porPagina;
-    const fim = inicio + porPagina;
-
-    for (
-      let indice = inicio;
-      indice < fim && indice < posts.length;
-      indice++
-    ) {
-      posts[indice].style.display = "flex";
-    }
-
-    atualizarPaginacao();
-  }
-
-  function atualizarPaginacao() {
-    const paginacaoDiv =
-      document.getElementById("paginacao");
-
-    if (!paginacaoDiv) return;
-
-    if (totalPaginas <= 1) {
-      paginacaoDiv.innerHTML = "";
-      return;
-    }
-
-    paginacaoDiv.innerHTML = "";
-
-    if (paginaAtual > 1) {
-      const anterior =
-        document.createElement("button");
-
-      anterior.textContent = "← Página anterior";
-
-      anterior.onclick = () => {
-        mostrarPagina(paginaAtual - 1);
-
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth"
-        });
-      };
-
-      paginacaoDiv.appendChild(anterior);
-    }
-
-    const info = document.createElement("span");
-
-    info.textContent =
-      `Página ${paginaAtual} de ${totalPaginas}`;
-
-    paginacaoDiv.appendChild(info);
-
-    if (paginaAtual < totalPaginas) {
-      const proxima =
-        document.createElement("button");
-
-      proxima.textContent = "Próxima página →";
-
-      proxima.onclick = () => {
-        mostrarPagina(paginaAtual + 1);
-
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth"
-        });
-      };
-
-      paginacaoDiv.appendChild(proxima);
-    }
-  }
-
-  mostrarPagina(paginaAtual);
+  
+  posts.forEach((post) => {
+    post.style.display = "flex";
+  });
 }
 
 function inicializarPlayerAudio() {
