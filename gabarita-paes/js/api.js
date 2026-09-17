@@ -1,4 +1,3 @@
-// Ajuste para a URL pública do seu serviço Render
 const API_BASE = 'https://mestrekira-api.onrender.com';
 
 export const api = {
