@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classificação por Curso | Gabarita PAES</title>
+  <link rel="stylesheet" href="css/gabarita.css">
+</head>
+<body>
+
+  <header class="header">
+    <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
+    <nav class="nav-links">
+      <a href="simulado.html">Simulado (60Q)</a>
+      <a href="redacao.html">Redação UEMA</a>
+      <a href="ranking.html" class="active">Classificação</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2 id="ranking-course">Classificação - PAES UEMA</h2>
+      <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
+        Ranqueamento exclusivo entre candidatos do mesmo curso que concluíram as 60 questões do ciclo oficial.
+      </p>
+
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th>Posição</th>
+            <th>Candidato</th>
+            <th>Acertos (60Q)</th>
+            <th>Redação (0 a 10)</th>
+            <th>Nota Final</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-body">
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted);">Carregando classificação...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script type="module">
+    import { api } from './js/api.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await api.get('/rankings/my-course');
+        if (!res) return;
+
+        document.getElementById('ranking-course').innerText = `Classificação: ${res.targetCourse}`;
+        
+        const tbody = document.getElementById('ranking-body');
+        if (res.ranking.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Nenhum candidato concluiu as 60 questões deste ciclo ainda.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = res.ranking.map((row) => `
+          <tr class="${row.isCurrentUser ? 'current-user' : ''}">
+            <td><strong>#${row.position}</strong></td>
+            <td>${row.name} ${row.isCurrentUser ? '⭐ (Você)' : ''}</td>
+            <td>${row.questionsCorrect} / 60</td>
+            <td>${row.highestEssayScore.toFixed(2)}</td>
+            <td><strong>${row.finalScore.toFixed(2)}</strong></td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('ranking-body').innerHTML = `
+          <tr><td colspan="5" style="text-align: center; color: var(--danger);">${error.message}</td></tr>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
