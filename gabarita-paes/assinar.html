@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assinar Gabarita PAES Premium</title>
+  <link rel="stylesheet" href="css/gabarita.css">
+  <style>
+    .plan-card {
+      border: 2px solid var(--primary);
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+    }
+    .price {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 1rem 0;
+    }
+    .benefits-list {
+      list-style: none;
+      text-align: left;
+      max-width: 400px;
+      margin: 1.5rem auto;
+    }
+    .benefits-list li {
+      padding: 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .payment-options {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .qr-box {
+      background: white;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 1.5rem;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
+  </header>
+
+  <main class="container" style="max-width: 700px;">
+    <div class="card plan-card">
+      <span class="badge" style="font-size: 1rem; padding: 0.4rem 1rem;">Reta Final PAES UEMA</span>
+      <h1 style="margin-top: 1rem;">Plano Mensal Premium</h1>
+      <p style="color: var(--text-muted);">Acesso completo até o dia da sua aprovação</p>
+      
+      <div class="price">R$ 29,90 <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">/ mês</span></div>
+
+      <ul class="benefits-list">
+        <li>✅ <strong>100% do Banco de Questões</strong> liberado (PAES UEMA e ENEM)</li>
+        <li>✅ <strong>Simulado Oficial de 60 Questões</strong> com pontuação isonômica</li>
+        <li>✅ <strong>Plataforma de Redação UEMA</strong> com 2 temas e correção instantânea por IA</li>
+        <li>✅ <strong>Ranqueamento por Curso</strong> entre seus concorrentes reais</li>
+        <li>✅ <strong>Diagnóstico de Erros</strong> com links para os artigos do Mestre Kira</li>
+      </ul>
+
+      <div class="payment-options" id="options-container">
+        <button class="btn" onclick="gerarCobranca('PIX')">⚡ Pagar via PIX (Liberação Imediata)</button>
+        <button class="btn btn-secondary" onclick="gerarCobranca('BOLETO')">📄 Pagar via Boleto</button>
+      </div>
+
+      <!-- Área do PIX -->
+      <div id="pix-area" style="display: none; margin-top: 2rem;">
+        <h3>Escaneie o QR Code ou Copie o Código</h3>
+        <div class="qr-box">
+          <img id="pix-img" src="" alt="QR Code PIX" style="width: 220px; height: 220px;">
+        </div>
+        <div style="margin-top: 1rem;">
+          <input type="text" id="pix-input" readonly style="width: 80%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
+          <button class="btn" onclick="copiarPix()" style="margin-top: 0.5rem;">📋 Copiar Código</button>
+        </div>
+        <p style="color: var(--accent); font-weight: 600; margin-top: 1rem;">
+          ⏳ Aguardando pagamento... O site atualizará automaticamente assim que confirmado!
+        </p>
+      </div>
+
+      <!-- Área do Boleto -->
+      <div id="boleto-area" style="display: none; margin-top: 2rem;">
+        <h3>Boleto Bancário Gerado</h3>
+        <p style="color: var(--text-muted); margin: 1rem 0;">Clique abaixo para visualizar o boleto ou use o código de barras no app do seu banco:</p>
+        <a id="boleto-link" href="#" target="_blank" class="btn">Visualizar Boleto (PDF)</a>
+        <div style="margin-top: 1rem;">
+          <input type="text" id="boleto-code" readonly style="width: 80%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { api } from './js/api.js';
+
+    let pollInterval = null;
+
+    window.gerarCobranca = async (method) => {
+      try {
+        const res = await api.post('/payments/checkout', { paymentMethod: method });
+        if (!res) return;
+
+        document.getElementById('options-container').style.display = 'none';
+
+        if (method === 'PIX') {
+          document.getElementById('pix-area').style.display = 'block';
+          document.getElementById('pix-img').src = res.pixQrCode;
+          document.getElementById('pix-input').value = res.pixCode;
+          iniciarVerificacaoPagamento();
+        } else {
+          document.getElementById('boleto-area').style.display = 'block';
+          document.getElementById('boleto-link').href = res.boletoUrl;
+          document.getElementById('boleto-code').value = res.boletoBarCode;
+        }
+      } catch (e) {
+        alert(e.message || 'Erro ao gerar cobrança.');
+      }
+    };
+
+    window.copiarPix = () => {
+      const input = document.getElementById('pix-input');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      alert('Código PIX copiado para a área de transferência!');
+    };
+
+    function iniciarVerificacaoPagamento() {
+      pollInterval = setInterval(async () => {
+        try {
+          const status = await api.get('/payments/status');
+          if (status && status.isPremium) {
+            clearInterval(pollInterval);
+            alert('🎉 Pagamento confirmado com sucesso! Seu acesso Premium está ativo.');
+            window.location.href = 'simulado.html';
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }, 5000); // Checa a cada 5 segundos
+    }
+  </script>
+</body>
+</html>
