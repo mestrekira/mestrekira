@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redação PAES UEMA | Gabarita PAES</title>
+  <link rel="stylesheet" href="css/gabarita.css">
+</head>
+<body>
+
+  <header class="header">
+    <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
+    <nav class="nav-links">
+      <a href="simulado.html">Simulado (60Q)</a>
+      <a href="redacao.html" class="active">Redação UEMA</a>
+      <a href="ranking.html">Classificação</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Seção de Trava (se < 60 questões) -->
+    <div id="locked-view" class="card lock-card" style="display: none;">
+      <div class="lock-icon">🔒</div>
+      <h2>Redação Bloqueada</h2>
+      <p id="lock-message" style="color: var(--text-muted); margin: 1rem 0; font-size: 1.1rem;"></p>
+      <a href="simulado.html" class="btn">Ir para o Simulado de 60 Questões</a>
+    </div>
+
+    <!-- Seção de Produção e Temas (quando liberado) -->
+    <div id="unlocked-view" style="display: none;">
+      <!-- Seletor dos 2 Temas -->
+      <div class="card">
+        <h3>Temas Disponíveis do Mês</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Você pode enviar até 2 redações neste ciclo. A maior nota será computada no ranking.</p>
+        <div style="display: flex; gap: 1rem;" id="theme-selector"></div>
+      </div>
+
+      <!-- Coletânea de Textos Motivadores -->
+      <div class="card" id="theme-details">
+        <h2 id="theme-title">Selecione um tema acima</h2>
+        <div id="theme-texts" style="margin-top: 1rem; color: #334155; line-height: 1.7;"></div>
+      </div>
+
+      <!-- Editor com Microfone -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3>Sua Produção Textual</h3>
+          <button id="btn-mic" class="btn-mic">
+            🎙️ Ditar Redação por Voz
+          </button>
+        </div>
+
+        <textarea id="essay-text" class="essay-textarea" placeholder="Digite seu texto ou clique no microfone acima para ditar por voz. Você poderá revisar pontuações e parágrafos antes de enviar..."></textarea>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+          <span id="char-count" style="color: var(--text-muted); font-size: 0.875rem;">0 caracteres (mínimo de 200)</span>
+          <button id="btn-submit-essay" class="btn">🚀 Enviar para Correção por IA</button>
+        </div>
+      </div>
+
+      <!-- Card de Resultado da Correção UEMA -->
+      <div class="card" id="result-card" style="display: none; border-color: var(--accent);">
+        <h2 style="color: var(--accent); margin-bottom: 1rem;">Resultado da Avaliação Oficial UEMA</h2>
+        <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;" id="res-total">0.00 / 10.0</div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;" id="criteria-grid"></div>
+
+        <h3>Feedback Pedagógico</h3>
+        <p id="res-feedback" style="margin-top: 0.5rem; line-height: 1.7;"></p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/redacao.js"></script>
+</body>
+</html>
