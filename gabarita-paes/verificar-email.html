@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificando E-mail | Gabarita PAES</title>
+  <link rel="stylesheet" href="css/gabarita.css">
+</head>
+<body>
+
+  <header class="header">
+    <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
+  </header>
+
+  <main class="container" style="max-width: 500px; text-align: center; margin-top: 4rem;">
+    <div class="card">
+      <h2 id="title" style="margin-bottom: 1rem;">Confirmando seu e-mail...</h2>
+      <p id="msg" style="color: var(--text-muted); margin-bottom: 1.5rem;">Aguarde alguns segundos enquanto validamos sua conta.</p>
+      <a id="btn-action" href="login.html" class="btn" style="display: none; margin: 0 auto;">Ir para o Login</a>
+    </div>
+  </main>
+
+  <script type="module">
+    import { api } from './js/api.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+
+      const title = document.getElementById('title');
+      const msg = document.getElementById('msg');
+      const btn = document.getElementById('btn-action');
+
+      if (!token) {
+        title.innerText = 'Link inválido';
+        msg.innerText = 'Nenhum código de validação foi fornecido.';
+        return;
+      }
+
+      try {
+        await api.post('/auth/verify-email', { token });
+        title.innerText = '✅ E-mail confirmado com sucesso!';
+        msg.innerText = 'Sua conta está ativa. Você já pode acessar a plataforma.';
+        btn.style.display = 'inline-flex';
+      } catch (err) {
+        title.innerText = '❌ Falha na verificação';
+        msg.innerText = err.message || 'O link de verificação expirou ou já foi utilizado.';
+        btn.style.display = 'inline-flex';
+        btn.innerText = 'Tentar Login';
+      }
+    });
+  </script>
+</body>
+</html>
