@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criar Conta | Gabarita PAES</title>
+  <link rel="stylesheet" href="css/gabarita.css">
+  <style>
+    .auth-card {
+      max-width: 480px;
+      margin: 3rem auto;
+      padding: 2.5rem 2rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
+  </header>
+
+  <main class="container">
+    <div class="card auth-card">
+      <h2 style="text-align: center; margin-bottom: 0.5rem;">Crie sua Conta</h2>
+      <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem;">
+        Prepare-se para o PAES UEMA com simulados e redação
+      </p>
+
+      <div id="alert-box" style="display: none; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+
+      <form id="form-cadastro">
+        <div class="form-group">
+          <label for="nome">Nome Completo</label>
+          <input type="text" id="nome" class="form-control" required placeholder="Seu nome">
+        </div>
+
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" class="form-control" required placeholder="seuemail@exemplo.com">
+        </div>
+
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" class="form-control" required minlength="8" placeholder="Mínimo de 8 caracteres">
+        </div>
+
+        <!-- Campo Obrigatório para o Ranqueamento -->
+        <div class="form-group">
+          <label for="curso">Curso Pretendido no PAES UEMA</label>
+          <select id="curso" class="form-control" required>
+            <option value="" disabled selected>Selecione seu curso...</option>
+            <option value="Medicina">Medicina</option>
+            <option value="Direito">Direito</option>
+            <option value="Enfermagem">Enfermagem</option>
+            <option value="Engenharia Civil">Engenharia Civil</option>
+            <option value="Administração">Administração</option>
+            <option value="Medicina Veterinária">Medicina Veterinária</option>
+            <option value="Agronomia">Agronomia</option>
+            <option value="Pedagogia">Pedagogia</option>
+            <option value="Ciências Biológicas">Ciências Biológicas</option>
+            <option value="História">História</option>
+            <option value="Letras">Letras</option>
+            <option value="Outro Curso">Outro Curso</option>
+          </select>
+        </div>
+
+        <!-- Opção de Língua Estrangeira -->
+        <div class="form-group">
+          <label for="lingua">Opção de Língua Estrangeira</label>
+          <select id="lingua" class="form-control" required>
+            <option value="INGLES">Língua Inglesa</option>
+            <option value="ESPANHOL">Língua Espanhola</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; justify-content: center; margin-top: 1rem;">
+          Cadastrar Gratuitamente
+        </button>
+      </form>
+
+      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+        Já tem uma conta? <a href="login.html" style="color: var(--primary); font-weight: 600;">Faça login</a>
+      </p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { api } from './js/api.js';
+
+    document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertBox = document.getElementById('alert-box');
+      alertBox.style.display = 'none';
+
+      const payload = {
+        name: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('senha').value,
+        targetCourse: document.getElementById('curso').value,
+        foreignLanguage: document.getElementById('lingua').value,
+      };
+
+      try {
+        const res = await api.post('/auth/register', payload);
+        alertBox.style.display = 'block';
+        alertBox.style.background = '#dcfce7';
+        alertBox.style.color = '#166534';
+        alertBox.innerText = 'Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail.';
+        document.getElementById('form-cadastro').reset();
+      } catch (err) {
+        alertBox.style.display = 'block';
+        alertBox.style.background = '#fee2e2';
+        alertBox.style.color = '#991b1b';
+        alertBox.innerText = err.message || 'Falha ao cadastrar.';
+      }
+    });
+  </script>
+</body>
+</html>
