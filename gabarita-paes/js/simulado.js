@@ -74,6 +74,9 @@ function renderQuestions() {
       </button>
     </div>
   `).join('');
+
+  ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura da questão ${q.questionOrder}">` : ''}
+${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar da questão ${q.questionOrder}">` : ''}
 }
 
 // Armazena seleção temporária do clique
