@@ -4,7 +4,7 @@ window.api = {
   getToken() {
     return localStorage.getItem('token');
   },
-//token
+
   setToken(token) {
     localStorage.setItem('token', token);
   },
@@ -18,7 +18,7 @@ window.api = {
     const token = this.getToken();
     const headers = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers || {}),
     };
 
     if (token) {
@@ -32,7 +32,6 @@ window.api = {
       });
 
       if (response.status === 401) {
-        // Se a rota privada recusar, limpa e redireciona
         if (!endpoint.includes('/auth/login')) {
           this.logout();
           return null;
