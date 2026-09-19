@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await window.api.post('/auth/login', { email, password });
       
-      // Captura o token tanto se o backend devolver 'token' quanto 'access_token'
       const token = res?.token || res?.access_token || res?.data?.token;
 
       if (token) {
