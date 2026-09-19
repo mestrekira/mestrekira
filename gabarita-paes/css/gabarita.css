@@ -308,3 +308,105 @@ body {
   background-color: #fef3c7;
   font-weight: 600;
 }
+
+/* ==========================================
+   Carrossel de Banners Rolantes e Hub
+   ========================================== */
+.carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  margin: 1.5rem auto;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.carousel-slides {
+  display: flex;
+  transition: transform 0.6s ease-in-out;
+  width: 300%; /* 3 banners */
+}
+
+.carousel-slide {
+  width: 33.333%;
+  padding: 3.5rem 2rem;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 260px;
+}
+
+.slide-1 {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+.slide-2 {
+  background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+}
+.slide-3 {
+  background: linear-gradient(135deg, #4c1d95 0%, #8b5cf6 100%);
+}
+
+.carousel-slide h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.carousel-slide p {
+  font-size: 1.1rem;
+  max-width: 650px;
+  margin-bottom: 1.5rem;
+  opacity: 0.95;
+}
+
+.carousel-dots {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.dot.active {
+  background: white;
+  transform: scale(1.1);
+}
+
+/* Grid de Módulos / Hub */
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.hub-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hub-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.hub-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
