@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem('user', JSON.stringify(res.user));
         }
 
-        window.location.href = 'simulado.html';
+        window.location.href = 'index.html';
       } else {
         throw new Error('Não foi possível identificar o token de acesso na resposta.');
       }
