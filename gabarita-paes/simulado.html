@@ -15,6 +15,11 @@
       <a href="redacao.html">Redação UEMA</a>
       <a href="ranking.html">Classificação</a>
     </nav>
+    <!-- Menu Perfil / Sair -->
+    <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
+      <span id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Aluno</span>
+      <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
+    </div>
   </header>
 
   <main class="container">
@@ -50,6 +55,8 @@
     </div>
   </main>
 
-  <script type="module" src="js/simulado.js"></script>
+  <!-- Carrega primeiro a API e depois a lógica do simulado sem depender de import -->
+  <script src="js/api.js"></script>
+  <script src="js/simulado.js"></script>
 </body>
 </html>
