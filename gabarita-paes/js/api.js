@@ -4,7 +4,7 @@ window.api = {
   getToken() {
     return localStorage.getItem('token');
   },
-
+//token
   setToken(token) {
     localStorage.setItem('token', token);
   },
