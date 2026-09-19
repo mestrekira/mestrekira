@@ -15,30 +15,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const res = await window.api.post('/auth/login', { email, password });
-      console.log('Resposta completa do login:', res);
+      console.log('Resposta do login:', res);
 
-      // Captura o token em qualquer formato que o backend retornar
+      // Se o servidor avisar que a senha/usuário são inválidos ou se ok for false
+      if (res?.ok === false || res?.error) {
+        throw new Error(res.error || res.message || 'Usuário ou senha inválidos.');
+      }
+
+      // Captura o token retornado
       const token =
         res?.token ||
         res?.accessToken ||
         res?.access_token ||
         res?.jwt ||
         res?.data?.token ||
-        res?.data?.accessToken ||
-        (typeof res === 'string' ? res : null);
+        res?.data?.accessToken;
 
       if (token) {
         window.api.setToken(token);
-        
-        // Guarda também os dados do usuário se vierem na resposta
+
         if (res?.user) {
           localStorage.setItem('user', JSON.stringify(res.user));
         }
 
         window.location.href = 'simulado.html';
       } else {
-        // Se ainda não achar, exibe na tela o formato exato que o servidor devolveu
-        throw new Error('Formato inesperado: ' + JSON.stringify(res));
+        throw new Error('Não foi possível identificar o token de acesso na resposta.');
       }
     } catch (err) {
       alertBox.style.display = 'block';
