@@ -64,7 +64,6 @@ window.selectTheme = (promptId) => {
   }
 };
 
-// Integração com a Web Speech API (Microfone)
 function setupSpeechRecognition() {
   const btnMic = document.getElementById('btn-mic');
   const textarea = document.getElementById('essay-text');
