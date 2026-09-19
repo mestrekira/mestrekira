@@ -68,7 +68,7 @@
 
         <!-- Lista Oficial Completa de Cursos do PAES UEMA -->
         <div class="form-group">
-          <label for="curso">Curso Pretendido no PAES UEMA (Para o Ranqueamento)</label>
+          <label for="curso">Curso Pretendido no PAES UEMA</label>
           <select id="curso" class="form-control" required>
             <option value="" disabled selected>Selecione seu curso oficial...</option>
             <option value="Administração Bacharelado">Administração Bacharelado</option>
@@ -137,9 +137,9 @@
     </div>
   </main>
 
-  <script type="module">
-    import { api } from './js/api.js';
-
+  <!-- Carrega a API global sem depender de import -->
+  <script src="js/api.js"></script>
+  <script>
     document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alertBox = document.getElementById('alert-box');
@@ -154,7 +154,7 @@
       };
 
       try {
-        const res = await api.post('/auth/register', payload);
+        const res = await window.api.post('/auth/register', payload);
         alertBox.style.display = 'block';
         alertBox.style.background = '#dcfce7';
         alertBox.style.color = '#166534';
