@@ -1,6 +1,6 @@
 const API_BASE = 'https://mestrekira-api.onrender.com';
 
-export const api = {
+window.api = {
   getToken() {
     return localStorage.getItem('token');
   },
@@ -11,7 +11,7 @@ export const api = {
 
   logout() {
     localStorage.removeItem('token');
-    window.location.href = '/gabarita-paes/login.html';
+    window.location.href = 'login.html';
   },
 
   async request(endpoint, options = {}) {
@@ -32,8 +32,11 @@ export const api = {
       });
 
       if (response.status === 401) {
-        this.logout();
-        return null;
+        // Se a rota privada recusar, limpa e redireciona
+        if (!endpoint.includes('/auth/login')) {
+          this.logout();
+          return null;
+        }
       }
 
       const data = await response.json();
