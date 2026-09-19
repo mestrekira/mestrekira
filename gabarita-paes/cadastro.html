@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
     .auth-card {
-      max-width: 480px;
-      margin: 3rem auto;
+      max-width: 520px;
+      margin: 2.5rem auto;
       padding: 2.5rem 2rem;
     }
     .form-group {
@@ -26,7 +26,8 @@
       padding: 0.75rem;
       border: 1px solid var(--border);
       border-radius: 6px;
-      font-size: 1rem;
+      font-size: 0.95rem;
+      background-color: white;
     }
     .form-control:focus {
       outline: none;
@@ -65,23 +66,54 @@
           <input type="password" id="senha" class="form-control" required minlength="8" placeholder="Mínimo de 8 caracteres">
         </div>
 
-        <!-- Campo Obrigatório para o Ranqueamento -->
+        <!-- Lista Oficial Completa de Cursos do PAES UEMA -->
         <div class="form-group">
-          <label for="curso">Curso Pretendido no PAES UEMA</label>
+          <label for="curso">Curso Pretendido no PAES UEMA (Para o Ranqueamento)</label>
           <select id="curso" class="form-control" required>
-            <option value="" disabled selected>Selecione seu curso...</option>
-            <option value="Medicina">Medicina</option>
-            <option value="Direito">Direito</option>
-            <option value="Enfermagem">Enfermagem</option>
-            <option value="Engenharia Civil">Engenharia Civil</option>
-            <option value="Administração">Administração</option>
-            <option value="Medicina Veterinária">Medicina Veterinária</option>
-            <option value="Agronomia">Agronomia</option>
-            <option value="Pedagogia">Pedagogia</option>
-            <option value="Ciências Biológicas">Ciências Biológicas</option>
-            <option value="História">História</option>
-            <option value="Letras">Letras</option>
-            <option value="Outro Curso">Outro Curso</option>
+            <option value="" disabled selected>Selecione seu curso oficial...</option>
+            <option value="Administração Bacharelado">Administração Bacharelado</option>
+            <option value="Agronomia Bacharelado">Agronomia Bacharelado</option>
+            <option value="Arquitetura e Urbanismo Bacharelado">Arquitetura e Urbanismo Bacharelado</option>
+            <option value="Ciências Biológicas Bacharelado">Ciências Biológicas Bacharelado</option>
+            <option value="Ciências Biológicas Licenciatura">Ciências Biológicas Licenciatura</option>
+            <option value="Ciências Contábeis Bacharelado">Ciências Contábeis Bacharelado</option>
+            <option value="Ciências Naturais Licenciatura">Ciências Naturais Licenciatura</option>
+            <option value="Ciências Sociais Bacharelado">Ciências Sociais Bacharelado</option>
+            <option value="Ciências Sociais Licenciatura">Ciências Sociais Licenciatura</option>
+            <option value="Curso de Formação de Oficiais – CBMMA Bacharelado em Segurança Pública do Trabalho">Curso de Formação de Oficiais – CBMMA Bacharelado em Segurança Pública do Trabalho</option>
+            <option value="Curso de Formação de Oficiais - Bacharelado em Segurança Pública - PMMA">Curso de Formação de Oficiais - Bacharelado em Segurança Pública - PMMA</option>
+            <option value="Curso Superior de Tecnologia em Alimentos">Curso Superior de Tecnologia em Alimentos</option>
+            <option value="Curso Superior de Tecnologia em Fruticultura">Curso Superior de Tecnologia em Fruticultura</option>
+            <option value="Curso Superior de Tecnologia em Gestão Ambiental">Curso Superior de Tecnologia em Gestão Ambiental</option>
+            <option value="Curso Superior de Tecnologia em Gestão Comercial">Curso Superior de Tecnologia em Gestão Comercial</option>
+            <option value="Curso Superior de Tecnologia em Gestão de Agronegócio">Curso Superior de Tecnologia em Gestão de Agronegócio</option>
+            <option value="Direito Bacharelado">Direito Bacharelado</option>
+            <option value="Educação Física Licenciatura">Educação Física Licenciatura</option>
+            <option value="Enfermagem Bacharelado">Enfermagem Bacharelado</option>
+            <option value="Engenharia Civil Bacharelado">Engenharia Civil Bacharelado</option>
+            <option value="Engenharia da Computação Bacharelado">Engenharia da Computação Bacharelado</option>
+            <option value="Engenharia de Pesca Bacharelado">Engenharia de Pesca Bacharelado</option>
+            <option value="Engenharia de Produção Bacharelado">Engenharia de Produção Bacharelado</option>
+            <option value="Engenharia Mecânica Bacharelado">Engenharia Mecânica Bacharelado</option>
+            <option value="Filosofia Licenciatura">Filosofia Licenciatura</option>
+            <option value="Física Licenciatura">Física Licenciatura</option>
+            <option value="Fisioterapia Bacharelado">Fisioterapia Bacharelado</option>
+            <option value="Geografia Bacharelado">Geografia Bacharelado</option>
+            <option value="Geografia Licenciatura">Geografia Licenciatura</option>
+            <option value="História Licenciatura">História Licenciatura</option>
+            <option value="Letras Licenciatura em Língua Portuguesa e Literaturas de Língua Portuguesa">Letras Licenciatura em Língua Portuguesa e Literaturas de Língua Portuguesa</option>
+            <option value="Letras Licenciatura em Língua Portuguesa Língua Espanhola e Literaturas">Letras Licenciatura em Língua Portuguesa Língua Espanhola e Literaturas</option>
+            <option value="Letras Licenciatura em Língua Portuguesa Língua Inglesa e Literaturas">Letras Licenciatura em Língua Portuguesa Língua Inglesa e Literaturas</option>
+            <option value="Matemática Licenciatura">Matemática Licenciatura</option>
+            <option value="Medicina Bacharelado">Medicina Bacharelado</option>
+            <option value="Medicina Veterinária Bacharelado">Medicina Veterinária Bacharelado</option>
+            <option value="Meteorologia">Meteorologia</option>
+            <option value="Música Licenciatura">Música Licenciatura</option>
+            <option value="Pedagogia Licenciatura">Pedagogia Licenciatura</option>
+            <option value="Psicologia Bacharelado">Psicologia Bacharelado</option>
+            <option value="Química Licenciatura">Química Licenciatura</option>
+            <option value="Relações Internacionais">Relações Internacionais</option>
+            <option value="Zootecnia Bacharelado">Zootecnia Bacharelado</option>
           </select>
         </div>
 
@@ -89,8 +121,8 @@
         <div class="form-group">
           <label for="lingua">Opção de Língua Estrangeira</label>
           <select id="lingua" class="form-control" required>
-            <option value="INGLES">Língua Inglesa</option>
-            <option value="ESPANHOL">Língua Espanhola</option>
+            <option value="INGLES">Língua Inglesa (Questões 12 a 16)</option>
+            <option value="ESPANHOL">Língua Espanhola (Questões 17 a 21)</option>
           </select>
         </div>
 
