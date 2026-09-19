@@ -15,6 +15,10 @@
       <a href="redacao.html">Redação UEMA</a>
       <a href="ranking.html" class="active">Classificação</a>
     </nav>
+    <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
+      <span id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Aluno</span>
+      <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
+    </div>
   </header>
 
   <main class="container">
@@ -43,19 +47,33 @@
     </div>
   </main>
 
-  <script type="module">
-    import { api } from './js/api.js';
-
+  <script src="js/api.js"></script>
+  <script>
     document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.api.getToken()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
       try {
-        const res = await api.get('/rankings/my-course');
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          if (user?.name) {
+            document.getElementById('user-name').innerText = `👤 ${user.name.split(' ')[0]}`;
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const res = await window.api.get('/rankings/my-course');
         if (!res) return;
 
         document.getElementById('ranking-course').innerText = `Classificação: ${res.targetCourse}`;
         
         const tbody = document.getElementById('ranking-body');
-        if (res.ranking.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Nenhum candidato concluiu as 60 questões deste ciclo ainda.</td></tr>`;
+        if (!res.ranking || res.ranking.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhum candidato deste curso concluiu as 60 questões deste ciclo ainda. Seja o primeiro!</td></tr>`;
           return;
         }
 
@@ -64,13 +82,13 @@
             <td><strong>#${row.position}</strong></td>
             <td>${row.name} ${row.isCurrentUser ? '⭐ (Você)' : ''}</td>
             <td>${row.questionsCorrect} / 60</td>
-            <td>${row.highestEssayScore.toFixed(2)}</td>
-            <td><strong>${row.finalScore.toFixed(2)}</strong></td>
+            <td>${Number(row.highestEssayScore).toFixed(2)}</td>
+            <td><strong>${Number(row.finalScore).toFixed(2)}</strong></td>
           </tr>
         `).join('');
       } catch (error) {
         document.getElementById('ranking-body').innerHTML = `
-          <tr><td colspan="5" style="text-align: center; color: var(--danger);">${error.message}</td></tr>
+          <tr><td colspan="5" style="text-align: center; color: var(--danger); padding: 2rem;">${error.message || 'Acesso restrito para assinantes Premium.'}</td></tr>
         `;
       }
     });
