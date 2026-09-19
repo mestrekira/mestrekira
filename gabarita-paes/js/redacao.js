@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Exibe o nome do aluno no menu
   try {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -35,7 +34,6 @@ async function checkEssayStatus() {
       document.getElementById('unlocked-view').style.display = 'none';
       document.getElementById('lock-message').innerText = res.message;
 
-      // Se o bloqueio for por plano gratuito, oferece o botão de assinar
       if (res.reason === 'PREMIUM_REQUIRED') {
         document.getElementById('lock-title').innerText = 'Recurso Exclusivo Premium';
         document.getElementById('lock-action').innerHTML = `
