@@ -20,34 +20,47 @@
     </div>
   </main>
 
-  <script type="module">
+<script type="module">
     import { api } from './js/api.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
       const params = new URLSearchParams(window.location.search);
+      const ok = params.get('ok');
       const token = params.get('token');
 
       const title = document.getElementById('title');
       const msg = document.getElementById('msg');
       const btn = document.getElementById('btn-action');
 
-      if (!token) {
-        title.innerText = 'Link inválido';
-        msg.innerText = 'Nenhum código de validação foi fornecido.';
-        return;
-      }
-
-      try {
-        await api.post('/auth/verify-email', { token });
+      // Se o backend já validou e redirecionou com ok=1
+      if (ok === '1') {
         title.innerText = '✅ E-mail confirmado com sucesso!';
         msg.innerText = 'Sua conta está ativa. Você já pode acessar a plataforma.';
         btn.style.display = 'inline-flex';
-      } catch (err) {
-        title.innerText = '❌ Falha na verificação';
-        msg.innerText = err.message || 'O link de verificação expirou ou já foi utilizado.';
-        btn.style.display = 'inline-flex';
-        btn.innerText = 'Tentar Login';
+        btn.href = 'login.html';
+        return;
       }
+
+      // Se abriu a página diretamente trazendo o token na URL
+      if (token) {
+        try {
+          await api.get(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+          title.innerText = '✅ E-mail confirmado com sucesso!';
+          msg.innerText = 'Sua conta está ativa. Você já pode acessar a plataforma.';
+          btn.style.display = 'inline-flex';
+          btn.href = 'login.html';
+        } catch (err) {
+          title.innerText = '❌ Falha na verificação';
+          msg.innerText = err.message || 'O link de verificação expirou ou já foi utilizado.';
+          btn.style.display = 'inline-flex';
+          btn.innerText = 'Ir para o Login';
+          btn.href = 'login.html';
+        }
+        return;
+      }
+
+      title.innerText = 'Link inválido';
+      msg.innerText = 'Nenhum código de validação foi fornecido.';
     });
   </script>
 </body>
