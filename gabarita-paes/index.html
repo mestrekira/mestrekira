@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gabarita PAES | Preparação Inteligente PAES UEMA</title>
+  <link rel="stylesheet" href="css/gabarita.css">
+</head>
+<body>
+
+  <header class="header">
+    <a href="index.html" class="brand">🎓 Gabarita PAES</a>
+    <nav class="nav-links">
+      <a href="index.html" class="active">Início</a>
+      <a href="simulado.html">Simulado (60Q)</a>
+      <a href="treino-enem.html">Treino ENEM</a>
+      <a href="redacao.html">Redação UEMA</a>
+      <a href="ranking.html">Classificação</a>
+    </nav>
+    <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
+      <span id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Aluno</span>
+      <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
+    </div>
+  </header>
+
+  <!-- Carrossel de Banners Rolantes (Auto-slide a cada 5 segundos) -->
+  <div class="carousel-container">
+    <div class="carousel-slides" id="carousel-slides">
+      
+      <!-- Slide 1: PAES UEMA Reta Final -->
+      <div class="carousel-slide slide-1">
+        <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 0.5rem;">Vestibular 2027</span>
+        <h2>Reta Final PAES UEMA</h2>
+        <p>Prepare-se com as 60 questões oficiais do ciclo e conquiste sua vaga disputando diretamente com candidatos do seu curso.</p>
+        <a href="simulado.html" class="btn" style="background: white; color: var(--primary);">Entrar no Simulado Oficial →</a>
+      </div>
+
+      <!-- Slide 2: Redação com IA nos critérios da UEMA -->
+      <div class="carousel-slide slide-2">
+        <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 0.5rem;">Tecnologia & Acessibilidade</span>
+        <h2>Redação com Correção por IA e Voz</h2>
+        <p>Pratique os 2 temas do mês ditando por voz no navegador e receba nota de 0 a 10 e feedback nos 4 critérios oficiais da UEMA.</p>
+        <a href="redacao.html" class="btn" style="background: white; color: #065f46;">Ir para a Redação →</a>
+      </div>
+
+      <!-- Slide 3: Treino Livre com o ENEM -->
+      <div class="carousel-slide slide-3">
+        <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 0.5rem;">Prática Contínua</span>
+        <h2>Treino Livre com o Banco ENEM</h2>
+        <p>Resolva baterias de questões inéditas por disciplina, sem repetição, com diagnósticos de erros e links para o Mestre Kira.</p>
+        <a href="treino-enem.html" class="btn" style="background: white; color: #4c1d95;">Praticar com o ENEM →</a>
+      </div>
+
+    </div>
+
+    <!-- Indicadores do Carrossel (Bolinhas) -->
+    <div class="carousel-dots">
+      <div class="dot active" onclick="irParaSlide(0)"></div>
+      <div class="dot" onclick="irParaSlide(1)"></div>
+      <div class="dot" onclick="irParaSlide(2)"></div>
+    </div>
+  </div>
+
+  <main class="container">
+    
+    <!-- Boas-Vindas e Explicação de Como Funciona -->
+    <div class="card" style="background: white; padding: 2rem;">
+      <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Como Funciona o Gabarita PAES?</h2>
+      <p style="color: var(--text-muted); line-height: 1.7; margin-bottom: 1.5rem;">
+        O <strong>Gabarita PAES</strong> é o ambiente de alto desempenho integrado ao <strong>Mestre Kira</strong>, desenvolvido especificamente para a banca da Universidade Estadual do Maranhão (UEMA).
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
+        <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--primary);">
+          <h4 style="margin-bottom: 0.4rem;">1. Simulado Isonômico (60Q)</h4>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">Um caderno oficial mensal de 60 questões fixas. Responda no seu ritmo durante 30 dias.</p>
+        </div>
+
+        <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--accent);">
+          <h4 style="margin-bottom: 0.4rem;">2. Desbloqueio da Redação</h4>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">Ao concluir as 60 questões, os 2 temas de redação são liberados para envio com correção imediata por IA.</p>
+        </div>
+
+        <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid #d97706);">
+          <h4 style="margin-bottom: 0.4rem;">3. Ranqueamento por Curso</h4>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">Sua pontuação final (questões + redação) compete diretamente com quem disputa a mesma vaga que você.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards de Ação Direta para os Módulos -->
+    <div class="hub-grid">
+      
+      <!-- Card Simulado PAES -->
+      <div class="card hub-card">
+        <div>
+          <div class="hub-icon">📝</div>
+          <h3>Simulado Oficial PAES UEMA</h3>
+          <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
+            O caderno oficial do ciclo de 30 dias com 60 questões e filtros por matéria.
+          </p>
+        </div>
+        <a href="simulado.html" class="btn" style="width: 100%; justify-content: center;">Acessar Simulado Oficial</a>
+      </div>
+
+      <!-- Card Treino ENEM -->
+      <div class="card hub-card">
+        <div>
+          <div class="hub-icon">🎯</div>
+          <h3>Treino Livre (Banco ENEM)</h3>
+          <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
+            Baterias de questões ilimitadas, sem repetições, com diagnósticos e links do Mestre Kira.
+          </p>
+        </div>
+        <a href="treino-enem.html" class="btn btn-secondary" style="width: 100%; justify-content: center; background: #e0e7ff; color: var(--primary);">Treinar com o ENEM</a>
+      </div>
+
+      <!-- Card Redação -->
+      <div class="card hub-card">
+        <div>
+          <div class="hub-icon">✍️</div>
+          <h3>Laboratório de Redação</h3>
+          <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
+            Temas mensais da UEMA, editor com gravação de voz e notas nos 4 critérios da banca.
+          </p>
+        </div>
+        <a href="redacao.html" class="btn btn-secondary" style="width: 100%; justify-content: center;">Acessar Redações</a>
+      </div>
+
+      <!-- Card Classificação -->
+      <div class="card hub-card">
+        <div>
+          <div class="hub-icon">🏆</div>
+          <h3>Classificação no Curso</h3>
+          <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
+            Veja sua colocação na disputa pelo seu curso pretendido da UEMA.
+          </p>
+        </div>
+        <a href="ranking.html" class="btn btn-secondary" style="width: 100%; justify-content: center;">Ver Classificação</a>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    // 1. Proteção de Rota e Exibição de Nome
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!window.api.getToken()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          if (user?.name) {
+            document.getElementById('user-name').innerText = `👤 ${user.name.split(' ')[0]}`;
+          }
+        }
+      } catch (e) {}
+
+      iniciarCarrossel();
+    });
+
+    // 2. Lógica do Carrossel Automático
+    let currentSlide = 0;
+    const totalSlides = 3;
+    let slideTimer;
+
+    function atualizarCarrossel() {
+      const slides = document.getElementById('carousel-slides');
+      const dots = document.querySelectorAll('.dot');
+
+      slides.style.transform = `translateX(-${currentSlide * (100 / totalSlides)}%)`;
+
+      dots.forEach((d, index) => {
+        d.classList.toggle('active', index === currentSlide);
+      });
+    }
+
+    window.irParaSlide = (index) => {
+      currentSlide = index;
+      atualizarCarrossel();
+      reiniciarTimer();
+    };
+
+    function proximoSlide() {
+      currentSlide = (currentSlide + 1) % totalSlides;
+      atualizarCarrossel();
+    }
+
+    function iniciarCarrossel() {
+      slideTimer = setInterval(proximoSlide, 5000); // Rola a cada 5 segundos
+    }
+
+    function reiniciarTimer() {
+      clearInterval(slideTimer);
+      iniciarCarrossel();
+    }
+  </script>
+</body>
+</html>
