@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Perfil | Gabarita PAES</title>
+  <link rel="stylesheet" href="css/gabarita.css">
+  <style>
+    .profile-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .info-box {
+      background: #f8fafc;
+      padding: 1.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .info-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .info-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 0.35rem;
+    }
+    .plan-badge {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .plan-free { background: #e2e8f0; color: #475569; }
+    .plan-premium { background: #dcfce7; color: #15803d; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <a href="index.html" class="brand">🎓 Gabarita PAES</a>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+      <a href="simulado.html">Simulado (60Q)</a>
+      <a href="treino-enem.html">Treino ENEM</a>
+      <a href="redacao.html">Redação UEMA</a>
+      <a href="ranking.html">Classificação</a>
+    </nav>
+    <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
+      <a href="perfil.html" style="text-decoration: none; font-weight: 600; font-size: 0.9rem; color: var(--primary);" id="user-name">👤 Meu Perfil</a>
+      <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
+    </div>
+  </header>
+
+  <main class="container" style="max-width: 800px;">
+    
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 id="profile-name">Carregando perfil...</h2>
+          <p id="profile-email" style="color: var(--text-muted); font-size: 0.95rem;">-</p>
+        </div>
+        <div id="plan-container">
+          <span class="plan-badge plan-free" id="plan-badge">PLANO GRATUITO</span>
+        </div>
+      </div>
+
+      <div class="profile-info">
+        <div class="info-box">
+          <div class="info-label">Curso Alvo no PAES UEMA</div>
+          <div class="info-value" id="profile-course">-</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Língua Estrangeira Escolhida</div>
+          <div class="info-value" id="profile-lang">-</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Vigência da Assinatura</div>
+          <div class="info-value" id="profile-expires">Acesso Básico</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Status da Conta</div>
+          <div class="info-value" style="color: var(--accent);">Ativa</div>
+        </div>
+      </div>
+
+      <!-- Banner de Upgrade caso o usuário seja FREE -->
+      <div id="upgrade-box" style="margin-top: 2rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h3 style="color: var(--primary);">Desbloqueie o Acesso Completo</h3>
+          <p style="color: #334155; font-size: 0.9rem; margin-top: 0.2rem;">
+            Tenha 100% das questões, correção de redação por IA e ranqueamento oficial.
+          </p>
+        </div>
+        <a href="assinar.html" class="btn" style="background: var(--accent);">Assinar Premium (R$ 29,90)</a>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.api.getToken()) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      try {
+        // Busca os dados do usuário autenticado
+        const userStr = localStorage.getItem('user');
+        let user = userStr ? JSON.parse(userStr) : null;
+
+        // Atualiza campos da tela
+        if (user) {
+          document.getElementById('profile-name').innerText = user.name || 'Estudante';
+          document.getElementById('profile-email').innerText = user.email || '';
+          document.getElementById('profile-course').innerText = user.targetCourse || 'Não informado';
+          document.getElementById('profile-lang').innerText = user.foreignLanguage === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa';
+        }
+
+        // Consulta status real da assinatura no backend
+        const planStatus = await window.api.get('/payments/status');
+        if (planStatus) {
+          const badge = document.getElementById('plan-badge');
+          const expiresEl = document.getElementById('profile-expires');
+          const upgradeBox = document.getElementById('upgrade-box');
+
+          if (planStatus.isPremium) {
+            badge.className = 'plan-badge plan-premium';
+            badge.innerText = '⭐ PREMIUM ATIVO';
+            upgradeBox.style.display = 'none';
+
+            if (planStatus.expiresAt) {
+              const d = new Date(planStatus.expiresAt);
+              expiresEl.innerText = `Até ${d.toLocaleDateString('pt-BR')}`;
+            } else {
+              expiresEl.innerText = 'Ativo';
+            }
+          } else {
+            badge.className = 'plan-badge plan-free';
+            badge.innerText = 'PLANO GRATUITO (50%)';
+            expiresEl.innerText = 'Limitado';
+            upgradeBox.style.display = 'flex';
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados do perfil:', err);
+      }
+    });
+  </script>
+</body>
+</html>
