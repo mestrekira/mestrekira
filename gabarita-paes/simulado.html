@@ -5,57 +5,118 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simulado Oficial PAES UEMA | Gabarita PAES</title>
   <link rel="stylesheet" href="css/gabarita.css">
+  <style>
+    .view-tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .view-tab-btn {
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    .view-tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .review-banner {
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      color: #92400e;
+      font-size: 0.95rem;
+    }
+  </style>
 </head>
 <body>
 
   <header class="header">
-    <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
+    <a href="index.html" class="brand">🎓 Gabarita PAES</a>
     <nav class="nav-links">
+      <a href="index.html">Início</a>
       <a href="simulado.html" class="active">Simulado (60Q)</a>
+      <a href="treino-enem.html">Treino ENEM</a>
       <a href="redacao.html">Redação UEMA</a>
       <a href="ranking.html">Classificação</a>
     </nav>
-    <!-- Menu Perfil / Sair -->
     <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
-      <span id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Aluno</span>
+      <a href="perfil.html" id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--primary); text-decoration: none;">👤 Aluno</a>
       <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
     </div>
   </header>
 
   <main class="container">
-    <!-- Barra de Progresso Geral -->
-    <div class="progress-box">
-      <div class="progress-header">
-        <span id="cycle-title">Carregando simulado...</span>
-        <span id="progress-text">0 de 60 respondidas</span>
+    
+    <!-- Seletor de Modo: Caderno Completo vs. Revisão Cega de Erros -->
+    <div class="view-tabs">
+      <button class="view-tab-btn active" id="tab-official" onclick="alternarModo('oficial')">
+        📝 Caderno Oficial (60Q)
+      </button>
+      <button class="view-tab-btn" id="tab-review" onclick="alternarModo('revisao')">
+        🔍 Revisar Questões que Errei
+      </button>
+    </div>
+
+    <!-- Área do Modo Oficial -->
+    <div id="section-official">
+      <!-- Barra de Progresso Geral -->
+      <div class="progress-box">
+        <div class="progress-header">
+          <span id="cycle-title">Carregando simulado...</span>
+          <span id="progress-text">0 de 60 respondidas</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
       </div>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="progress-bar"></div>
+
+      <!-- Filtros de Disciplinas -->
+      <div class="filter-scroll" id="disciplines-filter">
+        <button class="filter-btn active" data-discipline="">Todas as 60 Questões</button>
+        <button class="filter-btn" data-discipline="Língua Portuguesa e Literatura">Língua Portuguesa e Literatura</button>
+        <button class="filter-btn" data-discipline="História">História</button>
+        <button class="filter-btn" data-discipline="Geografia">Geografia</button>
+        <button class="filter-btn" data-discipline="Filosofia e Sociologia">Filosofia e Sociologia</button>
+        <button class="filter-btn" data-discipline="Biologia">Biologia</button>
+        <button class="filter-btn" data-discipline="Física">Física</button>
+        <button class="filter-btn" data-discipline="Química">Química</button>
+        <button class="filter-btn" data-discipline="Matemática">Matemática</button>
+      </div>
+
+      <!-- Container das 60 Questões -->
+      <div id="questions-container">
+        <div class="card" style="text-align: center; color: var(--text-muted);">
+          Carregando as questões do ciclo...
+        </div>
       </div>
     </div>
 
-    <!-- Filtros de Disciplinas Alinhados com o Gabarita PAES -->
-    <div class="filter-scroll" id="disciplines-filter">
-      <button class="filter-btn active" data-discipline="">Todas as 60 Questões</button>
-      <button class="filter-btn" data-discipline="Língua Portuguesa e Literatura">Língua Portuguesa e Literatura</button>
-      <button class="filter-btn" data-discipline="História">História</button>
-      <button class="filter-btn" data-discipline="Geografia">Geografia</button>
-      <button class="filter-btn" data-discipline="Filosofia e Sociologia">Filosofia e Sociologia</button>
-      <button class="filter-btn" data-discipline="Biologia">Biologia</button>
-      <button class="filter-btn" data-discipline="Física">Física</button>
-      <button class="filter-btn" data-discipline="Química">Química</button>
-      <button class="filter-btn" data-discipline="Matemática">Matemática</button>
-    </div>
+    <!-- Área da Revisão Cega (Active Recall) -->
+    <div id="section-review" style="display: none;">
+      <div class="review-banner">
+        <strong>💡 Modo de Revisão Cega:</strong> Aqui estão apenas as questões do simulado que você errou na tentativa oficial. Tente resolvê-las novamente para aprender com seus próprios erros. Suas respostas aqui <strong>não alteram</strong> a nota oficial do ranking.
+      </div>
 
-    <!-- Área de Renderização das Questões -->
-    <div id="questions-container">
-      <div class="card" style="text-align: center; color: var(--text-muted);">
-        Carregando as questões do ciclo...
+      <div id="review-container">
+        <div class="card" style="text-align: center; color: var(--text-muted);">
+          Buscando questões para revisão...
+        </div>
       </div>
     </div>
+
   </main>
 
-  <!-- Carrega primeiro a API e depois a lógica do simulado sem depender de import -->
   <script src="js/api.js"></script>
   <script src="js/simulado.js"></script>
 </body>
