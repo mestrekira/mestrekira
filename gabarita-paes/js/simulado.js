@@ -1,29 +1,42 @@
 let currentSimulationId = null;
-let currentQuestions = [];
+let allOfficialQuestions = []; // Guarda todas as 60 questões na memória
 let activeDiscipline = '';
+
+let allWrongQuestions = []; // Guarda todas as questões erradas
+let activeReviewDiscipline = '';
 let currentMode = 'oficial'; // 'oficial' ou 'revisao'
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!window.api.getToken()) {
+  if (!window.api || !window.api.getToken()) {
     window.location.href = 'login.html';
     return;
   }
 
+  // 1. Exibe o nome do estudante no menu do topo
   try {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const user = JSON.parse(userStr);
       if (user?.name) {
-        document.getElementById('user-name').innerText = `👤 ${user.name.split(' ')[0]}`;
+        const userEl = document.getElementById('user-name');
+        if (userEl) userEl.innerText = `👤 ${user.name.split(' ')[0]}`;
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error(e);
+  }
 
+  // 2. Configura os cliques dos botões de filtro
   setupFilterButtons();
+  setupReviewFilters();
+
+  // 3. Carrega o simulado
   loadSimulation();
 });
 
-// Alterna entre o Caderno Oficial e a Revisão Cega
+// ==========================================
+// 1. Alternância entre Oficial e Revisão
+// ==========================================
 window.alternarModo = (modo) => {
   currentMode = modo;
   const tabOfficial = document.getElementById('tab-official');
@@ -32,58 +45,88 @@ window.alternarModo = (modo) => {
   const secReview = document.getElementById('section-review');
 
   if (modo === 'oficial') {
-    tabOfficial.classList.add('active');
-    tabReview.classList.remove('active');
-    secOfficial.style.display = 'block';
-    secReview.style.display = 'none';
-    loadSimulation();
+    if (tabOfficial) tabOfficial.classList.add('active');
+    if (tabReview) tabReview.classList.remove('active');
+    if (secOfficial) secOfficial.style.display = 'block';
+    if (secReview) secReview.style.display = 'none';
+    renderQuestions();
   } else {
-    tabOfficial.classList.remove('active');
-    tabReview.classList.add('active');
-    secOfficial.style.display = 'none';
-    secReview.style.display = 'block';
+    if (tabOfficial) tabOfficial.classList.remove('active');
+    if (tabReview) tabReview.classList.add('active');
+    if (secOfficial) secOfficial.style.display = 'none';
+    if (secReview) secReview.style.display = 'block';
     loadErrorReview();
   }
 };
 
-// 1. Carrega o Simulado Oficial (60Q)
+// ==========================================
+// 2. Caderno Oficial (60 Questões)
+// ==========================================
 async function loadSimulation() {
   const container = document.getElementById('questions-container');
   try {
-    const url = activeDiscipline
-      ? `/simulations/current?discipline=${encodeURIComponent(activeDiscipline)}`
-      : '/simulations/current';
-
-    const data = await window.api.get(url);
+    const data = await window.api.get('/simulations/current');
     if (!data) return;
 
     currentSimulationId = data.simulationId;
-    currentQuestions = data.questions;
+    allOfficialQuestions = data.questions || [];
 
-    document.getElementById('cycle-title').innerText = data.title;
-    document.getElementById('progress-text').innerText = `${data.answeredCount} de ${data.totalQuestions} respondidas`;
+    // Atualiza título e barras de progresso
+    const cycleTitle = document.getElementById('cycle-title');
+    if (cycleTitle) cycleTitle.innerText = data.title;
 
-    const percentage = (data.answeredCount / data.totalQuestions) * 100;
-    document.getElementById('progress-bar').style.width = `${percentage}%`;
-
+    atualizarProgresso(data.answeredCount, data.totalQuestions);
     renderQuestions();
   } catch (error) {
-    container.innerHTML = `
-      <div class="card" style="color: var(--danger); text-align: center;">
-        ${error.message || 'Erro ao carregar o simulado.'}
-      </div>
-    `;
+    if (container) {
+      container.innerHTML = `
+        <div class="card" style="color: var(--danger); text-align: center;">
+          ${error.message || 'Erro ao carregar o simulado.'}
+        </div>
+      `;
+    }
   }
 }
 
+function atualizarProgresso(answered, total) {
+  const progressText = document.getElementById('progress-text');
+  const progressBar = document.getElementById('progress-bar');
+
+  // Conta acertos e erros das respondidas
+  const acertos = allOfficialQuestions.filter((q) => q.isAnswered && q.isCorrect === true).length;
+  const erros = allOfficialQuestions.filter((q) => q.isAnswered && q.isCorrect === false).length;
+
+  if (progressText) {
+    progressText.innerText = `${answered} de ${total} respondidas (${acertos} acertos • ${erros} erros)`;
+  }
+  if (progressBar) {
+    const percentage = total > 0 ? (answered / total) * 100 : 0;
+    progressBar.style.width = `${percentage}%`;
+  }
+}
+
+// Renderiza as questões com filtro instantâneo em memória
 function renderQuestions() {
   const container = document.getElementById('questions-container');
-  if (!currentQuestions || currentQuestions.length === 0) {
-    container.innerHTML = `<div class="card" style="text-align: center;">Nenhuma questão encontrada para este filtro.</div>`;
+  if (!container) return;
+
+  // Filtra em memória na hora (ultra veloz)
+  const filtered = activeDiscipline
+    ? allOfficialQuestions.filter(
+        (q) => q.discipline.trim().toLowerCase() === activeDiscipline.trim().toLowerCase(),
+      )
+    : allOfficialQuestions;
+
+  if (!filtered || filtered.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        Nenhuma questão encontrada para a matéria <strong>${activeDiscipline}</strong>.
+      </div>
+    `;
     return;
   }
 
-  container.innerHTML = currentQuestions
+  container.innerHTML = filtered
     .map(
       (q) => `
     <div class="card" id="card-${q.questionId}">
@@ -94,7 +137,7 @@ function renderQuestions() {
 
       <div class="question-statement">${q.statement.replace(/\n/g, '<br>')}</div>
 
-      ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura da questão ${q.questionOrder}">` : ''}
+      ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura">` : ''}
       ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar">` : ''}
 
       <div class="options-list" id="opts-${q.questionId}">
@@ -123,49 +166,56 @@ function renderQuestions() {
     .join('');
 }
 
-let allWrongQuestions = [];
-let activeReviewDiscipline = '';
-
-// Carrega as Questões Erradas com Filtro e Contador
+// ==========================================
+// 3. Revisão Cega (Active Recall)
+// ==========================================
 async function loadErrorReview() {
   const container = document.getElementById('review-container');
   const counterBadge = document.getElementById('review-counter-badge');
 
   if (!currentSimulationId) {
-    container.innerHTML = `<div class="card" style="text-align: center;">Inicie o simulado oficial antes de revisar.</div>`;
+    if (container) container.innerHTML = `<div class="card" style="text-align: center;">Inicie o simulado oficial antes de revisar.</div>`;
     return;
   }
 
-  container.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted);">Buscando suas questões erradas...</div>`;
+  if (container) {
+    container.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted);">Buscando suas questões erradas...</div>`;
+  }
 
   try {
     const wrongList = await window.api.get(`/simulations/review-errors?simulationId=${currentSimulationId}`);
     allWrongQuestions = wrongList || [];
 
-    // Atualiza o contador de erros no banner
+    // Atualiza o contador de erros com segurança
     const totalErros = allWrongQuestions.length;
-    counterBadge.innerText = totalErros === 1 ? `1 questão errada` : `${totalErros} questões erradas`;
+    if (counterBadge) {
+      counterBadge.innerText = `${totalErros} ${totalErros === 1 ? 'questão errada' : 'questões erradas'}`;
+    }
 
-    setupReviewFilters();
     renderFilteredReview();
   } catch (err) {
-    container.innerHTML = `<div class="card" style="color: var(--danger); text-align: center;">${err.message || 'Erro ao carregar revisão.'}</div>`;
+    if (container) {
+      container.innerHTML = `<div class="card" style="color: var(--danger); text-align: center;">${err.message || 'Erro ao carregar revisão.'}</div>`;
+    }
   }
 }
 
 function renderFilteredReview() {
   const container = document.getElementById('review-container');
+  if (!container) return;
 
-  // Filtra por matéria se o aluno clicou em alguma disciplina
+  // Filtra em memória na hora
   const filtered = activeReviewDiscipline
-    ? allWrongQuestions.filter((q) => q.discipline === activeReviewDiscipline)
+    ? allWrongQuestions.filter(
+        (q) => q.discipline.trim().toLowerCase() === activeReviewDiscipline.trim().toLowerCase(),
+      )
     : allWrongQuestions;
 
   if (allWrongQuestions.length === 0) {
     container.innerHTML = `
       <div class="card" style="text-align: center; padding: 2.5rem;">
-        <h3 style="color: var(--accent);">🎉 Nenhuma questão pendente para revisão!</h3>
-        <p style="color: var(--text-muted); margin-top: 0.5rem;">Você não errou nenhuma das questões respondidas até agora.</p>
+        <h3 style="color: var(--accent);">🎉 Nenhuma questão para revisar!</h3>
+        <p style="color: var(--text-muted); margin-top: 0.5rem;">Você não errou nenhuma das questões que respondeu até agora.</p>
       </div>
     `;
     return;
@@ -174,7 +224,7 @@ function renderFilteredReview() {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="card" style="text-align: center; padding: 2rem;">
-        <p style="color: var(--text-muted);">Você não errou nenhuma questão de <strong>${activeReviewDiscipline}</strong>! Parabéns!</p>
+        <p style="color: var(--text-muted);">Você não tem erros pendentes na matéria <strong>${activeReviewDiscipline}</strong>! Parabéns!</p>
       </div>
     `;
     return;
@@ -186,7 +236,7 @@ function renderFilteredReview() {
     <div class="card" id="rev-card-${q.questionId}">
       <div class="question-header">
         <span class="badge" style="background: #fee2e2; color: #991b1b;">Revisar • ${q.discipline}</span>
-        <span style="color: #92400e; font-size: 0.85rem;">Segunda Tentativa</span>
+        <span style="color: #92400e; font-size: 0.85rem;">Segunda Tentativa (Sem Spoiler)</span>
       </div>
 
       <div class="question-statement">${q.statement.replace(/\n/g, '<br>')}</div>
@@ -218,19 +268,9 @@ function renderFilteredReview() {
     .join('');
 }
 
-function setupReviewFilters() {
-  const buttons = document.querySelectorAll('#review-disciplines-filter .filter-btn');
-  buttons.forEach((btn) => {
-    btn.onclick = () => {
-      buttons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeReviewDiscipline = btn.getAttribute('data-discipline');
-      renderFilteredReview();
-    };
-  });
-}
-
-// Seleção e Envio no Modo Oficial
+// ==========================================
+// 4. Seleção e Envio das Questões
+// ==========================================
 window.tempSelections = {};
 window.selectOption = (questionId, optionId) => {
   const optsContainer = document.getElementById(`opts-${questionId}`);
@@ -249,29 +289,45 @@ window.submitAnswer = async (questionId) => {
   }
 
   const btn = document.getElementById(`btn-submit-${questionId}`);
-  btn.innerText = 'Gravando...';
-  btn.disabled = true;
+  if (btn) {
+    btn.innerText = 'Gravando...';
+    btn.disabled = true;
+  }
 
   try {
-    await window.api.post('/simulations/answer', {
+    const res = await window.api.post('/simulations/answer', {
       simulationId: currentSimulationId,
       questionId,
       selectedOptionId,
     });
 
-    btn.innerText = '✓ Resposta Gravada';
-    btn.style.background = 'var(--text-muted)';
-    btn.style.cursor = 'not-allowed';
+    if (btn) {
+      btn.innerText = '✓ Resposta Gravada';
+      btn.style.background = 'var(--text-muted)';
+      btn.style.cursor = 'not-allowed';
+    }
 
-    loadSimulation();
+    // Atualiza a questão na memória local
+    const q = allOfficialQuestions.find((item) => item.questionId === questionId);
+    if (q) {
+      q.isAnswered = true;
+      q.selectedOptionId = selectedOptionId;
+      q.isCorrect = res.isCorrect;
+    }
+
+    // Atualiza a barra de progresso imediatamente
+    const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
+    atualizarProgresso(answeredCount, allOfficialQuestions.length);
   } catch (error) {
     alert(error.message || 'Falha ao gravar resposta.');
-    btn.disabled = false;
-    btn.innerText = 'Confirmar Resposta';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Confirmar Resposta';
+    }
   }
 };
 
-// Seleção e Envio no Modo Revisão Cega
+// Resolução da Revisão Cega
 window.revSelections = {};
 window.selectReviewOption = (questionId, optionId) => {
   const optsContainer = document.getElementById(`rev-opts-${questionId}`);
@@ -290,8 +346,10 @@ window.submitReviewAnswer = async (questionId) => {
   }
 
   const btn = document.getElementById(`btn-rev-${questionId}`);
-  btn.disabled = true;
-  btn.innerText = 'Verificando...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Verificando...';
+  }
 
   try {
     const res = await window.api.post('/simulations/answer', {
@@ -300,41 +358,62 @@ window.submitReviewAnswer = async (questionId) => {
       selectedOptionId,
     });
 
-    btn.style.display = 'none';
+    if (btn) btn.style.display = 'none';
     const feedbackBox = document.getElementById(`rev-feedback-${questionId}`);
-    feedbackBox.style.display = 'block';
+    if (feedbackBox) {
+      feedbackBox.style.display = 'block';
 
-    if (res.isCorrect) {
-      feedbackBox.innerHTML = `
-        <div style="padding: 1rem; border-radius: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;">
-          <strong>🎯 Excelente! Você encontrou a alternativa correta na revisão!</strong>
-        </div>
-      `;
-    } else {
-      feedbackBox.innerHTML = `
-        <div style="padding: 1rem; border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">
-          <strong>Ainda não é esta alternativa. Continue relendo a questão para encontrar o gabarito.</strong>
-        </div>
-      `;
-      btn.style.display = 'inline-flex';
-      btn.disabled = false;
-      btn.innerText = 'Tentar Outra Alternativa';
+      if (res.isCorrect) {
+        feedbackBox.innerHTML = `
+          <div style="padding: 1rem; border-radius: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;">
+            <strong>🎯 Excelente! Você encontrou a alternativa correta na revisão!</strong>
+          </div>
+        `;
+      } else {
+        feedbackBox.innerHTML = `
+          <div style="padding: 1rem; border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">
+            <strong>Ainda não é esta alternativa. Continue relendo a questão para encontrar o gabarito.</strong>
+          </div>
+        `;
+        if (btn) {
+          btn.style.display = 'inline-flex';
+          btn.disabled = false;
+          btn.innerText = 'Tentar Outra Alternativa';
+        }
+      }
     }
   } catch (e) {
     alert(e.message || 'Erro ao verificar revisão.');
-    btn.disabled = false;
-    btn.innerText = 'Testar Segunda Resposta';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Testar Segunda Resposta';
+    }
   }
 };
 
+// ==========================================
+// 5. Configuração dos Botões de Filtro
+// ==========================================
 function setupFilterButtons() {
   const buttons = document.querySelectorAll('#disciplines-filter .filter-btn');
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
       buttons.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      activeDiscipline = btn.getAttribute('data-discipline');
-      loadSimulation();
+      activeDiscipline = btn.getAttribute('data-discipline') || '';
+      renderQuestions(); // Filtro instantâneo em memória!
+    });
+  });
+}
+
+function setupReviewFilters() {
+  const buttons = document.querySelectorAll('#review-disciplines-filter .filter-btn');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      buttons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeReviewDiscipline = btn.getAttribute('data-discipline') || '';
+      renderFilteredReview(); // Filtro instantâneo em memória!
     });
   });
 }
