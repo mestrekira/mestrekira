@@ -2,7 +2,8 @@ let promptsData = [];
 let selectedPromptId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!window.api.getToken()) {
+  // Verificação defensiva de autenticação
+  if (!window.api || !window.api.getToken()) {
     window.location.href = 'login.html';
     return;
   }
@@ -12,7 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userStr) {
       const user = JSON.parse(userStr);
       if (user?.name) {
-        document.getElementById('user-name').innerText = `👤 ${user.name.split(' ')[0]}`;
+        const userEl = document.getElementById('user-name');
+        if (userEl) userEl.innerText = `👤 ${user.name.split(' ')[0]}`;
       }
     }
   } catch (e) {
@@ -25,37 +27,50 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function checkEssayStatus() {
+  const lockedView = document.getElementById('locked-view');
+  const unlockedView = document.getElementById('unlocked-view');
+
   try {
     const res = await window.api.get('/essays/cycle-status');
     if (!res) return;
 
     if (!res.unlocked) {
-      document.getElementById('locked-view').style.display = 'block';
-      document.getElementById('unlocked-view').style.display = 'none';
-      document.getElementById('lock-message').innerText = res.message;
+      if (lockedView) lockedView.style.display = 'block';
+      if (unlockedView) unlockedView.style.display = 'none';
+      
+      const lockMsg = document.getElementById('lock-message');
+      if (lockMsg) lockMsg.innerText = res.message;
 
       if (res.reason === 'PREMIUM_REQUIRED') {
-        document.getElementById('lock-title').innerText = 'Recurso Exclusivo Premium';
-        document.getElementById('lock-action').innerHTML = `
-          <a href="assinar.html" class="btn" style="background: var(--accent);">⭐ Assinar Plano Premium</a>
-        `;
+        const lockTitle = document.getElementById('lock-title');
+        const lockAction = document.getElementById('lock-action');
+        if (lockTitle) lockTitle.innerText = 'Recurso Exclusivo Premium';
+        if (lockAction) {
+          lockAction.innerHTML = `
+            <a href="assinar.html" class="btn" style="background: var(--accent);">⭐ Assinar Plano Premium</a>
+          `;
+        }
       }
       return;
     }
 
-    document.getElementById('locked-view').style.display = 'none';
-    document.getElementById('unlocked-view').style.display = 'block';
+    if (lockedView) lockedView.style.display = 'none';
+    if (unlockedView) unlockedView.style.display = 'block';
 
-    promptsData = res.prompts;
+    promptsData = res.prompts || [];
     renderThemes();
   } catch (error) {
-    document.getElementById('locked-view').style.display = 'block';
-    document.getElementById('lock-message').innerText = error.message || 'Erro ao consultar status da redação.';
+    if (lockedView) lockedView.style.display = 'block';
+    if (unlockedView) unlockedView.style.display = 'none';
+    const lockMsg = document.getElementById('lock-message');
+    if (lockMsg) lockMsg.innerText = error.message || 'Erro ao consultar status da redação.';
   }
 }
 
 function renderThemes() {
   const container = document.getElementById('theme-selector');
+  if (!container) return;
+
   container.innerHTML = promptsData
     .map(
       (p) => `
@@ -78,25 +93,30 @@ window.selectTheme = (promptId) => {
   if (!prompt) return;
 
   renderThemes();
-  document.getElementById('theme-title').innerText = `Tema ${prompt.themeNumber}: ${prompt.title}`;
-  document.getElementById('theme-texts').innerHTML = prompt.motivationalTexts.replace(/\n/g, '<br>');
+  const themeTitle = document.getElementById('theme-title');
+  const themeTexts = document.getElementById('theme-texts');
+  if (themeTitle) themeTitle.innerText = `Tema ${prompt.themeNumber}: ${prompt.title}`;
+  if (themeTexts) themeTexts.innerHTML = (prompt.motivationalTexts || '').replace(/\n/g, '<br>');
 
   const submitBtn = document.getElementById('btn-submit-essay');
-  if (prompt.isSubmitted) {
-    submitBtn.disabled = true;
-    submitBtn.innerText = 'Redação Já Enviada';
-    submitBtn.style.background = 'var(--text-muted)';
-  } else {
-    submitBtn.disabled = false;
-    submitBtn.innerText = '🚀 Enviar para Correção com IA';
-    submitBtn.style.background = 'var(--primary)';
+  if (submitBtn) {
+    if (prompt.isSubmitted) {
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Redação Já Enviada';
+      submitBtn.style.background = 'var(--text-muted)';
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.innerText = '🚀 Enviar para Correção com IA';
+      submitBtn.style.background = 'var(--primary)';
+    }
   }
 };
 
-// Web Speech API: Reconhecimento de Voz nativo
+// Reconhecimento de Voz
 function setupSpeechRecognition() {
   const btnMic = document.getElementById('btn-mic');
   const textarea = document.getElementById('essay-text');
+  if (!btnMic || !textarea) return;
 
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
     btnMic.style.display = 'none';
@@ -146,15 +166,23 @@ function setupSpeechRecognition() {
 function setupCounter() {
   const textarea = document.getElementById('essay-text');
   const countSpan = document.getElementById('char-count');
-  textarea.addEventListener('input', () => {
-    countSpan.innerText = `${textarea.value.length} caracteres (mínimo de 200)`;
-  });
+  const submitBtn = document.getElementById('btn-submit-essay');
 
-  document.getElementById('btn-submit-essay').addEventListener('click', submitEssay);
+  if (textarea && countSpan) {
+    textarea.addEventListener('input', () => {
+      countSpan.innerText = `${textarea.value.length} caracteres (mínimo de 200)`;
+    });
+  }
+
+  if (submitBtn) {
+    submitBtn.addEventListener('click', submitEssay);
+  }
 }
 
 async function submitEssay() {
-  const content = document.getElementById('essay-text').value;
+  const textarea = document.getElementById('essay-text');
+  const content = textarea ? textarea.value : '';
+
   if (!selectedPromptId) {
     alert('Selecione um tema primeiro.');
     return;
@@ -165,8 +193,10 @@ async function submitEssay() {
   }
 
   const btn = document.getElementById('btn-submit-essay');
-  btn.disabled = true;
-  btn.innerText = '⏳ A IA do PAES UEMA está corrigindo sua redação...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '⏳ A IA do PAES UEMA está corrigindo sua redação...';
+  }
 
   try {
     const res = await window.api.post('/essays/submit', {
@@ -178,31 +208,44 @@ async function submitEssay() {
     checkEssayStatus();
   } catch (error) {
     alert(error.message || 'Erro ao enviar redação.');
-    btn.disabled = false;
-    btn.innerText = '🚀 Enviar para Correção com IA';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = '🚀 Enviar para Correção com IA';
+    }
   }
 }
 
 function displayResult(res) {
   const card = document.getElementById('result-card');
+  if (!card) return;
   card.style.display = 'block';
-  document.getElementById('res-total').innerText = `${Number(res.totalScore).toFixed(2)} / 10.0`;
 
-  document.getElementById('criteria-grid').innerHTML = `
-    <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-      <strong>Tema e Tipologia:</strong><br>${Number(res.criteria.themeGenre).toFixed(2)} / 2.50
-    </div>
-    <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-      <strong>Coerência e Argumentação:</strong><br>${Number(res.criteria.coherence).toFixed(2)} / 2.50
-    </div>
-    <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-      <strong>Coesão Textual:</strong><br>${Number(res.criteria.cohesion).toFixed(2)} / 2.50
-    </div>
-    <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-      <strong>Norma Padrão:</strong><br>${Number(res.criteria.grammarNorm).toFixed(2)} / 2.50
-    </div>
-  `;
+  const resTotal = document.getElementById('res-total');
+  if (resTotal) {
+    resTotal.innerText = `${Number(res.totalScore ?? 0).toFixed(2)} / 10.0`;
+  }
 
-  document.getElementById('res-feedback').innerText = res.feedback?.pedagogical_feedback || 'Redação corrigida com sucesso.';
+  const criteriaGrid = document.getElementById('criteria-grid');
+  if (criteriaGrid) {
+    criteriaGrid.innerHTML = `
+      <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
+        <strong>Tema e Tipologia:</strong><br>${Number(res.criteria?.themeGenre ?? 0).toFixed(2)} / 2.50
+      </div>
+      <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
+        <strong>Coerência e Argumentação:</strong><br>${Number(res.criteria?.coherence ?? 0).toFixed(2)} / 2.50
+      </div>
+      <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
+        <strong>Coesão Textual:</strong><br>${Number(res.criteria?.cohesion ?? 0).toFixed(2)} / 2.50
+      </div>
+      <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
+        <strong>Norma Padrão:</strong><br>${Number(res.criteria?.grammarNorm ?? 0).toFixed(2)} / 2.50
+      </div>
+    `;
+  }
+
+  const resFeedback = document.getElementById('res-feedback');
+  if (resFeedback) {
+    resFeedback.innerText = res.feedback?.pedagogical_feedback || 'Redação corrigida com sucesso.';
+  }
   card.scrollIntoView({ behavior: 'smooth' });
 }
