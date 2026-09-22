@@ -88,11 +88,12 @@ async function loadSimulation() {
   }
 }
 
+// 1. Atualização da Barra de Progresso e verificação das 60 questões
 function atualizarProgresso(answered, total) {
   const progressText = document.getElementById('progress-text');
   const progressBar = document.getElementById('progress-bar');
+  const finishCard = document.getElementById('finish-card');
 
-  // Conta acertos e erros das respondidas
   const acertos = allOfficialQuestions.filter((q) => q.isAnswered && q.isCorrect === true).length;
   const erros = allOfficialQuestions.filter((q) => q.isAnswered && q.isCorrect === false).length;
 
@@ -103,7 +104,94 @@ function atualizarProgresso(answered, total) {
     const percentage = total > 0 ? (answered / total) * 100 : 0;
     progressBar.style.width = `${percentage}%`;
   }
+
+  // Se respondeu todas as 60 questões (ou o total da lista), exibe o botão de finalizar
+  if (finishCard) {
+    if (answered >= 60 && total > 0) {
+      finishCard.style.display = 'block';
+    } else {
+      finishCard.style.display = 'none';
+    }
+  }
 }
+
+// 2. Envio da resposta individual
+window.submitAnswer = async (questionId) => {
+  const selectedOptionId = window.tempSelections[questionId];
+  if (!selectedOptionId) {
+    alert('Por favor, selecione uma alternativa antes de confirmar.');
+    return;
+  }
+
+  const btn = document.getElementById(`btn-submit-${questionId}`);
+  if (btn) {
+    btn.innerText = 'Gravando...';
+    btn.disabled = true;
+  }
+
+  try {
+    const res = await window.api.post('/simulations/answer', {
+      simulationId: currentSimulationId,
+      questionId,
+      selectedOptionId,
+    });
+
+    if (btn) {
+      btn.innerText = '✓ Resposta Gravada';
+      btn.style.background = 'var(--text-muted)';
+      btn.style.cursor = 'not-allowed';
+    }
+
+    const q = allOfficialQuestions.find((item) => item.questionId === questionId);
+    if (q) {
+      q.isAnswered = true;
+      q.selectedOptionId = selectedOptionId;
+      q.isCorrect = res.isCorrect;
+    }
+
+    const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
+    atualizarProgresso(answeredCount, allOfficialQuestions.length);
+
+    // Se completou a 60ª questão, rola a tela suavemente até o botão de finalizar
+    if (answeredCount >= 60) {
+      const finishCard = document.getElementById('finish-card');
+      if (finishCard) finishCard.scrollIntoView({ behavior: 'smooth' });
+    }
+  } catch (error) {
+    alert(error.message || 'Falha ao gravar resposta.');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Confirmar Resposta';
+    }
+  }
+};
+
+// 3. Nova Função: Finalização Oficial do Simulado
+window.finalizarSimulado = async () => {
+  if (!currentSimulationId) return;
+
+  const btn = document.getElementById('btn-finish-simulation');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '⏳ Processando resultado no ranking...';
+  }
+
+  try {
+    // Rota que consolida a tentativa e calcula a nota final no backend
+    await window.api.post('/simulations/finish', {
+      simulationId: currentSimulationId,
+    });
+
+    alert('Simulado finalizado com sucesso! Redirecionando para a classificação...');
+    window.location.href = 'ranking.html';
+  } catch (error) {
+    alert(error.message || 'Erro ao finalizar simulado.');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = '🏁 Finalizar e Enviar Simulado';
+    }
+  }
+};
 
 // Renderiza as questões com filtro instantâneo em memória
 function renderQuestions() {
