@@ -49,49 +49,48 @@
 
   <script src="js/api.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (!window.api.getToken()) {
-        window.location.href = 'login.html';
-        return;
-      }
+   document.addEventListener('DOMContentLoaded', async () => {
+  if (!window.api || !window.api.getToken()) {
+    window.location.href = 'login.html';
+    return;
+  }
 
-      try {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          if (user?.name) {
-            document.getElementById('user-name').innerText = `👤 ${user.name.split(' ')[0]}`;
-          }
-        }
-      } catch (e) {}
+  // 1. Carrega o Ranking Geral (Disponível para todos os alunos)
+  try {
+    const generalData = await window.api.get('/rankings/general');
+    renderGeneralRanking(generalData);
+  } catch (err) {
+    console.error('[Ranking] Erro ao carregar ranking geral:', err);
+  }
 
-      try {
-        const res = await window.api.get('/rankings/my-course');
-        if (!res) return;
+  // 2. Carrega o Ranking por Curso (Exclusivo Premium — isolado com try/catch)
+  try {
+    const courseData = await window.api.get('/rankings/my-course');
+    renderCourseRanking(courseData);
+  } catch (err) {
+    console.warn('[Ranking] Usuário sem acesso ao ranking por curso:', err.message);
 
-        document.getElementById('ranking-course').innerText = `Classificação: ${res.targetCourse}`;
-        
-        const tbody = document.getElementById('ranking-body');
-        if (!res.ranking || res.ranking.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhum candidato deste curso concluiu as 60 questões deste ciclo ainda. Seja o primeiro!</td></tr>`;
-          return;
-        }
+    // Identifica o container onde a lista do curso seria exibida
+    const courseContainer = 
+      document.getElementById('course-ranking-table') || 
+      document.getElementById('ranking-course-container') || 
+      document.getElementById('ranking-curso');
 
-        tbody.innerHTML = res.ranking.map((row) => `
-          <tr class="${row.isCurrentUser ? 'current-user' : ''}">
-            <td><strong>#${row.position}</strong></td>
-            <td>${row.name} ${row.isCurrentUser ? '⭐ (Você)' : ''}</td>
-            <td>${row.questionsCorrect} / 60</td>
-            <td>${Number(row.highestEssayScore).toFixed(2)}</td>
-            <td><strong>${Number(row.finalScore).toFixed(2)}</strong></td>
-          </tr>
-        `).join('');
-      } catch (error) {
-        document.getElementById('ranking-body').innerHTML = `
-          <tr><td colspan="5" style="text-align: center; color: var(--danger); padding: 2rem;">${error.message || 'Acesso restrito para assinantes Premium.'}</td></tr>
-        `;
-      }
-    });
+    if (courseContainer) {
+      courseContainer.innerHTML = `
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1.5rem; text-align: center; color: #92400e; margin-top: 1rem;">
+          <h4 style="margin-bottom: 0.5rem; color: #b45309;">⭐ Ranqueamento por Curso (Exclusivo Premium)</h4>
+          <p style="font-size: 0.95rem; margin-bottom: 1rem;">
+            A comparação direta com os candidatos do seu curso específico no PAES UEMA é reservada a assinantes.
+          </p>
+          <a href="assinar.html" class="btn" style="background: var(--accent); color: white; text-decoration: none; padding: 0.6rem 1.25rem; border-radius: 6px; font-weight: 600; display: inline-block;">
+            Seja Premium
+          </a>
+        </div>
+      `;
+    }
+  }
+});
   </script>
 </body>
 </html>
