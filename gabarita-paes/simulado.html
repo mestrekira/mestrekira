@@ -102,10 +102,29 @@
       </div>
     </div>
 
-    <!-- Área da Revisão Cega (Active Recall) -->
+   <!-- Área da Revisão Cega (Active Recall) -->
     <div id="section-review" style="display: none;">
-      <div class="review-banner">
-        <strong>💡 Modo de Revisão Cega:</strong> Aqui estão apenas as questões do simulado que você errou na tentativa oficial. Tente resolvê-las novamente para aprender com seus próprios erros. Suas respostas aqui <strong>não alteram</strong> a nota oficial do ranking.
+      <div class="review-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <strong>💡 Modo de Revisão Cega (Active Recall):</strong><br>
+          <span style="font-size: 0.9rem;">Resolva novamente sem spoiler para fixar o conteúdo. Não altera sua nota oficial no ranking.</span>
+        </div>
+        <div style="background: white; border: 1px solid #fde68a; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 700; color: #b45309;" id="review-counter-badge">
+          Carregando erros...
+        </div>
+      </div>
+
+      <!-- Filtros de Disciplinas Exclusivo para as Questões Erradas -->
+      <div class="filter-scroll" id="review-disciplines-filter" style="margin-bottom: 1.5rem;">
+        <button class="filter-btn active" data-discipline="">Todas as Erradas</button>
+        <button class="filter-btn" data-discipline="Língua Portuguesa e Literatura">Língua Portuguesa e Literatura</button>
+        <button class="filter-btn" data-discipline="História">História</button>
+        <button class="filter-btn" data-discipline="Geografia">Geografia</button>
+        <button class="filter-btn" data-discipline="Filosofia e Sociologia">Filosofia e Sociologia</button>
+        <button class="filter-btn" data-discipline="Biologia">Biologia</button>
+        <button class="filter-btn" data-discipline="Física">Física</button>
+        <button class="filter-btn" data-discipline="Química">Química</button>
+        <button class="filter-btn" data-discipline="Matemática">Matemática</button>
       </div>
 
       <div id="review-container">
