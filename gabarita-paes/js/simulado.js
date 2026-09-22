@@ -88,7 +88,6 @@ async function loadSimulation() {
   }
 }
 
-// 1. Atualização da Barra de Progresso e verificação das 60 questões
 function atualizarProgresso(answered, total) {
   const progressText = document.getElementById('progress-text');
   const progressBar = document.getElementById('progress-bar');
@@ -105,7 +104,7 @@ function atualizarProgresso(answered, total) {
     progressBar.style.width = `${percentage}%`;
   }
 
-  // Se respondeu todas as 60 questões (ou o total da lista), exibe o botão de finalizar
+  // Exibe o card de conclusão se atingiu as 60 questões
   if (finishCard) {
     if (answered >= 60 && total > 0) {
       finishCard.style.display = 'block';
@@ -115,90 +114,11 @@ function atualizarProgresso(answered, total) {
   }
 }
 
-// 2. Envio da resposta individual
-window.submitAnswer = async (questionId) => {
-  const selectedOptionId = window.tempSelections[questionId];
-  if (!selectedOptionId) {
-    alert('Por favor, selecione uma alternativa antes de confirmar.');
-    return;
-  }
-
-  const btn = document.getElementById(`btn-submit-${questionId}`);
-  if (btn) {
-    btn.innerText = 'Gravando...';
-    btn.disabled = true;
-  }
-
-  try {
-    const res = await window.api.post('/simulations/answer', {
-      simulationId: currentSimulationId,
-      questionId,
-      selectedOptionId,
-    });
-
-    if (btn) {
-      btn.innerText = '✓ Resposta Gravada';
-      btn.style.background = 'var(--text-muted)';
-      btn.style.cursor = 'not-allowed';
-    }
-
-    const q = allOfficialQuestions.find((item) => item.questionId === questionId);
-    if (q) {
-      q.isAnswered = true;
-      q.selectedOptionId = selectedOptionId;
-      q.isCorrect = res.isCorrect;
-    }
-
-    const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
-    atualizarProgresso(answeredCount, allOfficialQuestions.length);
-
-    // Se completou a 60ª questão, rola a tela suavemente até o botão de finalizar
-    if (answeredCount >= 60) {
-      const finishCard = document.getElementById('finish-card');
-      if (finishCard) finishCard.scrollIntoView({ behavior: 'smooth' });
-    }
-  } catch (error) {
-    alert(error.message || 'Falha ao gravar resposta.');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = 'Confirmar Resposta';
-    }
-  }
-};
-
-// 3. Nova Função: Finalização Oficial do Simulado
-window.finalizarSimulado = async () => {
-  if (!currentSimulationId) return;
-
-  const btn = document.getElementById('btn-finish-simulation');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerText = '⏳ Processando resultado no ranking...';
-  }
-
-  try {
-    // Rota que consolida a tentativa e calcula a nota final no backend
-    await window.api.post('/simulations/finish', {
-      simulationId: currentSimulationId,
-    });
-
-    alert('Simulado finalizado com sucesso! Redirecionando para a classificação...');
-    window.location.href = 'ranking.html';
-  } catch (error) {
-    alert(error.message || 'Erro ao finalizar simulado.');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = '🏁 Finalizar e Enviar Simulado';
-    }
-  }
-};
-
 // Renderiza as questões com filtro instantâneo em memória
 function renderQuestions() {
   const container = document.getElementById('questions-container');
   if (!container) return;
 
-  // Filtra em memória na hora (ultra veloz)
   const filtered = activeDiscipline
     ? allOfficialQuestions.filter(
         (q) => q.discipline.trim().toLowerCase() === activeDiscipline.trim().toLowerCase(),
@@ -256,7 +176,82 @@ function renderQuestions() {
 }
 
 // ==========================================
-// 3. Revisão Cega (Active Recall)
+// 3. Seleção, Gravação e Finalização
+// ==========================================
+window.tempSelections = {};
+window.selectOption = (questionId, optionId) => {
+  const optsContainer = document.getElementById(`opts-${questionId}`);
+  if (!optsContainer) return;
+  optsContainer.querySelectorAll('.option-item').forEach((el) => el.classList.remove('selected'));
+  const targetOpt = document.getElementById(`opt-${optionId}`);
+  if (targetOpt) targetOpt.classList.add('selected');
+  window.tempSelections[questionId] = optionId;
+};
+
+window.submitAnswer = async (questionId) => {
+  const selectedOptionId = window.tempSelections[questionId];
+  if (!selectedOptionId) {
+    alert('Por favor, selecione uma alternativa antes de confirmar.');
+    return;
+  }
+
+  const btn = document.getElementById(`btn-submit-${questionId}`);
+  if (btn) {
+    btn.innerText = 'Gravando...';
+    btn.disabled = true;
+  }
+
+  try {
+    const res = await window.api.post('/simulations/answer', {
+      simulationId: currentSimulationId,
+      questionId,
+      selectedOptionId,
+    });
+
+    if (btn) {
+      btn.innerText = '✓ Resposta Gravada';
+      btn.style.background = 'var(--text-muted)';
+      btn.style.cursor = 'not-allowed';
+    }
+
+    // Atualiza na memória
+    const q = allOfficialQuestions.find((item) => item.questionId === questionId);
+    if (q) {
+      q.isAnswered = true;
+      q.selectedOptionId = selectedOptionId;
+      q.isCorrect = res.isCorrect;
+    }
+
+    const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
+    atualizarProgresso(answeredCount, allOfficialQuestions.length);
+
+    // Se completou a 60ª questão, rola suavemente até o card de conclusão
+    if (answeredCount >= 60) {
+      const finishCard = document.getElementById('finish-card');
+      if (finishCard) finishCard.scrollIntoView({ behavior: 'smooth' });
+    }
+  } catch (error) {
+    alert(error.message || 'Falha ao gravar resposta.');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Confirmar Resposta';
+    }
+  }
+};
+
+// Como o backend grava em tempo real, finalizar é apenas redirecionar para a classificação
+window.finalizarSimulado = () => {
+  const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
+  if (answeredCount < 60) {
+    if (!confirm(`Você respondeu ${answeredCount} de 60 questões. Deseja ver a classificação mesmo assim?`)) {
+      return;
+    }
+  }
+  window.location.href = 'ranking.html';
+};
+
+// ==========================================
+// 4. Revisão Cega (Active Recall)
 // ==========================================
 async function loadErrorReview() {
   const container = document.getElementById('review-container');
@@ -275,7 +270,6 @@ async function loadErrorReview() {
     const wrongList = await window.api.get(`/simulations/review-errors?simulationId=${currentSimulationId}`);
     allWrongQuestions = wrongList || [];
 
-    // Atualiza o contador de erros com segurança
     const totalErros = allWrongQuestions.length;
     if (counterBadge) {
       counterBadge.innerText = `${totalErros} ${totalErros === 1 ? 'questão errada' : 'questões erradas'}`;
@@ -293,7 +287,6 @@ function renderFilteredReview() {
   const container = document.getElementById('review-container');
   if (!container) return;
 
-  // Filtra em memória na hora
   const filtered = activeReviewDiscipline
     ? allWrongQuestions.filter(
         (q) => q.discipline.trim().toLowerCase() === activeReviewDiscipline.trim().toLowerCase(),
@@ -333,11 +326,11 @@ function renderFilteredReview() {
       ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura">` : ''}
       ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar">` : ''}
 
-    <div class="options-list" id="rev-opts-${q.questionId}">
-          ${[...q.options]
-            .sort((a, b) => a.letter.localeCompare(b.letter))
-            .map(
-              (opt) => `
+      <div class="options-list" id="rev-opts-${q.questionId}">
+        ${[...q.options]
+          .sort((a, b) => a.letter.localeCompare(b.letter))
+          .map(
+            (opt) => `
           <div class="option-item" onclick="selectReviewOption('${q.questionId}', '${opt.id}')" id="rev-opt-${opt.id}">
             <span class="option-letter">${opt.letter}</span>
             <span class="option-text">${opt.text}</span>
@@ -358,66 +351,6 @@ function renderFilteredReview() {
     .join('');
 }
 
-// ==========================================
-// 4. Seleção e Envio das Questões
-// ==========================================
-window.tempSelections = {};
-window.selectOption = (questionId, optionId) => {
-  const optsContainer = document.getElementById(`opts-${questionId}`);
-  if (!optsContainer) return;
-  optsContainer.querySelectorAll('.option-item').forEach((el) => el.classList.remove('selected'));
-  const targetOpt = document.getElementById(`opt-${optionId}`);
-  if (targetOpt) targetOpt.classList.add('selected');
-  window.tempSelections[questionId] = optionId;
-};
-
-window.submitAnswer = async (questionId) => {
-  const selectedOptionId = window.tempSelections[questionId];
-  if (!selectedOptionId) {
-    alert('Por favor, selecione uma alternativa antes de confirmar.');
-    return;
-  }
-
-  const btn = document.getElementById(`btn-submit-${questionId}`);
-  if (btn) {
-    btn.innerText = 'Gravando...';
-    btn.disabled = true;
-  }
-
-  try {
-    const res = await window.api.post('/simulations/answer', {
-      simulationId: currentSimulationId,
-      questionId,
-      selectedOptionId,
-    });
-
-    if (btn) {
-      btn.innerText = '✓ Resposta Gravada';
-      btn.style.background = 'var(--text-muted)';
-      btn.style.cursor = 'not-allowed';
-    }
-
-    // Atualiza a questão na memória local
-    const q = allOfficialQuestions.find((item) => item.questionId === questionId);
-    if (q) {
-      q.isAnswered = true;
-      q.selectedOptionId = selectedOptionId;
-      q.isCorrect = res.isCorrect;
-    }
-
-    // Atualiza a barra de progresso imediatamente
-    const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
-    atualizarProgresso(answeredCount, allOfficialQuestions.length);
-  } catch (error) {
-    alert(error.message || 'Falha ao gravar resposta.');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = 'Confirmar Resposta';
-    }
-  }
-};
-
-// Resolução da Revisão Cega
 window.revSelections = {};
 window.selectReviewOption = (questionId, optionId) => {
   const optsContainer = document.getElementById(`rev-opts-${questionId}`);
@@ -482,7 +415,7 @@ window.submitReviewAnswer = async (questionId) => {
 };
 
 // ==========================================
-// 5. Configuração dos Botões de Filtro
+// 5. Filtros
 // ==========================================
 function setupFilterButtons() {
   const buttons = document.querySelectorAll('#disciplines-filter .filter-btn');
@@ -491,7 +424,7 @@ function setupFilterButtons() {
       buttons.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       activeDiscipline = btn.getAttribute('data-discipline') || '';
-      renderQuestions(); // Filtro instantâneo em memória!
+      renderQuestions();
     });
   });
 }
@@ -503,7 +436,7 @@ function setupReviewFilters() {
       buttons.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       activeReviewDiscipline = btn.getAttribute('data-discipline') || '';
-      renderFilteredReview(); // Filtro instantâneo em memória!
+      renderFilteredReview();
     });
   });
 }
