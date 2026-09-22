@@ -55,22 +55,26 @@
     return;
   }
 
-  // 1. Carrega o Ranking Geral (Disponível para todos os alunos)
+// 1. Carrega o Ranking Geral (Rota raiz da API: /rankings)
   try {
-    const generalData = await window.api.get('/rankings/general');
-    renderGeneralRanking(generalData);
+    const generalData = await window.api.get('/rankings');
+    if (typeof renderGeneralRanking === 'function') {
+      renderGeneralRanking(generalData);
+    }
   } catch (err) {
     console.error('[Ranking] Erro ao carregar ranking geral:', err);
   }
 
-  // 2. Carrega o Ranking por Curso (Exclusivo Premium — isolado com try/catch)
+  // 2. Carrega o Ranking por Curso (Exclusivo Premium)
   try {
     const courseData = await window.api.get('/rankings/my-course');
-    renderCourseRanking(courseData);
+    if (typeof renderCourseRanking === 'function') {
+      renderCourseRanking(courseData);
+    }
   } catch (err) {
     console.warn('[Ranking] Usuário sem acesso ao ranking por curso:', err.message);
 
-    // Identifica o container onde a lista do curso seria exibida
+    // Exibe o card amigável no lugar da tabela do curso
     const courseContainer = 
       document.getElementById('course-ranking-table') || 
       document.getElementById('ranking-course-container') || 
@@ -78,10 +82,10 @@
 
     if (courseContainer) {
       courseContainer.innerHTML = `
-        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1.5rem; text-align: center; color: #92400e; margin-top: 1rem;">
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1.5rem; text-align: center; color: #92400e; margin: 1rem 0;">
           <h4 style="margin-bottom: 0.5rem; color: #b45309;">⭐ Ranqueamento por Curso (Exclusivo Premium)</h4>
           <p style="font-size: 0.95rem; margin-bottom: 1rem;">
-            A comparação direta com os candidatos do seu curso específico no PAES UEMA é reservada a assinantes.
+            A comparação direta com os candidatos do seu curso no PAES UEMA é exclusiva para assinantes.
           </p>
           <a href="assinar.html" class="btn" style="background: var(--accent); color: white; text-decoration: none; padding: 0.6rem 1.25rem; border-radius: 6px; font-weight: 600; display: inline-block;">
             Seja Premium
