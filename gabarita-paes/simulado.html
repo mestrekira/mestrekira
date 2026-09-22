@@ -80,7 +80,27 @@
           <div class="progress-bar-fill" id="progress-bar"></div>
         </div>
       </div>
+<!-- Barra de Progresso Geral -->
+      <div class="progress-box">
+        <div class="progress-header">
+          <span id="cycle-title">Carregando simulado...</span>
+          <span id="progress-text">0 de 60 respondidas</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
+      </div>
 
+      <!-- Card de Finalização (exibido ao atingir as 60 questões ou se já finalizado) -->
+      <div id="finish-card" class="card" style="display: none; background: #f0fdf4; border: 2px solid #86efac; text-align: center; margin-bottom: 1.5rem; padding: 1.5rem;">
+        <h3 style="color: #166534; margin-bottom: 0.5rem;">🎉 Todas as 60 questões foram respondidas!</h3>
+        <p style="color: #15803d; margin-bottom: 1rem; font-size: 0.95rem;">
+          Suas respostas estão salvas. Clique no botão abaixo para consolidar sua pontuação oficial e registrar sua colocação no ranking.
+        </p>
+        <button id="btn-finish-simulation" class="btn" onclick="finalizarSimulado()" style="background: #16a34a; font-size: 1rem; padding: 0.75rem 2rem; cursor: pointer;">
+          🏁 Finalizar e Enviar Simulado
+        </button>
+      </div>
       <!-- Filtros de Disciplinas -->
       <div class="filter-scroll" id="disciplines-filter">
         <button class="filter-btn active" data-discipline="">Todas as 60 Questões</button>
