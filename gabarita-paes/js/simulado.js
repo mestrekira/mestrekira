@@ -123,9 +123,14 @@ function renderQuestions() {
     .join('');
 }
 
-// 2. Carrega as Questões Erradas para a Revisão Cega
+let allWrongQuestions = [];
+let activeReviewDiscipline = '';
+
+// Carrega as Questões Erradas com Filtro e Contador
 async function loadErrorReview() {
   const container = document.getElementById('review-container');
+  const counterBadge = document.getElementById('review-counter-badge');
+
   if (!currentSimulationId) {
     container.innerHTML = `<div class="card" style="text-align: center;">Inicie o simulado oficial antes de revisar.</div>`;
     return;
@@ -135,56 +140,94 @@ async function loadErrorReview() {
 
   try {
     const wrongList = await window.api.get(`/simulations/review-errors?simulationId=${currentSimulationId}`);
+    allWrongQuestions = wrongList || [];
 
-    if (!wrongList || wrongList.length === 0) {
-      container.innerHTML = `
-        <div class="card" style="text-align: center; padding: 2.5rem;">
-          <h3 style="color: var(--accent);">🎉 Nenhuma questão pendente para revisão!</h3>
-          <p style="color: var(--text-muted); margin-top: 0.5rem;">Você não errou nenhuma das questões que respondeu até agora ou ainda não começou o simulado.</p>
-        </div>
-      `;
-      return;
-    }
+    // Atualiza o contador de erros no banner
+    const totalErros = allWrongQuestions.length;
+    counterBadge.innerText = totalErros === 1 ? `1 questão errada` : `${totalErros} questões erradas`;
 
-    container.innerHTML = wrongList
-      .map(
-        (q) => `
-      <div class="card" id="rev-card-${q.questionId}">
-        <div class="question-header">
-          <span class="badge" style="background: #fee2e2; color: #991b1b;">Revisar • ${q.discipline}</span>
-          <span style="color: #92400e; font-size: 0.85rem;">Segunda Tentativa (Active Recall)</span>
-        </div>
-
-        <div class="question-statement">${q.statement.replace(/\n/g, '<br>')}</div>
-
-        ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura">` : ''}
-        ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar">` : ''}
-
-        <div class="options-list" id="rev-opts-${q.questionId}">
-          ${q.options
-            .map(
-              (opt) => `
-            <div class="option-item" onclick="selectReviewOption('${q.questionId}', '${opt.id}')" id="rev-opt-${opt.id}">
-              <span class="option-letter">${opt.letter}</span>
-              <span class="option-text">${opt.text}</span>
-            </div>
-          `,
-            )
-            .join('')}
-        </div>
-
-        <button class="btn" id="btn-rev-${q.questionId}" onclick="submitReviewAnswer('${q.questionId}')">
-          Testar Segunda Resposta
-        </button>
-
-        <div id="rev-feedback-${q.questionId}" style="display: none; margin-top: 1rem;"></div>
-      </div>
-    `,
-      )
-      .join('');
+    setupReviewFilters();
+    renderFilteredReview();
   } catch (err) {
     container.innerHTML = `<div class="card" style="color: var(--danger); text-align: center;">${err.message || 'Erro ao carregar revisão.'}</div>`;
   }
+}
+
+function renderFilteredReview() {
+  const container = document.getElementById('review-container');
+
+  // Filtra por matéria se o aluno clicou em alguma disciplina
+  const filtered = activeReviewDiscipline
+    ? allWrongQuestions.filter((q) => q.discipline === activeReviewDiscipline)
+    : allWrongQuestions;
+
+  if (allWrongQuestions.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align: center; padding: 2.5rem;">
+        <h3 style="color: var(--accent);">🎉 Nenhuma questão pendente para revisão!</h3>
+        <p style="color: var(--text-muted); margin-top: 0.5rem;">Você não errou nenhuma das questões respondidas até agora.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align: center; padding: 2rem;">
+        <p style="color: var(--text-muted);">Você não errou nenhuma questão de <strong>${activeReviewDiscipline}</strong>! Parabéns!</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered
+    .map(
+      (q) => `
+    <div class="card" id="rev-card-${q.questionId}">
+      <div class="question-header">
+        <span class="badge" style="background: #fee2e2; color: #991b1b;">Revisar • ${q.discipline}</span>
+        <span style="color: #92400e; font-size: 0.85rem;">Segunda Tentativa</span>
+      </div>
+
+      <div class="question-statement">${q.statement.replace(/\n/g, '<br>')}</div>
+
+      ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura">` : ''}
+      ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar">` : ''}
+
+      <div class="options-list" id="rev-opts-${q.questionId}">
+        ${q.options
+          .map(
+            (opt) => `
+          <div class="option-item" onclick="selectReviewOption('${q.questionId}', '${opt.id}')" id="rev-opt-${opt.id}">
+            <span class="option-letter">${opt.letter}</span>
+            <span class="option-text">${opt.text}</span>
+          </div>
+        `,
+          )
+          .join('')}
+      </div>
+
+      <button class="btn" id="btn-rev-${q.questionId}" onclick="submitReviewAnswer('${q.questionId}')">
+        Testar Segunda Resposta
+      </button>
+
+      <div id="rev-feedback-${q.questionId}" style="display: none; margin-top: 1rem;"></div>
+    </div>
+  `,
+    )
+    .join('');
+}
+
+function setupReviewFilters() {
+  const buttons = document.querySelectorAll('#review-disciplines-filter .filter-btn');
+  buttons.forEach((btn) => {
+    btn.onclick = () => {
+      buttons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeReviewDiscipline = btn.getAttribute('data-discipline');
+      renderFilteredReview();
+    };
+  });
 }
 
 // Seleção e Envio no Modo Oficial
