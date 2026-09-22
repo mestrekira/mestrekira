@@ -141,7 +141,8 @@ function renderQuestions() {
       ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar">` : ''}
 
       <div class="options-list" id="opts-${q.questionId}">
-        ${q.options
+        ${[...q.options]
+          .sort((a, b) => a.letter.localeCompare(b.letter))
           .map(
             (opt) => `
           <div class="option-item ${q.selectedOptionId === opt.id ? 'selected' : ''}" 
@@ -244,10 +245,11 @@ function renderFilteredReview() {
       ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura">` : ''}
       ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar">` : ''}
 
-      <div class="options-list" id="rev-opts-${q.questionId}">
-        ${q.options
-          .map(
-            (opt) => `
+    <div class="options-list" id="rev-opts-${q.questionId}">
+          ${[...q.options]
+            .sort((a, b) => a.letter.localeCompare(b.letter))
+            .map(
+              (opt) => `
           <div class="option-item" onclick="selectReviewOption('${q.questionId}', '${opt.id}')" id="rev-opt-${opt.id}">
             <span class="option-letter">${opt.letter}</span>
             <span class="option-text">${opt.text}</span>
