@@ -2,7 +2,7 @@ let promptsData = [];
 let selectedPromptId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Verificação defensiva de autenticação
+  
   if (!window.api || !window.api.getToken()) {
     window.location.href = 'login.html';
     return;
