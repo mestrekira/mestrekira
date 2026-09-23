@@ -229,23 +229,41 @@ function displayResult(res) {
   if (criteriaGrid) {
     criteriaGrid.innerHTML = `
       <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-        <strong>Tema e Tipologia:</strong><br>${Number(res.criteria?.themeGenre ?? 0).toFixed(2)} / 2.50
+        <strong>1. Atendimento ao Tema:</strong><br>${Number(res.criteria?.theme ?? res.criteria?.themeGenre ?? 0).toFixed(2)} / 2.00
       </div>
       <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-        <strong>Coerência e Argumentação:</strong><br>${Number(res.criteria?.coherence ?? 0).toFixed(2)} / 2.50
+        <strong>2. Coesão das Partes:</strong><br>${Number(res.criteria?.cohesion ?? 0).toFixed(2)} / 2.00
       </div>
       <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-        <strong>Coesão Textual:</strong><br>${Number(res.criteria?.cohesion ?? 0).toFixed(2)} / 2.50
+        <strong>3. Coerência Argumentativa:</strong><br>${Number(res.criteria?.coherence ?? 0).toFixed(2)} / 2.00
       </div>
       <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-        <strong>Norma Padrão:</strong><br>${Number(res.criteria?.grammarNorm ?? 0).toFixed(2)} / 2.50
+        <strong>4. Tipo Textual & Título:</strong><br>${Number(res.criteria?.genre ?? 0).toFixed(2)} / 2.00
+      </div>
+      <div style="background: white; border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
+        <strong>5. Norma Padrão da Língua:</strong><br>${Number(res.criteria?.grammarNorm ?? 0).toFixed(2)} / 2.00
       </div>
     `;
   }
 
+  // Feedback pedagógico detalhado
   const resFeedback = document.getElementById('res-feedback');
   if (resFeedback) {
-    resFeedback.innerText = res.feedback?.pedagogical_feedback || 'Redação corrigida com sucesso.';
+    resFeedback.innerText = res.feedback?.pedagogical_feedback || res.feedback || 'Redação avaliada conforme a banca UEMA.';
   }
+
+  // Sugestões de aprofundamento (se retornado pela IA)
+  const tipsContainer = document.getElementById('res-study-tips');
+  if (tipsContainer && res.feedback?.improvement_tips) {
+    tipsContainer.innerHTML = `
+      <div style="margin-top: 1rem; background: #eff6ff; border: 1px solid #bfdbfe; padding: 1rem; border-radius: 6px;">
+        <strong style="color: #1e40af;">📚 Sugestões de Aprofundamento para o PAES UEMA:</strong>
+        <ul style="margin: 0.5rem 0 0 1.25rem; color: #1e3a8a; font-size: 0.95rem;">
+          ${res.feedback.improvement_tips.map(tip => `<li>${tip}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+
   card.scrollIntoView({ behavior: 'smooth' });
 }
