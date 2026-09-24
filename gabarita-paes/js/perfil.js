@@ -1,15 +1,28 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Verificação defensiva de autenticação
+  // 1. Verificação de autenticação
   if (!window.api || !window.api.getToken()) {
     window.location.href = 'login.html';
     return;
   }
 
-  // 2. Carrega os dados básicos do usuário do localStorage
+  // 2. Busca os dados atualizados DIRETO do banco de dados (API)
   try {
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
+    let user = null;
 
+    // Tenta buscar da rota /users/me do backend
+    try {
+      user = await window.api.get('/users/me');
+      if (user) {
+        // Atualiza o cache local para que outras páginas tenham acesso
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+    } catch (e) {
+      console.warn('[Perfil] Rota /users/me indisponível, usando cache local:', e.message);
+      const userStr = localStorage.getItem('user');
+      user = userStr ? JSON.parse(userStr) : null;
+    }
+
+    // Preenche os campos na tela com os dados reais
     if (user) {
       const nameEl = document.getElementById('profile-name');
       const emailEl = document.getElementById('profile-email');
@@ -19,19 +32,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (nameEl) nameEl.innerText = user.name || 'Estudante';
       if (emailEl) emailEl.innerText = user.email || 'Não informado';
-      if (courseEl) courseEl.innerText = user.targetCourse || 'Não informado';
+      
+      // Suporta targetCourse ou course
+      const cursoEscolhido = user.targetCourse || user.course || user.target_course;
+      if (courseEl) courseEl.innerText = cursoEscolhido || 'Não informado';
+
+      const linguaEscolhida = user.foreignLanguage || user.language;
       if (langEl) {
-        langEl.innerText = user.foreignLanguage === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa';
+        langEl.innerText = linguaEscolhida === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa';
       }
+
       if (headerNameEl && user.name) {
         headerNameEl.innerText = `👤 ${user.name.split(' ')[0]}`;
       }
     }
   } catch (err) {
-    console.error('[Perfil] Erro ao ler dados locais do usuário:', err);
+    console.error('[Perfil] Erro ao carregar informações do usuário:', err);
   }
 
-  // 3. Consulta o status real da assinatura no backend
+  // 3. Status de assinatura
   try {
     const planStatus = await window.api.get('/payments/status');
     const badge = document.getElementById('plan-badge');
@@ -62,53 +81,53 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (upgradeBox) upgradeBox.style.display = 'flex';
     }
   } catch (err) {
-    console.warn('[Perfil] Não foi possível obter status de pagamento:', err.message);
+    console.warn('[Perfil] Status de pagamento não retornado:', err.message);
   }
 });
 
 // ========================================================
-// 4. FUNÇÃO DE EXCLUSÃO DEFINITIVA DE CONTA (LGPD)
+// 4. EXCLUSÃO DEFINITIVA DE CONTA
 // ========================================================
 window.confirmarExclusaoConta = async () => {
-  // Primeira confirmação: Alerta sobre a gravidade da ação
   const primeiraConfirmacao = confirm(
     'ATENÇÃO! Esta ação é irreversível.\n\n' +
-    'Ao excluir sua conta, todas as suas respostas do simulado oficial, ' +
-    'redações corrigidas pela IA e colocações no ranking serão apagadas para sempre.\n\n' +
+    'Ao excluir sua conta, todas as suas respostas do simulado, ' +
+    'redações corrigidas pela IA e colocações no ranking serão apagadas definitivamente.\n\n' +
     'Deseja mesmo prosseguir?'
   );
 
   if (!primeiraConfirmacao) return;
 
-  // Segunda confirmação: Digitação obrigatória da palavra de segurança
   const palavraSeguranca = prompt(
-    'Para confirmar a exclusão definitiva de todos os seus dados, digite a palavra EXCLUIR em maiúsculas:'
+    'Para confirmar a exclusão definitiva, digite a palavra EXCLUIR em maiúsculas:'
   );
 
   if (palavraSeguranca !== 'EXCLUIR') {
-    alert('Confirmação incorreta. O processo de exclusão foi cancelado com segurança.');
+    alert('Confirmação incorreta. O processo foi cancelado.');
     return;
   }
 
   const btn = document.getElementById('btn-delete-account');
   if (btn) {
     btn.disabled = true;
-    btn.innerText = '⏳ Excluindo conta e limpando dados...';
-    btn.style.opacity = '0.7';
-    btn.style.cursor = 'not-allowed';
+    btn.innerText = '⏳ Excluindo conta no servidor...';
   }
 
   try {
-    // Chamada à rota DELETE /users/me do backend
+    // Chamada segura via window.api ou fetch nativo com token
     if (typeof window.api.delete === 'function') {
       await window.api.delete('/users/me');
-    } else {
-      await window.api.request('/users/me', { method: 'DELETE' });
+    } else if (typeof window.api.request === 'function') {
+      try {
+        await window.api.request('/users/me', 'DELETE');
+      } catch (e) {
+        await window.api.request('/users/me', { method: 'DELETE' });
+      }
     }
 
-    alert('Sua conta e todos os seus dados associados foram excluídos com sucesso.');
+    alert('Sua conta e todos os dados vinculados foram excluídos com sucesso.');
 
-    // Limpa credenciais locais e desloga
+    // Limpa credenciais locais
     if (window.api && typeof window.api.logout === 'function') {
       window.api.logout();
     } else {
@@ -116,12 +135,11 @@ window.confirmarExclusaoConta = async () => {
       window.location.href = 'login.html';
     }
   } catch (err) {
-    alert(err.message || 'Erro ao processar a exclusão da conta. Tente novamente mais tarde.');
+    console.error('Falha ao excluir:', err);
+    alert(err.message || 'Erro ao excluir conta. Verifique sua conexão e tente novamente.');
     if (btn) {
       btn.disabled = false;
       btn.innerText = '🗑️ Excluir Minha Conta Permanentemente';
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
     }
   }
 };
