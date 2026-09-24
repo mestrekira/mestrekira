@@ -3,50 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redação PAES UEMA | Gabarita PAES</title>
+  <title>Redação Modelo UEMA | Gabarita PAES</title>
   <link rel="stylesheet" href="css/gabarita.css">
+  <style>
+    /* Estilos complementares de apoio pedagógico */
+    .badge-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .badge-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+    .criterion-box {
+      background: #ffffff;
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .criterion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 0.5rem;
+    }
+    .student-quote {
+      background: #f8fafc;
+      border-left: 3px solid var(--primary, #2563eb);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      font-style: italic;
+      color: #334155;
+      margin: 0.25rem 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .tip-box {
+      font-size: 0.85rem;
+      color: #0369a1;
+      background: #f0f9ff;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+    }
+    .table-deviations {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
+    .table-deviations th, .table-deviations td {
+      border: 1px solid #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    .table-deviations th { background: #f8fafc; font-weight: 600; }
+  </style>
 </head>
 <body>
 
+  <!-- Cabeçalho com todas as subseções e Perfil -->
   <header class="header">
     <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
     <nav class="nav-links">
       <a href="simulado.html">Simulado (60Q)</a>
-      <a href="redacao.html" class="active">Redação UEMA</a>
+      <a href="redacao.html" class="active">Redação</a>
       <a href="ranking.html">Classificação</a>
+      <a href="perfil.html">Meu Perfil</a>
     </nav>
-    <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
-      <span id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Aluno</span>
+    <div id="user-menu" style="display: flex; align-items: center; gap: 0.85rem;">
+      <a href="perfil.html" id="user-profile-link" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.4rem;">
+        <span id="user-avatar" style="background: var(--primary, #2563eb); color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">👤</span>
+        <span id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main, #1e293b);">Aluno</span>
+      </a>
       <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
     </div>
   </header>
 
   <main class="container">
-    <!-- Seção de Trava Visual (se < 60 questões ou plano gratuito) -->
+    <!-- Seção de Trava Visual -->
     <div id="locked-view" class="card lock-card" style="display: none;">
       <div class="lock-icon">🔒</div>
       <h2 id="lock-title">Redação Bloqueada</h2>
-      <p id="lock-message" style="color: var(--text-muted); margin: 1rem 0; font-size: 1.1rem;"></p>
+      <p id="lock-message" style="color: var(--text-muted, #64748b); margin: 1rem 0; font-size: 1.1rem;"></p>
       <div id="lock-action">
         <a href="simulado.html" class="btn">Ir para o Simulado Oficial</a>
       </div>
     </div>
 
-    <!-- Seção de Produção e Temas (quando liberado) -->
+    <!-- Seção de Produção e Temas -->
     <div id="unlocked-view" style="display: none;">
-      <!-- Seletor dos 2 Temas do Mês -->
+      <!-- Seletor dos Temas do Ciclo -->
       <div class="card">
-        <h3>Temas Disponíveis do Mês (PAES UEMA)</h3>
-        <p style="color: var(--text-muted); margin-bottom: 1rem;">Você pode enviar até 2 redações neste ciclo de 30 dias. A maior nota contará para o ranqueamento.</p>
+        <h3>Propostas de Redação do Ciclo</h3>
+        <p style="color: var(--text-muted, #64748b); margin-bottom: 1rem;">
+          Você pode enviar até 2 redações neste ciclo de 30 dias. A maior nota contará para o ranqueamento geral.
+        </p>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;" id="theme-selector"></div>
       </div>
 
       <!-- Textos Motivadores -->
       <div class="card" id="theme-details">
-        <h2 id="theme-title" style="color: var(--primary);">Selecione um tema acima</h2>
+        <h2 id="theme-title" style="color: var(--primary, #2563eb);">Selecione uma proposta acima</h2>
         <div id="theme-texts" style="margin-top: 1rem; color: #334155; line-height: 1.7;"></div>
       </div>
 
+      <!-- Área de Produção -->
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
           <h3>Sua Produção Textual</h3>
@@ -55,22 +124,83 @@
           </button>
         </div>
 
-        <textarea id="essay-text" class="essay-textarea" placeholder="Digite seu texto dissertativo-argumentativo ou clique no microfone acima para ditar por voz. Você poderá corrigir acentos, pontuação e parágrafos antes de enviar..."></textarea>
+        <textarea id="essay-text" class="essay-textarea" placeholder="Lembre-se: o TÍTULO é obrigatório no modelo UEMA e deve estar na 1ª linha. Escreva seu texto dissertativo-argumentativo ou utilize o microfone para ditar..."></textarea>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-          <span id="char-count" style="color: var(--text-muted); font-size: 0.875rem;">0 caracteres (mínimo de 200)</span>
-          <button id="btn-submit-essay" class="btn">🚀 Enviar para Correção com IA</button>
+          <span id="char-count" style="color: var(--text-muted, #64748b); font-size: 0.875rem;">0 caracteres (mínimo de 200)</span>
+          <button id="btn-submit-essay" class="btn">🚀 Enviar para Correção Inteligente</button>
         </div>
       </div>
 
-      <div class="card" id="result-card" style="display: none; border-color: var(--accent); background: #f0fdf4;">
-        <h2 style="color: var(--accent); margin-bottom: 0.5rem;">Resultado da Avaliação Oficial UEMA</h2>
-        <div style="font-size: 2.8rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;" id="res-total">0.00 / 10.0</div>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;" id="criteria-grid"></div>
+      <!-- Devolutiva Pedagógica Completa -->
+      <div class="card" id="result-card" style="display: none; border-color: var(--accent, #10b981); background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <h2 style="color: var(--text-main, #0f172a); margin: 0;">Resultado da Avaliação Pedagógica</h2>
+            <p style="color: var(--text-muted, #64748b); margin: 0.25rem 0 0 0; font-size: 0.9rem;">
+              Correção analítica orientada pelos 5 critérios da banca do PAES UEMA
+            </p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 2.6rem; font-weight: 800; color: var(--primary, #2563eb); line-height: 1;" id="res-total">0.00 / 10.0</div>
+            <div id="title-badge-container" style="margin-top: 0.4rem;"></div>
+          </div>
+        </div>
 
-        <h3 style="color: var(--text-main);">Devolutiva Pedagógica da IA</h3>
-        <p id="res-feedback" style="margin-top: 0.5rem; line-height: 1.7; color: #334155;"></p>
+        <!-- Parecer Geral -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+          <h4 style="margin: 0 0 0.5rem 0; color: var(--text-main, #1e293b); display: flex; align-items: center; gap: 0.4rem;">
+            📝 Parecer Geral da Banca
+          </h4>
+          <p id="res-feedback" style="margin: 0; line-height: 1.7; color: #334155; font-size: 0.95rem;"></p>
+        </div>
+
+        <!-- Grade dos 5 Critérios Analíticos -->
+        <h4 style="margin-bottom: 0.75rem; color: var(--text-main, #1e293b);">Análise Detalhada por Critério</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;" id="criteria-grid"></div>
+
+        <!-- Desvios Gramaticais Identificados -->
+        <div id="deviations-container" style="margin-bottom: 1.5rem; display: none;">
+          <h4 style="margin-bottom: 0.5rem; color: var(--text-main, #1e293b);">🔍 Desvios Gramaticais e Ortográficos Identificados</h4>
+          <div style="overflow-x: auto;">
+            <table class="table-deviations">
+              <thead>
+                <tr>
+                  <th style="color: #b91c1c;">Trecho na Redação</th>
+                  <th style="color: #15803d;">Forma Recomendada</th>
+                  <th>Regra Gramatical</th>
+                </tr>
+              </thead>
+              <tbody id="deviations-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Articulação com Obras do PAES UEMA -->
+        <div id="repertoire-box" style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: none;">
+          <h4 style="margin: 0 0 0.5rem 0; color: #6b21a8; display: flex; align-items: center; gap: 0.4rem;">
+            📖 Sugestão de Repertório das Obras Oficiais da UEMA
+          </h4>
+          <div id="repertoire-content" style="color: #581c87; font-size: 0.95rem; line-height: 1.6;"></div>
+        </div>
+
+        <!-- Pontos Fortes e Pontos de Atenção -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #166534;">🌟 Pontos Fortes</h4>
+            <ul id="strengths-list" style="margin: 0; padding-left: 1.25rem; color: #14532d; font-size: 0.9rem; line-height: 1.6;"></ul>
+          </div>
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1rem;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #92400e;">🎯 Pontos para Desenvolver</h4>
+            <ul id="weaknesses-list" style="margin: 0; padding-left: 1.25rem; color: #78350f; font-size: 0.9rem; line-height: 1.6;"></ul>
+          </div>
+        </div>
+
+        <!-- Recomendações de Estudo -->
+        <div id="recommendations-box" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; display: none;">
+          <h4 style="margin: 0 0 0.5rem 0; color: #1e40af;">📚 Recomendações para a Próxima Produção</h4>
+          <ul id="recommendations-list" style="margin: 0; padding-left: 1.25rem; color: #1e3a8a; font-size: 0.9rem; line-height: 1.6;"></ul>
+        </div>
       </div>
     </div>
   </main>
