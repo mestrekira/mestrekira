@@ -23,6 +23,23 @@
     .rec-item:hover {
       text-decoration: underline;
     }
+    .next-q-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--primary);
+      color: white;
+      padding: 0.6rem 1.25rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      margin-top: 1rem;
+      transition: opacity 0.2s;
+    }
+    .next-q-btn:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -37,22 +54,41 @@
       <a href="ranking.html">Classificação</a>
     </nav>
     <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
-      <span id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Aluno</span>
+      <!-- Link ativo para o Perfil do Aluno -->
+      <a href="perfil.html" id="user-name" style="text-decoration: none; font-weight: 600; font-size: 0.9rem; color: var(--primary);">👤 Aluno</a>
       <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
     </div>
   </header>
 
   <main class="container">
     
-    <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
       <div>
         <h2>🎯 Treino Livre com Questões do ENEM</h2>
-        <p style="color: var(--text-muted);">Pratique com questões inéditas. Suas respostas não afetam o ranking oficial do PAES UEMA.</p>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+          Pratique por blocos com resolução comentada. Suas respostas de treino não afetam o ranking oficial.
+        </p>
       </div>
-      <button class="btn" onclick="buscarNovasQuestoes()">🔄 Gerar Novo Bloco (10Q)</button>
+      <button class="btn" onclick="buscarNovasQuestoes()" style="background: var(--primary); font-weight: 600;">
+        🔄 Gerar Novo Bloco (10Q)
+      </button>
     </div>
 
-    <!-- Seletor de Matéria com os nomes exatos do JSON do ENEM -->
+    <!-- Barra de Progresso do Bloco -->
+    <div class="progress-box" style="margin-bottom: 1.5rem;">
+      <div class="progress-header">
+        <span id="practice-progress-title">Bloco Atual (10 Questões)</span>
+        <span id="practice-progress-text">0 de 10 respondidas</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="practice-progress-bar" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Painel de Conclusão do Bloco (Aparece no topo ao responder as 10) -->
+    <div id="practice-completion-banner" style="display: none;"></div>
+
+    <!-- Filtros de Matérias do ENEM -->
     <div class="filter-scroll" id="disciplines-filter">
       <button class="filter-btn active" data-discipline="">Todas as Matérias</button>
       <button class="filter-btn" data-discipline="Língua Portuguesa">Língua Portuguesa</button>
