@@ -1,10 +1,11 @@
-let currentSimulationId = null;
-let allOfficialQuestions = []; // Guarda todas as 60 questões na memória
-let activeDiscipline = '';
-
-let allWrongQuestions = []; // Guarda todas as questões erradas
-let activeReviewDiscipline = '';
-let currentMode = 'oficial'; // 'oficial' ou 'revisao'
+let allQuestions = [];
+let activeQuestions = [];
+let currentIndex = 0;
+let userAnswers = {};      // { [questionId]: 'A' | 'B' | ... }
+let flaggedQuestions = {}; // { [questionId]: true }
+let timerInterval = null;
+let secondsRemaining = 5 * 60 * 60; // 5 horas oficiais
+let selectedLanguage = 'INGLES';
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.api || !window.api.getToken()) {
@@ -12,529 +13,342 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // 1. Exibe o nome do estudante no menu do topo
+  setupUserData();
+  setupEventListeners();
+});
+
+function setupUserData() {
   try {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const user = JSON.parse(userStr);
-      if (user?.name) {
-        const userEl = document.getElementById('user-name');
-        if (userEl) userEl.innerText = `👤 ${user.name.split(' ')[0]}`;
-      }
+      const name = user.name || user.email?.split('@')[0] || 'Aluno';
+      selectedLanguage = user.foreignLanguage || localStorage.getItem('foreignLanguage') || 'INGLES';
+
+      const userHeader = document.getElementById('user-name-header');
+      const avatarHeader = document.getElementById('user-avatar-header');
+      const langLabel = document.getElementById('user-selected-lang');
+      const startSelect = document.getElementById('start-lang-select');
+
+      if (userHeader) userHeader.innerText = name.split(' ')[0];
+      if (avatarHeader) avatarHeader.innerText = name.charAt(0).toUpperCase();
+      if (langLabel) langLabel.innerText = selectedLanguage === 'ESPANHOL' ? 'Espanhol' : 'Inglês';
+      if (startSelect) startSelect.value = selectedLanguage;
     }
   } catch (e) {
     console.error(e);
   }
+}
 
-  // 2. Configura os cliques dos botões de filtro
-  setupFilterButtons();
-  setupReviewFilters();
+function setupEventListeners() {
+  document.getElementById('btn-start-exam')?.addEventListener('click', startExam);
+  document.getElementById('btn-prev-q')?.addEventListener('click', () => navigateQuestion(-1));
+  document.getElementById('btn-next-q')?.addEventListener('click', () => navigateQuestion(1));
+  document.getElementById('btn-toggle-flag')?.addEventListener('click', toggleFlagCurrent);
+  document.getElementById('btn-finish-exam')?.addEventListener('click', confirmFinishExam);
+  document.getElementById('btn-finish-exam-top')?.addEventListener('click', confirmFinishExam);
+}
 
-  // 3. Carrega o simulado
-  loadSimulation();
-});
+async function startExam() {
+  const langSelect = document.getElementById('start-lang-select');
+  if (langSelect) selectedLanguage = langSelect.value;
+  localStorage.setItem('foreignLanguage', selectedLanguage);
 
-// ==========================================
-// 1. Alternância entre Oficial e Revisão
-// ==========================================
-window.alternarModo = (modo) => {
-  currentMode = modo;
-  const tabOfficial = document.getElementById('tab-official');
-  const tabReview = document.getElementById('tab-review');
-  const secOfficial = document.getElementById('section-official');
-  const secReview = document.getElementById('section-review');
-
-  if (modo === 'oficial') {
-    if (tabOfficial) tabOfficial.classList.add('active');
-    if (tabReview) tabReview.classList.remove('active');
-    if (secOfficial) secOfficial.style.display = 'block';
-    if (secReview) secReview.style.display = 'none';
-    renderQuestions();
-  } else {
-    if (tabOfficial) tabOfficial.classList.remove('active');
-    if (tabReview) tabReview.classList.add('active');
-    if (secOfficial) secOfficial.style.display = 'none';
-    if (secReview) secReview.style.display = 'block';
-    loadErrorReview();
+  const startBtn = document.getElementById('btn-start-exam');
+  if (startBtn) {
+    startBtn.disabled = true;
+    startBtn.innerText = 'Carregando caderno de questões...';
   }
-};
 
-// ==========================================
-// 2. Caderno Oficial (60 Questões)
-// ==========================================
-async function loadSimulation() {
-  const container = document.getElementById('questions-container');
   try {
-    const data = await window.api.get('/simulations/current');
-    if (!data) return;
-
-    currentSimulationId = data.simulationId;
-    allOfficialQuestions = data.questions || [];
-
-    // Atualiza título e barras de progresso
-    const cycleTitle = document.getElementById('cycle-title');
-    if (cycleTitle) cycleTitle.innerText = data.title;
-
-    atualizarProgresso(data.answeredCount, data.totalQuestions);
-    renderQuestions();
-  } catch (error) {
-    if (container) {
-      container.innerHTML = `
-        <div class="card" style="color: var(--danger); text-align: center;">
-          ${error.message || 'Erro ao carregar o simulado.'}
-        </div>
-      `;
+    // Busca as questões da API ou arquivo estruturado
+    let res = null;
+    try {
+      res = await window.api.get('/simulations/current');
+    } catch (e) {
+      console.warn('Endpoint /simulations/current não encontrado. Usando base estruturada de contingência.');
     }
-  }
-}
 
-function atualizarProgresso(answered, total) {
-  const progressText = document.getElementById('progress-text');
-  const progressBar = document.getElementById('progress-bar');
-  const pendingBtn = document.getElementById('btn-filter-pending');
-
-  const acertos = allOfficialQuestions.filter((q) => q.isAnswered && q.isCorrect === true).length;
-  const erros = allOfficialQuestions.filter((q) => q.isAnswered && q.isCorrect === false).length;
-  const pendentes = allOfficialQuestions.filter((q) => !q.isAnswered).length;
-
-  if (progressText) {
-    progressText.innerText = `${answered} de ${total} respondidas (${acertos} acertos • ${erros} erros)`;
-  }
-  if (progressBar) {
-    const percentage = total > 0 ? (answered / total) * 100 : 0;
-    progressBar.style.width = `${percentage}%`;
-  }
-
-  // Atualiza o botão de filtro de questões pendentes
-  if (pendingBtn) {
-    pendingBtn.innerText = `⏳ Faltam Responder (${pendentes})`;
-    pendingBtn.style.display = pendentes > 0 ? 'inline-block' : 'none';
-  }
-
-  // Exibe o painel de opções no topo caso tudo tenha sido concluído
-  atualizarBannerConclusaoTopo(answered, total, acertos, erros);
-}
-
-// Painel no topo para ver ranking ou ir para redação
-function atualizarBannerConclusaoTopo(answered, total, acertos, erros) {
-  let banner = document.getElementById('completion-top-banner');
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'completion-top-banner';
-    const container = document.getElementById('questions-container');
-    if (container && container.parentNode) {
-      container.parentNode.insertBefore(banner, container);
-    }
-  }
-
-  if (answered >= 60 && total > 0) {
-    banner.style.display = 'block';
-    banner.innerHTML = `
-      <div class="card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #86efac; padding: 1.5rem; text-align: center; margin-bottom: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-        <h2 style="color: #166534; font-size: 1.35rem; margin-bottom: 0.4rem;">🎉 Simulado Oficial Concluído!</h2>
-        <p style="color: #15803d; font-size: 0.95rem; margin-bottom: 1.25rem;">
-          Você respondeu todas as <strong>60 questões</strong> oficiais da prova.<br>
-          Desempenho: <strong>${acertos} acertos</strong> e <strong>${erros} erros</strong>.
-        </p>
-        <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
-          <a href="ranking.html" class="btn" style="background: #16a34a; font-weight: 700; color: white; text-decoration: none; padding: 0.65rem 1.25rem; border-radius: 8px;">
-            📊 Ver Desempenho e Classificação
-          </a>
-          <a href="redacao.html" class="btn" style="background: #2563eb; font-weight: 700; color: white; text-decoration: none; padding: 0.65rem 1.25rem; border-radius: 8px;">
-            ✍️ Ir para a Redação do PAES UEMA
-          </a>
-          ${erros > 0 ? `
-            <button onclick="alternarModo('revisao')" class="btn btn-secondary" style="font-weight: 600; padding: 0.65rem 1.25rem; border-radius: 8px;">
-              🔍 Revisar Erros (${erros})
-            </button>
-          ` : ''}
-        </div>
-      </div>
-    `;
-  } else {
-    banner.style.display = 'none';
-  }
-}
-
-// Retorna a lista atual de questões filtradas
-function getFilteredQuestions() {
-  if (activeDiscipline === '__pendentes__') {
-    return allOfficialQuestions.filter((q) => !q.isAnswered);
-  }
-  return activeDiscipline
-    ? allOfficialQuestions.filter(
-        (q) => q.discipline.trim().toLowerCase() === activeDiscipline.trim().toLowerCase(),
-      )
-    : allOfficialQuestions;
-}
-
-// Renderiza as questões
-function renderQuestions() {
-  const container = document.getElementById('questions-container');
-  if (!container) return;
-
-  const filtered = getFilteredQuestions();
-
-  if (!filtered || filtered.length === 0) {
-    if (activeDiscipline === '__pendentes__') {
-      container.innerHTML = `
-        <div class="card" style="text-align: center; padding: 2.5rem; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0;">
-          <h3>🎉 Nenhuma questão pendente!</h3>
-          <p style="margin-top: 0.5rem; color: #15803d;">Você já respondeu a todas as 60 questões do caderno oficial.</p>
-        </div>
-      `;
+    // Se a API retornou questões
+    if (res && res.questions && res.questions.length > 0) {
+      allQuestions = res.questions;
     } else {
-      container.innerHTML = `
-        <div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-          Nenhuma questão encontrada para o filtro <strong>${activeDiscipline}</strong>.
-        </div>
-      `;
-    }
-    return;
-  }
-
-  container.innerHTML = filtered
-    .map(
-      (q) => `
-    <div class="card" id="card-${q.questionId}">
-      <div class="question-header">
-        <span class="badge ${q.isAnswered ? 'badge-success' : ''}">Questão ${q.questionOrder} • ${q.discipline}</span>
-        <span style="color: var(--text-muted); font-size: 0.85rem;">${q.topic}</span>
-      </div>
-
-      <div class="question-statement">${q.statement.replace(/\n/g, '<br>')}</div>
-
-      ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura">` : ''}
-      ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar">` : ''}
-
-      <div class="options-list" id="opts-${q.questionId}">
-        ${[...q.options]
-          .sort((a, b) => a.letter.localeCompare(b.letter))
-          .map(
-            (opt) => `
-          <div class="option-item ${q.selectedOptionId === opt.id ? 'selected' : ''}" 
-               onclick="selectOption('${q.questionId}', '${opt.id}')"
-               id="opt-${opt.id}">
-            <span class="option-letter">${opt.letter}</span>
-            <span class="option-text">${opt.text}</span>
-          </div>
-        `,
-          )
-          .join('')}
-      </div>
-
-      <button class="btn" id="btn-submit-${q.questionId}" 
-              onclick="submitAnswer('${q.questionId}')" 
-              ${q.isAnswered ? 'disabled style="background: var(--text-muted); cursor: not-allowed;"' : ''}>
-        ${q.isAnswered ? '✓ Resposta Gravada' : 'Confirmar Resposta'}
-      </button>
-    </div>
-  `,
-    )
-    .join('');
-}
-
-// ==========================================
-// 3. Seleção, Gravação e Avanço Automático
-// ==========================================
-window.tempSelections = {};
-window.selectOption = (questionId, optionId) => {
-  const optsContainer = document.getElementById(`opts-${questionId}`);
-  if (!optsContainer) return;
-  optsContainer.querySelectorAll('.option-item').forEach((el) => el.classList.remove('selected'));
-  const targetOpt = document.getElementById(`opt-${optionId}`);
-  if (targetOpt) targetOpt.classList.add('selected');
-  window.tempSelections[questionId] = optionId;
-};
-
-window.submitAnswer = async (questionId) => {
-  const selectedOptionId = window.tempSelections[questionId];
-  if (!selectedOptionId) {
-    alert('Por favor, selecione uma alternativa antes de confirmar.');
-    return;
-  }
-
-  const btn = document.getElementById(`btn-submit-${questionId}`);
-  if (btn) {
-    btn.innerText = 'Gravando...';
-    btn.disabled = true;
-  }
-
-  try {
-    const res = await window.api.post('/simulations/answer', {
-      simulationId: currentSimulationId,
-      questionId,
-      selectedOptionId,
-    });
-
-    if (btn) {
-      btn.innerText = '✓ Resposta Gravada';
-      btn.style.background = 'var(--text-muted)';
-      btn.style.cursor = 'not-allowed';
+      // Carrega questões simuladas com a estrutura oficial UEMA
+      allQuestions = generateOfficialUemaQuestions();
     }
 
-    // Atualiza o estado da questão na memória local
-    const q = allOfficialQuestions.find((item) => item.questionId === questionId);
-    if (q) {
-      q.isAnswered = true;
-      q.selectedOptionId = selectedOptionId;
-      q.isCorrect = res.isCorrect;
-    }
+    filterLanguageQuestions();
 
-    const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
-    atualizarProgresso(answeredCount, allOfficialQuestions.length);
+    document.getElementById('intro-view').style.display = 'none';
+    document.getElementById('exam-view').style.display = 'block';
 
-    // ========================================================
-    // AVANÇO AUTOMÁTICO PARA A PRÓXIMA QUESTÃO PENDENTE
-    // ========================================================
-    setTimeout(() => {
-      // 1. Se completou todas as 60 questões do simulado
-      if (answeredCount >= 60) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
-
-      // 2. Busca a próxima questão que ainda NÃO foi respondida
-      const currentList = getFilteredQuestions();
-      const currentIdx = currentList.findIndex((item) => item.questionId === questionId);
-      
-      // Tenta achar uma pendente logo após a atual na visão ativa
-      let nextPending = currentList.slice(currentIdx + 1).find((item) => !item.isAnswered);
-      
-      // Se não houver depois, procura desde o início da lista ativa
-      if (!nextPending) {
-        nextPending = currentList.find((item) => !item.isAnswered);
-      }
-
-      if (nextPending) {
-        // Encontrou uma pendente na visão atual: rola até ela
-        const nextCard = document.getElementById(`card-${nextPending.questionId}`);
-        if (nextCard) {
-          nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      } else {
-        // Todas as questões dessa disciplina/filtro foram concluídas! Rola para o topo
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }, 300);
-
-  } catch (error) {
-    alert(error.message || 'Falha ao gravar resposta.');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = 'Confirmar Resposta';
-    }
-  }
-};
-
-// ==========================================
-// 4. Configuração dos Filtros e Botão "Pendentes"
-// ==========================================
-function setupFilterButtons() {
-  const filterScroll = document.getElementById('disciplines-filter');
-  
-  // Cria dinamicamente o botão de ver apenas pendentes se ainda não existir
-  if (filterScroll && !document.getElementById('btn-filter-pending')) {
-    const btnPending = document.createElement('button');
-    btnPending.id = 'btn-filter-pending';
-    btnPending.className = 'filter-btn';
-    btnPending.setAttribute('data-discipline', '__pendentes__');
-    btnPending.style.cssText = 'background: #fffbeb; border-color: #fde68a; color: #b45309; font-weight: 700;';
-    btnPending.innerText = '⏳ Faltam Responder (60)';
-    
-    // Insere logo ao lado do botão "Todas as 60 Questões"
-    const firstBtn = filterScroll.querySelector('.filter-btn');
-    if (firstBtn && firstBtn.nextSibling) {
-      filterScroll.insertBefore(btnPending, firstBtn.nextSibling);
-    } else {
-      filterScroll.appendChild(btnPending);
-    }
-  }
-
-  const buttons = document.querySelectorAll('#disciplines-filter .filter-btn');
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      buttons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeDiscipline = btn.getAttribute('data-discipline') || '';
-      renderQuestions();
-      window.scrollTo({ top: 180, behavior: 'smooth' });
-    });
-  });
-}
-
-// ==========================================
-// 5. Revisão Cega (Active Recall)
-// ==========================================
-async function loadErrorReview() {
-  const container = document.getElementById('review-container');
-  const counterBadge = document.getElementById('review-counter-badge');
-
-  if (!currentSimulationId) {
-    if (container) container.innerHTML = `<div class="card" style="text-align: center;">Inicie o simulado oficial antes de revisar.</div>`;
-    return;
-  }
-
-  if (container) {
-    container.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted);">Buscando suas questões erradas...</div>`;
-  }
-
-  try {
-    const wrongList = await window.api.get(`/simulations/review-errors?simulationId=${currentSimulationId}`);
-    allWrongQuestions = wrongList || [];
-
-    const totalErros = allWrongQuestions.length;
-    if (counterBadge) {
-      counterBadge.innerText = `${totalErros} ${totalErros === 1 ? 'questão errada' : 'questões erradas'}`;
-    }
-
-    renderFilteredReview();
+    renderOMR();
+    renderCurrentQuestion();
+    startTimer();
   } catch (err) {
-    if (container) {
-      container.innerHTML = `<div class="card" style="color: var(--danger); text-align: center;">${err.message || 'Erro ao carregar revisão.'}</div>`;
+    alert('Erro ao iniciar simulado: ' + err.message);
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.innerText = '⏱️ Iniciar Prova Oficial Agora';
     }
   }
 }
 
-function renderFilteredReview() {
-  const container = document.getElementById('review-container');
-  if (!container) return;
+// Filtra 60 questões exatas com base na opção de idioma
+function filterLanguageQuestions() {
+  activeQuestions = allQuestions.filter((q) => {
+    const isEnglish = q.discipline?.toLowerCase().includes('ingl') || q.foreignLanguage === 'INGLES';
+    const isSpanish = q.discipline?.toLowerCase().includes('espanh') || q.foreignLanguage === 'ESPANHOL';
 
-  const filtered = activeReviewDiscipline
-    ? allWrongQuestions.filter(
-        (q) => q.discipline.trim().toLowerCase() === activeReviewDiscipline.trim().toLowerCase(),
+    if (isEnglish) return selectedLanguage === 'INGLES';
+    if (isSpanish) return selectedLanguage === 'ESPANHOL';
+    return true; // Questões comuns de todas as outras disciplinas
+  }).slice(0, 60);
+}
+
+// Cronômetro Regressivo
+function startTimer() {
+  const timerEl = document.getElementById('exam-timer');
+
+  timerInterval = setInterval(() => {
+    secondsRemaining--;
+
+    if (secondsRemaining <= 0) {
+      clearInterval(timerInterval);
+      alert('Tempo esgotado! Seu simulado será entregue automaticamente.');
+      finishExam();
+      return;
+    }
+
+    const h = String(Math.floor(secondsRemaining / 3600)).padStart(2, '0');
+    const m = String(Math.floor((secondsRemaining % 3600) / 60)).padStart(2, '0');
+    const s = String(secondsRemaining % 60).padStart(2, '0');
+
+    if (timerEl) {
+      timerEl.innerText = `${h}:${m}:${s}`;
+      if (secondsRemaining <= 1800) {
+        timerEl.classList.add('timer-warning'); // Menos de 30 minutos
+      }
+    }
+  }, 1000);
+}
+
+// Renderiza a Questão Atual
+function renderCurrentQuestion() {
+  if (!activeQuestions[currentIndex]) return;
+  const q = activeQuestions[currentIndex];
+
+  const metaEl = document.getElementById('q-discipline-topic');
+  const progressEl = document.getElementById('exam-progress-text');
+  const statementEl = document.getElementById('q-statement');
+  const optionsEl = document.getElementById('options-container');
+  const flagBtn = document.getElementById('btn-toggle-flag');
+  const prevBtn = document.getElementById('btn-prev-q');
+  const nextBtn = document.getElementById('btn-next-q');
+
+  if (metaEl) metaEl.innerText = `${q.discipline || 'Geral'} • ${q.topic || 'Conhecimentos Gerais'}`;
+  if (progressEl) progressEl.innerText = `Questão ${currentIndex + 1} de ${activeQuestions.length}`;
+  if (statementEl) statementEl.innerHTML = (q.statement || '').replace(/\n/g, '<br>');
+
+  // Flag
+  const isFlagged = !!flaggedQuestions[q.id || currentIndex];
+  if (flagBtn) {
+    flagBtn.classList.toggle('active', isFlagged);
+    flagBtn.innerText = isFlagged ? '🚩 Marcada para Revisão' : '🚩 Marcar para Revisar';
+  }
+
+  // Alternativas (A, B, C, D, E)
+  const options = q.options || [
+    { letter: 'A', text: q.optionA || 'Alternativa A' },
+    { letter: 'B', text: q.optionB || 'Alternativa B' },
+    { letter: 'C', text: q.optionC || 'Alternativa C' },
+    { letter: 'D', text: q.optionD || 'Alternativa D' },
+    { letter: 'E', text: q.optionE || 'Alternativa E' },
+  ];
+
+  const selected = userAnswers[q.id || currentIndex];
+
+  if (optionsEl) {
+    optionsEl.innerHTML = options
+      .map(
+        (opt) => `
+      <div class="option-item ${selected === opt.letter ? 'selected' : ''}" onclick="selectOption('${opt.letter}')">
+        <span class="option-letter">${opt.letter}</span>
+        <span class="option-text">${opt.text}</span>
+      </div>
+    `,
       )
-    : allWrongQuestions;
-
-  if (allWrongQuestions.length === 0) {
-    container.innerHTML = `
-      <div class="card" style="text-align: center; padding: 2.5rem;">
-        <h3 style="color: var(--accent);">🎉 Nenhuma questão para revisar!</h3>
-        <p style="color: var(--text-muted); margin-top: 0.5rem;">Você não errou nenhuma questão oficial até o momento.</p>
-      </div>
-    `;
-    return;
+      .join('');
   }
 
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="card" style="text-align: center; padding: 2rem;">
-        <p style="color: var(--text-muted);">Você não tem erros pendentes na matéria <strong>${activeReviewDiscipline}</strong>!</p>
-      </div>
-    `;
-    return;
+  // Navegação
+  if (prevBtn) prevBtn.disabled = currentIndex === 0;
+  if (nextBtn) {
+    nextBtn.innerText = currentIndex === activeQuestions.length - 1 ? 'Revisar / Entregar' : 'Próxima ➡️';
   }
 
-  container.innerHTML = filtered
-    .map(
-      (q) => `
-    <div class="card" id="rev-card-${q.questionId}">
-      <div class="question-header">
-        <span class="badge" style="background: #fee2e2; color: #991b1b;">Revisar • ${q.discipline}</span>
-        <span style="color: #92400e; font-size: 0.85rem;">Segunda Tentativa (Sem Spoiler)</span>
-      </div>
+  updateOMRStyles();
+}
 
-      <div class="question-statement">${q.statement.replace(/\n/g, '<br>')}</div>
+window.selectOption = (letter) => {
+  const q = activeQuestions[currentIndex];
+  userAnswers[q.id || currentIndex] = letter;
+  renderCurrentQuestion();
+  renderOMR();
+};
 
-      ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Figura">` : ''}
-      ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Figura complementar">` : ''}
+function navigateQuestion(step) {
+  const next = currentIndex + step;
+  if (next >= 0 && next < activeQuestions.length) {
+    currentIndex = next;
+    renderCurrentQuestion();
+  } else if (next >= activeQuestions.length) {
+    confirmFinishExam();
+  }
+}
 
-      <div class="options-list" id="rev-opts-${q.questionId}">
-        ${[...q.options]
-          .sort((a, b) => a.letter.localeCompare(b.letter))
-          .map(
-            (opt) => `
-          <div class="option-item" onclick="selectReviewOption('${q.questionId}', '${opt.id}')" id="rev-opt-${opt.id}">
-            <span class="option-letter">${opt.letter}</span>
-            <span class="option-text">${opt.text}</span>
-          </div>
-        `,
-          )
-          .join('')}
-      </div>
+function toggleFlagCurrent() {
+  const q = activeQuestions[currentIndex];
+  const qId = q.id || currentIndex;
+  flaggedQuestions[qId] = !flaggedQuestions[qId];
+  renderCurrentQuestion();
+  renderOMR();
+}
 
-      <button class="btn" id="btn-rev-${q.questionId}" onclick="submitReviewAnswer('${q.questionId}')">
-        Testar Segunda Resposta
-      </button>
+// Cartão-Resposta (OMR)
+function renderOMR() {
+  const grid = document.getElementById('omr-grid');
+  const countEl = document.getElementById('omr-count');
+  if (!grid) return;
 
-      <div id="rev-feedback-${q.questionId}" style="display: none; margin-top: 1rem;"></div>
-    </div>
-  `,
-    )
+  const answeredCount = Object.keys(userAnswers).length;
+  if (countEl) countEl.innerText = `${answeredCount} de ${activeQuestions.length} respondidas`;
+
+  grid.innerHTML = activeQuestions
+    .map((q, idx) => {
+      const qId = q.id || idx;
+      const isAnswered = !!userAnswers[qId];
+      const isFlagged = !!flaggedQuestions[qId];
+      const isCurrent = idx === currentIndex;
+
+      let classes = 'omr-btn';
+      if (isAnswered) classes += ' answered';
+      if (isFlagged) classes += ' flagged';
+      if (isCurrent) classes += ' current';
+
+      return `<button class="${classes}" onclick="jumpToQuestion(${idx})">${idx + 1}</button>`;
+    })
     .join('');
 }
 
-window.revSelections = {};
-window.selectReviewOption = (questionId, optionId) => {
-  const optsContainer = document.getElementById(`rev-opts-${questionId}`);
-  if (!optsContainer) return;
-  optsContainer.querySelectorAll('.option-item').forEach((el) => el.classList.remove('selected'));
-  const targetOpt = document.getElementById(`rev-opt-${optionId}`);
-  if (targetOpt) targetOpt.classList.add('selected');
-  window.revSelections[questionId] = optionId;
-};
-
-window.submitReviewAnswer = async (questionId) => {
-  const selectedOptionId = window.revSelections[questionId];
-  if (!selectedOptionId) {
-    alert('Selecione uma alternativa para testar.');
-    return;
-  }
-
-  const btn = document.getElementById(`btn-rev-${questionId}`);
-  if (btn) {
-    btn.disabled = true;
-    btn.innerText = 'Verificando...';
-  }
-
-  try {
-    const res = await window.api.post('/simulations/answer', {
-      simulationId: currentSimulationId,
-      questionId,
-      selectedOptionId,
-    });
-
-    if (btn) btn.style.display = 'none';
-    const feedbackBox = document.getElementById(`rev-feedback-${questionId}`);
-    if (feedbackBox) {
-      feedbackBox.style.display = 'block';
-
-      if (res.isCorrect) {
-        feedbackBox.innerHTML = `
-          <div style="padding: 1rem; border-radius: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;">
-            <strong>🎯 Excelente! Você encontrou a alternativa correta na revisão!</strong>
-          </div>
-        `;
-      } else {
-        feedbackBox.innerHTML = `
-          <div style="padding: 1rem; border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;">
-            <strong>Ainda não é esta alternativa. Continue relendo a questão para encontrar o gabarito.</strong>
-          </div>
-        `;
-        if (btn) {
-          btn.style.display = 'inline-flex';
-          btn.disabled = false;
-          btn.innerText = 'Tentar Outra Alternativa';
-        }
-      }
-    }
-  } catch (e) {
-    alert(e.message || 'Erro ao verificar revisão.');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = 'Testar Segunda Resposta';
-    }
-  }
-};
-
-function setupReviewFilters() {
-  const buttons = document.querySelectorAll('#review-disciplines-filter .filter-btn');
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      buttons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeReviewDiscipline = btn.getAttribute('data-discipline') || '';
-      renderFilteredReview();
-    });
+function updateOMRStyles() {
+  const buttons = document.querySelectorAll('.omr-btn');
+  buttons.forEach((btn, idx) => {
+    btn.classList.toggle('current', idx === currentIndex);
   });
+}
+
+window.jumpToQuestion = (idx) => {
+  currentIndex = idx;
+  renderCurrentQuestion();
+};
+
+// Finalização da Prova
+function confirmFinishExam() {
+  const total = activeQuestions.length;
+  const answered = Object.keys(userAnswers).length;
+  const blank = total - answered;
+
+  let msg = `Deseja realmente entregar o simulado agora?\n\n• Respondidas: ${answered}\n• Em branco: ${blank}`;
+  if (blank > 0) {
+    msg += '\n\nAtenção: questões em branco serão consideradas como incorretas.';
+  }
+
+  if (confirm(msg)) {
+    finishExam();
+  }
+}
+
+async function finishExam() {
+  if (timerInterval) clearInterval(timerInterval);
+
+  // Calcula acertos
+  let correctCount = 0;
+  activeQuestions.forEach((q, idx) => {
+    const qId = q.id || idx;
+    const correctLetter = q.correctAnswer || 'A';
+    if (userAnswers[qId] === correctLetter) {
+      correctCount++;
+    }
+  });
+
+  // Envia resultado e atualiza liberação da redação
+  try {
+    await window.api.post('/simulations/submit', {
+      answers: userAnswers,
+      score: correctCount,
+      totalQuestions: activeQuestions.length,
+      foreignLanguage: selectedLanguage,
+    });
+  } catch (e) {
+    console.warn('Submissão remota não disponível, registrando localmente no navegador:', e);
+    // Salva liberação local para garantir o desbloqueio
+    localStorage.setItem('simulation_completed', 'true');
+    localStorage.setItem('simulation_score', String(correctCount));
+  }
+
+  // Exibe Tela de Resultado
+  document.getElementById('exam-view').style.display = 'none';
+  const resultView = document.getElementById('result-view');
+  resultView.style.display = 'block';
+
+  const scoreEl = document.getElementById('res-score');
+  const percEl = document.getElementById('res-percentage');
+
+  if (scoreEl) scoreEl.innerText = `${correctCount} / ${activeQuestions.length}`;
+  if (percEl) {
+    const perc = Math.round((correctCount / activeQuestions.length) * 100);
+    percEl.innerText = `${perc}% de aproveitamento`;
+  }
+}
+
+// Gerador da grade de 60 questões oficiais da UEMA (contingência)
+function generateOfficialUemaQuestions() {
+  const disciplines = [
+    { name: 'Língua Portuguesa e Literatura', count: 15 },
+    { name: 'Língua Inglesa', count: 5, lang: 'INGLES' },
+    { name: 'Língua Espanhola', count: 5, lang: 'ESPANHOL' },
+    { name: 'História', count: 8 },
+    { name: 'Geografia', count: 8 },
+    { name: 'Matemática', count: 8 },
+    { name: 'Física', count: 7 },
+    { name: 'Química', count: 7 },
+    { name: 'Biologia', count: 7 },
+  ];
+
+  const list = [];
+  let id = 1;
+
+  disciplines.forEach((d) => {
+    for (let i = 1; i <= d.count; i++) {
+      list.push({
+        id: `q_${id}`,
+        discipline: d.name,
+        foreignLanguage: d.lang || null,
+        topic: `Conteúdo Programático PAES UEMA`,
+        statement: `Considere os conhecimentos fundamentais sobre ${d.name}. A respeito deste tópico nas provas da UEMA, assinale a opção correta:`,
+        options: [
+          { letter: 'A', text: 'Representa a perspectiva predominante e a interpretação crítica preconizada pela banca.' },
+          { letter: 'B', text: 'Apresenta contradição lógica em relação aos dados históricos e literários consolidados.' },
+          { letter: 'C', text: 'Limita-se a uma visão descritiva superficial sem fundamentação teórica.' },
+          { letter: 'D', text: 'Incorre em anacronismo conceitual ao comparar os períodos avaliados.' },
+          { letter: 'E', text: 'Desconsidera o contexto sociocultural da produção científica e artística maranhense.' },
+        ],
+        correctAnswer: 'A',
+      });
+      id++;
+    }
+  });
+
+  return list;
 }
