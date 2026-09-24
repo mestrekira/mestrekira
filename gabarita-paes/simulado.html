@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulado Oficial (60Q) | Gabarita PAES</title>
+  <title>Simulado Oficial PAES UEMA | Gabarita PAES</title>
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
-    /* Layout da Prova Objetiva */
+    /* Estilos da Prova e Gabarito */
     .exam-container {
       display: grid;
       grid-template-columns: 1fr 320px;
@@ -14,12 +14,9 @@
       align-items: start;
     }
     @media (max-width: 900px) {
-      .exam-container {
-        grid-template-columns: 1fr;
-      }
+      .exam-container { grid-template-columns: 1fr; }
     }
 
-    /* Barra Superior de Status da Prova */
     .exam-bar {
       background: #ffffff;
       border: 1px solid var(--border, #e2e8f0);
@@ -43,14 +40,7 @@
       border-radius: 6px;
       border: 1px solid #bfdbfe;
     }
-    .timer-warning {
-      color: #dc2626 !important;
-      background: #fef2f2 !important;
-      border-color: #fecaca !important;
-      animation: pulse 1.5s infinite;
-    }
 
-    /* Card da Questão */
     .question-card {
       background: #ffffff;
       border: 1px solid var(--border, #e2e8f0);
@@ -69,11 +59,6 @@
       flex-wrap: wrap;
       gap: 0.5rem;
     }
-    .question-meta-tags {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--primary, #2563eb);
-    }
     .btn-flag {
       background: none;
       border: 1px solid #cbd5e1;
@@ -90,110 +75,7 @@
       font-weight: 600;
     }
 
-    .question-statement {
-      font-size: 1.05rem;
-      line-height: 1.8;
-      color: #1e293b;
-      margin-bottom: 1.5rem;
-    }
-
-    /* Alternativas */
-    .option-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.85rem;
-      padding: 0.85rem 1rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      margin-bottom: 0.65rem;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      background: #ffffff;
-    }
-    .option-item:hover {
-      background: #f8fafc;
-      border-color: #cbd5e1;
-    }
-    .option-item.selected {
-      background: #eff6ff;
-      border-color: var(--primary, #2563eb);
-      box-shadow: 0 0 0 1px var(--primary, #2563eb);
-    }
-    .option-letter {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: #475569;
-      min-width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      background: #f1f5f9;
-    }
-    .option-item.selected .option-letter {
-      background: var(--primary, #2563eb);
-      color: white;
-    }
-    .option-text {
-      font-size: 0.95rem;
-      color: #334155;
-      line-height: 1.5;
-    }
-
-    /* Cartão-Resposta Lateral */
-    .omr-card {
-      background: #ffffff;
-      border: 1px solid var(--border, #e2e8f0);
-      border-radius: 10px;
-      padding: 1.25rem;
-      position: sticky;
-      top: 1rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .omr-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 0.4rem;
-      max-height: 380px;
-      overflow-y: auto;
-      padding-right: 0.25rem;
-      margin: 1rem 0;
-    }
-    .omr-btn {
-      width: 100%;
-      aspect-ratio: 1;
-      border: 1px solid #cbd5e1;
-      background: #f8fafc;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #475569;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    .omr-btn:hover { background: #e2e8f0; }
-    .omr-btn.answered {
-      background: #dbeafe;
-      border-color: #3b82f6;
-      color: #1d4ed8;
-    }
-    .omr-btn.flagged::after {
-      content: '🚩';
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      font-size: 0.65rem;
-    }
-    .omr-btn.current {
-      box-shadow: 0 0 0 2px var(--primary, #2563eb);
-      font-weight: 800;
-    }
-
-    /* Imagens e Figuras da Questão */
+    /* Imagens da Questão */
     .question-image-box {
       margin: 1.25rem 0;
       text-align: center;
@@ -208,13 +90,8 @@
       max-height: 440px;
       border-radius: 6px;
       object-fit: contain;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
       cursor: zoom-in;
-      transition: transform 0.2s ease;
       background: #ffffff;
-    }
-    .question-image:hover {
-      transform: scale(1.01);
     }
     .question-image-caption {
       font-size: 0.85rem;
@@ -222,6 +99,125 @@
       margin-top: 0.5rem;
       font-weight: 500;
     }
+
+    /* Alternativas */
+    .option-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 0.65rem;
+      cursor: pointer;
+      background: #ffffff;
+      transition: all 0.15s ease;
+    }
+    .option-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .option-item.selected {
+      background: #eff6ff;
+      border-color: var(--primary, #2563eb);
+      box-shadow: 0 0 0 1px var(--primary, #2563eb);
+    }
+    .option-letter {
+      font-weight: 700;
+      font-size: 0.95rem;
+      min-width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #f1f5f9;
+      color: #475569;
+    }
+    .option-item.selected .option-letter {
+      background: var(--primary, #2563eb);
+      color: white;
+    }
+
+    /* Cartão-Resposta Lateral */
+    .omr-card {
+      background: #ffffff;
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 10px;
+      padding: 1.25rem;
+      position: sticky;
+      top: 1rem;
+    }
+    .omr-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.4rem;
+      max-height: 380px;
+      overflow-y: auto;
+      margin: 1rem 0;
+    }
+    .omr-btn {
+      aspect-ratio: 1;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      position: relative;
+    }
+    .omr-btn.answered { background: #dbeafe; border-color: #3b82f6; color: #1d4ed8; }
+    .omr-btn.flagged::after { content: '🚩'; position: absolute; top: -3px; right: -3px; font-size: 0.6rem; }
+    .omr-btn.current { box-shadow: 0 0 0 2px var(--primary, #2563eb); font-weight: 800; }
+
+    /* Estilos da Revisão e Questões Erradas */
+    .review-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    .review-card.wrong { border-left: 6px solid #ef4444; }
+    .review-card.correct { border-left: 6px solid #10b981; }
+
+    .ans-tag {
+      padding: 0.5rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-top: 0.4rem;
+    }
+    .ans-wrong { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .ans-correct { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+    .explanation-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      color: #334155;
+      line-height: 1.6;
+    }
+    .study-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    .study-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-right: 1rem;
+      margin-top: 0.5rem;
+      font-weight: 600;
+      color: #1d4ed8;
+      text-decoration: none;
+    }
+    .study-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -245,35 +241,70 @@
   </header>
 
   <main class="container">
-    <!-- Tela de Boas-Vindas / Instruções -->
+    <!-- Tela 1: Boas-Vindas ou Bloqueio de Prova Já Realizada -->
     <div id="intro-view" class="card" style="max-width: 800px; margin: 2rem auto; padding: 2rem;">
-      <h2 style="color: var(--primary, #2563eb); margin-top: 0;">Simulado Oficial PAES UEMA (Ciclo 2026)</h2>
-      <p style="color: #475569; line-height: 1.7; font-size: 1.05rem;">
-        Este simulado é estruturado conforme o edital oficial da Universidade Estadual do Maranhão:
-      </p>
-      <ul style="color: #334155; line-height: 1.8; margin: 1rem 0 1.5rem 1.25rem;">
-        <li><strong>60 Questões Objetivas</strong> de múltipla escolha (A a E);</li>
-        <li><strong>Duração Máxima:</strong> 5 horas de prova (cronômetro em tempo real);</li>
-        <li><strong>Língua Estrangeira:</strong> Você responderá apenas as 5 questões da sua opção (<span id="user-selected-lang">Inglês</span>);</li>
-        <li><strong>Desbloqueio da Redação:</strong> Ao concluir o simulado, o módulo de redação será liberado automaticamente para correção com IA.</li>
-      </ul>
-
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-        <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.5rem;">Confirme sua Língua Estrangeira:</label>
-        <select id="start-lang-select" style="padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
-          <option value="INGLES">Língua Inglesa (Questões 12 a 16)</option>
-          <option value="ESPANHOL">Língua Espanhola (Questões 17 a 21)</option>
-        </select>
+      <!-- Alerta Informativo do Ciclo de 21 dias -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary, #2563eb); background: #eff6ff; padding: 0.3rem 0.65rem; border-radius: 9999px;">
+          ⏱️ Ciclo de 21 Dias
+        </span>
+        <span style="font-size: 0.85rem; color: #64748b;" id="cycle-period-label">
+          Válido até: <strong>30/09/2026</strong>
+        </span>
       </div>
 
-      <button id="btn-start-exam" class="btn" style="width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 700;">
-        ⏱️ Iniciar Prova Oficial Agora
-      </button>
+      <div id="not-submitted-intro">
+        <h2 style="color: var(--primary, #2563eb); margin-top: 0;">Simulado Oficial PAES UEMA (60 Questões)</h2>
+        <p style="color: #475569; line-height: 1.7; font-size: 1.05rem;">
+          Este simulado possui regra de <strong>tentativa única</strong> por ciclo. Certifique-se de estar em um ambiente tranquilo antes de iniciar:
+        </p>
+        <ul style="color: #334155; line-height: 1.8; margin: 1rem 0 1.5rem 1.25rem;">
+          <li><strong>60 Questões Objetivas</strong> com gabarito oficial;</li>
+          <li><strong>Duração:</strong> 5 horas de prova contínua;</li>
+          <li><strong>Tentativa Única:</strong> Não é permitido reiniciar ou refazer a prova no mesmo ciclo de 21 dias;</li>
+          <li><strong>Língua Estrangeira:</strong> Questões 12 a 16 (Inglês) ou 17 a 21 (Espanhol).</li>
+        </ul>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+          <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.5rem;">Confirme sua Língua Estrangeira:</label>
+          <select id="start-lang-select" style="padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+            <option value="INGLES">Língua Inglesa</option>
+            <option value="ESPANHOL">Língua Espanhola</option>
+          </select>
+        </div>
+
+        <button id="btn-start-exam" class="btn" style="width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 700;">
+          ⏱️ Iniciar Simulado Oficial
+        </button>
+      </div>
+
+      <!-- Exibido apenas se o aluno JÁ tiver realizado o simulado do ciclo -->
+      <div id="already-submitted-intro" style="display: none; text-align: center; padding: 1rem 0;">
+        <span style="font-size: 3rem;">📋</span>
+        <h2 style="color: #1e293b; margin: 0.5rem 0;">Simulado Já Realizado neste Ciclo</h2>
+        <p style="color: #64748b; font-size: 1rem; max-width: 550px; margin: 0 auto 1.5rem auto; line-height: 1.6;">
+          Você já enviou o seu caderno de 60 questões do ciclo atual (válido até 30/09). Para manter a fidedignidade da classificação oficial, é permitida apenas 1 submissão por ciclo.
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem; display: inline-block; min-width: 280px; margin-bottom: 1.5rem;">
+          <div style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Sua Pontuação Registrada</div>
+          <div style="font-size: 2.8rem; font-weight: 800; color: var(--primary, #2563eb);" id="already-score">0 / 60</div>
+          <div style="font-size: 1rem; color: var(--accent, #10b981); font-weight: 700;" id="already-perc">0% de acertos</div>
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+          <button id="btn-view-review" class="btn" style="padding: 0.75rem 1.5rem;">
+            📖 Revisar Questões Erradas & Gabarito
+          </button>
+          <a href="redacao.html" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
+            Ir para a Redação
+          </a>
+        </div>
+      </div>
     </div>
 
-    <!-- Tela da Prova em Execução -->
+    <!-- Tela 2: Prova em Execução -->
     <div id="exam-view" style="display: none;">
-      <!-- Barra Superior -->
       <div class="exam-bar">
         <div>
           <span style="font-weight: 700; color: #1e293b;" id="exam-title-bar">PAES UEMA - 60 Questões</span>
@@ -288,26 +319,15 @@
       </div>
 
       <div class="exam-container">
-        <!-- Coluna da Questão Atual -->
         <div>
           <div class="question-card">
             <div class="question-meta">
               <span class="question-meta-tags" id="q-discipline-topic">Língua Portuguesa e Literatura</span>
               <button id="btn-toggle-flag" class="btn-flag">🚩 Marcar para Revisar</button>
-              <div class="question-statement" id="q-statement">
-              Carregando enunciado da questão...
             </div>
 
-            <!-- CONTAINER DE IMAGENS E FIGURAS (INSERIDO AQUI) -->
-            <div id="q-images-container" style="display: none; margin-bottom: 1.5rem;"></div>
-
-            <div id="options-container"></div>
-            </div>
-
-            <div class="question-statement" id="q-statement">
-              Carregando enunciado da questão...
-            </div>
-
+            <div class="question-statement" id="q-statement"></div>
+            <div id="q-images-container" style="display: none;"></div>
             <div id="options-container"></div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
@@ -317,22 +337,11 @@
           </div>
         </div>
 
-        <!-- Coluna Lateral: Cartão-Resposta -->
         <aside>
           <div class="omr-card">
             <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">Cartão-Resposta</h4>
-            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem;" id="omr-count">
-              0 de 60 respondidas
-            </div>
-
+            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem;" id="omr-count">0 de 60 respondidas</div>
             <div class="omr-grid" id="omr-grid"></div>
-
-            <div style="font-size: 0.75rem; color: #64748b; display: flex; flex-direction: column; gap: 0.25rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; margin-top: 0.75rem;">
-              <div>🟦 Respondida</div>
-              <div>⬜ Em branco</div>
-              <div>🚩 Marcada para revisão</div>
-            </div>
-
             <button id="btn-finish-exam" class="btn" style="width: 100%; margin-top: 1rem; background: var(--accent, #10b981);">
               ✅ Entregar Simulado
             </button>
@@ -341,34 +350,53 @@
       </div>
     </div>
 
-    <!-- Tela de Resultado / Conclusão -->
-    <div id="result-view" class="card" style="display: none; max-width: 800px; margin: 2rem auto; text-align: center; padding: 2.5rem 2rem;">
-      <span style="font-size: 3rem;">🎉</span>
-      <h2 style="color: var(--text-main, #0f172a); margin: 0.5rem 0;">Simulado Concluído com Sucesso!</h2>
-      <p style="color: #64748b; font-size: 1.05rem;">Seu cartão-resposta foi processado de acordo com o gabarito oficial da banca.</p>
+    <!-- Tela 3: Resultado Oficial & Revisão de Erros -->
+    <div id="result-view" style="display: none; max-width: 900px; margin: 2rem auto;">
+      <div class="card" style="text-align: center; padding: 2.5rem 2rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 3rem;">🎉</span>
+        <h2 style="color: var(--text-main, #0f172a); margin: 0.5rem 0;">Resultado do Simulado Oficial</h2>
+        <p style="color: #64748b; font-size: 1rem;">Ciclo de 21 dias (Encerramento em 30/09/2026)</p>
 
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; display: inline-block; min-width: 250px;">
-        <div style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Seu Desempenho nas 60 Questões</div>
-        <div style="font-size: 3.2rem; font-weight: 800; color: var(--primary, #2563eb);" id="res-score">0 / 60</div>
-        <div style="font-size: 1.1rem; color: var(--accent, #10b981); font-weight: 700;" id="res-percentage">0% de acertos</div>
+        <!-- Placar de Acertos em Destaque -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin: 1.5rem auto; max-width: 380px;">
+          <div style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Total de Acertos nas 60 Questões</div>
+          <div style="font-size: 3.4rem; font-weight: 800; color: var(--primary, #2563eb); line-height: 1.1;" id="res-score">0 / 60</div>
+          <div style="font-size: 1.15rem; color: var(--accent, #10b981); font-weight: 700; margin-top: 0.35rem;" id="res-percentage">0% de aproveitamento</div>
+        </div>
+
+        <!-- Desempenho por Áreas do Conhecimento -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;" id="areas-breakdown"></div>
+
+        <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+          <a href="redacao.html" class="btn" style="padding: 0.75rem 1.75rem; font-size: 1.05rem;">
+            🚀 Ir para a Redação Desbloqueada
+          </a>
+          <a href="ranking.html" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
+            Ver Classificação
+          </a>
+        </div>
       </div>
 
-      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem; text-align: left;">
-        <h4 style="margin: 0 0 0.5rem 0; color: #065f46; display: flex; align-items: center; gap: 0.5rem;">
-          🔓 Redação PAES UEMA Desbloqueada!
-        </h4>
-        <p style="margin: 0; color: #047857; font-size: 0.95rem; line-height: 1.6;">
-          Parabéns! Você completou as 60 questões obrigatórias. O módulo de redação do ciclo atual está liberado para você redigir seu texto e receber a correção analítica completa pela inteligência artificial.
-        </p>
-      </div>
+      <!-- Seção de Revisão das Questões Erradas -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h3 style="margin: 0; color: #1e293b;">Revisão Pedagógica das Questões</h3>
+            <p style="margin: 0.2rem 0 0 0; color: #64748b; font-size: 0.85rem;">Analise o gabarito comentado e as recomendações de estudo para os seus pontos cegos</p>
+          </div>
+          <!-- Filtros de Questões -->
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" id="filter-wrong-btn" onclick="filterReview('WRONG')" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
+              ❌ Apenas Erradas (<span id="wrong-count-badge">0</span>)
+            </button>
+            <button class="btn btn-secondary" id="filter-all-btn" onclick="filterReview('ALL')" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
+              Todas as 60
+            </button>
+          </div>
+        </div>
 
-      <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-        <a href="redacao.html" class="btn" style="padding: 0.75rem 1.75rem; font-size: 1.05rem;">
-          🚀 Ir para a Redação Agora
-        </a>
-        <a href="ranking.html" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
-          Ver Classificação Geral
-        </a>
+        <!-- Container onde as questões serão listadas -->
+        <div id="review-list-container"></div>
       </div>
     </div>
   </main>
