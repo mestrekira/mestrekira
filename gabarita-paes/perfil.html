@@ -6,168 +6,226 @@
   <title>Meu Perfil | Gabarita PAES</title>
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
-    .profile-info {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    /* Estilos complementares do Perfil */
+    .profile-header-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
       gap: 1.25rem;
-      margin-top: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    .info-box {
-      background: #f8fafc;
-      padding: 1.25rem;
+    .profile-avatar-large {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--primary, #2563eb);
+      color: white;
+      font-size: 2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: #ffffff;
+      border: 1px solid var(--border, #e2e8f0);
       border-radius: 8px;
-      border: 1px solid var(--border);
+      padding: 1.25rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    .info-label {
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary, #2563eb);
+      line-height: 1.2;
+    }
+    .stat-label {
       font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      color: var(--text-muted, #64748b);
+      margin-top: 0.25rem;
+      font-weight: 500;
     }
-    .info-value {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--text-main);
-      margin-top: 0.35rem;
+    .history-card {
+      background: #ffffff;
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      transition: border-color 0.2s;
     }
-    .plan-badge {
-      display: inline-block;
-      padding: 0.3rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
+    .history-card:hover {
+      border-color: var(--primary, #2563eb);
     }
-    .plan-free { background: #e2e8f0; color: #475569; }
-    .plan-premium { background: #dcfce7; color: #15803d; }
+
+    /* Modal do Espelho de Correção */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+      backdrop-filter: blur(3px);
+    }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 12px;
+      max-width: 750px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 1.75rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
   </style>
 </head>
 <body>
 
+  <!-- Cabeçalho Institucional -->
   <header class="header">
-    <a href="index.html" class="brand">🎓 Gabarita PAES</a>
+    <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
     <nav class="nav-links">
-      <a href="index.html">Início</a>
       <a href="simulado.html">Simulado (60Q)</a>
-      <a href="treino-enem.html">Treino ENEM</a>
-      <a href="redacao.html">Redação UEMA</a>
+      <a href="redacao.html">Redação</a>
       <a href="ranking.html">Classificação</a>
+      <a href="perfil.html" class="active">Meu Perfil</a>
     </nav>
-    <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
-      <a href="perfil.html" style="text-decoration: none; font-weight: 600; font-size: 0.9rem; color: var(--primary);" id="user-name">👤 Meu Perfil</a>
+    <div id="user-menu" style="display: flex; align-items: center; gap: 0.85rem;">
+      <a href="perfil.html" id="user-profile-link" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.4rem;">
+        <span id="user-avatar-header" style="background: var(--primary, #2563eb); color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">👤</span>
+        <span id="user-name-header" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main, #1e293b);">Aluno</span>
+      </a>
       <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
     </div>
   </header>
 
-  <main class="container" style="max-width: 800px;">
-    
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+  <main class="container">
+    <!-- Card Principal do Usuário -->
+    <div class="profile-header-card">
+      <div style="display: flex; align-items: center; gap: 1.25rem;">
+        <div class="profile-avatar-large" id="profile-avatar">A</div>
         <div>
-          <h2 id="profile-name">Carregando perfil...</h2>
-          <p id="profile-email" style="color: var(--text-muted); font-size: 0.95rem;">-</p>
-        </div>
-        <div id="plan-container">
-          <span class="plan-badge plan-free" id="plan-badge">PLANO GRATUITO</span>
+          <h2 style="margin: 0; font-size: 1.5rem; color: #ffffff;" id="profile-name">Carregando perfil...</h2>
+          <p style="margin: 0.25rem 0 0.5rem 0; color: #94a3b8; font-size: 0.9rem;" id="profile-email">email@exemplo.com</p>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span id="plan-badge" style="background: #334155; color: #cbd5e1; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">Plano Gratuito</span>
+            <span id="lang-badge" style="background: #1e3a8a; color: #93c5fd; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">Opção: Língua Inglesa</span>
+          </div>
         </div>
       </div>
-
-      <div class="profile-info">
-        <div class="info-box">
-          <div class="info-label">Curso Alvo no PAES UEMA</div>
-          <div class="info-value" id="profile-course">-</div>
-        </div>
-
-        <div class="info-box">
-          <div class="info-label">Língua Estrangeira Escolhida</div>
-          <div class="info-value" id="profile-lang">-</div>
-        </div>
-
-        <div class="info-box">
-          <div class="info-label">Vigência da Assinatura</div>
-          <div class="info-value" id="profile-expires">Acesso Básico</div>
-        </div>
-
-        <div class="info-box">
-          <div class="info-label">Status da Conta</div>
-          <div class="info-value" style="color: var(--accent);">Ativa</div>
-        </div>
-      </div>
-
-      <!-- Banner de Upgrade caso o usuário seja FREE -->
-      <div id="upgrade-box" style="margin-top: 2rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h3 style="color: var(--primary);">Desbloqueie o Acesso Completo</h3>
-          <p style="color: #334155; font-size: 0.9rem; margin-top: 0.2rem;">
-            Tenha 100% das questões, correção de redação por IA e ranqueamento oficial.
-          </p>
-        </div>
-        <a href="assinar.html" class="btn" style="background: var(--accent);">Assinar Premium (R$ 29,90)</a>
+      <div id="plan-cta">
+        <a href="assinar.html" class="btn" style="background: var(--accent, #10b981); color: white; font-weight: 600; padding: 0.6rem 1.25rem;">
+          ⭐ Fazer Upgrade Premium
+        </a>
       </div>
     </div>
-<!-- Seção: Exclusão de Conta -->
-<div class="card" style="margin-top: 2rem; border: 1px solid #fecaca; background: #fff5f5;">
-  <h3 style="color: #991b1b; font-size: 1.1rem; margin-bottom: 0.5rem;">⚠️ Zona de Perigo</h3>
-  <p style="color: #7f1d1d; font-size: 0.9rem; margin-bottom: 1rem;">
-    Ao excluir sua conta, todas as suas respostas de simulados, redações corrigidas e posições no ranking serão permanentemente removidas. Esta ação não pode ser desfeita.
-  </p>
-  <button id="btn-delete-account" onclick="confirmarExclusaoConta()" class="btn" style="background: #dc2626; color: white; padding: 0.6rem 1.25rem; font-weight: 600;">
-    🗑️ Excluir Minha Conta Permanentemente
-  </button>
-</div>
+
+    <!-- Estatísticas de Desempenho -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-essays">0 / 2</div>
+        <div class="stat-label">Redações no Ciclo Atual</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-best-essay">0.00</div>
+        <div class="stat-label">Maior Nota de Redação (UEMA)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-simulations">0</div>
+        <div class="stat-label">Simulados Concluídos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-best-sim">--%</div>
+        <div class="stat-label">Taxa de Acertos (60Q)</div>
+      </div>
+    </div>
+
+    <!-- Configurações do Candidato -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <h3 style="margin-top: 0; color: var(--text-main, #1e293b);">Preferências do PAES UEMA</h3>
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
+        <div>
+          <label style="display: block; font-weight: 600; font-size: 0.9rem; color: #334155; margin-bottom: 0.25rem;">Opção de Língua Estrangeira Oficial:</label>
+          <span style="font-size: 0.85rem; color: var(--text-muted, #64748b);">Essa escolha filtrará suas questões (12 a 16 para Inglês ou 17 a 21 para Espanhol) nos simulados.</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <select id="select-language" style="padding: 0.5rem 0.75rem; border: 1px solid var(--border, #cbd5e1); border-radius: 6px; font-size: 0.9rem;">
+            <option value="INGLES">Língua Inglesa</option>
+            <option value="ESPANHOL">Língua Espanhola</option>
+          </select>
+          <button id="btn-save-lang" class="btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico de Redações -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: var(--text-main, #1e293b);">Histórico de Redações Avaliadas</h3>
+        <a href="redacao.html" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">Ir para Redação</a>
+      </div>
+      <div id="essays-history-container">
+        <p style="color: var(--text-muted, #64748b); font-size: 0.95rem;">Carregando histórico...</p>
+      </div>
+    </div>
+
+    <!-- Histórico de Simulados -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: var(--text-main, #1e293b);">Histórico de Simulados Realizados</h3>
+        <a href="simulado.html" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">Fazer Simulado</a>
+      </div>
+      <div id="simulations-history-container">
+        <p style="color: var(--text-muted, #64748b); font-size: 0.95rem;">Nenhum simulado finalizado neste ciclo.</p>
+      </div>
+    </div>
   </main>
+
+  <!-- Modal do Espelho de Correção -->
+  <div class="modal-overlay" id="essay-modal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1rem;">
+        <div>
+          <h3 id="modal-theme-title" style="margin: 0; color: var(--primary, #2563eb);">Espelho da Redação</h3>
+          <span id="modal-date" style="font-size: 0.85rem; color: #64748b;">Enviado em 24/09/2026</span>
+        </div>
+        <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+      </div>
+
+      <div style="font-size: 2.2rem; font-weight: 800; color: var(--primary, #2563eb); margin-bottom: 1rem;" id="modal-score">
+        0.00 / 10.0
+      </div>
+
+      <div id="modal-body-feedback" style="line-height: 1.7; color: #334155; font-size: 0.95rem;"></div>
+
+      <div style="text-align: right; margin-top: 1.5rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+        <button onclick="closeModal()" class="btn btn-secondary">Fechar Espelho</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/api.js"></script>
   <script src="js/perfil.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (!window.api.getToken()) {
-        window.location.href = 'login.html';
-        return;
-      }
-
-      try {
-        // Busca os dados do usuário autenticado
-        const userStr = localStorage.getItem('user');
-        let user = userStr ? JSON.parse(userStr) : null;
-
-        // Atualiza campos da tela
-        if (user) {
-          document.getElementById('profile-name').innerText = user.name || 'Estudante';
-          document.getElementById('profile-email').innerText = user.email || '';
-          document.getElementById('profile-course').innerText = user.targetCourse || 'Não informado';
-          document.getElementById('profile-lang').innerText = user.foreignLanguage === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa';
-        }
-
-        // Consulta status real da assinatura no backend
-        const planStatus = await window.api.get('/payments/status');
-        if (planStatus) {
-          const badge = document.getElementById('plan-badge');
-          const expiresEl = document.getElementById('profile-expires');
-          const upgradeBox = document.getElementById('upgrade-box');
-
-          if (planStatus.isPremium) {
-            badge.className = 'plan-badge plan-premium';
-            badge.innerText = '⭐ PREMIUM ATIVO';
-            upgradeBox.style.display = 'none';
-
-            if (planStatus.expiresAt) {
-              const d = new Date(planStatus.expiresAt);
-              expiresEl.innerText = `Até ${d.toLocaleDateString('pt-BR')}`;
-            } else {
-              expiresEl.innerText = 'Ativo';
-            }
-          } else {
-            badge.className = 'plan-badge plan-free';
-            badge.innerText = 'PLANO GRATUITO (50%)';
-            expiresEl.innerText = 'Limitado';
-            upgradeBox.style.display = 'flex';
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao carregar dados do perfil:', err);
-      }
-    });
-  </script>
 </body>
 </html>
