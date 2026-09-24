@@ -133,7 +133,7 @@ function startTimer() {
   }, 1000);
 }
 
-// Renderiza a Questão Atual
+// Renderiza a Questão Atual com suporte completo a imagens (imageUrl e imageUrlB)
 function renderCurrentQuestion() {
   if (!activeQuestions[currentIndex]) return;
   const q = activeQuestions[currentIndex];
@@ -141,6 +141,7 @@ function renderCurrentQuestion() {
   const metaEl = document.getElementById('q-discipline-topic');
   const progressEl = document.getElementById('exam-progress-text');
   const statementEl = document.getElementById('q-statement');
+  const imagesContainer = document.getElementById('q-images-container');
   const optionsEl = document.getElementById('options-container');
   const flagBtn = document.getElementById('btn-toggle-flag');
   const prevBtn = document.getElementById('btn-prev-q');
@@ -150,7 +151,52 @@ function renderCurrentQuestion() {
   if (progressEl) progressEl.innerText = `Questão ${currentIndex + 1} de ${activeQuestions.length}`;
   if (statementEl) statementEl.innerHTML = (q.statement || '').replace(/\n/g, '<br>');
 
-  // Flag
+  // Processamento de Imagens da Questão (Figura 1, Figura 2 ou Imagem Única)
+  if (imagesContainer) {
+    const images = [];
+    if (q.imageUrl) {
+      images.push({ 
+        url: q.imageUrl, 
+        label: q.imageUrlB ? 'Figura 1' : 'Figura da Questão' 
+      });
+    }
+    if (q.imageUrlB) {
+      images.push({ 
+        url: q.imageUrlB, 
+        label: 'Figura 2' 
+      });
+    }
+    if (q.image && !q.imageUrl) {
+      images.push({ 
+        url: q.image, 
+        label: 'Figura da Questão' 
+      });
+    }
+
+    if (images.length > 0) {
+      imagesContainer.style.display = 'block';
+      imagesContainer.innerHTML = images
+        .map(
+          (img) => `
+        <div class="question-image-box">
+          <img src="${img.url}" 
+               alt="${img.label}" 
+               class="question-image" 
+               loading="lazy"
+               onclick="window.open('${img.url}', '_blank')"
+               onerror="handleImageError(this, '${img.url}')">
+          <div class="question-image-caption">🔍 ${img.label} (clique para ampliar)</div>
+        </div>
+      `,
+        )
+        .join('');
+    } else {
+      imagesContainer.style.display = 'none';
+      imagesContainer.innerHTML = '';
+    }
+  }
+
+  // Marcação de Revisão (Flag)
   const isFlagged = !!flaggedQuestions[q.id || currentIndex];
   if (flagBtn) {
     flagBtn.classList.toggle('active', isFlagged);
@@ -189,6 +235,29 @@ function renderCurrentQuestion() {
 
   updateOMRStyles();
 }
+
+// Tratamento de falha de carregamento de imagem com tentativa de caminho alternativo
+window.handleImageError = (imgEl, originalUrl) => {
+  // Se falhou ao buscar com URL absoluta, tenta caminho relativo local
+  if (originalUrl.includes('mestrekira.com.br/gabarita-paes/')) {
+    const relativePath = originalUrl.split('mestrekira.com.br/gabarita-paes/')[1];
+    imgEl.onerror = () => {
+      // Se ainda falhar, exibe aviso limpo ao aluno
+      imgEl.parentElement.innerHTML = `
+        <div style="padding: 1rem; color: #b45309; background: #fef3c7; border-radius: 6px; font-size: 0.85rem;">
+          ⚠️ Imagem da questão não encontrada no servidor: <code>${relativePath}</code>
+        </div>
+      `;
+    };
+    imgEl.src = relativePath;
+  } else {
+    imgEl.parentElement.innerHTML = `
+      <div style="padding: 1rem; color: #b45309; background: #fef3c7; border-radius: 6px; font-size: 0.85rem;">
+        ⚠️ Não foi possível carregar a imagem da questão.
+      </div>
+    `;
+  }
+};
 
 window.selectOption = (letter) => {
   const q = activeQuestions[currentIndex];
