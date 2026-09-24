@@ -3,163 +3,336 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulado Oficial PAES UEMA | Gabarita PAES</title>
+  <title>Simulado Oficial (60Q) | Gabarita PAES</title>
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
-    .view-tabs {
+    /* Layout da Prova Objetiva */
+    .exam-container {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .exam-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Barra Superior de Status da Prova */
+    .exam-bar {
+      background: #ffffff;
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 1.25rem;
       display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
       gap: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .timer-badge {
+      font-size: 1.35rem;
+      font-weight: 800;
+      font-family: monospace;
+      color: var(--primary, #2563eb);
+      background: #eff6ff;
+      padding: 0.35rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid #bfdbfe;
+    }
+    .timer-warning {
+      color: #dc2626 !important;
+      background: #fef2f2 !important;
+      border-color: #fecaca !important;
+      animation: pulse 1.5s infinite;
+    }
+
+    /* Card da Questão */
+    .question-card {
+      background: #ffffff;
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 10px;
+      padding: 1.75rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      margin-bottom: 1rem;
+    }
+    .question-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .question-meta-tags {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary, #2563eb);
+    }
+    .btn-flag {
+      background: none;
+      border: 1px solid #cbd5e1;
+      padding: 0.3rem 0.65rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #64748b;
+    }
+    .btn-flag.active {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #b45309;
+      font-weight: 600;
+    }
+
+    .question-statement {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #1e293b;
       margin-bottom: 1.5rem;
     }
-    .view-tab-btn {
-      padding: 0.65rem 1.25rem;
+
+    /* Alternativas */
+    .option-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid #e2e8f0;
       border-radius: 8px;
-      border: 1px solid var(--border);
-      background: white;
+      margin-bottom: 0.65rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: #ffffff;
+    }
+    .option-item:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .option-item.selected {
+      background: #eff6ff;
+      border-color: var(--primary, #2563eb);
+      box-shadow: 0 0 0 1px var(--primary, #2563eb);
+    }
+    .option-letter {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #475569;
+      min-width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #f1f5f9;
+    }
+    .option-item.selected .option-letter {
+      background: var(--primary, #2563eb);
+      color: white;
+    }
+    .option-text {
+      font-size: 0.95rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+
+    /* Cartão-Resposta Lateral */
+    .omr-card {
+      background: #ffffff;
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 10px;
+      padding: 1.25rem;
+      position: sticky;
+      top: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .omr-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.4rem;
+      max-height: 380px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+      margin: 1rem 0;
+    }
+    .omr-btn {
+      width: 100%;
+      aspect-ratio: 1;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      border-radius: 6px;
+      font-size: 0.8rem;
       font-weight: 600;
+      color: #475569;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s;
+      justify-content: center;
+      position: relative;
     }
-    .view-tab-btn.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
+    .omr-btn:hover { background: #e2e8f0; }
+    .omr-btn.answered {
+      background: #dbeafe;
+      border-color: #3b82f6;
+      color: #1d4ed8;
     }
-    .review-banner {
-      background: #fef3c7;
-      border: 1px solid #fde68a;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      color: #92400e;
-      font-size: 0.95rem;
+    .omr-btn.flagged::after {
+      content: '🚩';
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      font-size: 0.65rem;
+    }
+    .omr-btn.current {
+      box-shadow: 0 0 0 2px var(--primary, #2563eb);
+      font-weight: 800;
     }
   </style>
 </head>
 <body>
 
+  <!-- Cabeçalho -->
   <header class="header">
-    <a href="index.html" class="brand">🎓 Gabarita PAES</a>
+    <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
     <nav class="nav-links">
-      <a href="index.html">Início</a>
       <a href="simulado.html" class="active">Simulado (60Q)</a>
-      <a href="treino-enem.html">Treino ENEM</a>
-      <a href="redacao.html">Redação UEMA</a>
+      <a href="redacao.html">Redação</a>
       <a href="ranking.html">Classificação</a>
+      <a href="perfil.html">Meu Perfil</a>
     </nav>
-    <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
-      <a href="perfil.html" id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--primary); text-decoration: none;">👤 Aluno</a>
+    <div id="user-menu" style="display: flex; align-items: center; gap: 0.85rem;">
+      <a href="perfil.html" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.4rem;">
+        <span id="user-avatar-header" style="background: var(--primary, #2563eb); color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">👤</span>
+        <span id="user-name-header" style="font-weight: 600; font-size: 0.9rem;">Aluno</span>
+      </a>
       <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
     </div>
   </header>
 
   <main class="container">
-    
-    <!-- Seletor de Modo: Caderno Completo vs. Revisão Cega de Erros -->
-    <div class="view-tabs">
-      <button class="view-tab-btn active" id="tab-official" onclick="alternarModo('oficial')">
-        📝 Caderno Oficial (60Q)
+    <!-- Tela de Boas-Vindas / Instruções -->
+    <div id="intro-view" class="card" style="max-width: 800px; margin: 2rem auto; padding: 2rem;">
+      <h2 style="color: var(--primary, #2563eb); margin-top: 0;">Simulado Oficial PAES UEMA (Ciclo 2026)</h2>
+      <p style="color: #475569; line-height: 1.7; font-size: 1.05rem;">
+        Este simulado é estruturado conforme o edital oficial da Universidade Estadual do Maranhão:
+      </p>
+      <ul style="color: #334155; line-height: 1.8; margin: 1rem 0 1.5rem 1.25rem;">
+        <li><strong>60 Questões Objetivas</strong> de múltipla escolha (A a E);</li>
+        <li><strong>Duração Máxima:</strong> 5 horas de prova (cronômetro em tempo real);</li>
+        <li><strong>Língua Estrangeira:</strong> Você responderá apenas as 5 questões da sua opção (<span id="user-selected-lang">Inglês</span>);</li>
+        <li><strong>Desbloqueio da Redação:</strong> Ao concluir o simulado, o módulo de redação será liberado automaticamente para correção com IA.</li>
+      </ul>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+        <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.5rem;">Confirme sua Língua Estrangeira:</label>
+        <select id="start-lang-select" style="padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+          <option value="INGLES">Língua Inglesa (Questões 12 a 16)</option>
+          <option value="ESPANHOL">Língua Espanhola (Questões 17 a 21)</option>
+        </select>
+      </div>
+
+      <button id="btn-start-exam" class="btn" style="width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 700;">
+        ⏱️ Iniciar Prova Oficial Agora
       </button>
-      <button class="view-tab-btn" id="tab-review" onclick="alternarModo('revisao')">
-        🔍 Revisar Questões que Errei
-      </button>
     </div>
 
-    <!-- Área do Modo Oficial -->
-    <div id="section-official">
-      <!-- Barra de Progresso Geral -->
-      <div class="progress-box">
-        <div class="progress-header">
-          <span id="cycle-title">Carregando simulado...</span>
-          <span id="progress-text">0 de 60 respondidas</span>
-        </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="progress-bar"></div>
-        </div>
-      </div>
-<!-- Barra de Progresso Geral -->
-      <div class="progress-box">
-        <div class="progress-header">
-          <span id="cycle-title">Carregando simulado...</span>
-          <span id="progress-text">0 de 60 respondidas</span>
-        </div>
-      </div>
-
-      <!-- Card de Finalização (exibido ao atingir as 60 questões ou se já finalizado) -->
-      <div id="finish-card" class="card" style="display: none; background: #f0fdf4; border: 2px solid #86efac; text-align: center; margin-bottom: 1.5rem; padding: 1.5rem;">
-        <h3 style="color: #166534; margin-bottom: 0.5rem;">🎉 Todas as 60 questões foram respondidas!</h3>
-        <p style="color: #15803d; margin-bottom: 1rem; font-size: 0.95rem;">
-          Suas respostas estão salvas. Clique no botão abaixo para consolidar sua pontuação oficial e registrar sua colocação no ranking.
-        </p>
-        <button id="btn-finish-simulation" class="btn" onclick="finalizarSimulado()" style="background: #16a34a; font-size: 1rem; padding: 0.75rem 2rem; cursor: pointer;">
-          🏁 Finalizar e Enviar Simulado
-        </button>
-      </div>
-      <!-- Filtros de Disciplinas -->
-      <div class="filter-scroll" id="disciplines-filter">
-      <button class="filter-btn active" data-discipline="">Todas as Matérias</button>
-      <button class="filter-btn" data-discipline="Língua Portuguesa">Língua Portuguesa</button>
-      <button class="filter-btn" data-discipline="Língua Estrangeira (Inglês)">Inglês</button>
-      <button class="filter-btn" data-discipline="Língua Estrangeira (Espanhol)">Espanhol</button>
-      <button class="filter-btn" data-discipline="Artes">Artes</button>
-      <button class="filter-btn" data-discipline="Educação Física">Educação Física</button>
-      <button class="filter-btn" data-discipline="História">História</button>
-      <button class="filter-btn" data-discipline="Geografia">Geografia</button>
-      <button class="filter-btn" data-discipline="Filosofia">Filosofia</button>
-      <button class="filter-btn" data-discipline="Sociologia">Sociologia</button>
-      <button class="filter-btn" data-discipline="Física">Física</button>
-      <button class="filter-btn" data-discipline="Química">Química</button>
-      <button class="filter-btn" data-discipline="Biologia">Biologia</button>
-      <button class="filter-btn" data-discipline="Matemática">Matemática</button>
-    </div>
-
-       <!-- Container das 60 Questões -->
-    <div id="questions-container">
-        <div class="card" style="text-align: center; color: var(--text-muted);">
-          Carregando as questões do ciclo...
-        </div>
-      </div>
-    </div>
-   <!-- Área da Revisão Cega (Active Recall) -->
-    <div id="section-review" style="display: none;">
-      <div class="review-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <!-- Tela da Prova em Execução -->
+    <div id="exam-view" style="display: none;">
+      <!-- Barra Superior -->
+      <div class="exam-bar">
         <div>
-          <strong>💡 Modo de Revisão Cega (Active Recall):</strong><br>
-          <span style="font-size: 0.9rem;">Resolva novamente sem spoiler para fixar o conteúdo. Não altera sua nota oficial no ranking.</span>
+          <span style="font-weight: 700; color: #1e293b;" id="exam-title-bar">PAES UEMA - 60 Questões</span>
+          <span style="display: block; font-size: 0.85rem; color: #64748b;" id="exam-progress-text">Questão 1 de 60</span>
         </div>
-        <div style="background: white; border: 1px solid #fde68a; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 700; color: #b45309;" id="review-counter-badge">
-          Carregando erros...
-        </div>
-      </div>
-
-      <!-- Filtros de Disciplinas Exclusivo para as Questões Erradas -->
-      <div class="filter-scroll" id="disciplines-filter">
-      <button class="filter-btn active" data-discipline="">Todas as Matérias</button>
-      <button class="filter-btn" data-discipline="Língua Portuguesa">Língua Portuguesa</button>
-      <button class="filter-btn" data-discipline="Língua Estrangeira (Inglês)">Inglês</button>
-      <button class="filter-btn" data-discipline="Língua Estrangeira (Espanhol)">Espanhol</button>
-      <button class="filter-btn" data-discipline="Artes">Artes</button>
-      <button class="filter-btn" data-discipline="Educação Física">Educação Física</button>
-      <button class="filter-btn" data-discipline="História">História</button>
-      <button class="filter-btn" data-discipline="Geografia">Geografia</button>
-      <button class="filter-btn" data-discipline="Filosofia">Filosofia</button>
-      <button class="filter-btn" data-discipline="Sociologia">Sociologia</button>
-      <button class="filter-btn" data-discipline="Física">Física</button>
-      <button class="filter-btn" data-discipline="Química">Química</button>
-      <button class="filter-btn" data-discipline="Biologia">Biologia</button>
-      <button class="filter-btn" data-discipline="Matemática">Matemática</button>
-    </div>
-
-      <div id="review-container">
-        <div class="card" style="text-align: center; color: var(--text-muted);">
-          Buscando questões para revisão...
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="timer-badge" id="exam-timer">05:00:00</div>
+          <button id="btn-finish-exam-top" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.85rem;">
+            Entregar Prova
+          </button>
         </div>
       </div>
+
+      <div class="exam-container">
+        <!-- Coluna da Questão Atual -->
+        <div>
+          <div class="question-card">
+            <div class="question-meta">
+              <span class="question-meta-tags" id="q-discipline-topic">Língua Portuguesa e Literatura</span>
+              <button id="btn-toggle-flag" class="btn-flag">🚩 Marcar para Revisar</button>
+            </div>
+
+            <div class="question-statement" id="q-statement">
+              Carregando enunciado da questão...
+            </div>
+
+            <div id="options-container"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
+              <button id="btn-prev-q" class="btn btn-secondary" style="padding: 0.5rem 1.25rem;">⬅️ Anterior</button>
+              <button id="btn-next-q" class="btn" style="padding: 0.5rem 1.25rem;">Próxima ➡️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna Lateral: Cartão-Resposta -->
+        <aside>
+          <div class="omr-card">
+            <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">Cartão-Resposta</h4>
+            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem;" id="omr-count">
+              0 de 60 respondidas
+            </div>
+
+            <div class="omr-grid" id="omr-grid"></div>
+
+            <div style="font-size: 0.75rem; color: #64748b; display: flex; flex-direction: column; gap: 0.25rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; margin-top: 0.75rem;">
+              <div>🟦 Respondida</div>
+              <div>⬜ Em branco</div>
+              <div>🚩 Marcada para revisão</div>
+            </div>
+
+            <button id="btn-finish-exam" class="btn" style="width: 100%; margin-top: 1rem; background: var(--accent, #10b981);">
+              ✅ Entregar Simulado
+            </button>
+          </div>
+        </aside>
+      </div>
     </div>
 
+    <!-- Tela de Resultado / Conclusão -->
+    <div id="result-view" class="card" style="display: none; max-width: 800px; margin: 2rem auto; text-align: center; padding: 2.5rem 2rem;">
+      <span style="font-size: 3rem;">🎉</span>
+      <h2 style="color: var(--text-main, #0f172a); margin: 0.5rem 0;">Simulado Concluído com Sucesso!</h2>
+      <p style="color: #64748b; font-size: 1.05rem;">Seu cartão-resposta foi processado de acordo com o gabarito oficial da banca.</p>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; display: inline-block; min-width: 250px;">
+        <div style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Seu Desempenho nas 60 Questões</div>
+        <div style="font-size: 3.2rem; font-weight: 800; color: var(--primary, #2563eb);" id="res-score">0 / 60</div>
+        <div style="font-size: 1.1rem; color: var(--accent, #10b981); font-weight: 700;" id="res-percentage">0% de acertos</div>
+      </div>
+
+      <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem; text-align: left;">
+        <h4 style="margin: 0 0 0.5rem 0; color: #065f46; display: flex; align-items: center; gap: 0.5rem;">
+          🔓 Redação PAES UEMA Desbloqueada!
+        </h4>
+        <p style="margin: 0; color: #047857; font-size: 0.95rem; line-height: 1.6;">
+          Parabéns! Você completou as 60 questões obrigatórias. O módulo de redação do ciclo atual está liberado para você redigir seu texto e receber a correção analítica completa pela inteligência artificial.
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <a href="redacao.html" class="btn" style="padding: 0.75rem 1.75rem; font-size: 1.05rem;">
+          🚀 Ir para a Redação Agora
+        </a>
+        <a href="ranking.html" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
+          Ver Classificação Geral
+        </a>
+      </div>
+    </div>
   </main>
 
   <script src="js/api.js"></script>
