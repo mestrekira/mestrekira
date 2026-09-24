@@ -91,10 +91,11 @@ async function loadSimulation() {
 function atualizarProgresso(answered, total) {
   const progressText = document.getElementById('progress-text');
   const progressBar = document.getElementById('progress-bar');
-  const finishCard = document.getElementById('finish-card');
+  const pendingBtn = document.getElementById('btn-filter-pending');
 
   const acertos = allOfficialQuestions.filter((q) => q.isAnswered && q.isCorrect === true).length;
   const erros = allOfficialQuestions.filter((q) => q.isAnswered && q.isCorrect === false).length;
+  const pendentes = allOfficialQuestions.filter((q) => !q.isAnswered).length;
 
   if (progressText) {
     progressText.innerText = `${answered} de ${total} respondidas (${acertos} acertos • ${erros} erros)`;
@@ -104,33 +105,91 @@ function atualizarProgresso(answered, total) {
     progressBar.style.width = `${percentage}%`;
   }
 
-  // Exibe o card de conclusão se atingiu as 60 questões
-  if (finishCard) {
-    if (answered >= 60 && total > 0) {
-      finishCard.style.display = 'block';
-    } else {
-      finishCard.style.display = 'none';
+  // Atualiza o botão de filtro de questões pendentes
+  if (pendingBtn) {
+    pendingBtn.innerText = `⏳ Faltam Responder (${pendentes})`;
+    pendingBtn.style.display = pendentes > 0 ? 'inline-block' : 'none';
+  }
+
+  // Exibe o painel de opções no topo caso tudo tenha sido concluído
+  atualizarBannerConclusaoTopo(answered, total, acertos, erros);
+}
+
+// Painel no topo para ver ranking ou ir para redação
+function atualizarBannerConclusaoTopo(answered, total, acertos, erros) {
+  let banner = document.getElementById('completion-top-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'completion-top-banner';
+    const container = document.getElementById('questions-container');
+    if (container && container.parentNode) {
+      container.parentNode.insertBefore(banner, container);
     }
+  }
+
+  if (answered >= 60 && total > 0) {
+    banner.style.display = 'block';
+    banner.innerHTML = `
+      <div class="card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #86efac; padding: 1.5rem; text-align: center; margin-bottom: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <h2 style="color: #166534; font-size: 1.35rem; margin-bottom: 0.4rem;">🎉 Simulado Oficial Concluído!</h2>
+        <p style="color: #15803d; font-size: 0.95rem; margin-bottom: 1.25rem;">
+          Você respondeu todas as <strong>60 questões</strong> oficiais da prova.<br>
+          Desempenho: <strong>${acertos} acertos</strong> e <strong>${erros} erros</strong>.
+        </p>
+        <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="ranking.html" class="btn" style="background: #16a34a; font-weight: 700; color: white; text-decoration: none; padding: 0.65rem 1.25rem; border-radius: 8px;">
+            📊 Ver Desempenho e Classificação
+          </a>
+          <a href="redacao.html" class="btn" style="background: #2563eb; font-weight: 700; color: white; text-decoration: none; padding: 0.65rem 1.25rem; border-radius: 8px;">
+            ✍️ Ir para a Redação do PAES UEMA
+          </a>
+          ${erros > 0 ? `
+            <button onclick="alternarModo('revisao')" class="btn btn-secondary" style="font-weight: 600; padding: 0.65rem 1.25rem; border-radius: 8px;">
+              🔍 Revisar Erros (${erros})
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  } else {
+    banner.style.display = 'none';
   }
 }
 
-// Renderiza as questões com filtro instantâneo em memória
-function renderQuestions() {
-  const container = document.getElementById('questions-container');
-  if (!container) return;
-
-  const filtered = activeDiscipline
+// Retorna a lista atual de questões filtradas
+function getFilteredQuestions() {
+  if (activeDiscipline === '__pendentes__') {
+    return allOfficialQuestions.filter((q) => !q.isAnswered);
+  }
+  return activeDiscipline
     ? allOfficialQuestions.filter(
         (q) => q.discipline.trim().toLowerCase() === activeDiscipline.trim().toLowerCase(),
       )
     : allOfficialQuestions;
+}
+
+// Renderiza as questões
+function renderQuestions() {
+  const container = document.getElementById('questions-container');
+  if (!container) return;
+
+  const filtered = getFilteredQuestions();
 
   if (!filtered || filtered.length === 0) {
-    container.innerHTML = `
-      <div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-        Nenhuma questão encontrada para a matéria <strong>${activeDiscipline}</strong>.
-      </div>
-    `;
+    if (activeDiscipline === '__pendentes__') {
+      container.innerHTML = `
+        <div class="card" style="text-align: center; padding: 2.5rem; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0;">
+          <h3>🎉 Nenhuma questão pendente!</h3>
+          <p style="margin-top: 0.5rem; color: #15803d;">Você já respondeu a todas as 60 questões do caderno oficial.</p>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `
+        <div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          Nenhuma questão encontrada para o filtro <strong>${activeDiscipline}</strong>.
+        </div>
+      `;
+    }
     return;
   }
 
@@ -139,7 +198,7 @@ function renderQuestions() {
       (q) => `
     <div class="card" id="card-${q.questionId}">
       <div class="question-header">
-        <span class="badge">Questão ${q.questionOrder} • ${q.discipline}</span>
+        <span class="badge ${q.isAnswered ? 'badge-success' : ''}">Questão ${q.questionOrder} • ${q.discipline}</span>
         <span style="color: var(--text-muted); font-size: 0.85rem;">${q.topic}</span>
       </div>
 
@@ -176,7 +235,7 @@ function renderQuestions() {
 }
 
 // ==========================================
-// 3. Seleção, Gravação e Finalização
+// 3. Seleção, Gravação e Avanço Automático
 // ==========================================
 window.tempSelections = {};
 window.selectOption = (questionId, optionId) => {
@@ -214,7 +273,7 @@ window.submitAnswer = async (questionId) => {
       btn.style.cursor = 'not-allowed';
     }
 
-    // Atualiza na memória
+    // Atualiza o estado da questão na memória local
     const q = allOfficialQuestions.find((item) => item.questionId === questionId);
     if (q) {
       q.isAnswered = true;
@@ -225,11 +284,40 @@ window.submitAnswer = async (questionId) => {
     const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
     atualizarProgresso(answeredCount, allOfficialQuestions.length);
 
-    // Se completou a 60ª questão, rola suavemente até o card de conclusão
-    if (answeredCount >= 60) {
-      const finishCard = document.getElementById('finish-card');
-      if (finishCard) finishCard.scrollIntoView({ behavior: 'smooth' });
-    }
+    // ========================================================
+    // AVANÇO AUTOMÁTICO PARA A PRÓXIMA QUESTÃO PENDENTE
+    // ========================================================
+    setTimeout(() => {
+      // 1. Se completou todas as 60 questões do simulado
+      if (answeredCount >= 60) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // 2. Busca a próxima questão que ainda NÃO foi respondida
+      const currentList = getFilteredQuestions();
+      const currentIdx = currentList.findIndex((item) => item.questionId === questionId);
+      
+      // Tenta achar uma pendente logo após a atual na visão ativa
+      let nextPending = currentList.slice(currentIdx + 1).find((item) => !item.isAnswered);
+      
+      // Se não houver depois, procura desde o início da lista ativa
+      if (!nextPending) {
+        nextPending = currentList.find((item) => !item.isAnswered);
+      }
+
+      if (nextPending) {
+        // Encontrou uma pendente na visão atual: rola até ela
+        const nextCard = document.getElementById(`card-${nextPending.questionId}`);
+        if (nextCard) {
+          nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      } else {
+        // Todas as questões dessa disciplina/filtro foram concluídas! Rola para o topo
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 300);
+
   } catch (error) {
     alert(error.message || 'Falha ao gravar resposta.');
     if (btn) {
@@ -239,19 +327,44 @@ window.submitAnswer = async (questionId) => {
   }
 };
 
-// Como o backend grava em tempo real, finalizar é apenas redirecionar para a classificação
-window.finalizarSimulado = () => {
-  const answeredCount = allOfficialQuestions.filter((item) => item.isAnswered).length;
-  if (answeredCount < 60) {
-    if (!confirm(`Você respondeu ${answeredCount} de 60 questões. Deseja ver a classificação mesmo assim?`)) {
-      return;
+// ==========================================
+// 4. Configuração dos Filtros e Botão "Pendentes"
+// ==========================================
+function setupFilterButtons() {
+  const filterScroll = document.getElementById('disciplines-filter');
+  
+  // Cria dinamicamente o botão de ver apenas pendentes se ainda não existir
+  if (filterScroll && !document.getElementById('btn-filter-pending')) {
+    const btnPending = document.createElement('button');
+    btnPending.id = 'btn-filter-pending';
+    btnPending.className = 'filter-btn';
+    btnPending.setAttribute('data-discipline', '__pendentes__');
+    btnPending.style.cssText = 'background: #fffbeb; border-color: #fde68a; color: #b45309; font-weight: 700;';
+    btnPending.innerText = '⏳ Faltam Responder (60)';
+    
+    // Insere logo ao lado do botão "Todas as 60 Questões"
+    const firstBtn = filterScroll.querySelector('.filter-btn');
+    if (firstBtn && firstBtn.nextSibling) {
+      filterScroll.insertBefore(btnPending, firstBtn.nextSibling);
+    } else {
+      filterScroll.appendChild(btnPending);
     }
   }
-  window.location.href = 'ranking.html';
-};
+
+  const buttons = document.querySelectorAll('#disciplines-filter .filter-btn');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      buttons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeDiscipline = btn.getAttribute('data-discipline') || '';
+      renderQuestions();
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+    });
+  });
+}
 
 // ==========================================
-// 4. Revisão Cega (Active Recall)
+// 5. Revisão Cega (Active Recall)
 // ==========================================
 async function loadErrorReview() {
   const container = document.getElementById('review-container');
@@ -297,7 +410,7 @@ function renderFilteredReview() {
     container.innerHTML = `
       <div class="card" style="text-align: center; padding: 2.5rem;">
         <h3 style="color: var(--accent);">🎉 Nenhuma questão para revisar!</h3>
-        <p style="color: var(--text-muted); margin-top: 0.5rem;">Você não errou nenhuma das questões que respondeu até agora.</p>
+        <p style="color: var(--text-muted); margin-top: 0.5rem;">Você não errou nenhuma questão oficial até o momento.</p>
       </div>
     `;
     return;
@@ -306,7 +419,7 @@ function renderFilteredReview() {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="card" style="text-align: center; padding: 2rem;">
-        <p style="color: var(--text-muted);">Você não tem erros pendentes na matéria <strong>${activeReviewDiscipline}</strong>! Parabéns!</p>
+        <p style="color: var(--text-muted);">Você não tem erros pendentes na matéria <strong>${activeReviewDiscipline}</strong>!</p>
       </div>
     `;
     return;
@@ -413,21 +526,6 @@ window.submitReviewAnswer = async (questionId) => {
     }
   }
 };
-
-// ==========================================
-// 5. Filtros
-// ==========================================
-function setupFilterButtons() {
-  const buttons = document.querySelectorAll('#disciplines-filter .filter-btn');
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      buttons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeDiscipline = btn.getAttribute('data-discipline') || '';
-      renderQuestions();
-    });
-  });
-}
 
 function setupReviewFilters() {
   const buttons = document.querySelectorAll('#review-disciplines-filter .filter-btn');
