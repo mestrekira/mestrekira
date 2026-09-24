@@ -1,145 +1,198 @@
-document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Verificação de autenticação
+let currentEssayHistory = [];
+
+document.addEventListener('DOMContentLoaded', () => {
   if (!window.api || !window.api.getToken()) {
     window.location.href = 'login.html';
     return;
   }
 
-  // 2. Busca os dados atualizados DIRETO do banco de dados (API)
-  try {
-    let user = null;
-
-    // Tenta buscar da rota /users/me do backend
-    try {
-      user = await window.api.get('/users/me');
-      if (user) {
-        // Atualiza o cache local para que outras páginas tenham acesso
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-    } catch (e) {
-      console.warn('[Perfil] Rota /users/me indisponível, usando cache local:', e.message);
-      const userStr = localStorage.getItem('user');
-      user = userStr ? JSON.parse(userStr) : null;
-    }
-
-    // Preenche os campos na tela com os dados reais
-    if (user) {
-      const nameEl = document.getElementById('profile-name');
-      const emailEl = document.getElementById('profile-email');
-      const courseEl = document.getElementById('profile-course');
-      const langEl = document.getElementById('profile-lang');
-      const headerNameEl = document.getElementById('user-name');
-
-      if (nameEl) nameEl.innerText = user.name || 'Estudante';
-      if (emailEl) emailEl.innerText = user.email || 'Não informado';
-      
-      // Suporta targetCourse ou course
-      const cursoEscolhido = user.targetCourse || user.course || user.target_course;
-      if (courseEl) courseEl.innerText = cursoEscolhido || 'Não informado';
-
-      const linguaEscolhida = user.foreignLanguage || user.language;
-      if (langEl) {
-        langEl.innerText = linguaEscolhida === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa';
-      }
-
-      if (headerNameEl && user.name) {
-        headerNameEl.innerText = `👤 ${user.name.split(' ')[0]}`;
-      }
-    }
-  } catch (err) {
-    console.error('[Perfil] Erro ao carregar informações do usuário:', err);
-  }
-
-  // 3. Status de assinatura
-  try {
-    const planStatus = await window.api.get('/payments/status');
-    const badge = document.getElementById('plan-badge');
-    const expiresEl = document.getElementById('profile-expires');
-    const upgradeBox = document.getElementById('upgrade-box');
-
-    if (planStatus && planStatus.isPremium) {
-      if (badge) {
-        badge.className = 'plan-badge plan-premium';
-        badge.innerText = '⭐ PREMIUM ATIVO';
-      }
-      if (upgradeBox) upgradeBox.style.display = 'none';
-
-      if (expiresEl) {
-        if (planStatus.expiresAt) {
-          const d = new Date(planStatus.expiresAt);
-          expiresEl.innerText = `Até ${d.toLocaleDateString('pt-BR')}`;
-        } else {
-          expiresEl.innerText = 'Acesso Ilimitado';
-        }
-      }
-    } else {
-      if (badge) {
-        badge.className = 'plan-badge plan-free';
-        badge.innerText = 'PLANO GRATUITO (BETA)';
-      }
-      if (expiresEl) expiresEl.innerText = 'Acesso Básico';
-      if (upgradeBox) upgradeBox.style.display = 'flex';
-    }
-  } catch (err) {
-    console.warn('[Perfil] Status de pagamento não retornado:', err.message);
-  }
+  loadUserData();
+  loadEssayHistory();
+  setupLanguagePreference();
 });
 
-// ========================================================
-// 4. EXCLUSÃO DEFINITIVA DE CONTA
-// ========================================================
-window.confirmarExclusaoConta = async () => {
-  const primeiraConfirmacao = confirm(
-    'ATENÇÃO! Esta ação é irreversível.\n\n' +
-    'Ao excluir sua conta, todas as suas respostas do simulado, ' +
-    'redações corrigidas pela IA e colocações no ranking serão apagadas definitivamente.\n\n' +
-    'Deseja mesmo prosseguir?'
-  );
-
-  if (!primeiraConfirmacao) return;
-
-  const palavraSeguranca = prompt(
-    'Para confirmar a exclusão definitiva, digite a palavra EXCLUIR em maiúsculas:'
-  );
-
-  if (palavraSeguranca !== 'EXCLUIR') {
-    alert('Confirmação incorreta. O processo foi cancelado.');
-    return;
-  }
-
-  const btn = document.getElementById('btn-delete-account');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerText = '⏳ Excluindo conta no servidor...';
-  }
-
+// Carrega informações cadastrais do Aluno
+function loadUserData() {
   try {
-    // Chamada segura via window.api ou fetch nativo com token
-    if (typeof window.api.delete === 'function') {
-      await window.api.delete('/users/me');
-    } else if (typeof window.api.request === 'function') {
-      try {
-        await window.api.request('/users/me', 'DELETE');
-      } catch (e) {
-        await window.api.request('/users/me', { method: 'DELETE' });
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return;
+    const user = JSON.parse(userStr);
+
+    const name = user.name || user.email?.split('@')[0] || 'Aluno';
+    const email = user.email || '';
+    const isPremium = !!user.isPremium;
+    const language = user.foreignLanguage || localStorage.getItem('foreignLanguage') || 'INGLES';
+
+    // Header
+    const nameHeader = document.getElementById('user-name-header');
+    const avatarHeader = document.getElementById('user-avatar-header');
+    if (nameHeader) nameHeader.innerText = name.split(' ')[0];
+    if (avatarHeader) avatarHeader.innerText = name.charAt(0).toUpperCase();
+
+    // Card Perfil
+    const nameEl = document.getElementById('profile-name');
+    const emailEl = document.getElementById('profile-email');
+    const avatarEl = document.getElementById('profile-avatar');
+    if (nameEl) nameEl.innerText = name;
+    if (emailEl) emailEl.innerText = email;
+    if (avatarEl) avatarEl.innerText = name.charAt(0).toUpperCase();
+
+    // Badges de Plano e Idioma
+    const planBadge = document.getElementById('plan-badge');
+    const planCta = document.getElementById('plan-cta');
+    if (planBadge) {
+      if (isPremium) {
+        planBadge.innerText = '⭐ Assinante Premium';
+        planBadge.style.background = '#dcfce7';
+        planBadge.style.color = '#166534';
+        if (planCta) planCta.style.display = 'none';
+      } else {
+        planBadge.innerText = 'Plano Gratuito';
       }
     }
 
-    alert('Sua conta e todos os dados vinculados foram excluídos com sucesso.');
-
-    // Limpa credenciais locais
-    if (window.api && typeof window.api.logout === 'function') {
-      window.api.logout();
-    } else {
-      localStorage.clear();
-      window.location.href = 'login.html';
+    const langBadge = document.getElementById('lang-badge');
+    const selectLang = document.getElementById('select-language');
+    if (langBadge) {
+      langBadge.innerText = `Opção: ${language === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa'}`;
+    }
+    if (selectLang) {
+      selectLang.value = language;
     }
   } catch (err) {
-    console.error('Falha ao excluir:', err);
-    alert(err.message || 'Erro ao excluir conta. Verifique sua conexão e tente novamente.');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = '🗑️ Excluir Minha Conta Permanentemente';
+    console.error('Erro ao carregar dados do usuário:', err);
+  }
+}
+
+// Configuração da Língua Estrangeira
+function setupLanguagePreference() {
+  const btn = document.getElementById('btn-save-lang');
+  const select = document.getElementById('select-language');
+
+  if (btn && select) {
+    btn.addEventListener('click', async () => {
+      const selected = select.value;
+      localStorage.setItem('foreignLanguage', selected);
+
+      // Tenta atualizar no backend se a rota existir
+      try {
+        if (window.api.patch) {
+          await window.api.patch('/users/me', { foreignLanguage: selected });
+        }
+      } catch (e) {
+        // Silencioso se não houver endpoint exclusivo
+      }
+
+      alert('Preferência de Língua Estrangeira salva com sucesso!');
+      loadUserData();
+    });
+  }
+}
+
+// Carrega histórico e indicadores de Redação do ciclo
+async function loadEssayHistory() {
+  const container = document.getElementById('essays-history-container');
+  const statEssays = document.getElementById('stat-essays');
+  const statBest = document.getElementById('stat-best-essay');
+
+  try {
+    const res = await window.api.get('/essays/cycle-status');
+    if (!res || !res.prompts) {
+      if (container) container.innerHTML = '<p style="color: var(--text-muted);">Nenhuma redação encontrada.</p>';
+      return;
+    }
+
+    const prompts = res.prompts || [];
+    const submitted = prompts.filter((p) => p.isSubmitted);
+    currentEssayHistory = submitted;
+
+    // Atualiza indicadores
+    if (statEssays) statEssays.innerText = `${submitted.length} / 2`;
+
+    let bestScore = 0;
+    submitted.forEach((p) => {
+      const s = Number(p.score || 0);
+      if (s > bestScore) bestScore = s;
+    });
+    if (statBest) statBest.innerText = bestScore > 0 ? `${bestScore.toFixed(2)}` : '0.00';
+
+    if (submitted.length === 0) {
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 1.5rem; background: #f8fafc; border-radius: 8px;">
+            <p style="color: #64748b; margin-bottom: 0.75rem;">Você ainda não enviou redações neste ciclo de 30 dias.</p>
+            <a href="redacao.html" class="btn" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Produzir Primeira Redação</a>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // Renderiza cada redação submetida
+    if (container) {
+      container.innerHTML = submitted
+        .map(
+          (p, idx) => `
+        <div class="history-card">
+          <div>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary, #2563eb); text-transform: uppercase;">
+              Tema ${p.themeNumber}
+            </span>
+            <h4 style="margin: 0.2rem 0; color: #1e293b;">${p.title}</h4>
+            <span style="font-size: 0.85rem; color: #64748b;">Avaliado pela banca inteligente do Gabarita PAES</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="text-align: right;">
+              <span style="font-size: 0.75rem; color: #64748b; display: block;">Nota Final</span>
+              <strong style="font-size: 1.35rem; color: var(--accent, #10b981);">
+                ${Number(p.score || 0).toFixed(2)} / 10.0
+              </strong>
+            </div>
+            <button class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.85rem;" onclick="viewEssayDetails('${p.id}')">
+              Ver Espelho
+            </button>
+          </div>
+        </div>
+      `,
+        )
+        .join('');
+    }
+  } catch (err) {
+    if (container) {
+      container.innerHTML = `<p style="color: #ef4444;">Erro ao carregar histórico de redações: ${err.message}</p>`;
     }
   }
+}
+
+// Modal do Espelho
+window.viewEssayDetails = (promptId) => {
+  const prompt = currentEssayHistory.find((p) => p.id === promptId);
+  if (!prompt) return;
+
+  const modal = document.getElementById('essay-modal');
+  const titleEl = document.getElementById('modal-theme-title');
+  const scoreEl = document.getElementById('modal-score');
+  const bodyEl = document.getElementById('modal-body-feedback');
+
+  if (titleEl) titleEl.innerText = `Tema ${prompt.themeNumber}: ${prompt.title}`;
+  if (scoreEl) scoreEl.innerText = `${Number(prompt.score || 0).toFixed(2)} / 10.0`;
+
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary, #2563eb); margin-bottom: 1rem;">
+        <strong>Avaliação Registrada:</strong><br>
+        Esta nota foi atribuída com base nos 5 critérios analíticos do PAES UEMA (Atendimento ao Tema, Coesão das Partes, Coerência Argumentativa, Atendimento ao Tipo Textual com Título e Norma da Língua Portuguesa).
+      </div>
+      <p style="color: #475569; font-size: 0.9rem;">
+        Para consultar o texto e reenviar ou praticar outras propostas disponíveis no ciclo, acerte seus estudos através da aba <strong>Redação</strong>.
+      </p>
+    `;
+  }
+
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeModal = () => {
+  const modal = document.getElementById('essay-modal');
+  if (modal) modal.style.display = 'none';
 };
