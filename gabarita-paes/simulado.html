@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulado Oficial PAES UEMA | Gabarita PAES</title>
+  <title>Simulado Oficial PAES UEMA (60Q) | Gabarita PAES</title>
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
-    /* Estilos da Prova e Gabarito */
     .exam-container {
       display: grid;
       grid-template-columns: 1fr 320px;
@@ -75,7 +74,6 @@
       font-weight: 600;
     }
 
-    /* Imagens da Questão */
     .question-image-box {
       margin: 1.25rem 0;
       text-align: center;
@@ -93,14 +91,7 @@
       cursor: zoom-in;
       background: #ffffff;
     }
-    .question-image-caption {
-      font-size: 0.85rem;
-      color: #64748b;
-      margin-top: 0.5rem;
-      font-weight: 500;
-    }
 
-    /* Alternativas */
     .option-item {
       display: flex;
       align-items: flex-start;
@@ -136,7 +127,6 @@
       color: white;
     }
 
-    /* Cartão-Resposta Lateral */
     .omr-card {
       background: #ffffff;
       border: 1px solid var(--border, #e2e8f0);
@@ -168,7 +158,7 @@
     .omr-btn.flagged::after { content: '🚩'; position: absolute; top: -3px; right: -3px; font-size: 0.6rem; }
     .omr-btn.current { box-shadow: 0 0 0 2px var(--primary, #2563eb); font-weight: 800; }
 
-    /* Estilos da Revisão e Questões Erradas */
+    /* Revisão */
     .review-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
@@ -192,12 +182,13 @@
     .explanation-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
+      border-left: 4px solid var(--primary, #2563eb);
       border-radius: 6px;
-      padding: 1rem;
+      padding: 1.15rem;
       margin-top: 1rem;
       font-size: 0.95rem;
-      color: #334155;
-      line-height: 1.6;
+      color: #1e293b;
+      line-height: 1.7;
     }
     .study-box {
       background: #eff6ff;
@@ -222,7 +213,7 @@
 </head>
 <body>
 
-  <!-- Cabeçalho -->
+  <!-- Cabeçalho Institucional -->
   <header class="header">
     <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
     <nav class="nav-links">
@@ -241,60 +232,60 @@
   </header>
 
   <main class="container">
-    <!-- Tela 1: Boas-Vindas ou Bloqueio de Prova Já Realizada -->
+    <!-- Tela 1: Boas-Vindas ou Bloqueio -->
     <div id="intro-view" class="card" style="max-width: 800px; margin: 2rem auto; padding: 2rem;">
-      <!-- Alerta Informativo do Ciclo de 21 dias -->
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
         <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary, #2563eb); background: #eff6ff; padding: 0.3rem 0.65rem; border-radius: 9999px;">
           ⏱️ Ciclo de 21 Dias
         </span>
-        <span style="font-size: 0.85rem; color: #64748b;" id="cycle-period-label">
-          Válido até: <strong>30/09/2026</strong>
+        <span style="font-size: 0.85rem; color: #64748b;">
+          Ciclo Atual de Testes: Válido até <strong>30/09/2026</strong>
         </span>
       </div>
 
+      <!-- Formulário de Início -->
       <div id="not-submitted-intro">
         <h2 style="color: var(--primary, #2563eb); margin-top: 0;">Simulado Oficial PAES UEMA (60 Questões)</h2>
         <p style="color: #475569; line-height: 1.7; font-size: 1.05rem;">
-          Este simulado possui regra de <strong>tentativa única</strong> por ciclo. Certifique-se de estar em um ambiente tranquilo antes de iniciar:
+          Este simulado possui regra de <strong>tentativa única</strong> por ciclo:
         </p>
         <ul style="color: #334155; line-height: 1.8; margin: 1rem 0 1.5rem 1.25rem;">
-          <li><strong>60 Questões Objetivas</strong> com gabarito oficial;</li>
-          <li><strong>Duração:</strong> 5 horas de prova contínua;</li>
-          <li><strong>Tentativa Única:</strong> Não é permitido reiniciar ou refazer a prova no mesmo ciclo de 21 dias;</li>
-          <li><strong>Língua Estrangeira:</strong> Questões 12 a 16 (Inglês) ou 17 a 21 (Espanhol).</li>
+          <li><strong>60 Questões Objetivas</strong> padronizadas no modelo da UEMA;</li>
+          <li><strong>5 Horas Contínuas</strong> de aplicação;</li>
+          <li><strong>Língua Estrangeira:</strong> Você responderá exatamente 5 questões conforme seu idioma oficial (<span id="user-selected-lang" style="font-weight: 700; color: var(--primary, #2563eb);">Inglês</span>);</li>
+          <li><strong>Gabarito e Conteúdos:</strong> Ao término, todas as questões erradas apresentarão resolução comentada e links de estudo direcionados.</li>
         </ul>
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-          <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.5rem;">Confirme sua Língua Estrangeira:</label>
+          <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.5rem;">Sua Opção de Língua Estrangeira:</label>
           <select id="start-lang-select" style="padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
-            <option value="INGLES">Língua Inglesa</option>
-            <option value="ESPANHOL">Língua Espanhola</option>
+            <option value="INGLES">Língua Inglesa (5 Questões)</option>
+            <option value="ESPANHOL">Língua Espanhola (5 Questões)</option>
           </select>
         </div>
 
         <button id="btn-start-exam" class="btn" style="width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 700;">
-          ⏱️ Iniciar Simulado Oficial
+          ⏱️ Iniciar Prova Oficial Agora
         </button>
       </div>
 
-      <!-- Exibido apenas se o aluno JÁ tiver realizado o simulado do ciclo -->
+      <!-- Painel de Bloqueio se já realizou o simulado -->
       <div id="already-submitted-intro" style="display: none; text-align: center; padding: 1rem 0;">
         <span style="font-size: 3rem;">📋</span>
         <h2 style="color: #1e293b; margin: 0.5rem 0;">Simulado Já Realizado neste Ciclo</h2>
         <p style="color: #64748b; font-size: 1rem; max-width: 550px; margin: 0 auto 1.5rem auto; line-height: 1.6;">
-          Você já enviou o seu caderno de 60 questões do ciclo atual (válido até 30/09). Para manter a fidedignidade da classificação oficial, é permitida apenas 1 submissão por ciclo.
+          Você já enviou as suas respostas do ciclo de 21 dias (ativo até 30/09). Para manter a classificação oficial fidedigna, cada aluno pode enviar apenas 1 vez por ciclo.
         </p>
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem; display: inline-block; min-width: 280px; margin-bottom: 1.5rem;">
-          <div style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Sua Pontuação Registrada</div>
+          <div style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Seu Desempenho Oficial</div>
           <div style="font-size: 2.8rem; font-weight: 800; color: var(--primary, #2563eb);" id="already-score">0 / 60</div>
           <div style="font-size: 1rem; color: var(--accent, #10b981); font-weight: 700;" id="already-perc">0% de acertos</div>
         </div>
 
         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
           <button id="btn-view-review" class="btn" style="padding: 0.75rem 1.5rem;">
-            📖 Revisar Questões Erradas & Gabarito
+            📖 Revisar Questões Erradas & Gabarito Comentado
           </button>
           <a href="redacao.html" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">
             Ir para a Redação
@@ -350,21 +341,19 @@
       </div>
     </div>
 
-    <!-- Tela 3: Resultado Oficial & Revisão de Erros -->
+    <!-- Tela 3: Resultado Oficial & Revisão -->
     <div id="result-view" style="display: none; max-width: 900px; margin: 2rem auto;">
       <div class="card" style="text-align: center; padding: 2.5rem 2rem; margin-bottom: 1.5rem;">
         <span style="font-size: 3rem;">🎉</span>
-        <h2 style="color: var(--text-main, #0f172a); margin: 0.5rem 0;">Resultado do Simulado Oficial</h2>
+        <h2 style="color: var(--text-main, #0f172a); margin: 0.5rem 0;">Resultado Oficial do Simulado</h2>
         <p style="color: #64748b; font-size: 1rem;">Ciclo de 21 dias (Encerramento em 30/09/2026)</p>
 
-        <!-- Placar de Acertos em Destaque -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin: 1.5rem auto; max-width: 380px;">
           <div style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Total de Acertos nas 60 Questões</div>
           <div style="font-size: 3.4rem; font-weight: 800; color: var(--primary, #2563eb); line-height: 1.1;" id="res-score">0 / 60</div>
           <div style="font-size: 1.15rem; color: var(--accent, #10b981); font-weight: 700; margin-top: 0.35rem;" id="res-percentage">0% de aproveitamento</div>
         </div>
 
-        <!-- Desempenho por Áreas do Conhecimento -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;" id="areas-breakdown"></div>
 
         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
@@ -377,14 +366,13 @@
         </div>
       </div>
 
-      <!-- Seção de Revisão das Questões Erradas -->
+      <!-- Revisão das Questões -->
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
           <div>
-            <h3 style="margin: 0; color: #1e293b;">Revisão Pedagógica das Questões</h3>
-            <p style="margin: 0.2rem 0 0 0; color: #64748b; font-size: 0.85rem;">Analise o gabarito comentado e as recomendações de estudo para os seus pontos cegos</p>
+            <h3 style="margin: 0; color: #1e293b;">Revisão das Questões & Gabarito Comentado</h3>
+            <p style="margin: 0.2rem 0 0 0; color: #64748b; font-size: 0.85rem;">Analise as explicações oficiais da banca e os materiais de estudo recomendados</p>
           </div>
-          <!-- Filtros de Questões -->
           <div style="display: flex; gap: 0.5rem;">
             <button class="btn btn-secondary" id="filter-wrong-btn" onclick="filterReview('WRONG')" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
               ❌ Apenas Erradas (<span id="wrong-count-badge">0</span>)
@@ -395,7 +383,6 @@
           </div>
         </div>
 
-        <!-- Container onde as questões serão listadas -->
         <div id="review-list-container"></div>
       </div>
     </div>
