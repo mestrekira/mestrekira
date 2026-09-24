@@ -18,7 +18,8 @@
       <a href="ranking.html">Classificação</a>
     </nav>
     <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
-      <span id="user-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Aluno</span>
+      <!-- Link direto para a página de perfil -->
+      <a href="perfil.html" id="user-name" style="text-decoration: none; font-weight: 600; font-size: 0.9rem; color: var(--primary);">👤 Aluno</a>
       <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
     </div>
   </header>
@@ -31,7 +32,7 @@
       <div class="carousel-slide slide-1">
         <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 0.5rem;">Vestibular 2027</span>
         <h2>Reta Final PAES UEMA</h2>
-        <p>Prepare-se com as 60 questões oficiais do ciclo e conquiste sua vaga disputando diretamente com candidatos do seu curso.</p>
+        <p>Caderno oficial com as 60 questões do ciclo, avanço automático e filtro de questões pendentes para disputar a vaga no seu curso.</p>
         <a href="simulado.html" class="btn" style="background: white; color: var(--primary);">Entrar no Simulado Oficial →</a>
       </div>
 
@@ -39,7 +40,7 @@
       <div class="carousel-slide slide-2">
         <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 0.5rem;">Tecnologia & Acessibilidade</span>
         <h2>Redação com Correção por IA e Voz</h2>
-        <p>Pratique os 2 temas do mês ditando por voz no navegador e receba nota de 0 a 10 e feedback nos 4 critérios oficiais da UEMA.</p>
+        <p>Pratique propostas baseadas nas obras obrigatórias (Cora Coralina, Graciliano Ramos e Lucy Teixeira) com feedback nos 5 critérios oficiais da UEMA.</p>
         <a href="redacao.html" class="btn" style="background: white; color: #065f46;">Ir para a Redação →</a>
       </div>
 
@@ -47,7 +48,7 @@
       <div class="carousel-slide slide-3">
         <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 0.5rem;">Prática Contínua</span>
         <h2>Treino Livre com o Banco ENEM</h2>
-        <p>Resolva baterias de questões inéditas por disciplina, sem repetição, com diagnósticos de erros e links para o Mestre Kira.</p>
+        <p>Resolva blocos de 10 questões inéditas por disciplina, com avanço automático, resolução comentada e artigos de aprofundamento do Mestre Kira.</p>
         <a href="treino-enem.html" class="btn" style="background: white; color: #4c1d95;">Praticar com o ENEM →</a>
       </div>
 
@@ -73,17 +74,17 @@
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
         <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--primary);">
           <h4 style="margin-bottom: 0.4rem;">1. Simulado Isonômico (60Q)</h4>
-          <p style="font-size: 0.9rem; color: var(--text-muted);">Um caderno oficial mensal de 60 questões fixas. Responda no seu ritmo durante 30 dias.</p>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">Caderno oficial mensal de 60 questões. Responda no seu ritmo com avanço automático e filtro para encontrar questões puladas.</p>
         </div>
 
         <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--accent);">
           <h4 style="margin-bottom: 0.4rem;">2. Desbloqueio da Redação</h4>
-          <p style="font-size: 0.9rem; color: var(--text-muted);">Ao concluir as 60 questões, os 2 temas de redação são liberados para envio com correção imediata por IA.</p>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">Ao concluir as 60 questões, os temas sobre as obras literárias são liberados para envio com correção detalhada nos 5 critérios da UEMA.</p>
         </div>
 
         <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid #d97706);">
           <h4 style="margin-bottom: 0.4rem;">3. Ranqueamento por Curso</h4>
-          <p style="font-size: 0.9rem; color: var(--text-muted);">Sua pontuação final (questões + redação) compete diretamente com quem disputa a mesma vaga que você.</p>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">Sua nota final (questões + redação) concorre diretamente com os estudantes inscritos no mesmo curso que você escolheu.</p>
         </div>
       </div>
     </div>
@@ -97,7 +98,7 @@
           <div class="hub-icon">📝</div>
           <h3>Simulado Oficial PAES UEMA</h3>
           <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
-            O caderno oficial do ciclo de 30 dias com 60 questões e filtros por matéria.
+            O caderno oficial do ciclo com 60 questões, gravação em tempo real e modo de revisão cega dos seus erros.
           </p>
         </div>
         <a href="simulado.html" class="btn" style="width: 100%; justify-content: center;">Acessar Simulado Oficial</a>
@@ -109,7 +110,7 @@
           <div class="hub-icon">🎯</div>
           <h3>Treino Livre (Banco ENEM)</h3>
           <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
-            Baterias de questões ilimitadas, sem repetições, com diagnósticos e links do Mestre Kira.
+            Blocos de 10 questões inéditas por matéria, sem repetições, com diagnósticos de acertos e links do Mestre Kira.
           </p>
         </div>
         <a href="treino-enem.html" class="btn btn-secondary" style="width: 100%; justify-content: center; background: #e0e7ff; color: var(--primary);">Treinar com o ENEM</a>
@@ -121,7 +122,7 @@
           <div class="hub-icon">✍️</div>
           <h3>Laboratório de Redação</h3>
           <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
-            Temas mensais da UEMA, editor com gravação de voz e notas nos 4 critérios da banca.
+            Temas baseados em <em>Infância</em>, <em>Crônicas de Lucy Teixeira</em> e <em>Meu livro de cordel</em> com avaliação em 5 critérios.
           </p>
         </div>
         <a href="redacao.html" class="btn btn-secondary" style="width: 100%; justify-content: center;">Acessar Redações</a>
@@ -131,9 +132,9 @@
       <div class="card hub-card">
         <div>
           <div class="hub-icon">🏆</div>
-          <h3>Classificação no Curso</h3>
+          <h3>Classificação Oficial</h3>
           <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
-            Veja sua colocação na disputa pelo seu curso pretendido da UEMA.
+            Acompanhe o ranking geral da prova e sua colocação específica na concorrência pelo seu curso na UEMA.
           </p>
         </div>
         <a href="ranking.html" class="btn btn-secondary" style="width: 100%; justify-content: center;">Ver Classificação</a>
@@ -145,27 +146,31 @@
 
   <script src="js/api.js"></script>
   <script>
-    // 1. Proteção de Rota e Exibição de Nome
     document.addEventListener('DOMContentLoaded', () => {
-      if (!window.api.getToken()) {
+      // 1. Verificação de autenticação
+      if (!window.api || !window.api.getToken()) {
         window.location.href = 'login.html';
         return;
       }
 
+      // 2. Carrega nome do usuário para o menu
       try {
         const userStr = localStorage.getItem('user');
         if (userStr) {
           const user = JSON.parse(userStr);
           if (user?.name) {
-            document.getElementById('user-name').innerText = `👤 ${user.name.split(' ')[0]}`;
+            const userEl = document.getElementById('user-name');
+            if (userEl) userEl.innerText = `👤 ${user.name.split(' ')[0]}`;
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error(e);
+      }
 
       iniciarCarrossel();
     });
 
-    // 2. Lógica do Carrossel Automático
+    // 3. Lógica do Carrossel Automático
     let currentSlide = 0;
     const totalSlides = 3;
     let slideTimer;
@@ -173,6 +178,7 @@
     function atualizarCarrossel() {
       const slides = document.getElementById('carousel-slides');
       const dots = document.querySelectorAll('.dot');
+      if (!slides) return;
 
       slides.style.transform = `translateX(-${currentSlide * (100 / totalSlides)}%)`;
 
