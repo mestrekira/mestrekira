@@ -192,6 +192,36 @@
       box-shadow: 0 0 0 2px var(--primary, #2563eb);
       font-weight: 800;
     }
+
+    /* Imagens e Figuras da Questão */
+    .question-image-box {
+      margin: 1.25rem 0;
+      text-align: center;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.85rem;
+    }
+    .question-image {
+      max-width: 100%;
+      height: auto;
+      max-height: 440px;
+      border-radius: 6px;
+      object-fit: contain;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      cursor: zoom-in;
+      transition: transform 0.2s ease;
+      background: #ffffff;
+    }
+    .question-image:hover {
+      transform: scale(1.01);
+    }
+    .question-image-caption {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
