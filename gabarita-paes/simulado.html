@@ -331,7 +331,7 @@
           <div>
             <strong style="color: #92400e; font-size: 0.95rem; display: block;">Você já realizou o Simulado Oficial Completo deste ciclo.</strong>
             <p style="color: #b45309; font-size: 0.85rem; margin: 0.25rem 0 0.75rem 0;">
-              Sua nota oficial está registrada. Para continuar estudando, você pode <strong>revisar seu gabarito</strong> ou praticar no <strong>Modo Treino por Disciplina</strong> acima!
+              Sua nota oficial está registrada. Para continuar estudando, você pode <strong>revisar seu gabarito</strong> ou praticar no <strong>Modo Treino por Disciplina</strong> abaixo!
             </p>
             <button id="btn-view-review" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
               📖 Consultar Gabarito Comentado Oficial
@@ -351,7 +351,7 @@
           </select>
         </div>
 
-        <!-- Seletor de Disciplinas (Visível apenas no Modo Treino) -->
+        <!-- Seletor com Todas as 11 Disciplinas Oficiais da UEMA -->
         <div id="practice-discipline-box" style="display: none; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
           <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.5rem;">Selecione a(s) disciplina(s) para treino:</label>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem;" id="disciplines-checkbox-grid">
@@ -362,7 +362,10 @@
             <label><input type="checkbox" name="disc-filter" value="químic" checked> Química</label>
             <label><input type="checkbox" name="disc-filter" value="histór" checked> História</label>
             <label><input type="checkbox" name="disc-filter" value="geograf" checked> Geografia</label>
-            <label><input type="checkbox" name="disc-filter" value="estrangeira" checked> Língua Estrangeira</label>
+            <label><input type="checkbox" name="disc-filter" value="filosof" checked> Filosofia</label>
+            <label><input type="checkbox" name="disc-filter" value="sociolog" checked> Sociologia</label>
+            <label><input type="checkbox" name="disc-filter" value="arte" checked> Artes</label>
+            <label><input type="checkbox" name="disc-filter" value="estrangeira" checked> Língua Estrangeira (Oficial)</label>
           </div>
         </div>
       </div>
@@ -434,7 +437,7 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;" id="areas-breakdown"></div>
 
-        <!-- Botão Inteligente com IA Gemini -->
+        <!-- Botão com IA Gemini -->
         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; text-align: left;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
