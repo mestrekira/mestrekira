@@ -8,7 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadUserData();
   loadEssayHistory();
+  loadSimulationHistory();
   setupLanguagePreference();
+  setupDeleteAccountListener();
 });
 
 // Carrega informações cadastrais do Aluno
@@ -74,14 +76,11 @@ function setupLanguagePreference() {
       const selected = select.value;
       localStorage.setItem('foreignLanguage', selected);
 
-      // Tenta atualizar no backend se a rota existir
       try {
         if (window.api.patch) {
           await window.api.patch('/users/me', { foreignLanguage: selected });
         }
-      } catch (e) {
-        // Silencioso se não houver endpoint exclusivo
-      }
+      } catch (e) {}
 
       alert('Preferência de Língua Estrangeira salva com sucesso!');
       loadUserData();
@@ -98,7 +97,7 @@ async function loadEssayHistory() {
   try {
     const res = await window.api.get('/essays/cycle-status');
     if (!res || !res.prompts) {
-      if (container) container.innerHTML = '<p style="color: var(--text-muted);">Nenhuma redação encontrada.</p>';
+      if (container) container.innerHTML = '<p style="color: var(--text-muted, #64748b);">Nenhuma redação encontrada.</p>';
       return;
     }
 
@@ -106,7 +105,6 @@ async function loadEssayHistory() {
     const submitted = prompts.filter((p) => p.isSubmitted);
     currentEssayHistory = submitted;
 
-    // Atualiza indicadores
     if (statEssays) statEssays.innerText = `${submitted.length} / 2`;
 
     let bestScore = 0;
@@ -120,7 +118,7 @@ async function loadEssayHistory() {
       if (container) {
         container.innerHTML = `
           <div style="text-align: center; padding: 1.5rem; background: #f8fafc; border-radius: 8px;">
-            <p style="color: #64748b; margin-bottom: 0.75rem;">Você ainda não enviou redações neste ciclo de 30 dias.</p>
+            <p style="color: #64748b; margin-bottom: 0.75rem;">Você ainda não enviou redações neste ciclo.</p>
             <a href="redacao.html" class="btn" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Produzir Primeira Redação</a>
           </div>
         `;
@@ -128,18 +126,17 @@ async function loadEssayHistory() {
       return;
     }
 
-    // Renderiza cada redação submetida
     if (container) {
       container.innerHTML = submitted
         .map(
-          (p, idx) => `
+          (p) => `
         <div class="history-card">
           <div>
             <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary, #2563eb); text-transform: uppercase;">
               Tema ${p.themeNumber}
             </span>
             <h4 style="margin: 0.2rem 0; color: #1e293b;">${p.title}</h4>
-            <span style="font-size: 0.85rem; color: #64748b;">Avaliado pela banca inteligente do Gabarita PAES</span>
+            <span style="font-size: 0.85rem; color: #64748b;">Avaliado nos 5 critérios da UEMA</span>
           </div>
           <div style="display: flex; align-items: center; gap: 1rem;">
             <div style="text-align: right;">
@@ -164,6 +161,122 @@ async function loadEssayHistory() {
   }
 }
 
+// Carrega histórico e indicadores de Simulado
+async function loadSimulationHistory() {
+  const container = document.getElementById('simulations-history-container');
+  const statSimulations = document.getElementById('stat-simulations');
+  const statBestSim = document.getElementById('stat-best-sim');
+
+  const cycleCode = '2026-TESTE-21D';
+  let simData = null;
+
+  // Tenta recuperar do localStorage ou do backend
+  const localSaved = localStorage.getItem(`sim_submission_${cycleCode}`);
+  if (localSaved) {
+    try {
+      simData = JSON.parse(localSaved);
+    } catch (e) {}
+  }
+
+  if (!simData) {
+    try {
+      const res = await window.api.get(`/simulations/my-status?cycle=${cycleCode}`);
+      if (res && res.submitted) simData = res;
+    } catch (e) {}
+  }
+
+  if (simData && (simData.score !== undefined || simData.submitted)) {
+    const score = Number(simData.score || 0);
+    const total = Number(simData.totalQuestions || 60);
+    const perc = Math.round((score / total) * 100);
+
+    if (statSimulations) statSimulations.innerText = '1';
+    if (statBestSim) statBestSim.innerText = `${perc}%`;
+
+    if (container) {
+      container.innerHTML = `
+        <div class="history-card">
+          <div>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary, #2563eb); text-transform: uppercase;">
+              Simulado Oficial PAES UEMA (Ciclo 21 Dias)
+            </span>
+            <h4 style="margin: 0.2rem 0; color: #1e293b;">Tentativa Concluída</h4>
+            <span style="font-size: 0.85rem; color: #64748b;">Validade do ciclo: até 30/09/2026</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="text-align: right;">
+              <span style="font-size: 0.75rem; color: #64748b; display: block;">Pontuação</span>
+              <strong style="font-size: 1.35rem; color: var(--primary, #2563eb);">
+                ${score} / ${total}
+              </strong>
+            </div>
+            <a href="simulado.html" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.85rem; text-decoration: none;">
+              Revisar Gabarito
+            </a>
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    if (statSimulations) statSimulations.innerText = '0';
+    if (statBestSim) statBestSim.innerText = '--%';
+    if (container) {
+      container.innerHTML = '<p style="color: var(--text-muted, #64748b); font-size: 0.95rem;">Nenhum simulado finalizado neste ciclo.</p>';
+    }
+  }
+}
+
+// Exclusão Segura de Conta (Frontend + Backend)
+function setupDeleteAccountListener() {
+  const btnDelete = document.getElementById('btn-delete-account');
+  if (!btnDelete) return;
+
+  btnDelete.addEventListener('click', async () => {
+    const firstConfirm = confirm(
+      '⚠️ ATENÇÃO: Esta ação é definitiva e irreversível!\n\n' +
+      'Ao confirmar, sua conta, dados cadastrais, notas de simulados e espelhos de redação serão totalmente excluídos do banco de dados.\n\n' +
+      'Deseja prosseguir?'
+    );
+    if (!firstConfirm) return;
+
+    const secondConfirm = prompt('Para confirmar a exclusão permanente da sua conta, digite exatamente a palavra EXCLUIR:');
+    if (secondConfirm !== 'EXCLUIR') {
+      alert('Operação cancelada. A palavra digitada não confere.');
+      return;
+    }
+
+    btnDelete.disabled = true;
+    btnDelete.innerText = 'Excluindo conta do sistema...';
+
+    try {
+      // Dispara a requisição DELETE para o backend NestJS
+      const token = window.api.getToken ? window.api.getToken() : localStorage.getItem('token');
+      const response = await fetch(`${window.api.BASE_URL || 'https://mestrekira-api.onrender.com'}/users/me`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erro HTTP ${response.status}`);
+      }
+
+      // Limpa os dados de sessão apenas se o banco de dados confirmar a deleção
+      localStorage.clear();
+      alert('Sua conta e todos os registros foram excluídos com sucesso.');
+      window.location.href = 'login.html';
+    } catch (err) {
+      console.error('Falha ao excluir conta:', err);
+      alert('Não foi possível excluir a conta: ' + (err.message || 'Erro de conexão com o servidor.'));
+      btnDelete.disabled = false;
+      btnDelete.innerText = '🗑️ Excluir Minha Conta Permanentemente';
+    }
+  });
+}
+
 // Modal do Espelho
 window.viewEssayDetails = (promptId) => {
   const prompt = currentEssayHistory.find((p) => p.id === promptId);
@@ -184,7 +297,7 @@ window.viewEssayDetails = (promptId) => {
         Esta nota foi atribuída com base nos 5 critérios analíticos do PAES UEMA (Atendimento ao Tema, Coesão das Partes, Coerência Argumentativa, Atendimento ao Tipo Textual com Título e Norma da Língua Portuguesa).
       </div>
       <p style="color: #475569; font-size: 0.9rem;">
-        Para consultar o texto e reenviar ou praticar outras propostas disponíveis no ciclo, acerte seus estudos através da aba <strong>Redação</strong>.
+        Para consultar o texto e reenviar ou praticar outras propostas disponíveis no ciclo, acesse a aba <strong>Redação</strong>.
       </p>
     `;
   }
