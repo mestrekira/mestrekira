@@ -6,7 +6,6 @@
   <title>Meu Perfil | Gabarita PAES</title>
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
-  
     .profile-header-card {
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
       color: #ffffff;
@@ -190,7 +189,7 @@
     </div>
 
     <!-- Histórico de Simulados -->
-    <div class="card">
+    <div class="card" style="margin-bottom: 1.5rem;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3 style="margin: 0; color: var(--text-main, #1e293b);">Histórico de Simulados Realizados</h3>
         <a href="simulado.html" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">Fazer Simulado</a>
@@ -198,6 +197,17 @@
       <div id="simulations-history-container">
         <p style="color: var(--text-muted, #64748b); font-size: 0.95rem;">Nenhum simulado finalizado neste ciclo.</p>
       </div>
+    </div>
+
+    <!-- Zona de Perigo: Exclusão de Conta -->
+    <div class="card" style="border: 1px solid #fecaca; background: #fffaf0;">
+      <h3 style="margin-top: 0; color: #b91c1c;">⚠️ Zona de Perigo</h3>
+      <p style="color: #64748b; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem;">
+        A exclusão da conta é permanente e irreversível. Todos os seus dados cadastrais, notas de simulados oficiais e espelhos de redação serão apagados do sistema e você não poderá mais fazer login com este e-mail.
+      </p>
+      <button id="btn-delete-account" class="btn" style="background: #dc2626; color: white; padding: 0.55rem 1.25rem; font-size: 0.9rem; font-weight: 600;">
+        🗑️ Excluir Minha Conta Permanentemente
+      </button>
     </div>
   </main>
 
