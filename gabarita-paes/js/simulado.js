@@ -247,9 +247,10 @@ async function startExam() {
     }
 
     const attempt = await window.api.post('/simulations/attempts', {
-      cycleCode: CURRENT_CYCLE.cycleCode,
-      resolutionMode: examMode,
-    });
+  cycleCode: CURRENT_CYCLE.cycleCode,
+  mode: 'OFFICIAL',
+  resolutionMode: examMode,
+});
     activeAttemptId = attempt.attemptId;
     const eligible = new Set(attempt.questionIds);
     activeQuestions = activeQuestions.filter((q) => eligible.has(q.id));
