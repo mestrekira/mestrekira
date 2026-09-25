@@ -1,6 +1,7 @@
 const API_BASE = 'https://mestrekira-api.onrender.com';
 
 window.api = {
+  BASE_URL: API_BASE,
   getToken() {
     return localStorage.getItem('token');
   },
@@ -52,6 +53,10 @@ window.api = {
 
   get(endpoint) {
     return this.request(endpoint, { method: 'GET' });
+  },
+
+  patch(endpoint, body) {
+    return this.request(endpoint, { method: 'PATCH', body: JSON.stringify(body) });
   },
 
   post(endpoint, body) {

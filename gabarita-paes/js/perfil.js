@@ -74,15 +74,16 @@ function setupLanguagePreference() {
   if (btn && select) {
     btn.addEventListener('click', async () => {
       const selected = select.value;
-      localStorage.setItem('foreignLanguage', selected);
-
       try {
-        if (window.api.patch) {
-          await window.api.patch('/users/me', { foreignLanguage: selected });
-        }
-      } catch (e) {}
-
-      alert('Preferência de Língua Estrangeira salva com sucesso!');
+        const updated = await window.api.patch('/users/me', { foreignLanguage: selected });
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        localStorage.setItem('user', JSON.stringify({ ...user, ...updated, foreignLanguage: selected }));
+        localStorage.setItem('foreignLanguage', selected);
+        alert('Preferência de Língua Estrangeira salva com sucesso!');
+      } catch (e) {
+        alert(e.message || 'Não foi possível salvar a preferência.');
+        return;
+      }
       loadUserData();
     });
   }
@@ -167,22 +168,12 @@ async function loadSimulationHistory() {
   const statSimulations = document.getElementById('stat-simulations');
   const statBestSim = document.getElementById('stat-best-sim');
 
-  const cycleCode = '2026-TESTE-21D';
   let simData = null;
-
-  // Tenta recuperar do localStorage ou do backend
-  const localSaved = localStorage.getItem(`sim_submission_${cycleCode}`);
-  if (localSaved) {
-    try {
-      simData = JSON.parse(localSaved);
-    } catch (e) {}
-  }
-
-  if (!simData) {
-    try {
-      const res = await window.api.get(`/simulations/my-status?cycle=${cycleCode}`);
-      if (res && res.submitted) simData = res;
-    } catch (e) {}
+  try {
+    const res = await window.api.get('/simulations/my-status');
+    if (res && res.submitted) simData = res;
+  } catch (e) {
+    console.error('Não foi possível consultar o simulado:', e);
   }
 
   if (simData && (simData.score !== undefined || simData.submitted)) {
@@ -198,10 +189,10 @@ async function loadSimulationHistory() {
         <div class="history-card">
           <div>
             <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary, #2563eb); text-transform: uppercase;">
-              Simulado Oficial PAES UEMA (Ciclo 21 Dias)
+              Simulado Oficial PAES UEMA
             </span>
             <h4 style="margin: 0.2rem 0; color: #1e293b;">Tentativa Concluída</h4>
-            <span style="font-size: 0.85rem; color: #64748b;">Validade do ciclo: até 30/09/2026</span>
+            <span style="font-size: 0.85rem; color: #64748b;">Ciclo: ${simData.cycleCode}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 1rem;">
             <div style="text-align: right;">

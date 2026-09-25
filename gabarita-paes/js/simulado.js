@@ -1,15 +1,13 @@
 // ================= CONFIGURAÇÃO DO CICLO E ACESSO =================
 const SYSTEM_CONFIG = {
   isTestMode: true, // Em fase de testes: liberado para todos. Mude para false em produção para exigir plano Premium!
-  geminiApiKey: '', // Insira sua chave Gemini API aqui ou defina no localStorage ('GEMINI_API_KEY')
 };
 
 const CURRENT_CYCLE = {
-  cycleCode: '2026-TESTE-21D',
+  cycleCode: '',
   title: 'Simulado Oficial PAES UEMA (Ciclo 21 Dias)',
-  startDate: '2026-09-09T00:00:00Z',
-  endDate: '2026-09-30T23:59:59Z',
-  durationDays: 21,
+  startDate: null,
+  endDate: null,
 };
 
 let allQuestions = [];
@@ -101,14 +99,28 @@ window.setExamMode = (mode) => {
   }
 };
 
+function updateCycleDate() {
+  const date = CURRENT_CYCLE.endDate
+    ? new Date(CURRENT_CYCLE.endDate).toLocaleDateString('pt-BR') : '';
+  const label = date ? `Ciclo ${CURRENT_CYCLE.cycleCode} • até ${date}` : `Ciclo ${CURRENT_CYCLE.cycleCode}`;
+  const intro = document.getElementById('cycle-date');
+  const result = document.getElementById('result-subtitle');
+  if (intro) intro.textContent = label;
+  if (result) result.textContent = label;
+}
+
 // Verificação de Tentativa Única no Ciclo (para a Prova Completa)
 async function checkCycleSubmissionStatus() {
-  const localSaved = localStorage.getItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`);
-  let isSubmitted = !!localSaved;
-  let savedData = localSaved ? JSON.parse(localSaved) : null;
+  let isSubmitted = false;
+  let savedData = null;
 
   try {
-    const res = await window.api.get(`/simulations/my-status?cycle=${CURRENT_CYCLE.cycleCode}`);
+    const res = await window.api.get('/simulations/my-status');
+    if (res) {
+      CURRENT_CYCLE.cycleCode = res.cycleCode;
+      CURRENT_CYCLE.endDate = res.endDate;
+      updateCycleDate();
+    }
     if (res && res.submitted) {
       isSubmitted = true;
       savedData = res;
@@ -128,7 +140,9 @@ async function checkCycleSubmissionStatus() {
 
     document.getElementById('btn-view-review')?.addEventListener('click', async () => {
       await ensureQuestionsLoaded();
-      openReviewFromSaved(savedData);
+      const review = await window.api.get(`/simulations/review?cycle=${encodeURIComponent(savedData.cycleCode)}`);
+      const userAnswers = Object.fromEntries(review.questions.map((q) => [q.id, q.selectedLetter]));
+      openReviewFromSaved({ ...savedData, questions: review.questions, areas: review.areas, userAnswers });
     });
   }
 }
@@ -147,32 +161,32 @@ function setupEventListeners() {
 async function ensureQuestionsLoaded() {
   if (allQuestions.length > 0) return;
 
-  try {
-    const jsonRes = await fetch('dados-simulado-uema-65q.json');
-    if (jsonRes.ok) {
-      const data = await jsonRes.json();
-      allQuestions = data.questions || [];
-    }
-  } catch (e) {}
-
-  if (allQuestions.length === 0) {
-    try {
-      const res = await window.api.get('/simulations/current');
-      if (res && res.questions) allQuestions = res.questions;
-    } catch (e) {}
+  const res = await window.api.get('/simulations/current');
+  if (!res || !Array.isArray(res.questions) || !res.questions.length) {
+    throw new Error('O caderno de questões não está disponível.');
   }
+  CURRENT_CYCLE.cycleCode = res.cycleCode;
+  CURRENT_CYCLE.title = res.title;
+  CURRENT_CYCLE.endDate = res.endDate;
+  updateCycleDate();
+  allQuestions = res.questions;
+
 }
 
 // Início do Simulado / Treino
 async function startExam() {
   const langSelect = document.getElementById('start-lang-select');
   if (langSelect) selectedLanguage = normalizeLanguage(langSelect.value);
-  localStorage.setItem('foreignLanguage', selectedLanguage);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (selectedLanguage !== normalizeLanguage(user.foreignLanguage)) {
+    alert('Altere a língua estrangeira no seu perfil antes de iniciar o simulado.');
+    return;
+  }
 
   if (examMode === 'FULL') {
-    const localSaved = localStorage.getItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`);
-    if (localSaved) {
-      alert('Você já realizou o Simulado Oficial Completo neste ciclo de 21 dias.\nUtilize a opção de Treino por Disciplina para praticar!');
+    const status = await window.api.get('/simulations/my-status');
+    if (status.submitted) {
+      alert('Você já realizou o Simulado Oficial Completo neste ciclo.\nUtilize a opção de Treino por Disciplina para praticar!');
       setExamMode('PRACTICE');
       return;
     }
@@ -470,88 +484,53 @@ function confirmFinishExam() {
 async function finishExam() {
   if (timerInterval) clearInterval(timerInterval);
 
-  let correctCount = 0;
-  const areas = {
-    'Linguagens': { correct: 0, total: 0 },
-    'Ciências Humanas': { correct: 0, total: 0 },
-    'Ciências da Natureza': { correct: 0, total: 0 },
-    'Matemática': { correct: 0, total: 0 },
-  };
-
-  activeQuestions.forEach((q, idx) => {
-    const qKey = q.id || q.order || idx;
-    const userChoice = userAnswers[qKey];
-
-    let correctLetter = 'A';
-    if (q.options && Array.isArray(q.options)) {
-      const correctOpt = q.options.find((o) => o.isCorrect);
-      if (correctOpt) correctLetter = correctOpt.letter;
-    } else if (q.correctAnswer) {
-      correctLetter = q.correctAnswer;
-    }
-    q.officialAnswer = correctLetter;
-
-    const isCorrect = userChoice === correctLetter;
-    if (isCorrect) correctCount++;
-
-    const disc = (q.discipline || '').toLowerCase();
-    let areaKey = 'Ciências Humanas';
-
-    // Agrupamento oficial das 11 matérias da UEMA por área de conhecimento
-    if (
-      disc.includes('portug') ||
-      disc.includes('literat') ||
-      disc.includes('estrangeira') ||
-      disc.includes('ingl') ||
-      disc.includes('espanh') ||
-      disc.includes('arte')
-    ) {
-      areaKey = 'Linguagens';
-    } else if (disc.includes('físic') || disc.includes('químic') || disc.includes('biolog')) {
-      areaKey = 'Ciências da Natureza';
-    } else if (disc.includes('matemát')) {
-      areaKey = 'Matemática';
-    } else if (
-      disc.includes('histór') ||
-      disc.includes('geograf') ||
-      disc.includes('filosof') ||
-      disc.includes('sociolog')
-    ) {
-      areaKey = 'Ciências Humanas';
-    }
-
-    if (areas[areaKey]) {
-      areas[areaKey].total++;
-      if (isCorrect) areas[areaKey].correct++;
-    }
-  });
-
-  const submissionData = {
-    cycleCode: CURRENT_CYCLE.cycleCode,
-    isOfficial: examMode === 'FULL',
-    submittedAt: new Date().toISOString(),
-    score: correctCount,
-    totalQuestions: activeQuestions.length,
-    userAnswers,
-    areas,
-    questions: activeQuestions,
-  };
-
   if (examMode === 'FULL') {
-    localStorage.setItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`, JSON.stringify(submissionData));
-
     try {
-      await window.api.post('/simulations/submit', {
+      const result = await window.api.post('/simulations/submit', {
         cycleCode: CURRENT_CYCLE.cycleCode,
         answers: userAnswers,
-        score: correctCount,
-        totalQuestions: activeQuestions.length,
-        areas,
       });
-    } catch (e) {}
+      const review = await window.api.get(`/simulations/review?cycle=${encodeURIComponent(CURRENT_CYCLE.cycleCode)}`);
+      const submissionData = {
+        cycleCode: CURRENT_CYCLE.cycleCode,
+        isOfficial: true,
+        score: result.score,
+        totalQuestions: result.totalQuestions,
+        userAnswers,
+        questions: review.questions,
+        areas: review.areas,
+      };
+      localStorage.setItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`, JSON.stringify(submissionData));
+      displayResult(submissionData);
+    } catch (error) {
+      alert(error.message || 'Não foi possível entregar o simulado. Suas respostas continuam nesta página.');
+    }
+    return;
   }
+  try {
+    const grade = await window.api.post('/simulations/practice/grade', {
+      cycleCode: CURRENT_CYCLE.cycleCode, answers: userAnswers,
+    });
+    const byId = new Map(grade.questions.map((q) => [q.id, q]));
+    const questions = activeQuestions.map((q) => ({
+      ...q,
+      officialAnswer: byId.get(q.id)?.officialAnswer || null,
+      explanation: byId.get(q.id)?.explanation || q.explanation,
+    }));
+    const submissionData = {
+      isOfficial: false,
+      score: grade.score,
+      totalQuestions: grade.totalQuestions,
+      userAnswers,
+      questions,
+      areas: {},
+    };
+    displayResult(submissionData);
+  } catch (error) {
+    alert(error.message || 'Não foi possível corrigir o treino.');
+  }
+  return;
 
-  displayResult(submissionData);
 }
 
 function displayResult(data) {
@@ -620,7 +599,7 @@ function renderReviewList(data) {
       const opt = q.options.find((o) => o.isCorrect);
       if (opt) correctChoice = opt.letter;
     }
-    if (!correctChoice) correctChoice = q.correctAnswer || 'A';
+    if (!correctChoice) correctChoice = q.correctAnswer || '—';
 
     const isCorrect = userChoice === correctChoice;
     if (!isCorrect) wrongCount++;
@@ -865,7 +844,7 @@ async function generateAiStudyPlan() {
     return;
   }
 
-  const apiKey = SYSTEM_CONFIG.geminiApiKey || localStorage.getItem('GEMINI_API_KEY');
+  const apiKey = ''; // Chaves de API não devem ser armazenadas no navegador.
 
   if (btn) {
     btn.disabled = true;
