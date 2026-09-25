@@ -119,7 +119,6 @@ async function checkCycleSubmissionStatus() {
     const warnBox = document.getElementById('already-submitted-warning');
     if (warnBox) warnBox.style.display = 'block';
 
-    // Desabilita o card de prova completa e ativa o modo treino por padrão
     const fullCard = document.getElementById('card-mode-full');
     if (fullCard) {
       fullCard.style.opacity = '0.6';
@@ -170,7 +169,6 @@ async function startExam() {
   if (langSelect) selectedLanguage = normalizeLanguage(langSelect.value);
   localStorage.setItem('foreignLanguage', selectedLanguage);
 
-  // Se escolheu Modo Completo, valida se já não enviou antes
   if (examMode === 'FULL') {
     const localSaved = localStorage.getItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`);
     if (localSaved) {
@@ -241,7 +239,7 @@ function filterFullExamQuestions() {
   });
 }
 
-// Filtro do Modo Treino Seletivo
+// Filtro do Modo Treino Seletivo (com todas as 11 disciplinas)
 function filterPracticeQuestions() {
   const checkboxes = document.querySelectorAll('input[name="disc-filter"]:checked');
   const selectedDiscs = Array.from(checkboxes).map((c) => c.value.toLowerCase());
@@ -463,7 +461,6 @@ function confirmFinishExam() {
     }
   }
 
-  // Se todas estão preenchidas
   if (confirm(`Deseja entregar o simulado com todas as ${total} questões respondidas?`)) {
     finishExam();
   }
@@ -499,12 +496,28 @@ async function finishExam() {
 
     const disc = (q.discipline || '').toLowerCase();
     let areaKey = 'Ciências Humanas';
-    if (disc.includes('portug') || disc.includes('literat') || disc.includes('estrangeira') || disc.includes('ingl') || disc.includes('espanh')) {
+
+    // Agrupamento oficial das 11 matérias da UEMA por área de conhecimento
+    if (
+      disc.includes('portug') ||
+      disc.includes('literat') ||
+      disc.includes('estrangeira') ||
+      disc.includes('ingl') ||
+      disc.includes('espanh') ||
+      disc.includes('arte')
+    ) {
       areaKey = 'Linguagens';
     } else if (disc.includes('físic') || disc.includes('químic') || disc.includes('biolog')) {
       areaKey = 'Ciências da Natureza';
     } else if (disc.includes('matemát')) {
       areaKey = 'Matemática';
+    } else if (
+      disc.includes('histór') ||
+      disc.includes('geograf') ||
+      disc.includes('filosof') ||
+      disc.includes('sociolog')
+    ) {
+      areaKey = 'Ciências Humanas';
     }
 
     if (areas[areaKey]) {
@@ -524,7 +537,6 @@ async function finishExam() {
     questions: activeQuestions,
   };
 
-  // Salva no ciclo oficial apenas se foi o modo completo
   if (examMode === 'FULL') {
     localStorage.setItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`, JSON.stringify(submissionData));
 
@@ -641,8 +653,6 @@ function renderReviewList(data) {
       const statusTitle = item.isCorrect ? '✅ Questão Correta' : '❌ Questão Incorreta';
 
       const recommendations = getTargetedRecommendations(q);
-
-      // Leitura da explicação suportando explanation e a tag explanacion do JSON
       const explanationText = q.explanation || q.explanacion || 'Resolução comentada oficial da banca PAES UEMA.';
 
       return `
@@ -677,7 +687,7 @@ function renderReviewList(data) {
           ` : ''}
         </div>
 
-        <!-- Explicação do JSON (explanation / explanacion) -->
+        <!-- Explicação Oficial (explanation / explanacion) -->
         <div class="explanation-box">
           <strong style="color: #1e293b; display: block; margin-bottom: 0.35rem;">💡 Resolução Comentada Oficial (Banca UEMA):</strong>
           <p style="margin: 0; line-height: 1.65; color: #334155;">
@@ -707,7 +717,7 @@ function renderReviewList(data) {
     }).join('');
 }
 
-// Recomendações Base (Mestre Kira, YouTube e portais de referência)
+// Recomendações Base para Todas as 11 Disciplinas
 function getTargetedRecommendations(q) {
   const disc = (q.discipline || '').toLowerCase();
   const topic = q.topic || q.discipline || 'PAES UEMA';
@@ -719,6 +729,7 @@ function getTargetedRecommendations(q) {
   let ytChannel = 'Videoaula Recomendada';
   let tip = `Reforce o conteúdo de ${topic} para dominar o estilo de cobrança da UEMA.`;
 
+  // 1. Língua Portuguesa e Literatura
   if (disc.includes('literat') || disc.includes('portug')) {
     if (topicLower.includes('lucy') || topicLower.includes('crônica')) {
       webLink = 'https://www.mestrekira.com.br/analise-cronicas-lucy-teixeira-ceres-costa-fernandes-paes-uema-2027.html';
@@ -745,37 +756,81 @@ function getTargetedRecommendations(q) {
       ytChannel = 'YouTube • Professor Noslen';
       tip = 'Revise a articulação sintática e os recursos coesivos no padrão da UEMA.';
     }
-  } else if (disc.includes('matemát')) {
+  }
+  // 2. Matemática
+  else if (disc.includes('matemát')) {
     webLink = `https://brasilescola.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Teoria & Exercícios no Brasil Escola';
     ytQuery = `Gis com Giz Matematica ${topic}`;
     ytChannel = 'YouTube • Gis com Giz Matemática';
     tip = 'Pratique a resolução passo a passo e a aplicação de fórmulas contextualizadas.';
-  } else if (disc.includes('biolog')) {
+  }
+  // 3. Biologia
+  else if (disc.includes('biolog')) {
     webLink = `https://www.todamateria.com.br/busca/?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Resumo Teórico no Toda Matéria';
     ytQuery = `Biologia com Samuel Cunha ${topic}`;
     ytChannel = 'YouTube • Prof. Samuel Cunha';
     tip = 'A UEMA valoriza ecologia, fisiologia e ciclos biogeoquímicos dos ecossistemas maranhenses.';
-  } else if (disc.includes('físic')) {
+  }
+  // 4. Física
+  else if (disc.includes('físic')) {
     webLink = `https://brasilescola.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Conceitos no Brasil Escola';
     ytQuery = `Professor Boaro ${topic}`;
     ytChannel = 'YouTube • Prof. Boaro';
     tip = 'Atenção à leitura e interpretação gráfica dos fenômenos físicos.';
-  } else if (disc.includes('químic')) {
+  }
+  // 5. Química
+  else if (disc.includes('químic')) {
     webLink = `https://mundoeducacao.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Resumo no Mundo Educação';
     ytQuery = `Cafe com Quimica Professor Michel ${topic}`;
     ytChannel = 'YouTube • Café com Química';
     tip = 'Revise cálculos estequiométricos e química ambiental.';
-  } else if (disc.includes('histór') || disc.includes('geograf')) {
+  }
+  // 6. História
+  else if (disc.includes('histór')) {
     webLink = `https://brasilescola.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Artigo Temático no Brasil Escola';
-    ytQuery = disc.includes('histór') ? `Parabolica Pedro Renno ${topic}` : `JeanGrafia ${topic}`;
-    ytChannel = disc.includes('histór') ? 'YouTube • Parabólica' : 'YouTube • Prof. JeanGrafia';
-    tip = 'A banca costuma relacionar os processos nacionais com a história e o território do Maranhão.';
-  } else if (disc.includes('ingl') || disc.includes('espanh')) {
+    ytQuery = `Parabolica Pedro Renno ${topic}`;
+    ytChannel = 'YouTube • Parabólica (Pedro Rennó)';
+    tip = 'A banca costuma relacionar os processos nacionais com a história e a formação social do Maranhão.';
+  }
+  // 7. Geografia
+  else if (disc.includes('geograf')) {
+    webLink = `https://brasilescola.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
+    webLabel = '🌐 Artigo Temático no Brasil Escola';
+    ytQuery = `JeanGrafia ${topic}`;
+    ytChannel = 'YouTube • Prof. JeanGrafia';
+    tip = 'Atenção ao relevo, bacias hidrográficas, vegetação e dinâmicas econômicas do Maranhão.';
+  }
+  // 8. Filosofia
+  else if (disc.includes('filosof')) {
+    webLink = `https://brasilescola.uol.com.br/busca?q=${encodeURIComponent('filosofia ' + topic)}`;
+    webLabel = '🌐 Conceitos no Brasil Escola';
+    ytQuery = `Parabolica Pedro Renno Filosofia ${topic}`;
+    ytChannel = 'YouTube • Parabólica (Filosofia)';
+    tip = 'A UEMA cobra ética, política clássica (Platão e Aristóteles), contratualismo e iluminismo.';
+  }
+  // 9. Sociologia
+  else if (disc.includes('sociolog')) {
+    webLink = `https://www.todamateria.com.br/busca/?q=${encodeURIComponent('sociologia ' + topic)}`;
+    webLabel = '🌐 Resumo no Toda Matéria';
+    ytQuery = `Parabolica Pedro Renno Sociologia ${topic}`;
+    ytChannel = 'YouTube • Parabólica (Sociologia)';
+    tip = 'Foco nos clássicos (Durkheim, Weber, Marx), cidadania, desigualdade social e cultura.';
+  }
+  // 10. Artes
+  else if (disc.includes('arte')) {
+    webLink = `https://www.todamateria.com.br/busca/?q=${encodeURIComponent('artes ' + topic)}`;
+    webLabel = '🌐 História da Arte no Toda Matéria';
+    ytQuery = `Historia da Arte Vestibular ${topic}`;
+    ytChannel = 'YouTube • Arte & Cultura';
+    tip = 'Atenção às manifestações culturais maranhenses, modernismo brasileiro e vanguardas europeias.';
+  }
+  // 11. Línguas Estrangeiras
+  else if (disc.includes('ingl') || disc.includes('espanh')) {
     webLink = `https://www.todamateria.com.br/busca/?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Gramática no Toda Matéria';
     ytQuery = disc.includes('ingl') ? `English in Brazil ${topic}` : `Espanhol para Brasileiros ${topic}`;
@@ -794,7 +849,6 @@ async function generateAiStudyPlan() {
   const btn = document.getElementById('btn-generate-ai-plan');
   const output = document.getElementById('ai-plan-output');
 
-  // Coleta as questões erradas
   const wrongQuestions = activeQuestions.filter((q, idx) => {
     const qKey = q.id || q.order || idx;
     const ans = userAnswers[qKey];
@@ -840,7 +894,6 @@ Seja direto, encorajador e prático.`;
     let resultText = '';
 
     if (apiKey) {
-      // Chamada direta à Gemini API com a chave do usuário
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -856,7 +909,6 @@ Seja direto, encorajador e prático.`;
       const data = await res.json();
       resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     } else {
-      // Fallback pedagógico imediato caso a chave não esteja configurada no frontend
       resultText = generateLocalSmartPlan(wrongQuestions);
     }
 
@@ -884,7 +936,6 @@ Seja direto, encorajador e prático.`;
   }
 }
 
-// Fallback inteligente de Roteiro Pedagógico (caso a chave esteja pendente)
 function generateLocalSmartPlan(wrongQuestions) {
   const countsByDisc = {};
   wrongQuestions.forEach((q) => {
@@ -904,7 +955,8 @@ function generateLocalSmartPlan(wrongQuestions) {
     <ul>
       <li><strong>Língua Portuguesa e Literatura:</strong> Revise as obras obrigatórias da UEMA (<em>Crônicas</em> de Lucy Teixeira, <em>Infância</em> de Graciliano Ramos e <em>Meu Livro de Cordel</em> de Cora Coralina) nos artigos do portal <a href="https://www.mestrekira.com.br" target="_blank" style="color: #1d4ed8; font-weight: 600;">Mestre Kira</a>.</li>
       <li><strong>Ciências Exatas:</strong> Pratique a resolução comentada dos exercícios nos canais <em>Gis com Giz</em> (Matemática), <em>Professor Boaro</em> (Física) e <em>Café com Química</em>.</li>
-      <li><strong>Humanas e Biológicas:</strong> Foque na contextualização maranhense com o canal <em>Parabólica</em> (Pedro Rennó) e <em>Biologia com Samuel Cunha</em>.</li>
+      <li><strong>Humanas (História, Geografia, Filosofia, Sociologia):</strong> Foque na contextualização maranhense com o canal <em>Parabólica</em> (Pedro Rennó).</li>
+      <li><strong>Linguagens e Artes:</strong> Revise expressões culturais maranhenses e modernismo brasileiro.</li>
     </ul>
   `;
 }
