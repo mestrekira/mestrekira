@@ -29,6 +29,7 @@ let examMode = 'FULL';              // Duas formas de resolver a mesma tentativa
 let reviewFilter = 'WRONG';
 let reviewDiscipline = 'ALL';
 let reviewData = null;
+let aiStudyPlan = null;
 let activeAttemptId = null;
 let officialCompleted = false;
 let pendingSave = Promise.resolve();
@@ -247,10 +248,10 @@ async function startExam() {
     }
 
     const attempt = await window.api.post('/simulations/attempts', {
-  cycleCode: CURRENT_CYCLE.cycleCode,
-  mode: 'OFFICIAL',
-  resolutionMode: examMode,
-});
+      cycleCode: CURRENT_CYCLE.cycleCode,
+      mode: 'OFFICIAL',
+      resolutionMode: examMode,
+    });
     activeAttemptId = attempt.attemptId;
     const eligible = new Set(attempt.questionIds);
     activeQuestions = activeQuestions.filter((q) => eligible.has(q.id));
@@ -622,6 +623,7 @@ function renderReviewList(data) {
       const cardClass = item.isCorrect ? 'review-card correct' : 'review-card wrong';
       const statusTitle = item.isCorrect ? '✅ Questão Correta' : '❌ Questão Incorreta';
 
+      const match = aiStudyPlan?.priorities?.find((p) => p.discipline === q.discipline && p.topic === q.topic);
       const recommendations = getTargetedRecommendations(q);
       const explanationText = escapeHtml(q.explanation || q.explanacion || 'Explicação ainda não cadastrada.').replace(/\n/g, '<br>');
 
@@ -667,153 +669,34 @@ function renderReviewList(data) {
           </p>
         </div>
 
-        <!-- Sugestões de Conteúdo e Vídeos -->
         <div class="study-box">
-          <strong style="color: #1e40af; display: flex; align-items: center; gap: 0.35rem;">
-            📚 Sugestões de Estudo & Videoaulas Recomendadas:
-          </strong>
-          <p style="margin: 0.25rem 0 0.5rem 0; color: #1e3a8a; font-size: 0.85rem;">
-            ${escapeHtml(recommendations.tip)}
-          </p>
-          <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem;">
-            <a href="${recommendations.webLink}" target="_blank" class="study-link">
-              ${recommendations.webLabel}
-            </a>
-            <a href="${recommendations.ytLink}" target="_blank" class="study-link">
-              📺 ${recommendations.ytLabel}
-            </a>
-          </div>
+          <strong style="color: #1e40af;">📚 Materiais para revisão</strong>
+          ${match ? `
+            <p style="margin: 0.4rem 0;">${escapeHtml(match.action)}</p>
+            ${(match.resources || []).length ? `<div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+              ${match.resources.map((r) => `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="study-link">${r.kind === 'video' ? '📺' : '🌐'} ${escapeHtml(r.title)}</a>`).join('')}
+            </div>` : '<p>Nenhum link específico foi confirmado para este tópico.</p>'}
+          ` : `
+            <p style="margin: 0.4rem 0;">Gere o roteiro com IA para receber links de páginas e videoaulas específicas. Enquanto isso:</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+              <a href="${recommendations.webLink}" target="_blank" rel="noopener noreferrer" class="study-link">Pesquisar leitura sobre ${escapeHtml(q.topic || 'o tema')}</a>
+              <a href="${recommendations.ytLink}" target="_blank" rel="noopener noreferrer" class="study-link">Pesquisar videoaula</a>
+            </div>
+          `}
         </div>
       </div>
     `;
     }).join('');
 }
 
-// Recomendações Base para Todas as 11 Disciplinas
+// Busca explícita como alternativa enquanto o roteiro com IA não for solicitado.
 function getTargetedRecommendations(q) {
-  const disc = (q.discipline || '').toLowerCase();
-  const topic = q.topic || q.discipline || 'PAES UEMA';
-  const topicLower = topic.toLowerCase();
-
-  let webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mestrekira.com.br ' + topic)}`;
-  let webLabel = '🌐 Buscar conteúdo no Mestre Kira';
-  let ytQuery = `UEMA ${q.discipline} ${topic}`;
-  let ytChannel = 'Videoaula Recomendada';
-  let tip = `Reforce o conteúdo de ${topic} para dominar o estilo de cobrança da UEMA.`;
-
-  // 1. Língua Portuguesa e Literatura
-  if (disc.includes('literat') || disc.includes('portug')) {
-    if (topicLower.includes('lucy') || topicLower.includes('crônica')) {
-      webLink = 'https://www.mestrekira.com.br/analise-cronicas-lucy-teixeira-ceres-costa-fernandes-paes-uema-2027.html';
-      webLabel = '🌐 Análise: Crônicas de Lucy Teixeira (Mestre Kira)';
-      ytQuery = 'Cronicas de Lucy Teixeira PAES UEMA';
-      ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória: estude a perspectiva do narrador e a ambientação maranhense.';
-    } else if (topicLower.includes('cordel') || topicLower.includes('cora')) {
-      webLink = 'https://www.mestrekira.com.br/analise-meu-livro-de-cordel-cora-coralina-paes-uema-2027.html';
-      webLabel = '🌐 Análise: Meu Livro de Cordel (Mestre Kira)';
-      ytQuery = 'Meu Livro de Cordel Cora Coralina UEMA';
-      ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória: foco na valorização do saber popular e oralidade sertaneja.';
-    } else if (topicLower.includes('infância') || topicLower.includes('graciliano')) {
-      webLink = 'https://www.mestrekira.com.br/analise-obra-infancia-graciliano-ramos-temas-redacao.html';
-      webLabel = '🌐 Análise: Infância de Graciliano Ramos (Mestre Kira)';
-      ytQuery = 'Infancia Graciliano Ramos UEMA analise';
-      ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória: atenção aos temas de autoritarismo patriarcal e infância.';
-    } else {
-      webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mestrekira.com.br ' + topic)}`;
-      webLabel = '🌐 Buscar conteúdo no Mestre Kira';
-      ytQuery = `Professor Noslen ${topic}`;
-      ytChannel = 'YouTube • Professor Noslen';
-      tip = 'Revise a articulação sintática e os recursos coesivos no padrão da UEMA.';
-    }
-  }
-  // 2. Matemática
-  else if (disc.includes('matemát')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Teoria & Exercícios no Brasil Escola';
-    ytQuery = `Gis com Giz Matematica ${topic}`;
-    ytChannel = 'YouTube • Gis com Giz Matemática';
-    tip = 'Pratique a resolução passo a passo e a aplicação de fórmulas contextualizadas.';
-  }
-  // 3. Biologia
-  else if (disc.includes('biolog')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br ' + topic)}`;
-    webLabel = '🌐 Resumo Teórico no Toda Matéria';
-    ytQuery = `Biologia com Samuel Cunha ${topic}`;
-    ytChannel = 'YouTube • Prof. Samuel Cunha';
-    tip = 'A UEMA valoriza ecologia, fisiologia e ciclos biogeoquímicos dos ecossistemas maranhenses.';
-  }
-  // 4. Física
-  else if (disc.includes('físic')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Conceitos no Brasil Escola';
-    ytQuery = `Professor Boaro ${topic}`;
-    ytChannel = 'YouTube • Prof. Boaro';
-    tip = 'Atenção à leitura e interpretação gráfica dos fenômenos físicos.';
-  }
-  // 5. Química
-  else if (disc.includes('químic')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mundoeducacao.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Resumo no Mundo Educação';
-    ytQuery = `Cafe com Quimica Professor Michel ${topic}`;
-    ytChannel = 'YouTube • Café com Química';
-    tip = 'Revise cálculos estequiométricos e química ambiental.';
-  }
-  // 6. História
-  else if (disc.includes('histór')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Artigo Temático no Brasil Escola';
-    ytQuery = `Parabolica Pedro Renno ${topic}`;
-    ytChannel = 'YouTube • Parabólica (Pedro Rennó)';
-    tip = 'A banca costuma relacionar os processos nacionais com a história e a formação social do Maranhão.';
-  }
-  // 7. Geografia
-  else if (disc.includes('geograf')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Artigo Temático no Brasil Escola';
-    ytQuery = `JeanGrafia ${topic}`;
-    ytChannel = 'YouTube • Prof. JeanGrafia';
-    tip = 'Atenção ao relevo, bacias hidrográficas, vegetação e dinâmicas econômicas do Maranhão.';
-  }
-  // 8. Filosofia
-  else if (disc.includes('filosof')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br filosofia ' + topic)}`;
-    webLabel = '🌐 Conceitos no Brasil Escola';
-    ytQuery = `Parabolica Pedro Renno Filosofia ${topic}`;
-    ytChannel = 'YouTube • Parabólica (Filosofia)';
-    tip = 'A UEMA cobra ética, política clássica (Platão e Aristóteles), contratualismo e iluminismo.';
-  }
-  // 9. Sociologia
-  else if (disc.includes('sociolog')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br sociologia ' + topic)}`;
-    webLabel = '🌐 Resumo no Toda Matéria';
-    ytQuery = `Parabolica Pedro Renno Sociologia ${topic}`;
-    ytChannel = 'YouTube • Parabólica (Sociologia)';
-    tip = 'Foco nos clássicos (Durkheim, Weber, Marx), cidadania, desigualdade social e cultura.';
-  }
-  // 10. Artes
-  else if (disc.includes('arte')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br artes ' + topic)}`;
-    webLabel = '🌐 História da Arte no Toda Matéria';
-    ytQuery = `Historia da Arte Vestibular ${topic}`;
-    ytChannel = 'YouTube • Arte & Cultura';
-    tip = 'Atenção às manifestações culturais maranhenses, modernismo brasileiro e vanguardas europeias.';
-  }
-  // 11. Línguas Estrangeiras
-  else if (disc.includes('ingl') || disc.includes('espanh')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br ' + topic)}`;
-    webLabel = '🌐 Gramática no Toda Matéria';
-    ytQuery = disc.includes('ingl') ? `English in Brazil ${topic}` : `Espanhol para Brasileiros ${topic}`;
-    ytChannel = disc.includes('ingl') ? 'YouTube • English in Brazil' : 'YouTube • Espanhol para Brasileiros';
-    tip = 'Foque no reconhecimento de conectivos e na técnica de leitura instrumental.';
-  }
-
-  const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`;
-  const ytLabel = `Pesquisar vídeo: ${ytChannel}`;
-
-  return { tip, webLink, webLabel, ytLink, ytLabel };
+  const portuguese = /portug|literat|redaç|interpretaç/i.test(q.discipline || '');
+  const topic = `${q.discipline || ''} ${q.topic || ''}`.trim();
+  return {
+    webLink: `https://www.google.com/search?q=${encodeURIComponent((portuguese ? 'site:mestrekira.com.br ' : 'site:brasilescola.uol.com.br OR site:todamateria.com.br ') + topic)}`,
+    ytLink: `https://www.youtube.com/results?search_query=${encodeURIComponent(`videoaula PAES UEMA ${topic}`)}`,
+  };
 }
 
 // ================= GERAÇÃO DE PLANO COM GEMINI IA =================
@@ -826,6 +709,8 @@ async function generateAiStudyPlan() {
   output.textContent = 'Gerando roteiro de revisão...';
   try {
     const plan = await window.api.post(`/simulations/attempts/${activeAttemptId}/study-plan`, {});
+    aiStudyPlan = plan;
+    if (reviewData) renderReviewList(reviewData);
     output.replaceChildren();
     const summary = document.createElement('p');
     summary.textContent = plan.summary;
@@ -833,7 +718,17 @@ async function generateAiStudyPlan() {
     const list = document.createElement('ul');
     for (const item of plan.priorities || []) {
       const li = document.createElement('li');
-      li.textContent = `${item.discipline} — ${item.topic}: ${item.action}`;
+      const title = document.createElement('strong');
+      title.textContent = `${item.discipline} — ${item.topic}: `;
+      li.append(title, document.createTextNode(item.action));
+      for (const resource of item.resources || []) {
+        const link = document.createElement('a');
+        link.href = resource.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = `${resource.kind === 'video' ? ' 📺 ' : ' 🌐 '}${resource.title}`;
+        li.append(link);
+      }
       list.append(li);
     }
     output.append(list);
