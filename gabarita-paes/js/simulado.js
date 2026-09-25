@@ -1,3 +1,9 @@
+// ================= CONFIGURAÇÃO DO CICLO E ACESSO =================
+const SYSTEM_CONFIG = {
+  isTestMode: true, // Em fase de testes: liberado para todos. Mude para false em produção para exigir plano Premium!
+  geminiApiKey: '', // Insira sua chave Gemini API aqui ou defina no localStorage ('GEMINI_API_KEY')
+};
+
 const CURRENT_CYCLE = {
   cycleCode: '2026-TESTE-21D',
   title: 'Simulado Oficial PAES UEMA (Ciclo 21 Dias)',
@@ -12,8 +18,10 @@ let currentIndex = 0;
 let userAnswers = {};
 let flaggedQuestions = {};
 let timerInterval = null;
-let secondsRemaining = 5 * 60 * 60;
+let secondsRemaining = 5 * 60 * 60; // 5 horas para modo completo
+let secondsElapsed = 0;             // cronômetro progressivo para treino
 let selectedLanguage = 'INGLES';
+let examMode = 'FULL';              // 'FULL' (Oficial 60Q) ou 'PRACTICE' (Treino Livre)
 let reviewFilter = 'WRONG';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,12 +30,31 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // Verificação de Acesso (Assinantes vs Fase de Testes)
+  if (!checkAccessPermission()) return;
+
   setupUserData();
   checkCycleSubmissionStatus();
   setupEventListeners();
 });
 
-// Normaliza a língua estrangeira vinda do cadastro/perfil
+// Checagem de Assinante (Premium Gate)
+function checkAccessPermission() {
+  if (SYSTEM_CONFIG.isTestMode) return true;
+
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isPremium = !!user.isPremium || user.planTier === 'PREMIUM';
+    if (!isPremium) {
+      document.getElementById('intro-view').style.display = 'none';
+      document.getElementById('premium-gate-view').style.display = 'block';
+      return false;
+    }
+  } catch (e) {}
+  return true;
+}
+
+// Normaliza Língua Estrangeira
 function normalizeLanguage(lang) {
   if (!lang) return 'INGLES';
   const str = String(lang).toLowerCase().trim();
@@ -46,12 +73,10 @@ function setupUserData() {
 
       const userHeader = document.getElementById('user-name-header');
       const avatarHeader = document.getElementById('user-avatar-header');
-      const langLabel = document.getElementById('user-selected-lang');
       const startSelect = document.getElementById('start-lang-select');
 
       if (userHeader) userHeader.innerText = name.split(' ')[0];
       if (avatarHeader) avatarHeader.innerText = name.charAt(0).toUpperCase();
-      if (langLabel) langLabel.innerText = selectedLanguage === 'ESPANHOL' ? 'Espanhol' : 'Inglês';
       if (startSelect) startSelect.value = selectedLanguage;
     }
   } catch (e) {
@@ -59,11 +84,25 @@ function setupUserData() {
   }
 }
 
-// Bloqueio de Tentativa Única
-async function checkCycleSubmissionStatus() {
-  const notSubIntro = document.getElementById('not-submitted-intro');
-  const alreadySubIntro = document.getElementById('already-submitted-intro');
+// Alternância entre as Duas Modalidades
+window.setExamMode = (mode) => {
+  examMode = mode;
+  document.getElementById('card-mode-full')?.classList.toggle('active', mode === 'FULL');
+  document.getElementById('card-mode-practice')?.classList.toggle('active', mode === 'PRACTICE');
 
+  const practiceBox = document.getElementById('practice-discipline-box');
+  if (practiceBox) {
+    practiceBox.style.display = mode === 'PRACTICE' ? 'block' : 'none';
+  }
+
+  const startBtn = document.getElementById('btn-start-exam');
+  if (startBtn) {
+    startBtn.innerText = mode === 'FULL' ? '⏱️ Iniciar Prova Oficial (5 Horas)' : '🎯 Iniciar Treino Livre';
+  }
+};
+
+// Verificação de Tentativa Única no Ciclo (para a Prova Completa)
+async function checkCycleSubmissionStatus() {
   const localSaved = localStorage.getItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`);
   let isSubmitted = !!localSaved;
   let savedData = localSaved ? JSON.parse(localSaved) : null;
@@ -77,16 +116,16 @@ async function checkCycleSubmissionStatus() {
   } catch (e) {}
 
   if (isSubmitted && savedData) {
-    if (notSubIntro) notSubIntro.style.display = 'none';
-    if (alreadySubIntro) alreadySubIntro.style.display = 'block';
+    const warnBox = document.getElementById('already-submitted-warning');
+    if (warnBox) warnBox.style.display = 'block';
 
-    const scoreEl = document.getElementById('already-score');
-    const percEl = document.getElementById('already-perc');
-    const score = Number(savedData.score || 0);
-    const total = Number(savedData.totalQuestions || 60);
-
-    if (scoreEl) scoreEl.innerText = `${score} / ${total} Acertos`;
-    if (percEl) percEl.innerText = `${Math.round((score / total) * 100)}% de aproveitamento`;
+    // Desabilita o card de prova completa e ativa o modo treino por padrão
+    const fullCard = document.getElementById('card-mode-full');
+    if (fullCard) {
+      fullCard.style.opacity = '0.6';
+      fullCard.title = 'Simulado completo já realizado neste ciclo.';
+    }
+    setExamMode('PRACTICE');
 
     document.getElementById('btn-view-review')?.addEventListener('click', async () => {
       await ensureQuestionsLoaded();
@@ -102,9 +141,10 @@ function setupEventListeners() {
   document.getElementById('btn-toggle-flag')?.addEventListener('click', toggleFlagCurrent);
   document.getElementById('btn-finish-exam')?.addEventListener('click', confirmFinishExam);
   document.getElementById('btn-finish-exam-top')?.addEventListener('click', confirmFinishExam);
+  document.getElementById('btn-generate-ai-plan')?.addEventListener('click', generateAiStudyPlan);
 }
 
-// Garante que o caderno com as explicações reais esteja na memória
+// Carregamento dos dados
 async function ensureQuestionsLoaded() {
   if (allQuestions.length > 0) return;
 
@@ -122,41 +162,68 @@ async function ensureQuestionsLoaded() {
       if (res && res.questions) allQuestions = res.questions;
     } catch (e) {}
   }
-
-  filterLanguageQuestions();
 }
 
+// Início do Simulado / Treino
 async function startExam() {
   const langSelect = document.getElementById('start-lang-select');
   if (langSelect) selectedLanguage = normalizeLanguage(langSelect.value);
   localStorage.setItem('foreignLanguage', selectedLanguage);
 
+  // Se escolheu Modo Completo, valida se já não enviou antes
+  if (examMode === 'FULL') {
+    const localSaved = localStorage.getItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`);
+    if (localSaved) {
+      alert('Você já realizou o Simulado Oficial Completo neste ciclo de 21 dias.\nUtilize a opção de Treino por Disciplina para praticar!');
+      setExamMode('PRACTICE');
+      return;
+    }
+  }
+
   const startBtn = document.getElementById('btn-start-exam');
   if (startBtn) {
     startBtn.disabled = true;
-    startBtn.innerText = 'Carregando caderno de 60 questões...';
+    startBtn.innerText = 'Carregando caderno de questões...';
   }
 
   try {
     await ensureQuestionsLoaded();
+
+    if (examMode === 'FULL') {
+      filterFullExamQuestions();
+      document.getElementById('exam-title-bar').innerText = 'PAES UEMA - Simulado Oficial (60 Questões)';
+      startCountDownTimer();
+    } else {
+      filterPracticeQuestions();
+      document.getElementById('exam-title-bar').innerText = 'PAES UEMA - Treino Livre por Disciplina';
+      startCountUpTimer();
+    }
+
+    if (activeQuestions.length === 0) {
+      alert('Nenhuma questão encontrada para os filtros selecionados.');
+      if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.innerText = 'Iniciar Resolução';
+      }
+      return;
+    }
 
     document.getElementById('intro-view').style.display = 'none';
     document.getElementById('exam-view').style.display = 'block';
 
     renderOMR();
     renderCurrentQuestion();
-    startTimer();
   } catch (err) {
     alert('Erro ao carregar simulado: ' + err.message);
     if (startBtn) {
       startBtn.disabled = false;
-      startBtn.innerText = '⏱️ Iniciar Prova Oficial Agora';
+      startBtn.innerText = 'Iniciar Resolução';
     }
   }
 }
 
-// Filtro estrito: seleciona exatamente as 60 questões (5 da língua escolhida e 55 comuns)
-function filterLanguageQuestions() {
+// Filtro Oficial: 60 questões (55 comuns + 5 da língua estrangeira oficial)
+function filterFullExamQuestions() {
   const target = normalizeLanguage(selectedLanguage);
 
   activeQuestions = allQuestions.filter((q) => {
@@ -170,18 +237,41 @@ function filterLanguageQuestions() {
       if (isSpanish) return target === 'ESPANHOL';
       return false;
     }
-
     return true;
   });
 }
 
-function startTimer() {
+// Filtro do Modo Treino Seletivo
+function filterPracticeQuestions() {
+  const checkboxes = document.querySelectorAll('input[name="disc-filter"]:checked');
+  const selectedDiscs = Array.from(checkboxes).map((c) => c.value.toLowerCase());
+  const targetLang = normalizeLanguage(selectedLanguage);
+
+  activeQuestions = allQuestions.filter((q) => {
+    const disc = (q.discipline || '').toLowerCase();
+    const isForeignLang = disc.includes('estrangeira') || disc.startsWith('língua inglesa') || disc.startsWith('língua espanhola');
+
+    if (isForeignLang) {
+      if (!selectedDiscs.includes('estrangeira')) return false;
+      const isEnglish = disc.includes('ingl');
+      const isSpanish = disc.includes('espanh');
+      if (isEnglish) return targetLang === 'INGLES';
+      if (isSpanish) return targetLang === 'ESPANHOL';
+      return false;
+    }
+
+    return selectedDiscs.some((d) => disc.includes(d));
+  });
+}
+
+// Temporizador Regressivo de 5h para Prova Oficial
+function startCountDownTimer() {
   const timerEl = document.getElementById('exam-timer');
   timerInterval = setInterval(() => {
     secondsRemaining--;
     if (secondsRemaining <= 0) {
       clearInterval(timerInterval);
-      alert('Tempo oficial esgotado! Entregando prova...');
+      alert('Tempo oficial de 5 horas esgotado! Entregando prova...');
       finishExam();
       return;
     }
@@ -189,6 +279,18 @@ function startTimer() {
     const m = String(Math.floor((secondsRemaining % 3600) / 60)).padStart(2, '0');
     const s = String(secondsRemaining % 60).padStart(2, '0');
     if (timerEl) timerEl.innerText = `${h}:${m}:${s}`;
+  }, 1000);
+}
+
+// Temporizador Progressivo para Modo Treino
+function startCountUpTimer() {
+  const timerEl = document.getElementById('exam-timer');
+  timerInterval = setInterval(() => {
+    secondsElapsed++;
+    const h = String(Math.floor(secondsElapsed / 3600)).padStart(2, '0');
+    const m = String(Math.floor((secondsElapsed % 3600) / 60)).padStart(2, '0');
+    const s = String(secondsElapsed % 60).padStart(2, '0');
+    if (timerEl) timerEl.innerText = `⏱️ ${h}:${m}:${s}`;
   }, 1000);
 }
 
@@ -318,18 +420,56 @@ window.jumpToQuestion = (idx) => {
   renderCurrentQuestion();
 };
 
+// ================= ALERTA DE QUESTÕES PENDENTES =================
 function confirmFinishExam() {
   const total = activeQuestions.length;
-  const answered = Object.keys(userAnswers).length;
-  const blank = total - answered;
+  const missingIndices = [];
 
-  let msg = `Deseja finalizar o Simulado Oficial?\n\n• Respondidas: ${answered}\n• Em branco: ${blank}\n\nLembre-se: Este ciclo possui tentativa única.`;
-  if (confirm(msg)) {
+  activeQuestions.forEach((q, idx) => {
+    const qKey = q.id || q.order || idx;
+    if (!userAnswers[qKey]) {
+      missingIndices.push(idx + 1);
+    }
+  });
+
+  const blankCount = missingIndices.length;
+
+  if (blankCount > 0) {
+    const modal = document.getElementById('unanswered-modal');
+    const textEl = document.getElementById('unanswered-modal-text');
+    const cancelBtn = document.getElementById('btn-modal-cancel');
+    const confirmBtn = document.getElementById('btn-modal-confirm');
+
+    if (modal && textEl) {
+      const missingList = missingIndices.slice(0, 15).join(', ') + (blankCount > 15 ? '...' : '');
+      textEl.innerHTML = `
+        Você ainda tem <strong>${blankCount} questão(ões) em branco</strong>:<br>
+        <span style="font-family: monospace; color: #b45309; font-weight: 600;">Questões: ${missingList}</span><br><br>
+        Deseja entregar agora ou prefere voltar para preenchê-las?
+      `;
+
+      cancelBtn.onclick = () => {
+        modal.style.display = 'none';
+        jumpToQuestion(missingIndices[0] - 1);
+      };
+
+      confirmBtn.onclick = () => {
+        modal.style.display = 'none';
+        finishExam();
+      };
+
+      modal.style.display = 'flex';
+      return;
+    }
+  }
+
+  // Se todas estão preenchidas
+  if (confirm(`Deseja entregar o simulado com todas as ${total} questões respondidas?`)) {
     finishExam();
   }
 }
 
-// Finalização e Armazenamento da Tentativa Única
+// Finalização da Prova
 async function finishExam() {
   if (timerInterval) clearInterval(timerInterval);
 
@@ -375,6 +515,7 @@ async function finishExam() {
 
   const submissionData = {
     cycleCode: CURRENT_CYCLE.cycleCode,
+    isOfficial: examMode === 'FULL',
     submittedAt: new Date().toISOString(),
     score: correctCount,
     totalQuestions: activeQuestions.length,
@@ -383,17 +524,20 @@ async function finishExam() {
     questions: activeQuestions,
   };
 
-  localStorage.setItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`, JSON.stringify(submissionData));
+  // Salva no ciclo oficial apenas se foi o modo completo
+  if (examMode === 'FULL') {
+    localStorage.setItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`, JSON.stringify(submissionData));
 
-  try {
-    await window.api.post('/simulations/submit', {
-      cycleCode: CURRENT_CYCLE.cycleCode,
-      answers: userAnswers,
-      score: correctCount,
-      totalQuestions: activeQuestions.length,
-      areas,
-    });
-  } catch (e) {}
+    try {
+      await window.api.post('/simulations/submit', {
+        cycleCode: CURRENT_CYCLE.cycleCode,
+        answers: userAnswers,
+        score: correctCount,
+        totalQuestions: activeQuestions.length,
+        areas,
+      });
+    } catch (e) {}
+  }
 
   displayResult(submissionData);
 }
@@ -406,11 +550,15 @@ function displayResult(data) {
 
   const scoreEl = document.getElementById('res-score');
   const percEl = document.getElementById('res-percentage');
-  const total = data.totalQuestions || 60;
+  const titleEl = document.getElementById('result-title');
+  const total = data.totalQuestions || activeQuestions.length || 60;
   const score = data.score || 0;
 
+  if (titleEl) {
+    titleEl.innerText = data.isOfficial ? 'Resultado Oficial do Simulado (60Q)' : 'Resultado do Treino Livre';
+  }
   if (scoreEl) scoreEl.innerText = `${score} / ${total} Acertos`;
-  if (percEl) percEl.innerText = `${Math.round((score / total) * 100)}% de aproveitamento geral`;
+  if (percEl) percEl.innerText = `${Math.round((score / total) * 100)}% de aproveitamento`;
 
   const areasContainer = document.getElementById('areas-breakdown');
   if (areasContainer && data.areas) {
@@ -433,6 +581,8 @@ window.filterReview = (type) => {
   const localSaved = localStorage.getItem(`sim_submission_${CURRENT_CYCLE.cycleCode}`);
   if (localSaved) {
     renderReviewList(JSON.parse(localSaved));
+  } else {
+    renderReviewList({ questions: activeQuestions, userAnswers });
   }
 };
 
@@ -478,7 +628,7 @@ function renderReviewList(data) {
     container.innerHTML = `
       <div style="text-align: center; padding: 2rem; color: #166534; background: #f0fdf4; border-radius: 8px;">
         <h3>🎉 Parabéns! Nenhuma questão incorreta neste filtro.</h3>
-        <p>Você demonstrou excelente aproveitamento.</p>
+        <p>Você demonstrou excelente domínio dos conteúdos.</p>
       </div>
     `;
     return;
@@ -491,7 +641,9 @@ function renderReviewList(data) {
       const statusTitle = item.isCorrect ? '✅ Questão Correta' : '❌ Questão Incorreta';
 
       const recommendations = getTargetedRecommendations(q);
-      const explanationText = q.explanation || 'Resolução comentada oficial da banca PAES UEMA.';
+
+      // Leitura da explicação suportando explanation e a tag explanacion do JSON
+      const explanationText = q.explanation || q.explanacion || 'Resolução comentada oficial da banca PAES UEMA.';
 
       return `
       <div class="${cardClass}">
@@ -525,13 +677,15 @@ function renderReviewList(data) {
           ` : ''}
         </div>
 
+        <!-- Explicação do JSON (explanation / explanacion) -->
         <div class="explanation-box">
-          <strong style="color: #1e293b; display: block; margin-bottom: 0.35rem;">💡 Gabarito Comentado Oficial da Banca:</strong>
+          <strong style="color: #1e293b; display: block; margin-bottom: 0.35rem;">💡 Resolução Comentada Oficial (Banca UEMA):</strong>
           <p style="margin: 0; line-height: 1.65; color: #334155;">
             ${explanationText}
           </p>
         </div>
 
+        <!-- Sugestões de Conteúdo e Vídeos -->
         <div class="study-box">
           <strong style="color: #1e40af; display: flex; align-items: center; gap: 0.35rem;">
             📚 Sugestões de Estudo & Videoaulas Recomendadas:
@@ -553,6 +707,7 @@ function renderReviewList(data) {
     }).join('');
 }
 
+// Recomendações Base (Mestre Kira, YouTube e portais de referência)
 function getTargetedRecommendations(q) {
   const disc = (q.discipline || '').toLowerCase();
   const topic = q.topic || q.discipline || 'PAES UEMA';
@@ -562,7 +717,7 @@ function getTargetedRecommendations(q) {
   let webLabel = '🌐 Artigo no Mestre Kira';
   let ytQuery = `UEMA ${q.discipline} ${topic}`;
   let ytChannel = 'Videoaula Recomendada';
-  let tip = `Reforce o conteúdo de ${topic} para dominar a interpretação exigida pela banca examinadora.`;
+  let tip = `Reforce o conteúdo de ${topic} para dominar o estilo de cobrança da UEMA.`;
 
   if (disc.includes('literat') || disc.includes('portug')) {
     if (topicLower.includes('lucy') || topicLower.includes('crônica')) {
@@ -570,25 +725,25 @@ function getTargetedRecommendations(q) {
       webLabel = '🌐 Análise: Crônicas de Lucy Teixeira (Mestre Kira)';
       ytQuery = 'Cronicas de Lucy Teixeira PAES UEMA';
       ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória da UEMA: estude a perspectiva do narrador e a ambientação maranhense.';
+      tip = 'Obra obrigatória: estude a perspectiva do narrador e a ambientação maranhense.';
     } else if (topicLower.includes('cordel') || topicLower.includes('cora')) {
       webLink = 'https://www.mestrekira.com.br/analise-meu-livro-de-cordel-cora-coralina-paes-uema-2027.html';
       webLabel = '🌐 Análise: Meu Livro de Cordel (Mestre Kira)';
       ytQuery = 'Meu Livro de Cordel Cora Coralina UEMA';
       ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória: foco na valorização do saber popular, oralidade e identidade sertaneja.';
+      tip = 'Obra obrigatória: foco na valorização do saber popular e oralidade sertaneja.';
     } else if (topicLower.includes('infância') || topicLower.includes('graciliano')) {
       webLink = 'https://www.mestrekira.com.br/analise-obra-infancia-graciliano-ramos-temas-redacao.html';
       webLabel = '🌐 Análise: Infância de Graciliano Ramos (Mestre Kira)';
       ytQuery = 'Infancia Graciliano Ramos UEMA analise';
       ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória: atenção aos temas de autoritarismo patriarcal e descoberta da escrita.';
+      tip = 'Obra obrigatória: atenção aos temas de autoritarismo patriarcal e infância.';
     } else {
-      webLink = 'https://www.mestrekira.com.br/conteudos-gramatica.html';
+      webLink = 'https://www.mestrekira.com.br/redacao-nota-10-paes-uema-2027.html';
       webLabel = '🌐 Guia Gramatical & Textual (Mestre Kira)';
       ytQuery = `Professor Noslen ${topic}`;
       ytChannel = 'YouTube • Professor Noslen';
-      tip = 'Revise a articulação sintática e os recursos de coesão textual no padrão da UEMA.';
+      tip = 'Revise a articulação sintática e os recursos coesivos no padrão da UEMA.';
     }
   } else if (disc.includes('matemát')) {
     webLink = `https://brasilescola.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
@@ -601,25 +756,25 @@ function getTargetedRecommendations(q) {
     webLabel = '🌐 Resumo Teórico no Toda Matéria';
     ytQuery = `Biologia com Samuel Cunha ${topic}`;
     ytChannel = 'YouTube • Prof. Samuel Cunha';
-    tip = 'A UEMA valoriza ecologia, fisiologia e ciclos biogeoquímicos aplicados aos ecossistemas locais.';
+    tip = 'A UEMA valoriza ecologia, fisiologia e ciclos biogeoquímicos dos ecossistemas maranhenses.';
   } else if (disc.includes('físic')) {
     webLink = `https://brasilescola.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Conceitos no Brasil Escola';
     ytQuery = `Professor Boaro ${topic}`;
     ytChannel = 'YouTube • Prof. Boaro';
-    tip = 'Atenção à análise gráfica e à correlação entre leis físicas e fenômenos do cotidiano.';
+    tip = 'Atenção à leitura e interpretação gráfica dos fenômenos físicos.';
   } else if (disc.includes('químic')) {
     webLink = `https://mundoeducacao.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Resumo no Mundo Educação';
     ytQuery = `Cafe com Quimica Professor Michel ${topic}`;
     ytChannel = 'YouTube • Café com Química';
-    tip = 'Reforce cálculos estequiométricos, propriedades das substâncias e química ambiental.';
+    tip = 'Revise cálculos estequiométricos e química ambiental.';
   } else if (disc.includes('histór') || disc.includes('geograf')) {
     webLink = `https://brasilescola.uol.com.br/busca?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Artigo Temático no Brasil Escola';
     ytQuery = disc.includes('histór') ? `Parabolica Pedro Renno ${topic}` : `JeanGrafia ${topic}`;
-    ytChannel = disc.includes('histór') ? 'YouTube • Parabólica (Pedro Rennó)' : 'YouTube • Prof. JeanGrafia';
-    tip = 'A banca costuma relacionar os processos históricos e geográficos nacionais com o Maranhão.';
+    ytChannel = disc.includes('histór') ? 'YouTube • Parabólica' : 'YouTube • Prof. JeanGrafia';
+    tip = 'A banca costuma relacionar os processos nacionais com a história e o território do Maranhão.';
   } else if (disc.includes('ingl') || disc.includes('espanh')) {
     webLink = `https://www.todamateria.com.br/busca/?q=${encodeURIComponent(topic)}`;
     webLabel = '🌐 Gramática no Toda Matéria';
@@ -632,6 +787,126 @@ function getTargetedRecommendations(q) {
   const ytLabel = `${ytChannel}`;
 
   return { tip, webLink, webLabel, ytLink, ytLabel };
+}
+
+// ================= GERAÇÃO DE PLANO COM GEMINI IA =================
+async function generateAiStudyPlan() {
+  const btn = document.getElementById('btn-generate-ai-plan');
+  const output = document.getElementById('ai-plan-output');
+
+  // Coleta as questões erradas
+  const wrongQuestions = activeQuestions.filter((q, idx) => {
+    const qKey = q.id || q.order || idx;
+    const ans = userAnswers[qKey];
+    let correct = q.officialAnswer;
+    if (!correct && q.options) {
+      const opt = q.options.find((o) => o.isCorrect);
+      if (opt) correct = opt.letter;
+    }
+    return ans !== correct;
+  });
+
+  if (wrongQuestions.length === 0) {
+    alert('Parabéns! Você não errou nenhuma questão neste caderno.');
+    return;
+  }
+
+  const apiKey = SYSTEM_CONFIG.geminiApiKey || localStorage.getItem('GEMINI_API_KEY');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Consultando Gemini AI...';
+  }
+  if (output) {
+    output.style.display = 'block';
+    output.innerHTML = '<em>Analisando seus pontos fracos e estruturando plano focado no PAES UEMA...</em>';
+  }
+
+  const errorSummary = wrongQuestions.map((q, idx) => `${idx + 1}. [${q.discipline || 'Geral'}] Tema: ${q.topic || 'Geral'}`).join('\n');
+
+  const prompt = `Você é o tutor especialista do "Gabarita PAES" (mestrekira.com.br), focado no vestibular da UEMA (Universidade Estadual do Maranhão).
+O estudante acabou de concluir um simulado e errou as seguintes questões e tópicos:
+
+${errorSummary}
+
+Por favor, elabore um plano de estudos objetivo em tópicos (HTML formatado com <h4>, <ul>, <li>, <strong>) contendo:
+1. 🎯 Diagnóstico dos pontos fracos mais críticos para a UEMA;
+2. 📚 Roteiro de prioridade de estudo para os próximos dias (quais matérias atacar primeiro);
+3. 💡 Recomendações práticas de estudo e canais educativos do YouTube recomendados (Professor Noslen, Gis com Giz, Samuel Cunha, Boaro, Parabólica Pedro Rennó, Café com Química) e artigos do Mestre Kira para Literatura (obras obrigatórias de Lucy Teixeira, Graciliano Ramos e Cora Coralina).
+
+Seja direto, encorajador e prático.`;
+
+  try {
+    let resultText = '';
+
+    if (apiKey) {
+      // Chamada direta à Gemini API com a chave do usuário
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Erro na API Gemini: ${res.status}`);
+      }
+
+      const data = await res.json();
+      resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+      // Fallback pedagógico imediato caso a chave não esteja configurada no frontend
+      resultText = generateLocalSmartPlan(wrongQuestions);
+    }
+
+    if (output) {
+      output.innerHTML = `
+        <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.25rem;">
+          ${resultText}
+        </div>
+      `;
+    }
+  } catch (err) {
+    console.error('Falha Gemini:', err);
+    if (output) {
+      output.innerHTML = `
+        <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.25rem;">
+          ${generateLocalSmartPlan(wrongQuestions)}
+        </div>
+      `;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = '🔄 Atualizar Roteiro com IA';
+    }
+  }
+}
+
+// Fallback inteligente de Roteiro Pedagógico (caso a chave esteja pendente)
+function generateLocalSmartPlan(wrongQuestions) {
+  const countsByDisc = {};
+  wrongQuestions.forEach((q) => {
+    const d = q.discipline || 'Conhecimentos Gerais';
+    countsByDisc[d] = (countsByDisc[d] || 0) + 1;
+  });
+
+  const sorted = Object.entries(countsByDisc).sort((a, b) => b - a);
+
+  return `
+    <h4 style="color: #1e40af; margin-top: 0;">🎯 Diagnóstico de Prioridades PAES UEMA:</h4>
+    <p>Com base nos seus erros nesta sessão, priorize as seguintes disciplinas nos próximos 7 dias:</p>
+    <ul>
+      ${sorted.map(([disc, count]) => `<li><strong>${disc}</strong>:${count} questão(ões) para revisar.</li>`).join('')}
+    </ul>
+    <h4 style="color: #1e40af;">📚 Recomendações de Reta Final:</h4>
+    <ul>
+      <li><strong>Língua Portuguesa e Literatura:</strong> Revise as obras obrigatórias da UEMA (<em>Crônicas</em> de Lucy Teixeira, <em>Infância</em> de Graciliano Ramos e <em>Meu Livro de Cordel</em> de Cora Coralina) nos artigos do portal <a href="https://www.mestrekira.com.br" target="_blank" style="color: #1d4ed8; font-weight: 600;">Mestre Kira</a>.</li>
+      <li><strong>Ciências Exatas:</strong> Pratique a resolução comentada dos exercícios nos canais <em>Gis com Giz</em> (Matemática), <em>Professor Boaro</em> (Física) e <em>Café com Química</em>.</li>
+      <li><strong>Humanas e Biológicas:</strong> Foque na contextualização maranhense com o canal <em>Parabólica</em> (Pedro Rennó) e <em>Biologia com Samuel Cunha</em>.</li>
+    </ul>
+  `;
 }
 
 function openReviewFromSaved(savedData) {
