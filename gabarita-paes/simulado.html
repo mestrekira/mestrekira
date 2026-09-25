@@ -313,13 +313,13 @@
         </div>
 
         <!-- Modo 2: Treino por Disciplina -->
-        <div class="mode-card" id="card-mode-practice" onclick="setExamMode('PRACTICE')">
+        <div class="mode-card" id="card-mode-practice" onclick="setExamMode('DISCIPLINE')">
           <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🎯</div>
-          <h3 style="margin: 0 0 0.35rem 0; font-size: 1.1rem; color: #1e293b;">2. Treino por Disciplina</h3>
+          <h3 style="margin: 0 0 0.35rem 0; font-size: 1.1rem; color: #1e293b;">2. Simulado por Disciplina</h3>
           <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin: 0;">
             • No seu próprio ritmo (sem pressão de 5h).<br>
             • Filtre matérias específicas.<br>
-            • <strong>Prática ilimitada</strong> (não consome a tentativa única).
+            • As respostas compõem a mesma tentativa única de 60 questões.
           </p>
         </div>
       </div>
@@ -329,9 +329,9 @@
         <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
           <span style="font-size: 1.5rem;">📋</span>
           <div>
-            <strong style="color: #92400e; font-size: 0.95rem; display: block;">Você já realizou o Simulado Oficial Completo deste ciclo.</strong>
+            <strong style="color: #92400e; font-size: 0.95rem; display: block;">Você já concluiu o simulado deste ciclo.</strong>
             <p style="color: #b45309; font-size: 0.85rem; margin: 0.25rem 0 0.75rem 0;">
-              Sua nota oficial está registrada. Para continuar estudando, você pode <strong>revisar seu gabarito</strong> ou praticar no <strong>Modo Treino por Disciplina</strong> abaixo!
+              Sua nota está registrada. Consulte o gabarito comentado e as recomendações de revisão.
             </p>
             <button id="btn-view-review" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
               📖 Consultar Gabarito Comentado Oficial
@@ -353,7 +353,7 @@
 
         <!-- Seletor com Todas as 11 Disciplinas Oficiais da UEMA -->
         <div id="practice-discipline-box" style="display: none; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
-          <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.5rem;">Selecione a(s) disciplina(s) para treino:</label>
+          <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.5rem;">Selecione a(s) disciplina(s) para resolver agora:</label>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem;" id="disciplines-checkbox-grid">
             <label><input type="checkbox" name="disc-filter" value="portug" checked> Língua Portuguesa & Literatura</label>
             <label><input type="checkbox" name="disc-filter" value="matemát" checked> Matemática</label>
@@ -373,6 +373,7 @@
       <button id="btn-start-exam" class="btn" style="width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 700;">
         ⏱️ Iniciar Resolução Agora
       </button>
+      <p style="font-size: 0.85rem; color: #475569;">As duas opções usam a mesma tentativa oficial. A nota sai após responder às 60 questões.</p>
     </div>
 
     <!-- Tela 2: Prova em Execução -->
@@ -414,6 +415,7 @@
             <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">Cartão-Resposta</h4>
             <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem;" id="omr-count">0 de 60 respondidas</div>
             <div class="omr-grid" id="omr-grid"></div>
+            <button id="btn-change-discipline" class="btn btn-secondary" style="display: none; width: 100%; margin-top: 1rem;">Salvar e escolher outras disciplinas</button>
             <button id="btn-finish-exam" class="btn" style="width: 100%; margin-top: 1rem; background: var(--accent, #10b981);">
               ✅ Entregar Simulado
             </button>
@@ -451,7 +453,7 @@
           <div id="ai-plan-output" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #bfdbfe; line-height: 1.7; color: #1e293b; font-size: 0.95rem;"></div>
         </div>
 
-        <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <div id="official-result-links" style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
           <a href="redacao.html" class="btn" style="padding: 0.75rem 1.75rem; font-size: 1.05rem;">
             🚀 Ir para a Redação Desbloqueada
           </a>
@@ -466,9 +468,10 @@
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
           <div>
             <h3 style="margin: 0; color: #1e293b;">Gabarito Comentado & Explicação da Banca</h3>
-            <p style="margin: 0.2rem 0 0 0; color: #64748b; font-size: 0.85rem;">Exibição detalhada da tag explanation oficial e materiais recomendados</p>
+            <p style="margin: 0.2rem 0 0 0; color: #64748b; font-size: 0.85rem;">Explicação de cada questão e sugestões de leitura e vídeo</p>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <select id="review-discipline" aria-label="Filtrar revisão por disciplina"><option value="ALL">Todas as disciplinas</option></select>
             <button class="btn btn-secondary" id="filter-wrong-btn" onclick="filterReview('WRONG')" style="font-size: 0.85rem; padding: 0.4rem 0.85rem;">
               ❌ Apenas Erradas (<span id="wrong-count-badge">0</span>)
             </button>
@@ -498,7 +501,7 @@
           ⬅️ Voltar e Responder
         </button>
         <button id="btn-modal-confirm" class="btn" style="background: #dc2626; color: white; padding: 0.5rem 1.25rem;">
-          Entregar Assim Mesmo
+          Ir para a Primeira Pendente
         </button>
       </div>
     </div>
