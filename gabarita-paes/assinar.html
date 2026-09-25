@@ -67,86 +67,13 @@
         <li>✅ <strong>Diagnóstico de Erros</strong> com links para os artigos do Mestre Kira</li>
       </ul>
 
-      <div class="payment-options" id="options-container">
-        <button class="btn" onclick="gerarCobranca('PIX')">⚡ Pagar via PIX (Liberação Imediata)</button>
-        <button class="btn btn-secondary" onclick="gerarCobranca('BOLETO')">📄 Pagar via Boleto</button>
-      </div>
-
-      <!-- Área do PIX -->
-      <div id="pix-area" style="display: none; margin-top: 2rem;">
-        <h3>Escaneie o QR Code ou Copie o Código</h3>
-        <div class="qr-box">
-          <img id="pix-img" src="" alt="QR Code PIX" style="width: 220px; height: 220px;">
-        </div>
-        <div style="margin-top: 1rem;">
-          <input type="text" id="pix-input" readonly style="width: 80%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
-          <button class="btn" onclick="copiarPix()" style="margin-top: 0.5rem;">📋 Copiar Código</button>
-        </div>
-        <p style="color: var(--accent); font-weight: 600; margin-top: 1rem;">
-          ⏳ Aguardando pagamento... O site atualizará automaticamente assim que confirmado!
-        </p>
-      </div>
-
-      <!-- Área do Boleto -->
-      <div id="boleto-area" style="display: none; margin-top: 2rem;">
-        <h3>Boleto Bancário Gerado</h3>
-        <p style="color: var(--text-muted); margin: 1rem 0;">Clique abaixo para visualizar o boleto ou use o código de barras no app do seu banco:</p>
-        <a id="boleto-link" href="#" target="_blank" class="btn">Visualizar Boleto (PDF)</a>
-        <div style="margin-top: 1rem;">
-          <input type="text" id="boleto-code" readonly style="width: 80%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
-        </div>
-      </div>
+      <p class="card" style="margin-top: 1.5rem; background: #eff6ff; color: #1e3a8a;">
+        As assinaturas ainda não estão disponíveis. Continue estudando nas áreas liberadas da plataforma.
+      </p>
+      <a class="btn" href="index.html">Voltar à plataforma</a>
     </div>
   </main>
 
-  <script type="module">
-    import { api } from './js/api.js';
 
-    let pollInterval = null;
-
-    window.gerarCobranca = async (method) => {
-      try {
-        const res = await api.post('/payments/checkout', { paymentMethod: method });
-        if (!res) return;
-
-        document.getElementById('options-container').style.display = 'none';
-
-        if (method === 'PIX') {
-          document.getElementById('pix-area').style.display = 'block';
-          document.getElementById('pix-img').src = res.pixQrCode;
-          document.getElementById('pix-input').value = res.pixCode;
-          iniciarVerificacaoPagamento();
-        } else {
-          document.getElementById('boleto-area').style.display = 'block';
-          document.getElementById('boleto-link').href = res.boletoUrl;
-          document.getElementById('boleto-code').value = res.boletoBarCode;
-        }
-      } catch (e) {
-        alert(e.message || 'Erro ao gerar cobrança.');
-      }
-    };
-
-    window.copiarPix = () => {
-      const input = document.getElementById('pix-input');
-      input.select();
-      navigator.clipboard.writeText(input.value);
-      alert('Código PIX copiado para a área de transferência!');
-    };
-
-    function iniciarVerificacaoPagamento() {
-      pollInterval = setInterval(async () => {
-        try {
-          const status = await api.get('/payments/status');
-          if (status && status.isPremium) {
-            clearInterval(pollInterval);
-            alert('🎉 Pagamento confirmado com sucesso! Seu acesso Premium está ativo.');
-            window.location.href = 'simulado.html';
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }, 5000); // Checa a cada 5 segundos
-    }
-  </script>
 </body>
 </html>

@@ -20,8 +20,8 @@
     </div>
   </main>
 
-<script type="module">
-    import { api } from './js/api.js';
+<script src="js/api.js"></script>
+<script>
 
     document.addEventListener('DOMContentLoaded', async () => {
       const params = new URLSearchParams(window.location.search);
@@ -44,7 +44,7 @@
       // Se abriu a página diretamente trazendo o token na URL
       if (token) {
         try {
-          await api.get(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+          await window.api.get(`/auth/verify-email?token=${encodeURIComponent(token)}`);
           title.innerText = '✅ E-mail confirmado com sucesso!';
           msg.innerText = 'Sua conta está ativa. Você já pode acessar a plataforma.';
           btn.style.display = 'inline-flex';
