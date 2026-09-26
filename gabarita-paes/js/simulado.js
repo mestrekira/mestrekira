@@ -583,7 +583,7 @@ function renderReviewList(data) {
 
   questions.forEach((q, idx) => {
     const qKey = q.id || q.order || idx;
-    const userChoice = answers[qKey] || 'EM BRANCO';
+    const userChoice = q.selectedLetter ?? answers[qKey] ?? 'EM BRANCO';
 
     let correctChoice = q.officialAnswer;
     if (!correctChoice && q.options) {
@@ -670,12 +670,14 @@ function renderReviewList(data) {
         </div>
 
         <div class="study-box">
-          <strong style="color: #1e40af;">📚 Materiais para revisão</strong>
+          <details class="review-study-details">
+            <summary>📚 Materiais para revisar ${escapeHtml(q.topic || 'este conteúdo')}</summary>
           ${match ? `
+            ${match.guidanceSource === 'basic' ? '<p class="study-note">Orientação básica; a IA não detalhou este tópico.</p>' : ''}
             <p style="margin: 0.4rem 0;"><strong>Diagnóstico:</strong> ${escapeHtml(match.reason || '')}</p>
             <p style="margin: 0.4rem 0;"><strong>Próximo passo:</strong> ${escapeHtml(match.action)}</p>
-            ${(match.resources || []).length ? `<div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-              ${match.resources.map((r) => `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="study-link">${r.kind === 'video_search' ? '📺' : '🌐'} ${escapeHtml(r.title)}</a>`).join('')}
+            ${(match.resources || []).length ? `<div class="study-resource-links">
+              ${match.resources.map((r) => `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="study-resource-link">${r.kind === 'video_search' ? '▶ ' : r.kind === 'article_search' ? '⌕ ' : '↗ '}${escapeHtml(r.title)}</a>`).join('')}
             </div>` : '<p>Nenhum link específico foi confirmado para este tópico.</p>'}
           ` : `
             <p style="margin: 0.4rem 0;">Use “Gerar roteiro com IA” acima para abrir diretamente o artigo específico ou o mais próximo da dificuldade identificada. A busca de videoaulas pode ser usada enquanto isso:</p>
@@ -683,6 +685,7 @@ function renderReviewList(data) {
               <a href="${recommendations.ytLink}" target="_blank" rel="noopener noreferrer" class="study-link">Pesquisar videoaula</a>
             </div>
           `}
+          </details>
         </div>
       </div>
     `;
@@ -697,7 +700,7 @@ function getTargetedRecommendations(q) {
   };
 }
 
-// ================= GERAÇÃO DE PLANO COM GEMINI IA =================
+// ================= ROTEIRO DE REVISÃO COM IA =================
 async function generateAiStudyPlan() {
   const btn = document.getElementById('btn-generate-ai-plan');
   const output = document.getElementById('ai-plan-output');
@@ -711,25 +714,67 @@ async function generateAiStudyPlan() {
     if (reviewData) renderReviewList(reviewData);
     output.replaceChildren();
     const summary = document.createElement('p');
+    summary.className = 'study-plan-summary';
     summary.textContent = plan.summary;
     output.append(summary);
-    const list = document.createElement('ul');
-    for (const item of plan.priorities || []) {
-      const li = document.createElement('li');
-      const title = document.createElement('strong');
-      title.textContent = `${item.discipline} — ${item.topic} (${item.wrongCount} de ${item.total} questão(ões) deste conteúdo): `;
-      li.append(title, document.createTextNode(`${item.reason || ''} ${item.action}`));
-      for (const resource of item.resources || []) {
-        const link = document.createElement('a');
-        link.href = resource.url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = `${resource.kind === 'video_search' ? ' 📺 ' : ' 🌐 '}${resource.title}`;
-        li.append(link);
-      }
-      list.append(li);
+    if (plan.basicCount || plan.source === 'offline') {
+      const notice = document.createElement('p');
+      notice.className = 'study-plan-notice';
+      notice.textContent = plan.source === 'offline'
+        ? 'Roteiro provisório: a IA não respondeu. Tente novamente mais tarde para obter o diagnóstico detalhado.'
+        : `${plan.basicCount} conteúdo(s) receberam orientação básica porque a IA não os detalhou.`;
+      output.append(notice);
     }
-    output.append(list);
+    const byDiscipline = new Map();
+    for (const item of plan.priorities || []) {
+      if (!byDiscipline.has(item.discipline)) byDiscipline.set(item.discipline, []);
+      byDiscipline.get(item.discipline).push(item);
+    }
+    const count = document.createElement('p');
+    count.className = 'study-plan-count';
+    count.textContent = `${byDiscipline.size} disciplina(s) · ${plan.priorities?.length || 0} conteúdo(s) para revisar`;
+    output.append(count);
+    for (const [discipline, items] of byDiscipline) {
+      const section = document.createElement('section');
+      section.className = 'study-discipline';
+      const heading = document.createElement('h3');
+      heading.textContent = discipline;
+      section.append(heading);
+      const grid = document.createElement('div');
+      grid.className = 'study-topic-grid';
+      for (const item of items) {
+        const card = document.createElement('article');
+        card.className = 'study-topic-card';
+        const title = document.createElement('h4');
+        title.textContent = item.topic;
+        const badge = document.createElement('span');
+        badge.className = 'study-topic-badge';
+        badge.textContent = `${item.wrongCount} erro(s) em ${item.total} questão(ões)`;
+        const reason = document.createElement('p');
+        const reasonLabel = document.createElement('strong');
+        reasonLabel.textContent = item.guidanceSource === 'basic' ? 'Observação básica: ' : 'Diagnóstico: ';
+        reason.append(reasonLabel, document.createTextNode(item.reason || ''));
+        const action = document.createElement('p');
+        const actionLabel = document.createElement('strong');
+        actionLabel.textContent = 'Próximo passo: ';
+        action.append(actionLabel, document.createTextNode(item.action || ''));
+        const resources = document.createElement('div');
+        resources.className = 'study-resource-links';
+        for (const resource of item.resources || []) {
+          const link = document.createElement('a');
+          link.href = resource.url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.className = 'study-resource-link';
+          link.textContent = `${resource.kind === 'video_search' ? '▶ ' : resource.kind === 'article_search' ? '⌕ ' : '↗ '}${resource.title}`;
+          resources.append(link);
+        }
+        card.append(title, badge, reason, action, resources);
+        grid.append(card);
+      }
+      section.append(grid);
+      output.append(section);
+    }
   } catch (error) {
     output.textContent = error.message || 'Não foi possível gerar o plano agora. Os materiais por questão continuam disponíveis abaixo.';
   } finally { btn.disabled = false; }
