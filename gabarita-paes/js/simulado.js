@@ -672,7 +672,8 @@ function renderReviewList(data) {
         <div class="study-box">
           <strong style="color: #1e40af;">📚 Materiais para revisão</strong>
           ${match ? `
-            <p style="margin: 0.4rem 0;">${escapeHtml(match.action)}</p>
+            <p style="margin: 0.4rem 0;"><strong>Diagnóstico:</strong> ${escapeHtml(match.reason || '')}</p>
+            <p style="margin: 0.4rem 0;"><strong>Próximo passo:</strong> ${escapeHtml(match.action)}</p>
             ${(match.resources || []).length ? `<div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
               ${match.resources.map((r) => `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="study-link">${r.kind === 'video' ? '📺' : '🌐'} ${escapeHtml(r.title)}</a>`).join('')}
             </div>` : '<p>Nenhum link específico foi confirmado para este tópico.</p>'}
@@ -719,14 +720,14 @@ async function generateAiStudyPlan() {
     for (const item of plan.priorities || []) {
       const li = document.createElement('li');
       const title = document.createElement('strong');
-      title.textContent = `${item.discipline} — ${item.topic}: `;
-      li.append(title, document.createTextNode(item.action));
+      title.textContent = `${item.discipline} — ${item.topic} (${item.wrongCount} de ${item.total} questão(ões) deste conteúdo): `;
+      li.append(title, document.createTextNode(`${item.reason || ''} ${item.action}`));
       for (const resource of item.resources || []) {
         const link = document.createElement('a');
         link.href = resource.url;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        link.textContent = `${resource.kind === 'video' ? ' 📺 ' : ' 🌐 '}${resource.title}`;
+        link.textContent = `${resource.kind === 'video' ? ' 📺 ' : ' 🌐 '}${resource.title}${resource.channel ? ` — ${resource.channel}` : ''}`;
         li.append(link);
       }
       list.append(li);
