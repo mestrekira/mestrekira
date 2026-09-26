@@ -675,10 +675,10 @@ function renderReviewList(data) {
             <p style="margin: 0.4rem 0;"><strong>Diagnóstico:</strong> ${escapeHtml(match.reason || '')}</p>
             <p style="margin: 0.4rem 0;"><strong>Próximo passo:</strong> ${escapeHtml(match.action)}</p>
             ${(match.resources || []).length ? `<div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-              ${match.resources.map((r) => `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="study-link">${r.kind === 'video' ? '📺' : '🌐'} ${escapeHtml(r.title)}</a>`).join('')}
+              ${match.resources.map((r) => `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="study-link">${r.kind === 'video_search' ? '📺' : '🌐'} ${escapeHtml(r.title)}</a>`).join('')}
             </div>` : '<p>Nenhum link específico foi confirmado para este tópico.</p>'}
           ` : `
-            <p style="margin: 0.4rem 0;">Gere o roteiro com IA para receber links de páginas e videoaulas específicas. Enquanto isso:</p>
+            <p style="margin: 0.4rem 0;">Gere o roteiro com IA para receber páginas selecionadas e uma busca de videoaulas sobre sua dificuldade. Enquanto isso:</p>
             <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
               <a href="${recommendations.webLink}" target="_blank" rel="noopener noreferrer" class="study-link">Pesquisar leitura sobre ${escapeHtml(q.topic || 'o tema')}</a>
               <a href="${recommendations.ytLink}" target="_blank" rel="noopener noreferrer" class="study-link">Pesquisar videoaula</a>
@@ -727,7 +727,7 @@ async function generateAiStudyPlan() {
         link.href = resource.url;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        link.textContent = `${resource.kind === 'video' ? ' 📺 ' : ' 🌐 '}${resource.title}${resource.channel ? ` — ${resource.channel}` : ''}`;
+        link.textContent = `${resource.kind === 'video_search' ? ' 📺 ' : ' 🌐 '}${resource.title}`;
         li.append(link);
       }
       list.append(li);
