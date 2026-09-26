@@ -678,9 +678,8 @@ function renderReviewList(data) {
               ${match.resources.map((r) => `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="study-link">${r.kind === 'video_search' ? '📺' : '🌐'} ${escapeHtml(r.title)}</a>`).join('')}
             </div>` : '<p>Nenhum link específico foi confirmado para este tópico.</p>'}
           ` : `
-            <p style="margin: 0.4rem 0;">Gere o roteiro com IA para receber páginas selecionadas e uma busca de videoaulas sobre sua dificuldade. Enquanto isso:</p>
+            <p style="margin: 0.4rem 0;">Use “Gerar roteiro com IA” acima para abrir diretamente o artigo específico ou o mais próximo da dificuldade identificada. A busca de videoaulas pode ser usada enquanto isso:</p>
             <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-              <a href="${recommendations.webLink}" target="_blank" rel="noopener noreferrer" class="study-link">Pesquisar leitura sobre ${escapeHtml(q.topic || 'o tema')}</a>
               <a href="${recommendations.ytLink}" target="_blank" rel="noopener noreferrer" class="study-link">Pesquisar videoaula</a>
             </div>
           `}
@@ -692,10 +691,8 @@ function renderReviewList(data) {
 
 // Busca explícita como alternativa enquanto o roteiro com IA não for solicitado.
 function getTargetedRecommendations(q) {
-  const portuguese = /portug|literat|redaç|interpretaç/i.test(q.discipline || '');
   const topic = `${q.discipline || ''} ${q.topic || ''}`.trim();
   return {
-    webLink: `https://www.google.com/search?q=${encodeURIComponent((portuguese ? 'site:mestrekira.com.br ' : 'site:brasilescola.uol.com.br OR site:todamateria.com.br ') + topic)}`,
     ytLink: `https://www.youtube.com/results?search_query=${encodeURIComponent(`videoaula PAES UEMA ${topic}`)}`,
   };
 }
