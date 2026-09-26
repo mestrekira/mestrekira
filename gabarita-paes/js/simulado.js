@@ -521,6 +521,12 @@ async function finishExam() {
 
 function displayResult(data) {
   reviewData = data;
+  aiStudyPlan = null;
+  const planOutput = document.getElementById('ai-plan-output');
+  if (planOutput) {
+    planOutput.replaceChildren();
+    planOutput.style.display = 'none';
+  }
   const disciplineSelect = document.getElementById('review-discipline');
   if (disciplineSelect) {
     const disciplines = [...new Set((data.questions || []).map((q) => q.discipline))].sort();
@@ -561,6 +567,7 @@ function displayResult(data) {
   }
 
   renderReviewList(data);
+  if (activeAttemptId) void restoreStudyPlan(activeAttemptId);
 }
 
 window.filterReview = (type) => {
@@ -701,6 +708,18 @@ function getTargetedRecommendations(q) {
 }
 
 // ================= ROTEIRO DE REVISÃO COM IA =================
+async function restoreStudyPlan(attemptId) {
+  try {
+    const plan = await window.api.get(`/simulations/attempts/${attemptId}/study-plan`);
+    if (attemptId !== activeAttemptId || !plan || aiStudyPlan) return;
+    aiStudyPlan = plan;
+    if (reviewData) renderReviewList(reviewData);
+    renderAiStudyPlan(plan);
+  } catch (error) {
+    console.error('Não foi possível recuperar o roteiro salvo:', error);
+  }
+}
+
 async function generateAiStudyPlan() {
   const btn = document.getElementById('btn-generate-ai-plan');
   const output = document.getElementById('ai-plan-output');
@@ -708,10 +727,22 @@ async function generateAiStudyPlan() {
   btn.disabled = true;
   output.style.display = 'block';
   output.textContent = 'Gerando roteiro de revisão...';
+  const attemptId = activeAttemptId;
   try {
-    const plan = await window.api.post(`/simulations/attempts/${activeAttemptId}/study-plan`, {});
+    const plan = await window.api.post(`/simulations/attempts/${attemptId}/study-plan`, {});
+    if (attemptId !== activeAttemptId) return;
     aiStudyPlan = plan;
     if (reviewData) renderReviewList(reviewData);
+    renderAiStudyPlan(plan);
+  } catch (error) {
+    if (attemptId === activeAttemptId) output.textContent = error.message || 'Não foi possível gerar o plano agora. Os materiais por questão continuam disponíveis abaixo.';
+  } finally { btn.disabled = false; }
+}
+
+function renderAiStudyPlan(plan) {
+    const output = document.getElementById('ai-plan-output');
+    if (!output) return;
+    output.style.display = 'block';
     output.replaceChildren();
     const summary = document.createElement('p');
     summary.className = 'study-plan-summary';
@@ -775,9 +806,6 @@ async function generateAiStudyPlan() {
       section.append(grid);
       output.append(section);
     }
-  } catch (error) {
-    output.textContent = error.message || 'Não foi possível gerar o plano agora. Os materiais por questão continuam disponíveis abaixo.';
-  } finally { btn.disabled = false; }
 }
 
 function generateLocalSmartPlan(wrongQuestions) {
