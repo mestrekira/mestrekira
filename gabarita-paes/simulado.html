@@ -216,6 +216,40 @@
       margin-top: 1rem;
       font-size: 0.9rem;
     }
+    .review-study-details summary { color: #1e40af; font-weight: 700; cursor: pointer; }
+    .review-study-details[open] summary { margin-bottom: 0.8rem; }
+    .study-plan-notice, .study-note {
+      background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+      border-radius: 8px; padding: 0.7rem 0.9rem;
+    }
+    #ai-plan-output { text-align: left; }
+    .study-plan-summary { margin: 0 0 0.75rem; line-height: 1.55; }
+    .study-plan-count { margin: 0.75rem 0 1.2rem; font-weight: 700; color: #334155; }
+    .study-discipline { margin: 1.3rem 0 1.6rem; }
+    .study-discipline h3 {
+      margin: 0 0 0.65rem; padding-bottom: 0.45rem;
+      border-bottom: 2px solid #bfdbfe; color: #1e3a8a; font-size: 1.12rem;
+    }
+    .study-topic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 0.85rem; }
+    .study-topic-card {
+      min-width: 0; background: #fff; border: 1px solid #cbd5e1;
+      border-radius: 10px; padding: 1rem 1.1rem; box-shadow: 0 1px 3px #0f172a0d;
+    }
+    .study-topic-card h4 { margin: 0 0 0.35rem; color: #0f172a; line-height: 1.3; }
+    .study-topic-card p { margin: 0.75rem 0 0; line-height: 1.5; color: #334155; }
+    .study-topic-badge {
+      display: inline-block; background: #fef2f2; color: #991b1b;
+      border-radius: 20px; padding: 0.15rem 0.65rem; font-size: 0.78rem; font-weight: 700;
+    }
+    .study-resource-links { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.9rem; }
+    .study-resource-link {
+      display: inline-flex; align-items: center; max-width: 100%;
+      padding: 0.45rem 0.7rem; border: 1px solid #bfdbfe;
+      border-radius: 8px; background: #eff6ff; color: #1d4ed8;
+      font-weight: 650; font-size: 0.86rem; line-height: 1.3;
+      text-decoration: none; overflow-wrap: anywhere;
+    }
+    .study-resource-link:hover, .study-resource-link:focus-visible { background: #dbeafe; text-decoration: underline; }
     .study-link {
       display: inline-flex;
       align-items: center;
@@ -439,7 +473,7 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;" id="areas-breakdown"></div>
 
-        <!-- Botão com IA Gemini -->
+        <!-- Roteiro de revisão -->
         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; text-align: left;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
