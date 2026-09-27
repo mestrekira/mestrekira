@@ -6,23 +6,15 @@
   <title>Treino Livre ENEM | Gabarita PAES</title>
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
-    .rec-box {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-top: 1rem;
-    }
-    .rec-item {
-      display: block;
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-      margin-top: 0.3rem;
-    }
-    .rec-item:hover {
-      text-decoration: underline;
-    }
+    .history-list { display: grid; gap: 1rem; margin-top: 1rem; }
+    .history-entry { border: 1px solid #dbe4ef; border-radius: 10px; background: white; overflow: hidden; }
+    .history-entry summary { cursor: pointer; padding: 1rem; font-weight: 650; line-height: 1.5; }
+    .history-entry summary:hover { background: #f8fafc; }
+    .history-detail { border-top: 1px solid #e2e8f0; padding: 1rem; line-height: 1.65; }
+    .history-detail p { margin: 0.6rem 0; }
+    .history-detail .question-img { display: block; max-width: 100%; height: auto; margin: 0.7rem 0; }
+    .history-answer { padding: 0.75rem; border-radius: 8px; background: #eff6ff; }
+    .history-pages { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 1rem 0; }
     .next-q-btn {
       display: inline-flex;
       align-items: center;
@@ -111,6 +103,16 @@
         Carregando bloco de questões inéditas...
       </div>
     </div>
+
+    <section class="card" id="enem-history" style="margin-top: 1.5rem;" aria-labelledby="history-title">
+      <h2 id="history-title">📚 Histórico de treino ENEM</h2>
+      <p style="color: var(--text-muted); margin: 0.5rem 0 1rem;">Reveja suas respostas e as resoluções comentadas. As questões respondidas ficam salvas na sua conta.</p>
+      <button id="btn-toggle-history" class="btn btn-secondary" type="button" aria-expanded="false">Ver questões respondidas</button>
+      <div id="history-panel" hidden>
+        <div id="history-list" class="history-list" aria-live="polite"></div>
+        <div id="history-pages" class="history-pages"></div>
+      </div>
+    </section>
 
   </main>
 
