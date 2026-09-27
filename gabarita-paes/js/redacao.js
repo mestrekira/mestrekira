@@ -1,5 +1,15 @@
 let promptsData = [];
 let selectedPromptId = null;
+let themeLoadToken = 0;
+const essayDrafts = {};
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char]);
+}
+
+function formatText(value) { return escapeHtml(value).replace(/\n/g, '<br>'); }
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.api || !window.api.getToken()) {
@@ -90,7 +100,10 @@ function renderThemes() {
 }
 
 window.selectTheme = (promptId) => {
+  const textarea = document.getElementById('essay-text');
+  if (selectedPromptId && textarea && !textarea.readOnly) essayDrafts[selectedPromptId] = textarea.value;
   selectedPromptId = promptId;
+  const token = ++themeLoadToken;
   const prompt = promptsData.find((p) => p.id === promptId);
   if (!prompt) return;
 
@@ -98,7 +111,15 @@ window.selectTheme = (promptId) => {
   const themeTitle = document.getElementById('theme-title');
   const themeTexts = document.getElementById('theme-texts');
   if (themeTitle) themeTitle.innerText = `Tema ${prompt.themeNumber}: ${prompt.title}`;
-  if (themeTexts) themeTexts.innerHTML = (prompt.motivationalTexts || '').replace(/\n/g, '<br>');
+  if (themeTexts) themeTexts.innerHTML = formatText(prompt.motivationalTexts || '');
+
+  const resultCard = document.getElementById('result-card');
+  if (resultCard) resultCard.style.display = 'none';
+  if (textarea) {
+    textarea.readOnly = !!prompt.isSubmitted;
+    textarea.value = prompt.isSubmitted ? '' : (essayDrafts[promptId] || '');
+    textarea.dispatchEvent(new Event('input'));
+  }
 
   const submitBtn = document.getElementById('btn-submit-essay');
   if (submitBtn) {
@@ -111,6 +132,17 @@ window.selectTheme = (promptId) => {
       submitBtn.innerText = '🚀 Enviar para Correção Inteligente';
       submitBtn.style.background = 'var(--primary, #2563eb)';
     }
+  }
+  if (prompt.isSubmitted && prompt.essayId) {
+    window.api.get(`/essays/${encodeURIComponent(prompt.essayId)}`)
+      .then((saved) => {
+        if (token !== themeLoadToken) return;
+        if (textarea) { textarea.value = saved.content || ''; textarea.dispatchEvent(new Event('input')); }
+        displayResult(saved);
+      })
+      .catch((error) => {
+        if (token === themeLoadToken) alert(error.message || 'Não foi possível carregar a correção salva.');
+      });
   }
 };
 
@@ -243,7 +275,7 @@ function displayResult(res) {
   const titleBadge = document.getElementById('title-badge-container');
   if (titleBadge) {
     const hasTitle = fb.has_title ?? res.has_title ?? true;
-    const titleAnalysis = fb.title_analysis || (hasTitle ? 'Título identificado na 1ª linha.' : 'Título ausente (-0,50 ponto).');
+    const titleAnalysis = escapeHtml(fb.title_analysis || (hasTitle ? 'Título identificado na 1ª linha.' : 'Título não identificado.'));
     titleBadge.innerHTML = hasTitle
       ? `<span class="badge-title badge-success">✓ ${titleAnalysis}</span>`
       : `<span class="badge-title badge-warning">⚠ ${titleAnalysis}</span>`;
@@ -272,7 +304,7 @@ function displayResult(res) {
       { num: 1, name: 'Atendimento ao Tema', score: crit.theme, det: details.theme },
       { num: 2, name: 'Coesão das Partes', score: crit.cohesion, det: details.cohesion },
       { num: 3, name: 'Coerência Argumentativa', score: crit.coherence, det: details.coherence },
-      { num: 4, name: 'Tipo Textual & Título', score: crit.genre, det: details.genre },
+      { num: 4, name: 'Tipo Dissertativo-Argumentativo', score: crit.genre, det: details.genre },
       { num: 5, name: 'Norma Padrão da Língua', score: crit.grammarNorm, det: details.grammar_norm },
     ];
 
@@ -281,13 +313,19 @@ function displayResult(res) {
       <div class="criterion-box">
         <div class="criterion-header">
           <strong>${item.num}. ${item.name}</strong>
-          <span style="font-weight: 700; color: var(--primary, #2563eb);">${Number(item.score ?? 0).toFixed(2)} / 2.00</span>
+          <span style="font-weight: 700; color: var(--primary, #2563eb);">${item.score == null ? '—' : Number(item.score).toFixed(2)} / 2.00</span>
         </div>
         <p style="margin: 0; font-size: 0.875rem; color: #475569;">
-          ${item.det?.diagnosis || 'Avaliação conforme os descritores oficiais.'}
+          ${formatText(item.det?.diagnosis || 'Análise detalhada não disponível para esta redação.')}
         </p>
-        ${item.det?.student_quote ? `<div class="student-quote">"${item.det.student_quote}"</div>` : ''}
-        ${item.det?.tip ? `<div class="tip-box">💡 <strong>Como aprimorar:</strong> ${item.det.tip}</div>` : ''}
+        ${item.det?.student_quote ? `<div class="student-quote">“${formatText(item.det.student_quote)}”</div>` : ''}
+        ${(item.det?.findings || []).map((finding) => `<div class="criterion-finding">
+          <div class="student-quote">“${formatText(finding.student_quote)}”</div>
+          <p><strong>O que ocorre:</strong> ${formatText(finding.explanation)}</p>
+          <p><strong>Por que afeta a nota:</strong> ${formatText(finding.effect)}</p>
+          <p><strong>Como melhorar:</strong> ${formatText(finding.suggestion)}</p>
+        </div>`).join('')}
+        ${item.det?.tip ? `<div class="tip-box">💡 <strong>Próximo passo:</strong> ${formatText(item.det.tip)}</div>` : ''}
       </div>
     `)
       .join('');
@@ -304,9 +342,9 @@ function displayResult(res) {
         .map(
           (d) => `
         <tr>
-          <td style="color: #b91c1c; font-style: italic;">"${d.original}"</td>
-          <td style="color: #15803d; font-weight: 500;">"${d.correction}"</td>
-          <td style="color: #475569;">${d.rule}</td>
+          <td style="color: #b91c1c; font-style: italic;">“${formatText(d.original)}”</td>
+          <td style="color: #15803d; font-weight: 500;">“${formatText(d.correction)}”</td>
+          <td style="color: #475569;">${formatText(d.rule)}</td>
         </tr>
       `,
         )
@@ -316,31 +354,36 @@ function displayResult(res) {
     }
   }
 
-  // 5. Repertório Sociocultural (Obras Obrigatórias)
+  // 5. Auditoria do repertório usado e sugestão separada de obra
   const repBox = document.getElementById('repertoire-box');
   const repContent = document.getElementById('repertoire-content');
-  if (repBox && repContent && fb.uema_repertoire_connection) {
-    const rep = fb.uema_repertoire_connection;
+  if (repBox && repContent) {
+    const used = Array.isArray(fb.repertoire_analysis) ? fb.repertoire_analysis : [];
+    const rep = fb.uema_repertoire_connection || {};
     repBox.style.display = 'block';
     repContent.innerHTML = `
-      <strong>Obra Indicada:</strong> ${rep.book}<br>
-      <strong>Aplicação Temática:</strong> ${rep.application}
+      ${used.length ? used.map((item) => `<div class="repertoire-finding">
+        <strong>${escapeHtml(item.reference || 'Referência usada')} · ${item.status === 'inaccurate' ? 'Atribuição incorreta' : item.status === 'consistent' ? 'Atribuição coerente' : 'Verificação pendente'}</strong>
+        <div class="student-quote">“${formatText(item.student_quote)}”</div>
+        <p>${formatText(item.analysis)}</p>
+        ${item.thematic_link ? `<p><strong>Relação com o tema:</strong> ${formatText(item.thematic_link)}</p>` : ''}
+        <small>${formatText(item.verification_basis)}</small>
+      </div>`).join('') : '<p>Nenhuma referência explícita foi identificada para conferir.</p>'}
+      ${rep.book && rep.application ? `<div class="repertoire-suggestion"><strong>Sugestão para outra produção:</strong> ${escapeHtml(rep.book)} — ${formatText(rep.application)}</div>` : ''}
     `;
-  } else if (repBox) {
-    repBox.style.display = 'none';
   }
 
   // 6. Pontos Fortes e Pontos de Atenção
   const strengthsList = document.getElementById('strengths-list');
   if (strengthsList) {
-    const strengths = fb.strengths || ['Boa adequação discursiva'];
-    strengthsList.innerHTML = strengths.map((s) => `<li>${s}</li>`).join('');
+    const strengths = fb.strengths || [];
+    strengthsList.innerHTML = strengths.map((s) => `<li>${formatText(s)}</li>`).join('');
   }
 
   const weaknessesList = document.getElementById('weaknesses-list');
   if (weaknessesList) {
-    const weaknesses = fb.weaknesses || ['Aprofundar a fundamentação com dados ou citações'];
-    weaknessesList.innerHTML = weaknesses.map((w) => `<li>${w}</li>`).join('');
+    const weaknesses = fb.weaknesses || [];
+    weaknessesList.innerHTML = weaknesses.map((w) => `<li>${formatText(w)}</li>`).join('');
   }
 
   // 7. Recomendações de Estudo
@@ -350,7 +393,7 @@ function displayResult(res) {
     const recs = fb.study_recommendations || [];
     if (recs.length > 0) {
       recBox.style.display = 'block';
-      recList.innerHTML = recs.map((r) => `<li>${r}</li>`).join('');
+      recList.innerHTML = recs.map((r) => `<li>${formatText(r)}</li>`).join('');
     } else {
       recBox.style.display = 'none';
     }
