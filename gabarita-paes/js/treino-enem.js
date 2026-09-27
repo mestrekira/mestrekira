@@ -1,6 +1,15 @@
 let practiceQuestions = [];
 let activeDiscipline = '';
 let filterOnlyPending = false;
+let historyOpen = false;
+let historyLoadToken = 0;
+let practiceLoadToken = 0;
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char]);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.api || !window.api.getToken()) {
@@ -24,13 +33,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 2. Configura filtros e busca primeiro bloco
   setupFilters();
+  document.getElementById('btn-toggle-history')?.addEventListener('click', () => {
+    historyOpen = !historyOpen;
+    document.getElementById('history-panel').hidden = !historyOpen;
+    const btn = document.getElementById('btn-toggle-history');
+    btn.setAttribute('aria-expanded', String(historyOpen));
+    btn.textContent = historyOpen ? 'Ocultar histórico' : 'Ver questões respondidas';
+    if (historyOpen) loadHistory(1);
+  });
   window.buscarNovasQuestoes();
 });
+
+async function loadHistory(page = 1) {
+  const list = document.getElementById('history-list');
+  const pages = document.getElementById('history-pages');
+  if (!list || !pages || !historyOpen) return;
+  const token = ++historyLoadToken;
+  list.textContent = 'Carregando histórico...';
+  pages.replaceChildren();
+  try {
+    const params = new URLSearchParams({ page: String(page) });
+    if (activeDiscipline) params.set('discipline', activeDiscipline);
+    const data = await window.api.get(`/questions/practice/history?${params}`);
+    if (token !== historyLoadToken || !historyOpen) return;
+    if (!data.items?.length) {
+      list.textContent = data.total ? 'Não há mais questões nesta página.' : 'Nenhuma questão respondida neste filtro.';
+      return;
+    }
+    list.innerHTML = data.items.map((item) => `
+      <details class="history-entry">
+        <summary>${item.isCorrect ? '✅' : '❌'} ${escapeHtml(item.discipline)} · ${escapeHtml(item.topic || 'Conteúdo geral')}
+          <small>— ENEM ${escapeHtml(item.year)} · ${escapeHtml(new Date(item.answeredAt).toLocaleString('pt-BR'))}</small></summary>
+        <div class="history-detail">
+          <p>${escapeHtml(item.statement).replace(/\n/g, '<br>')}</p>
+          ${[item.imageUrl, item.imageUrlB].filter((url) => /^https:\/\//i.test(url || '')).map((url) =>
+            `<img class="question-img" src="${escapeHtml(url)}" alt="Imagem da questão">`).join('')}
+          <ol type="A">${(item.options || []).map((option) =>
+            `<li><strong>${escapeHtml(option.letter)}.</strong> ${escapeHtml(option.text)}</li>`).join('')}</ol>
+          <div class="history-answer">Sua resposta: <strong>${escapeHtml(item.selectedLetter || '—')}</strong> ·
+            Gabarito: <strong>${escapeHtml(item.correctLetter || '—')}</strong></div>
+          <p><strong>Resolução comentada:</strong> ${escapeHtml(item.explanation || 'Explicação ainda não cadastrada.').replace(/\n/g, '<br>')}</p>
+        </div>
+      </details>`).join('');
+    const maxPage = Math.ceil(data.total / data.pageSize);
+    const prev = document.createElement('button');
+    prev.className = 'btn btn-secondary';
+    prev.textContent = 'Anterior';
+    prev.disabled = page <= 1;
+    prev.addEventListener('click', () => loadHistory(page - 1));
+    const label = document.createElement('span');
+    label.textContent = `Página ${page} de ${maxPage} · ${data.total} resposta(s)`;
+    const next = document.createElement('button');
+    next.className = 'btn btn-secondary';
+    next.textContent = 'Próxima';
+    next.disabled = page >= maxPage;
+    next.addEventListener('click', () => loadHistory(page + 1));
+    pages.append(prev, label, next);
+  } catch (error) {
+    if (token === historyLoadToken) list.textContent = error.message || 'Não foi possível carregar o histórico.';
+  }
+}
 
 // ==========================================
 // 1. Busca e Carregamento do Bloco
 // ==========================================
 window.buscarNovasQuestoes = async () => {
+  const token = ++practiceLoadToken;
   const container = document.getElementById('practice-container');
   const banner = document.getElementById('practice-completion-banner');
   if (banner) banner.style.display = 'none';
@@ -48,14 +116,15 @@ window.buscarNovasQuestoes = async () => {
       : '/questions/practice?limit=10';
 
     const questions = await window.api.get(url);
+    if (token !== practiceLoadToken) return;
 
     if (!questions || questions.length === 0) {
       if (container) {
         container.innerHTML = `
           <div class="card" style="text-align: center; padding: 2.5rem;">
             <h3>🎉 Você respondeu todas as questões disponíveis desta matéria!</h3>
-            <p style="color: var(--text-muted); margin: 1rem 0;">Deseja reiniciar seu histórico para treinar novamente?</p>
-            <button class="btn" onclick="reiniciarHistorico()">Reiniciar Histórico de ${activeDiscipline || 'Geral'}</button>
+            <p style="color: var(--text-muted); margin: 1rem 0;">Confira as respostas no histórico abaixo. Novas questões aparecerão quando forem adicionadas ao acervo.</p>
+            <button class="btn btn-secondary" onclick="document.getElementById('btn-toggle-history').click()">Ver histórico</button>
           </div>
         `;
       }
@@ -74,6 +143,7 @@ window.buscarNovasQuestoes = async () => {
     atualizarProgressoTreino(0, practiceQuestions.length);
     renderPractice();
   } catch (error) {
+    if (token !== practiceLoadToken) return;
     if (container) {
       container.innerHTML = `
         <div class="card" style="color: var(--danger); text-align: center;">
@@ -174,15 +244,15 @@ function renderPractice() {
     <div class="card" id="practice-card-${q.id}">
       <div class="question-header">
         <span class="badge ${q.isAnswered ? (q.isCorrect ? 'badge-success' : 'badge-danger') : ''}">
-          Questão ${idx + 1} de ${practiceQuestions.length} • ENEM ${q.year || ''} • ${q.discipline}
+          Questão ${idx + 1} de ${practiceQuestions.length} • ENEM ${escapeHtml(q.year || '')} • ${escapeHtml(q.discipline)}
         </span>
-        <span style="color: var(--text-muted); font-size: 0.85rem;">${q.topic || ''}</span>
+        <span style="color: var(--text-muted); font-size: 0.85rem;">${escapeHtml(q.topic || '')}</span>
       </div>
 
-      <div class="question-statement">${q.statement.replace(/\n/g, '<br>')}</div>
+      <div class="question-statement">${escapeHtml(q.statement).replace(/\n/g, '<br>')}</div>
 
-      ${q.imageUrl ? `<img src="${q.imageUrl}" class="question-img" alt="Imagem da questão">` : ''}
-      ${q.imageUrlB ? `<img src="${q.imageUrlB}" class="question-img" alt="Imagem complementar">` : ''}
+      ${/^https:\/\//i.test(q.imageUrl || '') ? `<img src="${escapeHtml(q.imageUrl)}" class="question-img" alt="Imagem da questão">` : ''}
+      ${/^https:\/\//i.test(q.imageUrlB || '') ? `<img src="${escapeHtml(q.imageUrlB)}" class="question-img" alt="Imagem complementar">` : ''}
 
       <div class="options-list" id="opts-${q.id}">
         ${q.options
@@ -191,8 +261,8 @@ function renderPractice() {
           <div class="option-item ${q.selectedOptionId === opt.id ? 'selected' : ''}" 
                onclick="${q.isAnswered ? '' : `selectPracticeOption('${q.id}', '${opt.id}')`}" 
                id="opt-${opt.id}">
-            <span class="option-letter">${opt.letter}</span>
-            <span class="option-text">${opt.text}</span>
+            <span class="option-letter">${escapeHtml(opt.letter)}</span>
+            <span class="option-text">${escapeHtml(opt.text)}</span>
           </div>
         `,
           )
@@ -216,31 +286,12 @@ function renderPractice() {
 }
 
 function gerarHtmlFeedback(q, nextQId = null) {
-  let recsHtml = '';
-  if (!q.isCorrect && q.recommendations && q.recommendations.length > 0) {
-    recsHtml = `
-      <div class="rec-box">
-        <strong>💡 Recomendação de Estudo para este Assunto:</strong>
-        ${q.recommendations
-          .map(
-            (r) => `
-          <a href="${r.url}" target="_blank" class="rec-item">
-            🔗 ${r.title}${r.sourceType === 'MESTRE_KIRA' ? '(Artigo Mestre Kira)' : ''}
-          </a>
-        `,
-          )
-          .join('')}
-      </div>
-    `;
-  }
-
   return `
     <div style="padding: 1rem; border-radius: 6px; background: ${q.isCorrect ? '#f0fdf4' : '#fef2f2'}; border: 1px solid ${q.isCorrect ? '#bbf7d0' : '#fecaca'};">
       <strong style="color: ${q.isCorrect ? '#166534' : '#991b1b'};">
         ${q.isCorrect ? '✅ Resposta Correta!' : `❌ Resposta Incorreta. A alternativa correta é a letra (${q.correctLetter || ''}).`}
       </strong>
-      ${q.explanation ? `<p style="margin-top: 0.5rem; color: #334155; line-height: 1.5;"><strong>Resolução:</strong> ${q.explanation}</p>` : ''}
-      ${recsHtml}
+      ${q.explanation ? `<p style="margin-top: 0.5rem; color: #334155; line-height: 1.5;"><strong>Resolução:</strong> ${escapeHtml(q.explanation).replace(/\n/g, '<br>')}</p>` : ''}
 
       ${nextQId ? `
         <div style="margin-top: 0.75rem; text-align: right;">
@@ -298,7 +349,6 @@ window.submitPracticeAnswer = async (questionId) => {
       q.correctOptionId = res.correctOptionId;
       q.correctLetter = res.correctLetter;
       q.explanation = res.explanation;
-      q.recommendations = res.recommendations || [];
     }
 
     // Pinta opções de verde e vermelho
@@ -340,6 +390,7 @@ window.submitPracticeAnswer = async (questionId) => {
     // Atualiza barra de progresso
     const answeredCount = practiceQuestions.filter((item) => item.isAnswered).length;
     atualizarProgressoTreino(answeredCount, practiceQuestions.length);
+    if (historyOpen) loadHistory(1);
 
     // Se completou todas as 10, rola para o topo suavemente
     if (answeredCount >= practiceQuestions.length) {
@@ -365,22 +416,8 @@ window.rolarParaQuestao = (questionId) => {
 };
 
 // ==========================================
-// 5. Filtros e Reinício de Histórico
+// 5. Filtros
 // ==========================================
-window.reiniciarHistorico = async () => {
-  if (!confirm(`Deseja realmente reiniciar seu histórico de questões desta matéria?`)) return;
-
-  try {
-    await window.api.post('/questions/practice/reset-history', {
-      discipline: activeDiscipline,
-    });
-    alert('Histórico reiniciado!');
-    window.buscarNovasQuestoes();
-  } catch (e) {
-    alert(e.message || 'Erro ao reiniciar histórico.');
-  }
-};
-
 function setupFilters() {
   const filterScroll = document.getElementById('disciplines-filter');
 
@@ -413,6 +450,7 @@ function setupFilters() {
       btn.classList.add('active');
       activeDiscipline = btn.getAttribute('data-discipline') || '';
       window.buscarNovasQuestoes();
+      if (historyOpen) loadHistory(1);
     });
   });
 }
