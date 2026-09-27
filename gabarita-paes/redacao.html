@@ -36,6 +36,11 @@
       border-bottom: 1px solid #f1f5f9;
       padding-bottom: 0.5rem;
     }
+    .criterion-finding { border-top: 1px solid #e2e8f0; padding-top: 0.65rem; font-size: 0.875rem; }
+    .criterion-finding p { margin: 0.4rem 0; line-height: 1.55; }
+    .repertoire-finding { background: white; padding: 0.85rem; border-radius: 8px; margin: 0.7rem 0; }
+    .repertoire-finding p { margin: 0.45rem 0; }
+    .repertoire-suggestion { border-top: 1px solid #d8b4fe; padding-top: 0.75rem; margin-top: 0.75rem; }
     .student-quote {
       background: #f8fafc;
       border-left: 3px solid var(--primary, #2563eb);
@@ -124,7 +129,7 @@
           </button>
         </div>
 
-        <textarea id="essay-text" class="essay-textarea" placeholder="Lembre-se: o TÍTULO é obrigatório no modelo UEMA e deve estar na 1ª linha. Escreva seu texto dissertativo-argumentativo ou utilize o microfone para ditar..."></textarea>
+        <textarea id="essay-text" class="essay-textarea" placeholder="Escreva um título relacionado aos argumentos na primeira linha e desenvolva seu texto dissertativo-argumentativo. Você também pode utilizar o microfone para ditar..."></textarea>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
           <span id="char-count" style="color: var(--text-muted, #64748b); font-size: 0.875rem;">0 caracteres (mínimo de 200)</span>
@@ -138,7 +143,7 @@
           <div>
             <h2 style="color: var(--text-main, #0f172a); margin: 0;">Resultado da Avaliação Pedagógica</h2>
             <p style="color: var(--text-muted, #64748b); margin: 0.25rem 0 0 0; font-size: 0.9rem;">
-              Correção analítica orientada pelos 5 critérios da banca do PAES UEMA
+              Avaliação pedagógica por IA baseada nos 5 critérios do edital PAES UEMA 2027
             </p>
           </div>
           <div style="text-align: right;">
@@ -150,7 +155,7 @@
         <!-- Parecer Geral -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
           <h4 style="margin: 0 0 0.5rem 0; color: var(--text-main, #1e293b); display: flex; align-items: center; gap: 0.4rem;">
-            📝 Parecer Geral da Banca
+            📝 Parecer Geral da Correção
           </h4>
           <p id="res-feedback" style="margin: 0; line-height: 1.7; color: #334155; font-size: 0.95rem;"></p>
         </div>
@@ -179,7 +184,7 @@
         <!-- Articulação com Obras do PAES UEMA -->
         <div id="repertoire-box" style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: none;">
           <h4 style="margin: 0 0 0.5rem 0; color: #6b21a8; display: flex; align-items: center; gap: 0.4rem;">
-            📖 Sugestão de Repertório das Obras Oficiais da UEMA
+            📖 Conferência das Referências e Obras do PAES
           </h4>
           <div id="repertoire-content" style="color: #581c87; font-size: 0.95rem; line-height: 1.6;"></div>
         </div>
