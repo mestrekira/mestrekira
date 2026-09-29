@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Criar Conta | Gabarita PAES</title>
+  <link rel="icon" href="../logo1.png">
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
     .auth-card {
@@ -48,7 +49,7 @@
         Prepare-se para o PAES UEMA com simulados e redação
       </p>
 
-      <div id="alert-box" style="display: none; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+      <div id="alert-box" role="status" aria-live="polite" style="display: none; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
 
       <form id="form-cadastro">
         <div class="form-group">
@@ -121,8 +122,9 @@
         <div class="form-group">
           <label for="lingua">Opção de Língua Estrangeira</label>
           <select id="lingua" class="form-control" required>
-            <option value="INGLES">Língua Inglesa (Questões 12 a 16)</option>
-            <option value="ESPANHOL">Língua Espanhola (Questões 17 a 21)</option>
+            <option value="" disabled selected>Selecione sua língua estrangeira...</option>
+            <option value="INGLES">Língua Inglesa</option>
+            <option value="ESPANHOL">Língua Espanhola</option>
           </select>
         </div>
 
@@ -155,11 +157,16 @@
 
       try {
         const res = await window.api.post('/auth/register', payload);
+        if (res?.ok === false) throw new Error(res.error || res.message || 'Falha ao cadastrar.');
         alertBox.style.display = 'block';
         alertBox.style.background = '#dcfce7';
         alertBox.style.color = '#166534';
         alertBox.innerText = 'Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail.';
         document.getElementById('form-cadastro').reset();
+        const loginLink = document.createElement('a');
+        loginLink.href = 'login.html';
+        loginLink.textContent = ' Ir para o login';
+        alertBox.appendChild(loginLink);
       } catch (err) {
         alertBox.style.display = 'block';
         alertBox.style.background = '#fee2e2';

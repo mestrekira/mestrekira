@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Entrar | Gabarita PAES</title>
+  <link rel="icon" href="../logo1.png">
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
     .auth-card {
@@ -43,7 +44,7 @@
         Entre para continuar seus simulados e redações
       </p>
 
-      <div id="alert-box" style="display: none; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+      <div id="alert-box" role="status" aria-live="polite" style="display: none; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
 
       <form id="form-login">
         <div class="form-group">
@@ -60,6 +61,13 @@
           Entrar na Plataforma
         </button>
       </form>
+
+      <p style="text-align: right; margin-top: 0.75rem; font-size: 0.9rem;">
+        <a href="recuperar-senha.html" style="color: var(--primary); font-weight: 600;">Esqueceu a senha?</a>
+      </p>
+      <p style="text-align: center; font-size: 0.9rem;">
+        <a href="verificar-email.html" style="color: var(--primary); font-weight: 600;">Não recebeu o e-mail de confirmação?</a>
+      </p>
 
       <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
         Ainda não tem conta? <a href="cadastro.html" style="color: var(--primary); font-weight: 600;">Cadastre-se</a>
