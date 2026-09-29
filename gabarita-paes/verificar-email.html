@@ -1,28 +1,85 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verificação de e-mail | Gabarita PAES</title>
-  <meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#1b2d59">
+  <meta name="description" content="Confirme o e-mail da sua conta Gabarita PAES ou solicite um novo link.">
+  <title>Confirmar e-mail | Gabarita PAES</title>
   <link rel="icon" href="../logo1.png">
-  <link rel="stylesheet" href="auth-pages.css">
+  <link rel="stylesheet" href="css/gabarita.css">
+  <style>
+    .auth-card { max-width: 460px; margin: 4rem auto; padding: 2.25rem; }
+    .auth-card h1 { margin-top: 0; }
+    .form-group { margin: 1.2rem 0; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
+    .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+    .form-control:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .feedback { display: none; padding: 0.8rem; border-radius: 8px; line-height: 1.5; margin: 1.2rem 0; }
+    .feedback.success { display: block; background: #dcfce7; color: #166534; }
+    .feedback.error { display: block; background: #fee2e2; color: #991b1b; }
+    .auth-card .btn { width: 100%; justify-content: center; }
+  </style>
 </head>
-<body data-page="verify">
-  <header class="site-header"><a href="index.html">Gabarita <strong>PAES</strong></a>
-    <nav class="auth-nav" aria-label="Seções do Gabarita PAES"><a href="index.html">Início</a><a href="simulado.html">Simulado (60Q)</a><a href="treino-enem.html">Treino ENEM</a><a href="redacao.html">Redação UEMA</a><a href="ranking.html">Classificação</a><a href="perfil.html">Meu Perfil</a></nav>
+<body>
+  <header class="header">
+    <a href="index.html" class="brand">🎓 Gabarita PAES</a>
+    <nav class="nav-links" aria-label="Seções do Gabarita PAES">
+      <a href="index.html">Início</a>
+      <a href="simulado.html">Simulado (60Q)</a>
+      <a href="treino-enem.html">Treino ENEM</a>
+      <a href="redacao.html">Redação UEMA</a>
+      <a href="ranking.html">Classificação</a>
+      <a href="perfil.html">Meu Perfil</a>
+    </nav>
   </header>
-  <main class="auth-card">
-    <p class="eyebrow">Sua conta</p>
-    <h1>Verificação de e-mail</h1>
-    <p id="message" class="status" role="status" aria-live="polite">Confira o resultado da verificação.</p>
-    <form id="auth-form" hidden>
-      <label for="email">Enviar novo link de verificação</label>
-      <input id="email" name="email" type="email" autocomplete="email" required placeholder="seu@email.com">
-      <button type="submit">Reenviar link</button>
-    </form>
-    <a class="secondary-link" href="login.html">Voltar ao login</a>
+  <main class="container">
+    <section class="card auth-card">
+      <h1>Confirmação de e-mail</h1>
+      <p id="instructions">Não recebeu o link de confirmação? Informe o e-mail cadastrado para solicitar outro.</p>
+      <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+      <form id="verify-form">
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input id="email" class="form-control" type="email" autocomplete="email" required>
+        </div>
+        <button type="submit" class="btn">Reenviar confirmação</button>
+      </form>
+      <p><a href="login.html">Voltar ao login</a></p>
+    </section>
   </main>
-  <script src="auth-pages.js" defer></script>
+  <script src="js/api.js"></script>
+  <script>
+    const feedback = document.getElementById('feedback');
+    const outcome = new URLSearchParams(location.search).get('ok');
+    if (outcome === '1') {
+      feedback.textContent = 'E-mail confirmado. Você já pode entrar na sua conta.';
+      feedback.className = 'feedback success';
+      document.getElementById('instructions').hidden = true;
+      document.getElementById('verify-form').hidden = true;
+    } else if (outcome === '0') {
+      feedback.textContent = 'O link não pôde ser confirmado. Solicite outro abaixo.';
+      feedback.className = 'feedback error';
+    }
+    if (outcome !== null) history.replaceState(null, '', location.pathname);
+    const form = document.getElementById('verify-form');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = form.querySelector('button');
+      button.disabled = true;
+      feedback.className = 'feedback';
+      try {
+        await window.api.post('/auth/request-verify', {
+          email: document.getElementById('email').value.trim(), expectedRole: 'student', origin: 'GABARITA',
+        });
+        feedback.textContent = 'Se o e-mail estiver cadastrado e ainda precisar de confirmação, enviaremos outro link.';
+        feedback.className = 'feedback success';
+      } catch (error) {
+        feedback.textContent = error.message || 'Não foi possível solicitar outro link.';
+        feedback.className = 'feedback error';
+      } finally { button.disabled = false; }
+    });
+  </script>
 </body>
 </html>

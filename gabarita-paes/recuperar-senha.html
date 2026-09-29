@@ -1,29 +1,74 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#1b2d59">
+  <meta name="description" content="Solicite um link seguro para redefinir a senha da sua conta Gabarita PAES.">
   <title>Recuperar senha | Gabarita PAES</title>
-  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="../logo1.png">
-  <link rel="stylesheet" href="auth-pages.css">
+  <link rel="stylesheet" href="css/gabarita.css">
+  <style>
+    .auth-card { max-width: 460px; margin: 4rem auto; padding: 2.25rem; }
+    .auth-card h1 { margin-top: 0; }
+    .form-group { margin: 1.2rem 0; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
+    .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; }
+    .form-control:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .feedback { display: none; padding: 0.8rem; border-radius: 8px; line-height: 1.5; margin: 1.2rem 0; }
+    .feedback.success { display: block; background: #dcfce7; color: #166534; }
+    .feedback.error { display: block; background: #fee2e2; color: #991b1b; }
+    .auth-card .btn { width: 100%; justify-content: center; }
+  </style>
 </head>
-<body data-page="recover">
-  <header class="site-header"><a href="index.html">Gabarita <strong>PAES</strong></a>
-    <nav class="auth-nav" aria-label="Seções do Gabarita PAES"><a href="index.html">Início</a><a href="simulado.html">Simulado (60Q)</a><a href="treino-enem.html">Treino ENEM</a><a href="redacao.html">Redação UEMA</a><a href="ranking.html">Classificação</a><a href="perfil.html">Meu Perfil</a></nav>
+<body>
+  <header class="header">
+    <a href="index.html" class="brand">🎓 Gabarita PAES</a>
+    <nav class="nav-links" aria-label="Seções do Gabarita PAES">
+      <a href="index.html">Início</a>
+      <a href="simulado.html">Simulado (60Q)</a>
+      <a href="treino-enem.html">Treino ENEM</a>
+      <a href="redacao.html">Redação UEMA</a>
+      <a href="ranking.html">Classificação</a>
+      <a href="perfil.html">Meu Perfil</a>
+    </nav>
   </header>
-  <main class="auth-card">
-    <p class="eyebrow">Acesso à conta</p>
-    <h1>Recuperar senha</h1>
-    <p>Informe seu e-mail cadastrado. Se houver uma conta, enviaremos um link válido por 30 minutos.</p>
-    <form id="auth-form">
-      <label for="email">E-mail</label>
-      <input id="email" name="email" type="email" autocomplete="email" required placeholder="seu@email.com">
-      <button type="submit">Enviar link</button>
-    </form>
-    <p id="message" class="status" role="status" aria-live="polite" hidden></p>
-    <a class="secondary-link" href="login.html">Voltar ao login</a>
+  <main class="container">
+    <section class="card auth-card">
+      <h1>Recuperar senha</h1>
+      <p>Informe o e-mail cadastrado. Se houver uma conta, enviaremos um link válido por 30 minutos.</p>
+      <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+      <form id="recover-form">
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input id="email" class="form-control" type="email" autocomplete="email" required>
+        </div>
+        <button type="submit" class="btn">Enviar link</button>
+      </form>
+      <p><a href="login.html">Voltar ao login</a></p>
+    </section>
   </main>
-  <script src="auth-pages.js" defer></script>
+  <script src="js/api.js"></script>
+  <script>
+    const form = document.getElementById('recover-form');
+    const feedback = document.getElementById('feedback');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = form.querySelector('button');
+      button.disabled = true;
+      feedback.className = 'feedback';
+      try {
+        await window.api.post('/auth/request-password-reset', {
+          email: document.getElementById('email').value.trim(), origin: 'GABARITA',
+        });
+        feedback.textContent = 'Se o e-mail estiver cadastrado, você receberá um link. Confira também a pasta de spam.';
+        feedback.className = 'feedback success';
+      } catch (error) {
+        feedback.textContent = error.message || 'Não foi possível solicitar o link. Tente novamente.';
+        feedback.className = 'feedback error';
+      } finally { button.disabled = false; }
+    });
+  </script>
 </body>
 </html>
