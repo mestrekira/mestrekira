@@ -724,11 +724,11 @@ function renderReviewList(data) {
             ${escapeHtml(recommendations.tip)}
           </p>
           <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem;">
-            <a href="${recommendations.webLink}" target="_blank" class="study-link">
-              ${recommendations.webLabel}
+            <a href="${recommendations.webLink}" target="_blank" rel="noopener noreferrer" class="study-link">
+              ${escapeHtml(recommendations.webLabel)}
             </a>
-            <a href="${recommendations.ytLink}" target="_blank" class="study-link">
-              📺 ${recommendations.ytLabel}
+            <a href="${recommendations.ytLink}" target="_blank" rel="noopener noreferrer" class="study-link">
+              📺 ${escapeHtml(recommendations.ytLabel)}
             </a>
           </div>
         </div>
@@ -737,134 +737,97 @@ function renderReviewList(data) {
     }).join('');
 }
 
-// Recomendações Base para Todas as 11 Disciplinas
+// Buscas contextualizadas; os resultados externos não são apresentados como páginas verificadas.
 function getTargetedRecommendations(q) {
-  const disc = (q.discipline || '').toLowerCase();
-  const topic = q.topic || q.discipline || 'PAES UEMA';
-  const topicLower = topic.toLowerCase();
-
-  let webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mestrekira.com.br ' + topic)}`;
-  let webLabel = '🌐 Buscar conteúdo no Mestre Kira';
-  let ytQuery = `UEMA ${q.discipline} ${topic}`;
-  let ytChannel = 'Videoaula Recomendada';
-  let tip = `Reforce o conteúdo de ${topic} para dominar o estilo de cobrança da UEMA.`;
-
-  // 1. Língua Portuguesa e Literatura
-  if (disc.includes('literat') || disc.includes('portug')) {
-    if (topicLower.includes('lucy') || topicLower.includes('crônica')) {
-      webLink = 'https://www.mestrekira.com.br/analise-cronicas-lucy-teixeira-ceres-costa-fernandes-paes-uema-2027.html';
-      webLabel = '🌐 Análise: Crônicas de Lucy Teixeira (Mestre Kira)';
-      ytQuery = 'Cronicas de Lucy Teixeira PAES UEMA';
-      ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória: estude a perspectiva do narrador e a ambientação maranhense.';
-    } else if (topicLower.includes('cordel') || topicLower.includes('cora')) {
-      webLink = 'https://www.mestrekira.com.br/analise-meu-livro-de-cordel-cora-coralina-paes-uema-2027.html';
-      webLabel = '🌐 Análise: Meu Livro de Cordel (Mestre Kira)';
-      ytQuery = 'Meu Livro de Cordel Cora Coralina UEMA';
-      ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória: foco na valorização do saber popular e oralidade sertaneja.';
-    } else if (topicLower.includes('infância') || topicLower.includes('graciliano')) {
-      webLink = 'https://www.mestrekira.com.br/analise-obra-infancia-graciliano-ramos-temas-redacao.html';
-      webLabel = '🌐 Análise: Infância de Graciliano Ramos (Mestre Kira)';
-      ytQuery = 'Infancia Graciliano Ramos UEMA analise';
-      ytChannel = 'YouTube • Análise Literária UEMA';
-      tip = 'Obra obrigatória: atenção aos temas de autoritarismo patriarcal e infância.';
-    } else {
-      webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mestrekira.com.br ' + topic)}`;
-      webLabel = '🌐 Buscar conteúdo no Mestre Kira';
-      ytQuery = `Professor Noslen ${topic}`;
-      ytChannel = 'YouTube • Professor Noslen';
-      tip = 'Revise a articulação sintática e os recursos coesivos no padrão da UEMA.';
-    }
-  }
-  // 2. Matemática
-  else if (disc.includes('matemát')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Teoria & Exercícios no Brasil Escola';
-    ytQuery = `Gis com Giz Matematica ${topic}`;
-    ytChannel = 'YouTube • Gis com Giz Matemática';
-    tip = 'Pratique a resolução passo a passo e a aplicação de fórmulas contextualizadas.';
-  }
-  // 3. Biologia
-  else if (disc.includes('biolog')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br ' + topic)}`;
-    webLabel = '🌐 Resumo Teórico no Toda Matéria';
-    ytQuery = `Biologia com Samuel Cunha ${topic}`;
-    ytChannel = 'YouTube • Prof. Samuel Cunha';
-    tip = 'A UEMA valoriza ecologia, fisiologia e ciclos biogeoquímicos dos ecossistemas maranhenses.';
-  }
-  // 4. Física
-  else if (disc.includes('físic')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Conceitos no Brasil Escola';
-    ytQuery = `Professor Boaro ${topic}`;
-    ytChannel = 'YouTube • Prof. Boaro';
-    tip = 'Atenção à leitura e interpretação gráfica dos fenômenos físicos.';
-  }
-  // 5. Química
-  else if (disc.includes('químic')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mundoeducacao.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Resumo no Mundo Educação';
-    ytQuery = `Cafe com Quimica Professor Michel ${topic}`;
-    ytChannel = 'YouTube • Café com Química';
-    tip = 'Revise cálculos estequiométricos e química ambiental.';
-  }
-  // 6. História
-  else if (disc.includes('histór')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Artigo Temático no Brasil Escola';
-    ytQuery = `Parabolica Pedro Renno ${topic}`;
-    ytChannel = 'YouTube • Parabólica (Pedro Rennó)';
-    tip = 'A banca costuma relacionar os processos nacionais com a história e a formação social do Maranhão.';
-  }
-  // 7. Geografia
-  else if (disc.includes('geograf')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
-    webLabel = '🌐 Artigo Temático no Brasil Escola';
-    ytQuery = `JeanGrafia ${topic}`;
-    ytChannel = 'YouTube • Prof. JeanGrafia';
-    tip = 'Atenção ao relevo, bacias hidrográficas, vegetação e dinâmicas econômicas do Maranhão.';
-  }
-  // 8. Filosofia
-  else if (disc.includes('filosof')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br filosofia ' + topic)}`;
-    webLabel = '🌐 Conceitos no Brasil Escola';
-    ytQuery = `Parabolica Pedro Renno Filosofia ${topic}`;
-    ytChannel = 'YouTube • Parabólica (Filosofia)';
-    tip = 'A UEMA cobra ética, política clássica (Platão e Aristóteles), contratualismo e iluminismo.';
-  }
-  // 9. Sociologia
-  else if (disc.includes('sociolog')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br sociologia ' + topic)}`;
-    webLabel = '🌐 Resumo no Toda Matéria';
-    ytQuery = `Parabolica Pedro Renno Sociologia ${topic}`;
-    ytChannel = 'YouTube • Parabólica (Sociologia)';
-    tip = 'Foco nos clássicos (Durkheim, Weber, Marx), cidadania, desigualdade social e cultura.';
-  }
-  // 10. Artes
-  else if (disc.includes('arte')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br artes ' + topic)}`;
-    webLabel = '🌐 História da Arte no Toda Matéria';
-    ytQuery = `Historia da Arte Vestibular ${topic}`;
-    ytChannel = 'YouTube • Arte & Cultura';
-    tip = 'Atenção às manifestações culturais maranhenses, modernismo brasileiro e vanguardas europeias.';
-  }
-  // 11. Línguas Estrangeiras
-  else if (disc.includes('ingl') || disc.includes('espanh')) {
-    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br ' + topic)}`;
-    webLabel = '🌐 Gramática no Toda Matéria';
-    ytQuery = disc.includes('ingl') ? `English in Brazil ${topic}` : `Espanhol para Brasileiros ${topic}`;
-    ytChannel = disc.includes('ingl') ? 'YouTube • English in Brazil' : 'YouTube • Espanhol para Brasileiros';
-    tip = 'Foque no reconhecimento de conectivos e na técnica de leitura instrumental.';
-  }
-
-  const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`;
-  const ytLabel = `Pesquisar vídeo: ${ytChannel}`;
-
-  return { tip, webLink, webLabel, ytLink, ytLabel };
+  const disc = String(q.discipline || 'Geral');
+  const topic = String(q.topic || 'conteúdo geral');
+  const english = /ingl|english/i.test(disc);
+  const spanish = /espan/i.test(disc);
+  const portuguese = /portug|literat|redação|interpret/i.test(disc);
+  const host = english ? 'learnenglish.britishcouncil.org' : spanish ? 'cvc.cervantes.es'
+    : portuguese ? 'www.mestrekira.com.br' : /arte/i.test(disc)
+      ? 'enciclopedia.itaucultural.org.br' : 'brasilescola.uol.com.br';
+  const webQuery = `site:${host} ${topic}`;
+  const ytQuery = `${disc} ${topic} aula`;
+  return {
+    tip: `Releia a resolução e busque atividades sobre ${topic}. A busca pode exigir ajustar os termos do conteúdo.`,
+    webLink: `https://www.google.com/search?q=${encodeURIComponent(webQuery)}`,
+    webLabel: '🌐 Pesquisar materiais sobre o conteúdo',
+    ytLink: `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`,
+    ytLabel: 'Pesquisar videoaulas',
+  };
 }
 
-// ================= GERAÇÃO DE PLANO COM GEMINI IA =================
+function renderStudyPlan(plan, output) {
+  output.replaceChildren();
+  const summary = document.createElement('p');
+  summary.className = 'study-plan-summary';
+  summary.textContent = plan.summary || 'Roteiro de revisão dos erros.';
+  output.append(summary);
+  if (plan.source === 'offline') {
+    const notice = document.createElement('p');
+    notice.className = 'study-plan-notice';
+    notice.textContent = 'Roteiro provisório sem IA. Tente gerar novamente mais tarde.';
+    output.append(notice);
+  }
+  const priorities = Array.isArray(plan.priorities) ? plan.priorities : [];
+  if (!priorities.length) return;
+  const count = document.createElement('p');
+  count.className = 'study-plan-count';
+  count.textContent = `${priorities.length} conteúdo(s) para revisar, ordenados pela recorrência dos erros.`;
+  output.append(count);
+  const grid = document.createElement('div');
+  grid.className = 'study-topic-grid';
+  for (const item of priorities) {
+    const card = document.createElement('article');
+    card.className = 'study-topic-card';
+    const title = document.createElement('h4');
+    title.textContent = `${item.discipline || 'Geral'} — ${item.topic || 'Conteúdo geral'}`;
+    card.append(title);
+    const badge = document.createElement('span');
+    badge.className = 'study-topic-badge';
+    badge.textContent = `${Number(item.wrongCount) || 0} erro(s) em ${Number(item.total) || 0} questão(ões)`;
+    card.append(badge);
+    if (item.guidanceSource === 'basic') {
+      const note = document.createElement('p');
+      note.className = 'study-note';
+      note.textContent = 'Orientação básica baseada na contagem de erros.';
+      card.append(note);
+    }
+    for (const [label, value] of [['Observação', item.reason], ['Próxima atividade', item.action]]) {
+      if (!value) continue;
+      const paragraph = document.createElement('p');
+      const strong = document.createElement('strong');
+      strong.textContent = `${label}: `;
+      paragraph.append(strong, document.createTextNode(String(value)));
+      card.append(paragraph);
+    }
+    const links = document.createElement('div');
+    links.className = 'study-resource-links';
+    for (const resource of item.resources || []) {
+      try {
+        const url = new URL(resource.url);
+        if (url.protocol !== 'https:' || !['www.google.com', 'www.youtube.com',
+          'www.mestrekira.com.br', 'learnenglish.britishcouncil.org', 'cvc.cervantes.es',
+          'brasilescola.uol.com.br', 'mundoeducacao.uol.com.br', 'todamateria.com.br',
+          'www.todamateria.com.br', 'educa.ibge.gov.br', 'enciclopedia.itaucultural.org.br',
+          'pt.khanacademy.org'].includes(url.hostname)) continue;
+        const link = document.createElement('a');
+        link.className = 'study-resource-link';
+        link.href = url.href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = resource.kind === 'article' ? `Ler: ${resource.title}` : resource.kind === 'video_search'
+          ? 'Pesquisar videoaulas' : 'Pesquisar artigos';
+        links.append(link);
+      } catch { /* URL inválida do serviço: omitir. */ }
+    }
+    card.append(links);
+    grid.append(card);
+  }
+  output.append(grid);
+}
+
 async function generateAiStudyPlan() {
   const btn = document.getElementById('btn-generate-ai-plan');
   const output = document.getElementById('ai-plan-output');
@@ -874,17 +837,7 @@ async function generateAiStudyPlan() {
   output.textContent = 'Gerando roteiro de revisão...';
   try {
     const plan = await window.api.post(`/simulations/attempts/${activeAttemptId}/study-plan`, {});
-    output.replaceChildren();
-    const summary = document.createElement('p');
-    summary.textContent = plan.summary;
-    output.append(summary);
-    const list = document.createElement('ul');
-    for (const item of plan.priorities || []) {
-      const li = document.createElement('li');
-      li.textContent = `${item.discipline} — ${item.topic}: ${item.action}`;
-      list.append(li);
-    }
-    output.append(list);
+    renderStudyPlan(plan, output);
   } catch (error) {
     output.textContent = error.message || 'Não foi possível gerar o plano agora. Os materiais por questão continuam disponíveis abaixo.';
   } finally { btn.disabled = false; }
