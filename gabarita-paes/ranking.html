@@ -25,10 +25,13 @@
     <div class="card">
       <h2 id="ranking-course">Classificação - PAES UEMA</h2>
       <p id="ranking-summary" style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
-        Estimativa por curso para quem concluiu as 60 questões oficiais: notas padronizadas em três áreas e na redação; média final com pesos 6 e 4.
+        Nota simulada de 0 a 1000: objetiva e redação têm pesos 6 e 4. A objetiva é comparada entre todos os participantes; a redação, entre candidatos do mesmo curso.
       </p>
       <p style="color: var(--text-muted); margin: -0.75rem 0 1rem; font-size: 0.875rem;">
-        Simulação pedagógica: a classificação oficial também depende de vagas, campus, turno e da população efetiva de candidatos.
+        Simulação pedagógica: a classificação oficial também depende de vagas, campus, turno e da população efetiva de candidatos. O banco atual do simulado tem 16/15/29 questões nas três áreas, enquanto a prova do edital usa 20/20/20.
+      </p>
+      <p style="color: var(--text-muted); margin: -0.75rem 0 1rem; font-size: 0.875rem;">
+        Quando a amostra não permite padronização, a nota é provisória: 600 × (acertos ÷ 60) + 40 × redação. A posição exige pelo menos 15 acertos e redação igual ou superior a 2.
       </p>
 
       <div style="overflow-x: auto;">
@@ -41,12 +44,13 @@
             <th>Redação (0 a 10)</th>
             <th>Objetiva padronizada</th>
             <th>Redação padronizada</th>
-            <th>Média estimada PAES</th>
+            <th>Nota simulada (0 a 1000)</th>
+            <th>Situação</th>
           </tr>
         </thead>
         <tbody id="ranking-body" aria-live="polite">
           <tr>
-            <td colspan="7" style="text-align: center; color: var(--text-muted);">Carregando classificação...</td>
+            <td colspan="8" style="text-align: center; color: var(--text-muted);">Carregando classificação...</td>
           </tr>
         </tbody>
       </table>
@@ -61,7 +65,7 @@
       body.replaceChildren();
       const row = document.createElement('tr');
       const cell = document.createElement('td');
-      cell.colSpan = 7;
+      cell.colSpan = 8;
       cell.style.textAlign = 'center';
       cell.textContent = message;
       row.appendChild(cell);
@@ -75,12 +79,15 @@
     }
 
     function rankingResult(entry) {
-      if (entry.finalScore !== null && entry.finalScore !== undefined) return rankingNumber(entry.finalScore, 2);
+      if (entry.rankingStatus === 'RANKED') {
+        return entry.scoreMethod === 'PAES_STANDARDIZED' ? 'Padronizada' : 'Provisória: amostra pequena';
+      }
       return ({
         ESSAY_PENDING: 'Aguardando redação',
         BELOW_MINIMUM: 'Menos de 15 acertos',
+        ESSAY_BELOW_MINIMUM: 'Redação inferior a 2',
         COURSE_MISSING: 'Curso não informado',
-        INVALID_AREAS: 'Áreas incompletas',
+        INVALID_AREAS: 'Áreas não identificadas',
       })[entry.rankingStatus] || 'Ainda sem nota';
     }
 
@@ -108,7 +115,7 @@
         const values = [entry.position, entry.name || 'Candidato',
           rankingNumber(entry.questionsCorrect), rankingNumber(entry.highestEssayScore, 2),
           rankingNumber(entry.objectiveScore, 2), rankingNumber(entry.standardizedEssayScore, 2),
-          rankingResult(entry)];
+          rankingNumber(entry.simulatedScore, 2), rankingResult(entry)];
         for (const value of values) {
           const cell = document.createElement('td');
           cell.textContent = String(value ?? '—');
