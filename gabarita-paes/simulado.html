@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simulado Oficial PAES UEMA (60Q) | Gabarita PAES</title>
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#1b2d59">
+  <link rel="icon" href="../logo1.png">
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
     .exam-container {
@@ -282,6 +285,9 @@
       padding: 1.75rem;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
     }
+    .exam-notice { padding: 0.85rem 1.1rem; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; }
+    .exam-notice.error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .exam-notice[hidden] { display: none; }
   </style>
 </head>
 <body>
@@ -290,8 +296,10 @@
   <header class="header">
     <a href="simulado.html" class="brand">🎓 Gabarita PAES</a>
     <nav class="nav-links">
+      <a href="index.html">Início</a>
       <a href="simulado.html" class="active">Simulado (60Q)</a>
-      <a href="redacao.html">Redação</a>
+      <a href="treino-enem.html">Treino ENEM</a>
+      <a href="redacao.html">Redação UEMA</a>
       <a href="ranking.html">Classificação</a>
       <a href="perfil.html">Meu Perfil</a>
     </nav>
@@ -305,6 +313,7 @@
   </header>
 
   <main class="container">
+    <div id="exam-notice" class="card exam-notice" role="status" aria-live="polite" hidden></div>
     <!-- Bloqueio para Usuários Gratuitos fora da Fase de Testes -->
     <div id="premium-gate-view" class="card" style="display: none; max-width: 650px; margin: 3rem auto; text-align: center; padding: 2.5rem;">
       <span style="font-size: 3.5rem;">⭐</span>
@@ -378,11 +387,14 @@
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
         <!-- Seletor de Língua Estrangeira -->
         <div style="margin-bottom: 1rem;">
-          <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.35rem;">Opção de Língua Estrangeira:</label>
-          <select id="start-lang-select" style="padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 100%; max-width: 350px;">
+          <label for="start-lang-select" style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 0.35rem;">Língua estrangeira cadastrada:</label>
+          <select id="start-lang-select" disabled aria-describedby="start-lang-message" style="padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 100%; max-width: 350px;">
+            <option value="" selected>Carregando sua escolha...</option>
             <option value="INGLES">Língua Inglesa (5 Questões)</option>
             <option value="ESPANHOL">Língua Espanhola (5 Questões)</option>
           </select>
+          <p id="start-lang-message" role="status" aria-live="polite" style="margin: 0.6rem 0 0; font-size: 0.88rem; color: #475569;">A opção será confirmada com seu perfil antes do início.</p>
+          <a href="perfil.html" style="display: inline-block; margin-top: 0.45rem; font-size: 0.88rem; color: var(--primary, #2563eb);">Conferir opção no perfil</a>
         </div>
 
         <!-- Seletor com Todas as 11 Disciplinas Oficiais da UEMA -->
@@ -404,7 +416,7 @@
         </div>
       </div>
 
-      <button id="btn-start-exam" class="btn" style="width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 700;">
+      <button id="btn-start-exam" class="btn" disabled style="width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 700;">
         ⏱️ Iniciar Resolução Agora
       </button>
       <p style="font-size: 0.85rem; color: #475569;">As duas opções usam a mesma tentativa oficial. A nota sai após responder às 60 questões.</p>
@@ -542,6 +554,6 @@
   </div>
 
   <script src="js/api.js"></script>
-  <script src="js/simulado.js"></script>
+  <script src="js/simulado.js?v=20260929-02"></script>
 </body>
 </html>
