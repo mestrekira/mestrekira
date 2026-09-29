@@ -319,8 +319,9 @@
       <span style="font-size: 3.5rem;">⭐</span>
       <h2 style="color: #1e293b; margin: 0.75rem 0;">Módulo de Simulado Premium</h2>
       <p style="color: #64748b; line-height: 1.7; font-size: 1.05rem; margin-bottom: 1.5rem;">
-        Os cadernos oficiais com 60 questões, gabaritos comentados e planos de estudo com IA são exclusivos para alunos do <strong>Plano Premium Gabarita PAES</strong>.
+        Os cadernos oficiais com 60 questões, gabaritos comentados e planos de estudo com IA estão disponíveis durante o teste gratuito ou com uma assinatura ativa.
       </p>
+      <p id="premium-gate-status" role="status"></p>
       <a href="assinar.html" class="btn" style="background: var(--accent, #10b981); padding: 0.85rem 1.75rem; font-size: 1.1rem; font-weight: 700;">
         Conhecer Plano Premium
       </a>
@@ -328,6 +329,7 @@
 
     <!-- Tela 1: Boas-Vindas e Escolha de Modalidade -->
     <div id="intro-view" class="card" style="max-width: 850px; margin: 2rem auto; padding: 2rem;">
+      <p id="trial-access-status" role="status" class="study-plan-notice" hidden></p>
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
         <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary, #2563eb); background: #eff6ff; padding: 0.3rem 0.65rem; border-radius: 9999px;">
           ⏱️ Simulado PAES UEMA
@@ -554,6 +556,6 @@
   </div>
 
   <script src="js/api.js"></script>
-  <script src="js/simulado.js?v=20260929-02"></script>
+  <script src="js/simulado.js?v=20260929-03"></script>
 </body>
 </html>
