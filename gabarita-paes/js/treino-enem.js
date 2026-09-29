@@ -11,6 +11,60 @@ function escapeHtml(value) {
   })[char]);
 }
 
+function showPracticeNotice(message, isError = true) {
+  const notice = document.getElementById('practice-notice');
+  if (!notice) return;
+  notice.textContent = message || '';
+  notice.hidden = !message;
+  notice.classList.toggle('error', isError);
+}
+
+function renderQuestionTable(table) {
+  if (!table || !Array.isArray(table.headers) || !table.headers.length ||
+    !Array.isArray(table.rows) || table.rows.some((row) => !Array.isArray(row) || row.length !== table.headers.length)) return '';
+  return `<div class="question-table-scroll" tabindex="0" role="region" aria-label="${escapeHtml(table.caption || 'Tabela da questão')}">
+    <table class="question-table">
+      ${table.caption ? `<caption>${escapeHtml(table.caption)}</caption>` : ''}
+      <thead><tr>${table.headers.map((header) => `<th scope="col">${escapeHtml(header)}</th>`).join('')}</tr></thead>
+      <tbody>${table.rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>
+    ${table.source ? `<p class="question-source">${escapeHtml(table.source)}</p>` : ''}
+  </div>`;
+}
+
+// Marcadores opcionais posicionam os recursos; questões antigas continuam válidas.
+function renderQuestionContent(question) {
+  const media = new Map();
+  [question.imageUrl, question.imageUrlB].forEach((value, i) => {
+    try {
+      const url = new URL(value);
+      if (url.protocol !== 'https:' || url.username || url.password) return;
+      const safe = escapeHtml(url.href);
+      media.set(`imagem:${i + 1}`, `<figure class="question-figure"><a href="${safe}" target="_blank" rel="noopener noreferrer" title="Abrir imagem em tamanho original">
+        <img src="${safe}" class="question-img" alt="Figura ${i + 1} da questão" loading="lazy"></a></figure>`);
+    } catch { /* Questão sem imagem ou URL inválida. */ }
+  });
+  if (Array.isArray(question.tables)) question.tables.slice(0, 4).forEach((table, i) => {
+    const html = renderQuestionTable(table);
+    if (html) media.set(`tabela:${i + 1}`, html);
+  });
+  const used = new Set();
+  const statement = String(question.statement || '');
+  const marker = /\[\[(imagem|tabela):([1-9]\d*)\]\]/g;
+  let output = '', last = 0, match;
+  const text = (value) => value ? `<div class="question-statement">${escapeHtml(value).replace(/\n/g, '<br>')}</div>` : '';
+  while ((match = marker.exec(statement))) {
+    output += text(statement.slice(last, match.index));
+    const key = `${match[1]}:${match[2]}`;
+    if (media.has(key)) { output += media.get(key); used.add(key); }
+    else output += text(match[0]);
+    last = marker.lastIndex;
+  }
+  output += text(statement.slice(last));
+  for (const [key, html] of media) if (!used.has(key)) output += html;
+  return output;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.api || !window.api.getToken()) {
     window.location.href = 'login.html';
@@ -65,9 +119,7 @@ async function loadHistory(page = 1) {
         <summary>${item.isCorrect ? '✅' : '❌'} ${escapeHtml(item.discipline)} · ${escapeHtml(item.topic || 'Conteúdo geral')}
           <small>— ENEM ${escapeHtml(item.year)} · ${escapeHtml(new Date(item.answeredAt).toLocaleString('pt-BR'))}</small></summary>
         <div class="history-detail">
-          <p>${escapeHtml(item.statement).replace(/\n/g, '<br>')}</p>
-          ${[item.imageUrl, item.imageUrlB].filter((url) => /^https:\/\//i.test(url || '')).map((url) =>
-            `<img class="question-img" src="${escapeHtml(url)}" alt="Imagem da questão">`).join('')}
+          ${renderQuestionContent(item)}
           <ol type="A">${(item.options || []).map((option) =>
             `<li><strong>${escapeHtml(option.letter)}.</strong> ${escapeHtml(option.text)}</li>`).join('')}</ol>
           <div class="history-answer">Sua resposta: <strong>${escapeHtml(item.selectedLetter || '—')}</strong> ·
@@ -99,12 +151,16 @@ async function loadHistory(page = 1) {
 // ==========================================
 window.buscarNovasQuestoes = async () => {
   const token = ++practiceLoadToken;
+  showPracticeNotice('');
   const container = document.getElementById('practice-container');
   const banner = document.getElementById('practice-completion-banner');
   if (banner) banner.style.display = 'none';
 
   filterOnlyPending = false;
+  document.getElementById('btn-filter-pending')?.classList.remove('active');
   window.practiceSelections = {};
+  practiceQuestions = [];
+  atualizarProgressoTreino(0, 0);
 
   if (container) {
     container.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted);">Buscando bloco de questões inéditas no acervo do ENEM...</div>`;
@@ -147,7 +203,7 @@ window.buscarNovasQuestoes = async () => {
     if (container) {
       container.innerHTML = `
         <div class="card" style="color: var(--danger); text-align: center;">
-          ${error.message || 'Erro ao carregar questões do ENEM.'}
+          ${escapeHtml(error.message || 'Erro ao carregar questões do ENEM.')}
         </div>
       `;
     }
@@ -244,15 +300,12 @@ function renderPractice() {
     <div class="card" id="practice-card-${q.id}">
       <div class="question-header">
         <span class="badge ${q.isAnswered ? (q.isCorrect ? 'badge-success' : 'badge-danger') : ''}">
-          Questão ${idx + 1} de ${practiceQuestions.length} • ENEM ${escapeHtml(q.year || '')} • ${escapeHtml(q.discipline)}
+          Questão ${practiceQuestions.indexOf(q) + 1} de ${practiceQuestions.length} • ENEM ${escapeHtml(q.year || '')} • ${escapeHtml(q.discipline)}
         </span>
         <span style="color: var(--text-muted); font-size: 0.85rem;">${escapeHtml(q.topic || '')}</span>
       </div>
 
-      <div class="question-statement">${escapeHtml(q.statement).replace(/\n/g, '<br>')}</div>
-
-      ${/^https:\/\//i.test(q.imageUrl || '') ? `<img src="${escapeHtml(q.imageUrl)}" class="question-img" alt="Imagem da questão">` : ''}
-      ${/^https:\/\//i.test(q.imageUrlB || '') ? `<img src="${escapeHtml(q.imageUrlB)}" class="question-img" alt="Imagem complementar">` : ''}
+      ${renderQuestionContent(q)}
 
       <div class="options-list" id="opts-${q.id}">
         ${q.options
@@ -271,8 +324,9 @@ function renderPractice() {
 
       <button class="btn" id="btn-submit-${q.id}" 
               onclick="submitPracticeAnswer('${q.id}')"
+              ${q.isSubmitting ? 'disabled' : ''}
               ${q.isAnswered ? 'style="display:none;"' : ''}>
-        Responder e Conferir
+        ${q.isSubmitting ? 'Corrigindo...' : 'Responder e Conferir'}
       </button>
 
       <!-- Feedback e Recomendações -->
@@ -289,7 +343,7 @@ function gerarHtmlFeedback(q, nextQId = null) {
   return `
     <div style="padding: 1rem; border-radius: 6px; background: ${q.isCorrect ? '#f0fdf4' : '#fef2f2'}; border: 1px solid ${q.isCorrect ? '#bbf7d0' : '#fecaca'};">
       <strong style="color: ${q.isCorrect ? '#166534' : '#991b1b'};">
-        ${q.isCorrect ? '✅ Resposta Correta!' : `❌ Resposta Incorreta. A alternativa correta é a letra (${q.correctLetter || ''}).`}
+        ${q.isCorrect ? '✅ Resposta Correta!' : `❌ Resposta Incorreta. A alternativa correta é a letra (${escapeHtml(q.correctLetter || '')}).`}
       </strong>
       ${q.explanation ? `<p style="margin-top: 0.5rem; color: #334155; line-height: 1.5;"><strong>Resolução:</strong> ${escapeHtml(q.explanation).replace(/\n/g, '<br>')}</p>` : ''}
 
@@ -309,6 +363,8 @@ function gerarHtmlFeedback(q, nextQId = null) {
 // ==========================================
 window.practiceSelections = {};
 window.selectPracticeOption = (questionId, optionId) => {
+  const question = practiceQuestions.find((item) => item.id === questionId);
+  if (!question || question.isAnswered || question.isSubmitting) return;
   const optsContainer = document.getElementById(`opts-${questionId}`);
   if (!optsContainer) return;
 
@@ -317,14 +373,20 @@ window.selectPracticeOption = (questionId, optionId) => {
   if (target) target.classList.add('selected');
 
   window.practiceSelections[questionId] = optionId;
+  question.selectedOptionId = optionId;
 };
 
 window.submitPracticeAnswer = async (questionId) => {
+  const q = practiceQuestions.find((item) => item.id === questionId);
+  if (!q || q.isAnswered || q.isSubmitting) return;
+  const loadToken = practiceLoadToken;
   const selectedOptionId = window.practiceSelections[questionId];
   if (!selectedOptionId) {
-    alert('Selecione uma alternativa antes de responder.');
+    showPracticeNotice('Selecione uma alternativa antes de responder.');
     return;
   }
+  q.isSubmitting = true;
+  showPracticeNotice('');
 
   const btn = document.getElementById(`btn-submit-${questionId}`);
   if (btn) {
@@ -337,11 +399,11 @@ window.submitPracticeAnswer = async (questionId) => {
       questionId,
       selectedOptionId,
     });
+    if (loadToken !== practiceLoadToken) return;
 
     if (btn) btn.style.display = 'none';
 
     // Atualiza na memória local
-    const q = practiceQuestions.find((item) => item.id === questionId);
     if (q) {
       q.isAnswered = true;
       q.isCorrect = res.isCorrect;
@@ -400,11 +462,14 @@ window.submitPracticeAnswer = async (questionId) => {
     }
 
   } catch (error) {
-    alert(error.message || 'Erro ao enviar resposta.');
+    if (loadToken !== practiceLoadToken) return;
+    showPracticeNotice(error.message || 'Erro ao enviar resposta.');
     if (btn) {
       btn.disabled = false;
       btn.innerText = 'Responder e Conferir';
     }
+  } finally {
+    q.isSubmitting = false;
   }
 };
 
