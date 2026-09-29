@@ -3,22 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verificação de e-mail | Gabarita PAES</title>
+  <title>Recuperar senha | Gabarita PAES</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="../logo1.png">
   <link rel="stylesheet" href="auth-pages.css">
 </head>
-<body data-page="verify">
+<body data-page="recover">
   <header class="site-header"><a href="index.html">Gabarita <strong>PAES</strong></a></header>
   <main class="auth-card">
-    <p class="eyebrow">Sua conta</p>
-    <h1>Verificação de e-mail</h1>
-    <p id="message" class="status" role="status" aria-live="polite">Confira o resultado da verificação.</p>
-    <form id="auth-form" hidden>
-      <label for="email">Enviar novo link de verificação</label>
+    <p class="eyebrow">Acesso à conta</p>
+    <h1>Recuperar senha</h1>
+    <p>Informe seu e-mail cadastrado. Se houver uma conta, enviaremos um link válido por 30 minutos.</p>
+    <form id="auth-form">
+      <label for="email">E-mail</label>
       <input id="email" name="email" type="email" autocomplete="email" required placeholder="seu@email.com">
-      <button type="submit">Reenviar link</button>
+      <button type="submit">Enviar link</button>
     </form>
+    <p id="message" class="status" role="status" aria-live="polite" hidden></p>
     <a class="secondary-link" href="login.html">Voltar ao login</a>
   </main>
   <script src="auth-pages.js" defer></script>
