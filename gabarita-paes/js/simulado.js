@@ -738,6 +738,18 @@ function renderReviewList(data) {
 
 // Buscas contextualizadas; os resultados externos não são apresentados como páginas verificadas.
 function getTargetedRecommendations(q) {
+  if (Array.isArray(q.studyResources)) {
+    const safe = q.studyResources.filter((resource) => {
+      try { return new URL(resource.url).protocol === 'https:'; } catch { return false; }
+    });
+    const web = safe.find((r) => r.kind === 'article' || r.kind === 'article_search');
+    const video = safe.find((r) => r.kind === 'video_search');
+    if (web && video) return {
+      tip: `Releia a resolução e pratique a habilidade: ${q.studyFocus || q.topic}. Os links de pesquisa abrem resultados de busca.`,
+      webLink: escapeHtml(web.url), webLabel: web.title,
+      ytLink: escapeHtml(video.url), ytLabel: video.title,
+    };
+  }
   const disc = String(q.discipline || 'Geral');
   const topic = String(q.topic || 'conteúdo geral');
   const english = /ingl|english/i.test(disc);
@@ -787,6 +799,11 @@ function renderStudyPlan(plan, output) {
     badge.className = 'study-topic-badge';
     badge.textContent = `${Number(item.wrongCount) || 0} erro(s) em ${Number(item.total) || 0} questão(ões)`;
     card.append(badge);
+    if (item.searchFocus) {
+      const focus = document.createElement('p');
+      focus.textContent = `Habilidade para revisar: ${item.searchFocus}`;
+      card.append(focus);
+    }
     if (item.guidanceSource === 'basic') {
       const note = document.createElement('p');
       note.className = 'study-note';
