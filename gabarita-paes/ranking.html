@@ -25,7 +25,10 @@
     <div class="card">
       <h2 id="ranking-course">Classificação - PAES UEMA</h2>
       <p id="ranking-summary" style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
-        Ranqueamento exclusivo entre candidatos do mesmo curso que concluíram as 60 questões do ciclo oficial.
+        Estimativa por curso para quem concluiu as 60 questões oficiais: notas padronizadas em três áreas e na redação; média final com pesos 6 e 4.
+      </p>
+      <p style="color: var(--text-muted); margin: -0.75rem 0 1rem; font-size: 0.875rem;">
+        Simulação pedagógica: a classificação oficial também depende de vagas, campus, turno e da população efetiva de candidatos.
       </p>
 
       <div style="overflow-x: auto;">
@@ -36,12 +39,14 @@
             <th>Candidato</th>
             <th>Acertos (60Q)</th>
             <th>Redação (0 a 10)</th>
-            <th>Nota Final</th>
+            <th>Objetiva padronizada</th>
+            <th>Redação padronizada</th>
+            <th>Média estimada PAES</th>
           </tr>
         </thead>
         <tbody id="ranking-body" aria-live="polite">
           <tr>
-            <td colspan="5" style="text-align: center; color: var(--text-muted);">Carregando classificação...</td>
+            <td colspan="7" style="text-align: center; color: var(--text-muted);">Carregando classificação...</td>
           </tr>
         </tbody>
       </table>
@@ -56,7 +61,7 @@
       body.replaceChildren();
       const row = document.createElement('tr');
       const cell = document.createElement('td');
-      cell.colSpan = 5;
+      cell.colSpan = 7;
       cell.style.textAlign = 'center';
       cell.textContent = message;
       row.appendChild(cell);
@@ -69,6 +74,16 @@
         ? '—' : number.toFixed(decimals).replace('.', ',');
     }
 
+    function rankingResult(entry) {
+      if (entry.finalScore !== null && entry.finalScore !== undefined) return rankingNumber(entry.finalScore, 2);
+      return ({
+        ESSAY_PENDING: 'Aguardando redação',
+        BELOW_MINIMUM: 'Menos de 15 acertos',
+        COURSE_MISSING: 'Curso não informado',
+        INVALID_AREAS: 'Áreas incompletas',
+      })[entry.rankingStatus] || 'Ainda sem nota';
+    }
+
     function renderCourseRanking(data) {
       if (!data || !Array.isArray(data.ranking)) throw new Error('Resposta de ranking inválida.');
       const title = document.getElementById('ranking-course');
@@ -76,7 +91,7 @@
       const body = document.getElementById('ranking-body');
       const hasCourse = data.targetCourse && data.targetCourse !== 'Geral';
       title.textContent = hasCourse ? `Classificação - ${data.targetCourse}` : 'Classificação geral';
-      summary.textContent = `${data.cycleCode ? `Ciclo ${data.cycleCode} · ` : ''}${data.ranking.length} participante(s) com o simulado oficial concluído. ` +
+      summary.textContent = `${data.cycleCode ? `Ciclo ${data.cycleCode} · ` : ''}${data.ranking.length} participante(s) com o simulado oficial concluído; ${data.rankedParticipants ?? 0} com média calculada. ` +
         (hasCourse ? `Sua posição: ${data.myPosition ?? 'ainda não classificado(a)'}.` : 'Seu curso não está informado; exibindo participantes de todos os cursos.');
 
       body.replaceChildren();
@@ -92,7 +107,8 @@
         }
         const values = [entry.position, entry.name || 'Candidato',
           rankingNumber(entry.questionsCorrect), rankingNumber(entry.highestEssayScore, 2),
-          rankingNumber(entry.finalScore, 2)];
+          rankingNumber(entry.objectiveScore, 2), rankingNumber(entry.standardizedEssayScore, 2),
+          rankingResult(entry)];
         for (const value of values) {
           const cell = document.createElement('td');
           cell.textContent = String(value ?? '—');
