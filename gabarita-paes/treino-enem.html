@@ -4,8 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Treino Livre ENEM | Gabarita PAES</title>
+  <meta name="description" content="Pratique questões do ENEM por disciplina e acompanhe suas respostas com resolução comentada no Gabarita PAES.">
+  <meta name="theme-color" content="#1e3a8a">
+  <link rel="icon" href="../logo1.png">
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
+    .question-figure { margin: 1rem 0; }
+    .question-figure .question-img { display: block; max-width: 100%; height: auto; margin: auto; }
+    .question-table-scroll { max-width: 100%; overflow-x: auto; margin: 1rem 0; border: 1px solid #dbe4ef; border-radius: 8px; }
+    .question-table { border-collapse: collapse; width: 100%; background: white; color: #1e293b; }
+    .question-table caption { padding: 0.75rem; font-weight: 700; text-align: left; background: #eff6ff; }
+    .question-table th, .question-table td { padding: 0.7rem; border: 1px solid #dbe4ef; text-align: left; min-width: 100px; vertical-align: top; }
+    .question-table th { background: #1e3a8a; color: white; }
+    .question-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .question-source { margin: 0; padding: 0.7rem; color: #64748b; font-size: 0.85rem; }
+    .practice-notice { padding: 1rem; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; }
+    .practice-notice.error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .practice-notice[hidden] { display: none; }
     .history-list { display: grid; gap: 1rem; margin-top: 1rem; }
     .history-entry { border: 1px solid #dbe4ef; border-radius: 10px; background: white; overflow: hidden; }
     .history-entry summary { cursor: pointer; padding: 1rem; font-weight: 650; line-height: 1.5; }
@@ -53,6 +68,7 @@
   </header>
 
   <main class="container">
+    <div id="practice-notice" class="card practice-notice" role="status" aria-live="polite" hidden></div>
     
     <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
       <div>
@@ -117,6 +133,6 @@
   </main>
 
   <script src="js/api.js"></script>
-  <script src="js/treino-enem.js"></script>
+  <script src="js/treino-enem.js?v=20260929-01"></script>
 </body>
 </html>
