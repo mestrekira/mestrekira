@@ -11,6 +11,14 @@ function escapeHtml(value) {
 
 function formatText(value) { return escapeHtml(value).replace(/\n/g, '<br>'); }
 
+function showEssayNotice(message, isError = true) {
+  const notice = document.getElementById('essay-notice');
+  if (!notice) return;
+  notice.hidden = !message;
+  notice.textContent = message || '';
+  notice.classList.toggle('error', !!message && isError);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.api || !window.api.getToken()) {
     window.location.href = 'login.html';
@@ -100,6 +108,7 @@ function renderThemes() {
 }
 
 window.selectTheme = (promptId) => {
+  showEssayNotice('');
   const textarea = document.getElementById('essay-text');
   if (selectedPromptId && textarea && !textarea.readOnly) essayDrafts[selectedPromptId] = textarea.value;
   selectedPromptId = promptId;
@@ -141,7 +150,7 @@ window.selectTheme = (promptId) => {
         displayResult(saved);
       })
       .catch((error) => {
-        if (token === themeLoadToken) alert(error.message || 'Não foi possível carregar a correção salva.');
+        if (token === themeLoadToken) showEssayNotice(error.message || 'Não foi possível carregar a correção salva.');
       });
   }
 };
@@ -216,15 +225,16 @@ async function submitEssay() {
   const content = textarea ? textarea.value : '';
 
   if (!selectedPromptId) {
-    alert('Selecione uma proposta de tema primeiro.');
+    showEssayNotice('Selecione uma proposta de tema primeiro.');
     return;
   }
   if (content.trim().length < 200) {
-    alert('A sua redação precisa ter no mínimo 200 caracteres para ser avaliada pela banca.');
+    showEssayNotice('A sua redação precisa ter no mínimo 200 caracteres para ser avaliada pela banca.');
     return;
   }
 
   const btn = document.getElementById('btn-submit-essay');
+  showEssayNotice('');
   if (btn) {
     btn.disabled = true;
     btn.innerText = '⏳ O Corretor Inteligente está analisando sua redação...';
@@ -238,6 +248,7 @@ async function submitEssay() {
     });
 
     displayResult(res);
+    showEssayNotice('Redação enviada e avaliada. Consulte a devolutiva abaixo.', false);
 
     // Atualiza o estado do botão para concluído
     if (btn) {
@@ -249,7 +260,7 @@ async function submitEssay() {
     // Atualiza os temas no topo para exibir a nota atualizada
     await checkEssayStatus();
   } catch (error) {
-    alert(error.message || 'Erro ao enviar redação.');
+    showEssayNotice(error.message || 'Erro ao enviar redação.');
     if (btn) {
       btn.disabled = false;
       btn.innerText = '🚀 Enviar para Correção Inteligente';
