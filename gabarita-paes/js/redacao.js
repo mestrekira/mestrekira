@@ -51,6 +51,25 @@ async function checkEssayStatus() {
   const unlockedView = document.getElementById('unlocked-view');
 
   try {
+    const profile = await window.api.get('/users/me');
+    if (!profile) return;
+    if (profile.paesAccess?.canAccess === false) {
+      if (lockedView) lockedView.style.display = 'block';
+      if (unlockedView) unlockedView.style.display = 'none';
+      const title = document.getElementById('lock-title');
+      const message = document.getElementById('lock-message');
+      const action = document.getElementById('lock-action');
+      if (title) title.textContent = 'Teste gratuito encerrado';
+      if (message) message.textContent = 'Para consultar propostas e correções, é necessária uma assinatura ativa.';
+      if (action) {
+        const link = document.createElement('a');
+        link.href = 'assinar.html';
+        link.className = 'btn';
+        link.textContent = 'Conhecer o plano';
+        action.replaceChildren(link);
+      }
+      return;
+    }
     const res = await window.api.get('/essays/cycle-status');
     if (!res) return;
 
