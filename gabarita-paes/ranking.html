@@ -24,10 +24,11 @@
   <main class="container">
     <div class="card">
       <h2 id="ranking-course">Classificação - PAES UEMA</h2>
-      <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
+      <p id="ranking-summary" style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
         Ranqueamento exclusivo entre candidatos do mesmo curso que concluíram as 60 questões do ciclo oficial.
       </p>
 
+      <div style="overflow-x: auto;">
       <table class="ranking-table">
         <thead>
           <tr>
@@ -38,63 +39,86 @@
             <th>Nota Final</th>
           </tr>
         </thead>
-        <tbody id="ranking-body">
+        <tbody id="ranking-body" aria-live="polite">
           <tr>
             <td colspan="5" style="text-align: center; color: var(--text-muted);">Carregando classificação...</td>
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </main>
 
   <script src="js/api.js"></script>
   <script>
-   document.addEventListener('DOMContentLoaded', async () => {
-  if (!window.api || !window.api.getToken()) {
-    window.location.href = 'login.html';
-    return;
-  }
-
-// 1. Carrega o Ranking Geral (Rota raiz da API: /rankings)
-  try {
-    const generalData = await window.api.get('/rankings');
-    if (typeof renderGeneralRanking === 'function') {
-      renderGeneralRanking(generalData);
+    function rankingStatus(message) {
+      const body = document.getElementById('ranking-body');
+      body.replaceChildren();
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.style.textAlign = 'center';
+      cell.textContent = message;
+      row.appendChild(cell);
+      body.appendChild(row);
     }
-  } catch (err) {
-    console.error('[Ranking] Erro ao carregar ranking geral:', err);
-  }
 
-  // 2. Carrega o Ranking por Curso (Exclusivo Premium)
-  try {
-    const courseData = await window.api.get('/rankings/my-course');
-    if (typeof renderCourseRanking === 'function') {
-      renderCourseRanking(courseData);
+    function rankingNumber(value, decimals = 0) {
+      const number = Number(value);
+      return value === null || value === undefined || !Number.isFinite(number)
+        ? '—' : number.toFixed(decimals).replace('.', ',');
     }
-  } catch (err) {
-    console.warn('[Ranking] Usuário sem acesso ao ranking por curso:', err.message);
 
-    // Exibe o card amigável no lugar da tabela do curso
-    const courseContainer = 
-      document.getElementById('course-ranking-table') || 
-      document.getElementById('ranking-course-container') || 
-      document.getElementById('ranking-curso');
+    function renderCourseRanking(data) {
+      if (!data || !Array.isArray(data.ranking)) throw new Error('Resposta de ranking inválida.');
+      const title = document.getElementById('ranking-course');
+      const summary = document.getElementById('ranking-summary');
+      const body = document.getElementById('ranking-body');
+      const hasCourse = data.targetCourse && data.targetCourse !== 'Geral';
+      title.textContent = hasCourse ? `Classificação - ${data.targetCourse}` : 'Classificação geral';
+      summary.textContent = `${data.cycleCode ? `Ciclo ${data.cycleCode} · ` : ''}${data.ranking.length} participante(s) com o simulado oficial concluído. ` +
+        (hasCourse ? `Sua posição: ${data.myPosition ?? 'ainda não classificado(a)'}.` : 'Seu curso não está informado; exibindo participantes de todos os cursos.');
 
-    if (courseContainer) {
-      courseContainer.innerHTML = `
-        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1.5rem; text-align: center; color: #92400e; margin: 1rem 0;">
-          <h4 style="margin-bottom: 0.5rem; color: #b45309;">⭐ Ranqueamento por Curso (Exclusivo Premium)</h4>
-          <p style="font-size: 0.95rem; margin-bottom: 1rem;">
-            A comparação direta com os candidatos do seu curso no PAES UEMA é exclusiva para assinantes.
-          </p>
-          <a href="assinar.html" class="btn" style="background: var(--accent); color: white; text-decoration: none; padding: 0.6rem 1.25rem; border-radius: 6px; font-weight: 600; display: inline-block;">
-            Seja Premium
-          </a>
-        </div>
-      `;
+      body.replaceChildren();
+      if (!data.ranking.length) {
+        rankingStatus('Ainda não há candidatos com as 60 questões oficiais concluídas neste ciclo.');
+        return;
+      }
+      for (const entry of data.ranking) {
+        const row = document.createElement('tr');
+        if (entry.isCurrentUser) {
+          row.style.background = '#eff6ff';
+          row.style.fontWeight = '700';
+        }
+        const values = [entry.position, entry.name || 'Candidato',
+          rankingNumber(entry.questionsCorrect), rankingNumber(entry.highestEssayScore, 2),
+          rankingNumber(entry.finalScore, 2)];
+        for (const value of values) {
+          const cell = document.createElement('td');
+          cell.textContent = String(value ?? '—');
+          row.appendChild(cell);
+        }
+        body.appendChild(row);
+      }
     }
-  }
-});
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.api || !window.api.getToken()) {
+        window.location.href = 'login.html';
+        return;
+      }
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('user-name').textContent = user.name?.split(' ')[0] || 'Aluno';
+      } catch { /* Os dados do perfil não impedem o ranking. */ }
+      try {
+        const courseData = await window.api.get('/rankings/my-course');
+        renderCourseRanking(courseData);
+      } catch (err) {
+        console.error('[Ranking] Erro ao carregar classificação:', err);
+        rankingStatus('Não foi possível carregar a classificação. Atualize a página e tente novamente.');
+      }
+    });
   </script>
 </body>
 </html>
