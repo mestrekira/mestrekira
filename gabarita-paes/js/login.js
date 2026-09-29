@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const res = await window.api.post('/auth/login', { email, password });
-      console.log('Resposta do login:', res);
 
       // Se o servidor avisar que a senha/usuário são inválidos ou se ok for false
       if (res?.ok === false || res?.error) {

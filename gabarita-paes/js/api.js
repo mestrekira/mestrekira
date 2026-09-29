@@ -10,9 +10,29 @@ window.api = {
     localStorage.setItem('token', token);
   },
 
-  logout() {
+  clearSession() {
     localStorage.removeItem('token');
-    window.location.href = 'login.html';
+    localStorage.removeItem('user');
+    window.location.replace('login.html');
+  },
+
+  async logout() {
+    const token = this.getToken();
+    try {
+      if (token) {
+        const response = await fetch(`${API_BASE}/auth/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok && response.status !== 401) {
+          console.warn('Não foi possível confirmar o encerramento da sessão no servidor.');
+        }
+      }
+    } catch (error) {
+      console.warn('Sem conexão para encerrar a sessão no servidor.', error);
+    } finally {
+      this.clearSession();
+    }
   },
 
   async request(endpoint, options = {}) {
@@ -34,7 +54,7 @@ window.api = {
 
       if (response.status === 401) {
         if (!endpoint.includes('/auth/login')) {
-          this.logout();
+          this.clearSession();
           return null;
         }
       }
