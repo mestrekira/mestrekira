@@ -23,15 +23,12 @@
 
   <main class="container">
     <div class="card">
-      <h2 id="ranking-course">Classificação - PAES UEMA</h2>
+      <h2 id="ranking-course">Ranking do simulado PAES UEMA</h2>
       <p id="ranking-summary" style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
-        Nota simulada de 0 a 1000: objetiva e redação têm pesos 6 e 4. A objetiva é comparada entre todos os participantes; a redação, entre candidatos do mesmo curso.
+        Classificação por curso: mais acertos primeiro; a redação corrigida mais recente desempata candidatos com os mesmos acertos.
       </p>
       <p style="color: var(--text-muted); margin: -0.75rem 0 1rem; font-size: 0.875rem;">
-        Simulação pedagógica: a classificação oficial também depende de vagas, campus, turno e da população efetiva de candidatos. O banco atual do simulado tem 16/15/29 questões nas três áreas, enquanto a prova do edital usa 20/20/20.
-      </p>
-      <p style="color: var(--text-muted); margin: -0.75rem 0 1rem; font-size: 0.875rem;">
-        Quando a amostra não permite padronização, a nota é provisória: 600 × (acertos ÷ 60) + 40 × redação. A posição exige pelo menos 15 acertos e redação igual ou superior a 2.
+        Pontos do simulado = acertos ÷ 60 × 1000. A redação não acrescenta pontos. Este ranking inclui todos que concluíram o simulado; a situação indica as exigências mínimas do PAES, cuja classificação oficial segue outros critérios.
       </p>
 
       <div style="overflow-x: auto;">
@@ -41,16 +38,14 @@
             <th>Posição</th>
             <th>Candidato</th>
             <th>Acertos (60Q)</th>
-            <th>Redação (0 a 10)</th>
-            <th>Objetiva padronizada</th>
-            <th>Redação padronizada</th>
-            <th>Nota simulada (0 a 1000)</th>
+            <th>Redação recente (0 a 10)</th>
+            <th>Pontos (0 a 1000)</th>
             <th>Situação</th>
           </tr>
         </thead>
         <tbody id="ranking-body" aria-live="polite">
           <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted);">Carregando classificação...</td>
+            <td colspan="6" style="text-align: center; color: var(--text-muted);">Carregando classificação...</td>
           </tr>
         </tbody>
       </table>
@@ -65,7 +60,7 @@
       body.replaceChildren();
       const row = document.createElement('tr');
       const cell = document.createElement('td');
-      cell.colSpan = 8;
+      cell.colSpan = 6;
       cell.style.textAlign = 'center';
       cell.textContent = message;
       row.appendChild(cell);
@@ -79,16 +74,12 @@
     }
 
     function rankingResult(entry) {
-      if (entry.rankingStatus === 'RANKED') {
-        return entry.scoreMethod === 'PAES_STANDARDIZED' ? 'Padronizada' : 'Provisória: amostra pequena';
-      }
+      if (entry.rankingStatus === 'RANKED') return 'Mínimos de acertos e redação atendidos';
       return ({
-        ESSAY_PENDING: 'Aguardando redação',
-        BELOW_MINIMUM: 'Menos de 15 acertos',
+        ESSAY_PENDING: 'Redação ainda não corrigida',
+        BELOW_MINIMUM: 'Abaixo de 15 acertos',
         ESSAY_BELOW_MINIMUM: 'Redação inferior a 2',
-        COURSE_MISSING: 'Curso não informado',
-        INVALID_AREAS: 'Áreas não identificadas',
-      })[entry.rankingStatus] || 'Ainda sem nota';
+      })[entry.rankingStatus] || 'Situação indisponível';
     }
 
     function renderCourseRanking(data) {
@@ -97,9 +88,9 @@
       const summary = document.getElementById('ranking-summary');
       const body = document.getElementById('ranking-body');
       const hasCourse = data.targetCourse && data.targetCourse !== 'Geral';
-      title.textContent = hasCourse ? `Classificação - ${data.targetCourse}` : 'Classificação geral';
-      summary.textContent = `${data.cycleCode ? `Ciclo ${data.cycleCode} · ` : ''}${data.ranking.length} participante(s) com o simulado oficial concluído; ${data.rankedParticipants ?? 0} com média calculada. ` +
-        (hasCourse ? `Sua posição: ${data.myPosition ?? 'ainda não classificado(a)'}.` : 'Seu curso não está informado; exibindo participantes de todos os cursos.');
+      title.textContent = hasCourse ? `Ranking do simulado - ${data.targetCourse}` : 'Ranking geral do simulado';
+      summary.textContent = `${data.cycleCode ? `Ciclo ${data.cycleCode} · ` : ''}${data.ranking.length} participante(s) com o simulado concluído. ` +
+        (hasCourse ? `Sua posição no simulado: ${data.myPosition ?? 'ainda sem posição'}.` : 'Seu curso não está informado; exibindo participantes de todos os cursos.');
 
       body.replaceChildren();
       if (!data.ranking.length) {
@@ -113,9 +104,8 @@
           row.style.fontWeight = '700';
         }
         const values = [entry.position, entry.name || 'Candidato',
-          rankingNumber(entry.questionsCorrect), rankingNumber(entry.highestEssayScore, 2),
-          rankingNumber(entry.objectiveScore, 2), rankingNumber(entry.standardizedEssayScore, 2),
-          rankingNumber(entry.simulatedScore, 2), rankingResult(entry)];
+          rankingNumber(entry.questionsCorrect), rankingNumber(entry.essayScore, 2),
+          rankingNumber(entry.objectivePoints, 2), rankingResult(entry)];
         for (const value of values) {
           const cell = document.createElement('td');
           cell.textContent = String(value ?? '—');
