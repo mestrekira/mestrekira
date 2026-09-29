@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redação Modelo UEMA | Gabarita PAES</title>
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#1b2d59">
+  <link rel="icon" href="../logo1.png">
   <link rel="stylesheet" href="css/gabarita.css">
   <style>
     /* Estilos complementares de apoio pedagógico */
@@ -70,6 +73,9 @@
       text-align: left;
     }
     .table-deviations th { background: #f8fafc; font-weight: 600; }
+    .essay-notice { margin: 1rem 0; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; }
+    .essay-notice.error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+    .essay-notice[hidden] { display: none; }
   </style>
 </head>
 <body>
@@ -109,7 +115,7 @@
       <div class="card">
         <h3>Propostas de Redação do Ciclo</h3>
         <p style="color: var(--text-muted, #64748b); margin-bottom: 1rem;">
-          Você pode enviar até 2 redações neste ciclo de 30 dias. A maior nota contará para o ranqueamento geral.
+          Escolha uma proposta disponível neste ciclo de 21 dias. A redação corrigida mais recente será usada como critério de desempate no ranking.
         </p>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;" id="theme-selector"></div>
       </div>
@@ -130,6 +136,7 @@
         </div>
 
         <textarea id="essay-text" class="essay-textarea" placeholder="Escreva um título relacionado aos argumentos na primeira linha e desenvolva seu texto dissertativo-argumentativo. Você também pode utilizar o microfone para ditar..."></textarea>
+        <div id="essay-notice" class="essay-notice" role="status" aria-live="polite" hidden></div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
           <span id="char-count" style="color: var(--text-muted, #64748b); font-size: 0.875rem;">0 caracteres (mínimo de 200)</span>
@@ -211,6 +218,6 @@
   </main>
 
   <script src="js/api.js"></script>
-  <script src="js/redacao.js?v=20260929-01"></script>
+  <script src="js/redacao.js?v=20260929-02"></script>
 </body>
 </html>
