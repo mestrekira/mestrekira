@@ -5,10 +5,6 @@ function escapeHtml(value) {
 }
 
 // ================= CONFIGURAÇÃO DO CICLO E ACESSO =================
-const SYSTEM_CONFIG = {
-  isTestMode: true, // Exibição na fase de testes; o bloqueio real é PAES_PREMIUM_REQUIRED na API.
-};
-
 const CURRENT_CYCLE = {
   cycleCode: '',
   title: 'Simulado Oficial PAES UEMA (Ciclo 21 Dias)',
@@ -34,35 +30,27 @@ let activeAttemptId = null;
 let officialCompleted = false;
 let pendingSave = Promise.resolve();
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (!window.api || !window.api.getToken()) {
     window.location.href = 'login.html';
     return;
   }
 
-  // Verificação de Acesso (Assinantes vs Fase de Testes)
-  if (!checkAccessPermission()) return;
-
   setupUserData();
   languageReady = loadSavedLanguage();
+  if (!await languageReady) return;
   checkCycleSubmissionStatus();
   setupEventListeners();
 });
 
-// Checagem de Assinante (Premium Gate)
-function checkAccessPermission() {
-  if (SYSTEM_CONFIG.isTestMode) return true;
-
-  try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const isPremium = !!user.isPremium || user.planTier === 'PREMIUM';
-    if (!isPremium) {
-      document.getElementById('intro-view').style.display = 'none';
-      document.getElementById('premium-gate-view').style.display = 'block';
-      return false;
-    }
-  } catch (e) {}
-  return true;
+function showPremiumGate(access) {
+  document.getElementById('intro-view').style.display = 'none';
+  document.getElementById('premium-gate-view').style.display = 'block';
+  const status = document.getElementById('premium-gate-status');
+  if (status) {
+    const date = access?.trialEndsAt ? new Date(access.trialEndsAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '';
+    status.textContent = date ? `Seu teste gratuito terminou em ${date}.` : 'Seu teste gratuito terminou.';
+  }
 }
 
 // Normaliza Língua Estrangeira
@@ -90,6 +78,17 @@ async function loadSavedLanguage() {
   if (select) select.disabled = true;
   try {
     const profile = await window.api.get('/users/me');
+    if (!profile) return null;
+    if (profile.paesAccess?.canAccess === false) {
+      showPremiumGate(profile.paesAccess);
+      return null;
+    }
+    const trialStatus = document.getElementById('trial-access-status');
+    if (trialStatus && profile.paesAccess?.accessReason === 'TRIAL') {
+      const endsAt = new Date(profile.paesAccess.trialEndsAt);
+      trialStatus.textContent = `Teste gratuito até ${endsAt.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} às ${endsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} (horário de Brasília).`;
+      trialStatus.hidden = false;
+    }
     const language = normalizeLanguage(profile?.foreignLanguage);
     if (!language) throw new Error('Defina sua língua estrangeira no perfil antes de iniciar.');
     selectedLanguage = language;
