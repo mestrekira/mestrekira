@@ -24,12 +24,12 @@ let flaggedQuestions = {};
 let timerInterval = null;
 let secondsRemaining = 5 * 60 * 60; // 5 horas para modo completo
 let secondsElapsed = 0;             // cronômetro progressivo para treino
-let selectedLanguage = 'INGLES';
+let selectedLanguage = null;
+let languageReady = null;
 let examMode = 'FULL';              // Duas formas de resolver a mesma tentativa oficial
 let reviewFilter = 'WRONG';
 let reviewDiscipline = 'ALL';
 let reviewData = null;
-let aiStudyPlan = null;
 let activeAttemptId = null;
 let officialCompleted = false;
 let pendingSave = Promise.resolve();
@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!checkAccessPermission()) return;
 
   setupUserData();
+  languageReady = loadSavedLanguage();
   checkCycleSubmissionStatus();
   setupEventListeners();
 });
@@ -66,10 +67,45 @@ function checkAccessPermission() {
 
 // Normaliza Língua Estrangeira
 function normalizeLanguage(lang) {
-  if (!lang) return 'INGLES';
+  if (!lang) return null;
   const str = String(lang).toLowerCase().trim();
   if (str.includes('esp')) return 'ESPANHOL';
-  return 'INGLES';
+  if (str.includes('ingl') || str.includes('engl')) return 'INGLES';
+  return null;
+}
+
+function showExamNotice(message, isError = true) {
+  const notice = document.getElementById('exam-notice');
+  if (!notice) return;
+  notice.hidden = !message;
+  notice.textContent = message || '';
+  notice.classList.toggle('error', !!message && isError);
+}
+
+async function loadSavedLanguage() {
+  const select = document.getElementById('start-lang-select');
+  const startBtn = document.getElementById('btn-start-exam');
+  const message = document.getElementById('start-lang-message');
+  if (startBtn) startBtn.disabled = true;
+  if (select) select.disabled = true;
+  try {
+    const profile = await window.api.get('/users/me');
+    const language = normalizeLanguage(profile?.foreignLanguage);
+    if (!language) throw new Error('Defina sua língua estrangeira no perfil antes de iniciar.');
+    selectedLanguage = language;
+    if (select) select.value = language;
+    if (message) message.textContent = `Opção cadastrada: ${language === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa'}. Para alterar, acesse seu perfil antes de começar.`;
+    if (startBtn && !officialCompleted) startBtn.disabled = false;
+    return language;
+  } catch (error) {
+    selectedLanguage = null;
+    if (message) {
+      message.textContent = error.message || 'Não foi possível confirmar sua língua. Recarregue a página.';
+      message.style.color = '#991b1b';
+    }
+    showExamNotice(error.message || 'Não foi possível confirmar sua língua estrangeira.');
+    return null;
+  }
 }
 
 function setupUserData() {
@@ -78,16 +114,12 @@ function setupUserData() {
     if (userStr) {
       const user = JSON.parse(userStr);
       const name = user.name || user.email?.split('@')[0] || 'Aluno';
-      const rawLang = user.foreignLanguage || user.language || localStorage.getItem('foreignLanguage') || 'INGLES';
-      selectedLanguage = normalizeLanguage(rawLang);
 
       const userHeader = document.getElementById('user-name-header');
       const avatarHeader = document.getElementById('user-avatar-header');
-      const startSelect = document.getElementById('start-lang-select');
 
       if (userHeader) userHeader.innerText = name.split(' ')[0];
       if (avatarHeader) avatarHeader.innerText = name.charAt(0).toUpperCase();
-      if (startSelect) startSelect.value = selectedLanguage;
     }
   } catch (e) {
     console.error(e);
@@ -97,7 +129,7 @@ function setupUserData() {
 // Alternância entre as Duas Modalidades
 window.setExamMode = (mode) => {
   if (officialCompleted) {
-    alert('O simulado deste ciclo já foi concluído. Consulte a revisão.');
+    showExamNotice('O simulado deste ciclo já foi concluído. Consulte a revisão.');
     return;
   }
   examMode = mode;
@@ -153,7 +185,7 @@ async function checkCycleSubmissionStatus() {
           activeAttemptId = existing?.attemptId || null;
           openReviewFromSaved({ ...res, isOfficial: true, ...review,
             userAnswers: Object.fromEntries(review.questions.map((q) => [q.id, q.selectedLetter])) });
-        } catch (error) { alert(error.message || 'Não foi possível abrir a revisão.'); }
+        } catch (error) { showExamNotice(error.message || 'Não foi possível abrir a revisão.'); }
       });
     } else if (existing?.status === 'IN_PROGRESS') {
       const btn = document.getElementById('btn-start-exam');
@@ -173,14 +205,19 @@ function setupEventListeners() {
       document.getElementById('exam-view').style.display = 'none';
       document.getElementById('intro-view').style.display = 'block';
       const btn = document.getElementById('btn-start-exam');
-      if (btn) { btn.disabled = false; btn.innerText = 'Continuar por disciplina'; }
-    } catch (error) { alert(error.message || 'Não foi possível salvar a resposta.'); }
+      if (btn) { btn.disabled = !selectedLanguage || officialCompleted; btn.innerText = 'Continuar por disciplina'; }
+    } catch (error) { showExamNotice(error.message || 'Não foi possível salvar a resposta.'); }
   });
   document.getElementById('btn-prev-q')?.addEventListener('click', () => navigateQuestion(-1));
   document.getElementById('btn-next-q')?.addEventListener('click', () => navigateQuestion(1));
   document.getElementById('btn-toggle-flag')?.addEventListener('click', toggleFlagCurrent);
   document.getElementById('btn-finish-exam')?.addEventListener('click', confirmFinishExam);
   document.getElementById('btn-finish-exam-top')?.addEventListener('click', confirmFinishExam);
+  document.getElementById('btn-modal-cancel')?.addEventListener('click', closeFinishDialog);
+  document.getElementById('btn-modal-confirm')?.addEventListener('click', () => {
+    closeFinishDialog();
+    finishExam();
+  });
   document.getElementById('btn-generate-ai-plan')?.addEventListener('click', generateAiStudyPlan);
   document.getElementById('review-discipline')?.addEventListener('change', (event) => {
     reviewDiscipline = event.target.value;
@@ -206,18 +243,15 @@ async function ensureQuestionsLoaded() {
 
 // Início do Simulado / Treino
 async function startExam() {
-  const langSelect = document.getElementById('start-lang-select');
-  if (langSelect) selectedLanguage = normalizeLanguage(langSelect.value);
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  if (selectedLanguage !== normalizeLanguage(user.foreignLanguage)) {
-    alert('Altere a língua estrangeira no seu perfil antes de iniciar o simulado.');
-    return;
-  }
+  if (languageReady) await languageReady;
+  const currentLanguage = await loadSavedLanguage();
+  if (!currentLanguage) return;
 
   if (officialCompleted) {
-    alert('Você já realizou a prova oficial neste ciclo.');
+    showExamNotice('Você já realizou a prova oficial neste ciclo.');
     return;
   }
+  showExamNotice('');
 
   const startBtn = document.getElementById('btn-start-exam');
   if (startBtn) {
@@ -239,7 +273,7 @@ async function startExam() {
     }
 
     if (activeQuestions.length === 0) {
-      alert('Nenhuma questão encontrada para os filtros selecionados.');
+      showExamNotice('Nenhuma questão encontrada para os filtros selecionados.');
       if (startBtn) {
         startBtn.disabled = false;
         startBtn.innerText = 'Iniciar Resolução';
@@ -272,7 +306,7 @@ async function startExam() {
     renderOMR();
     renderCurrentQuestion();
   } catch (err) {
-    alert('Erro ao carregar simulado: ' + err.message);
+    showExamNotice('Erro ao carregar simulado: ' + err.message);
     if (startBtn) {
       startBtn.disabled = false;
       startBtn.innerText = 'Iniciar Resolução';
@@ -329,7 +363,7 @@ function startCountDownTimer() {
     secondsRemaining--;
     if (secondsRemaining <= 0) {
       clearInterval(timerInterval);
-      alert('Tempo oficial de 5 horas esgotado! Entregando prova...');
+      showExamNotice('Tempo de cinco horas esgotado. Tentando entregar as respostas salvas.', false);
       finishExam();
       return;
     }
@@ -432,7 +466,7 @@ window.selectOption = (letter) => {
       renderCurrentQuestion();
       renderOMR();
     } catch (error) {
-      alert(error.message || 'A resposta não foi salva no banco. Tente novamente.');
+      showExamNotice(error.message || 'A resposta não foi salva no banco. Tente novamente.');
       throw error;
     }
   });
@@ -497,10 +531,23 @@ function confirmFinishExam() {
   });
   const missing = allEligible.filter((q) => !userAnswers[q.id]);
   if (missing.length) {
-    alert(`Faltam ${missing.length} de ${allEligible.length} questões. Suas respostas estão salvas no banco. ${examMode === 'DISCIPLINE' ? 'Escolha as demais disciplinas para continuar.' : 'Responda todas antes de entregar.'}`);
+    showExamNotice(`Faltam ${missing.length} de ${allEligible.length} questões. As respostas já marcadas estão salvas. ${examMode === 'DISCIPLINE' ? 'Escolha as demais disciplinas para continuar.' : 'Responda todas antes de entregar.'}`);
+    const firstPending = activeQuestions.findIndex((q) => !userAnswers[q.id]);
+    if (firstPending >= 0) { currentIndex = firstPending; renderCurrentQuestion(); }
     return;
   }
-  if (confirm(`Deseja entregar o simulado com todas as ${allEligible.length} questões respondidas?`)) finishExam();
+  const dialog = document.getElementById('unanswered-modal');
+  if (!dialog) return;
+  dialog.querySelector('h3').textContent = 'Confirmar entrega do simulado';
+  document.getElementById('unanswered-modal-text').textContent = `Você respondeu às ${allEligible.length} questões. Deseja encerrar esta tentativa oficial?`;
+  document.getElementById('btn-modal-confirm').textContent = 'Confirmar entrega';
+  dialog.style.display = 'flex';
+  document.getElementById('btn-modal-cancel')?.focus();
+}
+
+function closeFinishDialog() {
+  const dialog = document.getElementById('unanswered-modal');
+  if (dialog) dialog.style.display = 'none';
 }
 
 // Finalização da Prova
@@ -515,18 +562,12 @@ async function finishExam() {
     displayResult({ ...result, ...review, isOfficial: result.submitted,
       userAnswers: Object.fromEntries(review.questions.map((q) => [q.id, q.selectedLetter])) });
   } catch (error) {
-    alert(error.message || 'Não foi possível finalizar. As respostas salvas permanecem no banco.');
+    showExamNotice(error.message || 'Não foi possível finalizar. As respostas salvas permanecem no banco.');
   }
 }
 
 function displayResult(data) {
   reviewData = data;
-  aiStudyPlan = null;
-  const planOutput = document.getElementById('ai-plan-output');
-  if (planOutput) {
-    planOutput.replaceChildren();
-    planOutput.style.display = 'none';
-  }
   const disciplineSelect = document.getElementById('review-discipline');
   if (disciplineSelect) {
     const disciplines = [...new Set((data.questions || []).map((q) => q.discipline))].sort();
@@ -567,7 +608,6 @@ function displayResult(data) {
   }
 
   renderReviewList(data);
-  if (activeAttemptId) void restoreStudyPlan(activeAttemptId);
 }
 
 window.filterReview = (type) => {
@@ -590,7 +630,7 @@ function renderReviewList(data) {
 
   questions.forEach((q, idx) => {
     const qKey = q.id || q.order || idx;
-    const userChoice = q.selectedLetter ?? answers[qKey] ?? 'EM BRANCO';
+    const userChoice = answers[qKey] || 'EM BRANCO';
 
     let correctChoice = q.officialAnswer;
     if (!correctChoice && q.options) {
@@ -630,7 +670,6 @@ function renderReviewList(data) {
       const cardClass = item.isCorrect ? 'review-card correct' : 'review-card wrong';
       const statusTitle = item.isCorrect ? '✅ Questão Correta' : '❌ Questão Incorreta';
 
-      const match = aiStudyPlan?.priorities?.find((p) => p.discipline === q.discipline && p.topic === q.topic);
       const recommendations = getTargetedRecommendations(q);
       const explanationText = escapeHtml(q.explanation || q.explanacion || 'Explicação ainda não cadastrada.').replace(/\n/g, '<br>');
 
@@ -676,50 +715,156 @@ function renderReviewList(data) {
           </p>
         </div>
 
+        <!-- Sugestões de Conteúdo e Vídeos -->
         <div class="study-box">
-          <details class="review-study-details">
-            <summary>📚 Materiais para revisar ${escapeHtml(q.topic || 'este conteúdo')}</summary>
-          ${match ? `
-            ${match.guidanceSource === 'basic' ? '<p class="study-note">Orientação básica; a IA não detalhou este tópico.</p>' : ''}
-            <p style="margin: 0.4rem 0;"><strong>Diagnóstico:</strong> ${escapeHtml(match.reason || '')}</p>
-            <p style="margin: 0.4rem 0;"><strong>Próximo passo:</strong> ${escapeHtml(match.action)}</p>
-            ${(match.resources || []).length ? `<div class="study-resource-links">
-              ${match.resources.map((r) => `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="study-resource-link">${r.kind === 'video_search' ? '▶ ' : r.kind === 'article_search' ? '⌕ ' : '↗ '}${escapeHtml(r.title)}</a>`).join('')}
-            </div>` : '<p>Nenhum link específico foi confirmado para este tópico.</p>'}
-          ` : `
-            <p style="margin: 0.4rem 0;">Use “Gerar roteiro com IA” acima para abrir diretamente o artigo específico ou o mais próximo da dificuldade identificada. A busca de videoaulas pode ser usada enquanto isso:</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-              <a href="${recommendations.ytLink}" target="_blank" rel="noopener noreferrer" class="study-link">Pesquisar videoaula</a>
-            </div>
-          `}
-          </details>
+          <strong style="color: #1e40af; display: flex; align-items: center; gap: 0.35rem;">
+            📚 Sugestões de Estudo & Videoaulas Recomendadas:
+          </strong>
+          <p style="margin: 0.25rem 0 0.5rem 0; color: #1e3a8a; font-size: 0.85rem;">
+            ${escapeHtml(recommendations.tip)}
+          </p>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem;">
+            <a href="${recommendations.webLink}" target="_blank" class="study-link">
+              ${recommendations.webLabel}
+            </a>
+            <a href="${recommendations.ytLink}" target="_blank" class="study-link">
+              📺 ${recommendations.ytLabel}
+            </a>
+          </div>
         </div>
       </div>
     `;
     }).join('');
 }
 
-// Busca explícita como alternativa enquanto o roteiro com IA não for solicitado.
+// Recomendações Base para Todas as 11 Disciplinas
 function getTargetedRecommendations(q) {
-  const topic = `${q.discipline || ''} ${q.topic || ''}`.trim();
-  return {
-    ytLink: `https://www.youtube.com/results?search_query=${encodeURIComponent(`videoaula PAES UEMA ${topic}`)}`,
-  };
-}
+  const disc = (q.discipline || '').toLowerCase();
+  const topic = q.topic || q.discipline || 'PAES UEMA';
+  const topicLower = topic.toLowerCase();
 
-// ================= ROTEIRO DE REVISÃO COM IA =================
-async function restoreStudyPlan(attemptId) {
-  try {
-    const plan = await window.api.get(`/simulations/attempts/${attemptId}/study-plan`);
-    if (attemptId !== activeAttemptId || !plan || aiStudyPlan) return;
-    aiStudyPlan = plan;
-    if (reviewData) renderReviewList(reviewData);
-    renderAiStudyPlan(plan);
-  } catch (error) {
-    console.error('Não foi possível recuperar o roteiro salvo:', error);
+  let webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mestrekira.com.br ' + topic)}`;
+  let webLabel = '🌐 Buscar conteúdo no Mestre Kira';
+  let ytQuery = `UEMA ${q.discipline} ${topic}`;
+  let ytChannel = 'Videoaula Recomendada';
+  let tip = `Reforce o conteúdo de ${topic} para dominar o estilo de cobrança da UEMA.`;
+
+  // 1. Língua Portuguesa e Literatura
+  if (disc.includes('literat') || disc.includes('portug')) {
+    if (topicLower.includes('lucy') || topicLower.includes('crônica')) {
+      webLink = 'https://www.mestrekira.com.br/analise-cronicas-lucy-teixeira-ceres-costa-fernandes-paes-uema-2027.html';
+      webLabel = '🌐 Análise: Crônicas de Lucy Teixeira (Mestre Kira)';
+      ytQuery = 'Cronicas de Lucy Teixeira PAES UEMA';
+      ytChannel = 'YouTube • Análise Literária UEMA';
+      tip = 'Obra obrigatória: estude a perspectiva do narrador e a ambientação maranhense.';
+    } else if (topicLower.includes('cordel') || topicLower.includes('cora')) {
+      webLink = 'https://www.mestrekira.com.br/analise-meu-livro-de-cordel-cora-coralina-paes-uema-2027.html';
+      webLabel = '🌐 Análise: Meu Livro de Cordel (Mestre Kira)';
+      ytQuery = 'Meu Livro de Cordel Cora Coralina UEMA';
+      ytChannel = 'YouTube • Análise Literária UEMA';
+      tip = 'Obra obrigatória: foco na valorização do saber popular e oralidade sertaneja.';
+    } else if (topicLower.includes('infância') || topicLower.includes('graciliano')) {
+      webLink = 'https://www.mestrekira.com.br/analise-obra-infancia-graciliano-ramos-temas-redacao.html';
+      webLabel = '🌐 Análise: Infância de Graciliano Ramos (Mestre Kira)';
+      ytQuery = 'Infancia Graciliano Ramos UEMA analise';
+      ytChannel = 'YouTube • Análise Literária UEMA';
+      tip = 'Obra obrigatória: atenção aos temas de autoritarismo patriarcal e infância.';
+    } else {
+      webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mestrekira.com.br ' + topic)}`;
+      webLabel = '🌐 Buscar conteúdo no Mestre Kira';
+      ytQuery = `Professor Noslen ${topic}`;
+      ytChannel = 'YouTube • Professor Noslen';
+      tip = 'Revise a articulação sintática e os recursos coesivos no padrão da UEMA.';
+    }
   }
+  // 2. Matemática
+  else if (disc.includes('matemát')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
+    webLabel = '🌐 Teoria & Exercícios no Brasil Escola';
+    ytQuery = `Gis com Giz Matematica ${topic}`;
+    ytChannel = 'YouTube • Gis com Giz Matemática';
+    tip = 'Pratique a resolução passo a passo e a aplicação de fórmulas contextualizadas.';
+  }
+  // 3. Biologia
+  else if (disc.includes('biolog')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br ' + topic)}`;
+    webLabel = '🌐 Resumo Teórico no Toda Matéria';
+    ytQuery = `Biologia com Samuel Cunha ${topic}`;
+    ytChannel = 'YouTube • Prof. Samuel Cunha';
+    tip = 'A UEMA valoriza ecologia, fisiologia e ciclos biogeoquímicos dos ecossistemas maranhenses.';
+  }
+  // 4. Física
+  else if (disc.includes('físic')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
+    webLabel = '🌐 Conceitos no Brasil Escola';
+    ytQuery = `Professor Boaro ${topic}`;
+    ytChannel = 'YouTube • Prof. Boaro';
+    tip = 'Atenção à leitura e interpretação gráfica dos fenômenos físicos.';
+  }
+  // 5. Química
+  else if (disc.includes('químic')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:mundoeducacao.uol.com.br ' + topic)}`;
+    webLabel = '🌐 Resumo no Mundo Educação';
+    ytQuery = `Cafe com Quimica Professor Michel ${topic}`;
+    ytChannel = 'YouTube • Café com Química';
+    tip = 'Revise cálculos estequiométricos e química ambiental.';
+  }
+  // 6. História
+  else if (disc.includes('histór')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
+    webLabel = '🌐 Artigo Temático no Brasil Escola';
+    ytQuery = `Parabolica Pedro Renno ${topic}`;
+    ytChannel = 'YouTube • Parabólica (Pedro Rennó)';
+    tip = 'A banca costuma relacionar os processos nacionais com a história e a formação social do Maranhão.';
+  }
+  // 7. Geografia
+  else if (disc.includes('geograf')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br ' + topic)}`;
+    webLabel = '🌐 Artigo Temático no Brasil Escola';
+    ytQuery = `JeanGrafia ${topic}`;
+    ytChannel = 'YouTube • Prof. JeanGrafia';
+    tip = 'Atenção ao relevo, bacias hidrográficas, vegetação e dinâmicas econômicas do Maranhão.';
+  }
+  // 8. Filosofia
+  else if (disc.includes('filosof')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:brasilescola.uol.com.br filosofia ' + topic)}`;
+    webLabel = '🌐 Conceitos no Brasil Escola';
+    ytQuery = `Parabolica Pedro Renno Filosofia ${topic}`;
+    ytChannel = 'YouTube • Parabólica (Filosofia)';
+    tip = 'A UEMA cobra ética, política clássica (Platão e Aristóteles), contratualismo e iluminismo.';
+  }
+  // 9. Sociologia
+  else if (disc.includes('sociolog')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br sociologia ' + topic)}`;
+    webLabel = '🌐 Resumo no Toda Matéria';
+    ytQuery = `Parabolica Pedro Renno Sociologia ${topic}`;
+    ytChannel = 'YouTube • Parabólica (Sociologia)';
+    tip = 'Foco nos clássicos (Durkheim, Weber, Marx), cidadania, desigualdade social e cultura.';
+  }
+  // 10. Artes
+  else if (disc.includes('arte')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br artes ' + topic)}`;
+    webLabel = '🌐 História da Arte no Toda Matéria';
+    ytQuery = `Historia da Arte Vestibular ${topic}`;
+    ytChannel = 'YouTube • Arte & Cultura';
+    tip = 'Atenção às manifestações culturais maranhenses, modernismo brasileiro e vanguardas europeias.';
+  }
+  // 11. Línguas Estrangeiras
+  else if (disc.includes('ingl') || disc.includes('espanh')) {
+    webLink = `https://www.google.com/search?q=${encodeURIComponent('site:todamateria.com.br ' + topic)}`;
+    webLabel = '🌐 Gramática no Toda Matéria';
+    ytQuery = disc.includes('ingl') ? `English in Brazil ${topic}` : `Espanhol para Brasileiros ${topic}`;
+    ytChannel = disc.includes('ingl') ? 'YouTube • English in Brazil' : 'YouTube • Espanhol para Brasileiros';
+    tip = 'Foque no reconhecimento de conectivos e na técnica de leitura instrumental.';
+  }
+
+  const ytLink = `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`;
+  const ytLabel = `Pesquisar vídeo: ${ytChannel}`;
+
+  return { tip, webLink, webLabel, ytLink, ytLabel };
 }
 
+// ================= GERAÇÃO DE PLANO COM GEMINI IA =================
 async function generateAiStudyPlan() {
   const btn = document.getElementById('btn-generate-ai-plan');
   const output = document.getElementById('ai-plan-output');
@@ -727,85 +872,22 @@ async function generateAiStudyPlan() {
   btn.disabled = true;
   output.style.display = 'block';
   output.textContent = 'Gerando roteiro de revisão...';
-  const attemptId = activeAttemptId;
   try {
-    const plan = await window.api.post(`/simulations/attempts/${attemptId}/study-plan`, {});
-    if (attemptId !== activeAttemptId) return;
-    aiStudyPlan = plan;
-    if (reviewData) renderReviewList(reviewData);
-    renderAiStudyPlan(plan);
-  } catch (error) {
-    if (attemptId === activeAttemptId) output.textContent = error.message || 'Não foi possível gerar o plano agora. Os materiais por questão continuam disponíveis abaixo.';
-  } finally { btn.disabled = false; }
-}
-
-function renderAiStudyPlan(plan) {
-    const output = document.getElementById('ai-plan-output');
-    if (!output) return;
-    output.style.display = 'block';
+    const plan = await window.api.post(`/simulations/attempts/${activeAttemptId}/study-plan`, {});
     output.replaceChildren();
     const summary = document.createElement('p');
-    summary.className = 'study-plan-summary';
     summary.textContent = plan.summary;
     output.append(summary);
-    if (plan.basicCount || plan.source === 'offline') {
-      const notice = document.createElement('p');
-      notice.className = 'study-plan-notice';
-      notice.textContent = plan.source === 'offline'
-        ? 'Roteiro provisório: a IA não respondeu. Tente novamente mais tarde para obter o diagnóstico detalhado.'
-        : `${plan.basicCount} conteúdo(s) receberam orientação básica porque a IA não os detalhou.`;
-      output.append(notice);
-    }
-    const byDiscipline = new Map();
+    const list = document.createElement('ul');
     for (const item of plan.priorities || []) {
-      if (!byDiscipline.has(item.discipline)) byDiscipline.set(item.discipline, []);
-      byDiscipline.get(item.discipline).push(item);
+      const li = document.createElement('li');
+      li.textContent = `${item.discipline} — ${item.topic}: ${item.action}`;
+      list.append(li);
     }
-    const count = document.createElement('p');
-    count.className = 'study-plan-count';
-    count.textContent = `${byDiscipline.size} disciplina(s) · ${plan.priorities?.length || 0} conteúdo(s) para revisar`;
-    output.append(count);
-    for (const [discipline, items] of byDiscipline) {
-      const section = document.createElement('section');
-      section.className = 'study-discipline';
-      const heading = document.createElement('h3');
-      heading.textContent = discipline;
-      section.append(heading);
-      const grid = document.createElement('div');
-      grid.className = 'study-topic-grid';
-      for (const item of items) {
-        const card = document.createElement('article');
-        card.className = 'study-topic-card';
-        const title = document.createElement('h4');
-        title.textContent = item.topic;
-        const badge = document.createElement('span');
-        badge.className = 'study-topic-badge';
-        badge.textContent = `${item.wrongCount} erro(s) em ${item.total} questão(ões)`;
-        const reason = document.createElement('p');
-        const reasonLabel = document.createElement('strong');
-        reasonLabel.textContent = item.guidanceSource === 'basic' ? 'Observação básica: ' : 'Diagnóstico: ';
-        reason.append(reasonLabel, document.createTextNode(item.reason || ''));
-        const action = document.createElement('p');
-        const actionLabel = document.createElement('strong');
-        actionLabel.textContent = 'Próximo passo: ';
-        action.append(actionLabel, document.createTextNode(item.action || ''));
-        const resources = document.createElement('div');
-        resources.className = 'study-resource-links';
-        for (const resource of item.resources || []) {
-          const link = document.createElement('a');
-          link.href = resource.url;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          link.className = 'study-resource-link';
-          link.textContent = `${resource.kind === 'video_search' ? '▶ ' : resource.kind === 'article_search' ? '⌕ ' : '↗ '}${resource.title}`;
-          resources.append(link);
-        }
-        card.append(title, badge, reason, action, resources);
-        grid.append(card);
-      }
-      section.append(grid);
-      output.append(section);
-    }
+    output.append(list);
+  } catch (error) {
+    output.textContent = error.message || 'Não foi possível gerar o plano agora. Os materiais por questão continuam disponíveis abaixo.';
+  } finally { btn.disabled = false; }
 }
 
 function generateLocalSmartPlan(wrongQuestions) {
