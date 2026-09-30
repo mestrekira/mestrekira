@@ -117,7 +117,7 @@ async function loadHistory(page = 1) {
     list.innerHTML = data.items.map((item) => `
       <details class="history-entry">
         <summary>${item.isCorrect ? '✅' : '❌'} ${escapeHtml(item.discipline)} · ${escapeHtml(item.topic || 'Conteúdo geral')}
-          <small>— ENEM ${escapeHtml(item.year)} · ${escapeHtml(new Date(item.answeredAt).toLocaleString('pt-BR'))}</small></summary>
+          <small>— ENEM ${escapeHtml(item.year)} · Rodada ${escapeHtml(item.practiceRound || 1)} · ${escapeHtml(new Date(item.answeredAt).toLocaleString('pt-BR'))}</small></summary>
         <div class="history-detail">
           ${renderQuestionContent(item)}
           <ol type="A">${(item.options || []).map((option) =>
@@ -175,14 +175,39 @@ window.buscarNovasQuestoes = async () => {
     if (token !== practiceLoadToken) return;
 
     if (!questions || questions.length === 0) {
+      const discipline = activeDiscipline;
+      const status = discipline ? await window.api.get(`/questions/practice/status?discipline=${encodeURIComponent(discipline)}`) : null;
+      if (token !== practiceLoadToken) return;
       if (container) {
-        container.innerHTML = `
-          <div class="card" style="text-align: center; padding: 2.5rem;">
-            <h3>🎉 Você respondeu todas as questões disponíveis desta matéria!</h3>
-            <p style="color: var(--text-muted); margin: 1rem 0;">Confira as respostas no histórico abaixo. Novas questões aparecerão quando forem adicionadas ao acervo.</p>
-            <button class="btn btn-secondary" onclick="document.getElementById('btn-toggle-history').click()">Ver histórico</button>
-          </div>
-        `;
+        const finished = status?.canRestart === true;
+        container.innerHTML = `<div class="card" style="text-align:center;padding:2rem;">
+          <h3>${finished ? 'Você concluiu esta rodada!' : 'Nenhuma questão encontrada neste bloco'}</h3>
+          <p>${finished ? 'Inicie outra rodada desta disciplina. Seu histórico e o progresso das demais matérias serão preservados.' : status?.pending > 0 ? 'Ainda há questões disponíveis. Gere um novo bloco.' : discipline ? 'Não há questões disponíveis desta disciplina para sua conta.' : 'Selecione uma disciplina para iniciar outra rodada.'}</p>
+          ${finished ? `<button class="btn btn-primary" id="btn-restart-discipline">Iniciar nova rodada de ${escapeHtml(discipline)}</button>` : ''}
+          <button class="btn btn-secondary" id="btn-show-completed-history">Ver histórico</button>
+        </div>`;
+        document.getElementById('btn-show-completed-history')?.addEventListener('click', () => {
+          if (!historyOpen) document.getElementById('btn-toggle-history')?.click();
+          else document.getElementById('history-panel')?.scrollIntoView({ behavior: 'smooth' });
+        });
+        document.getElementById('btn-restart-discipline')?.addEventListener('click', async (event) => {
+          const button = event.currentTarget;
+          if (button.disabled) return;
+          button.disabled = true;
+          button.textContent = 'Iniciando rodada...';
+          try {
+            await window.api.post('/questions/practice/restart', { discipline, currentRound: status.currentRound });
+            if (token !== practiceLoadToken || activeDiscipline !== discipline) return;
+            await window.buscarNovasQuestoes();
+            showPracticeNotice('Nova rodada iniciada. Seu histórico foi preservado.', false);
+          } catch (error) {
+            if (token === practiceLoadToken) {
+              showPracticeNotice(error.message || 'Não foi possível iniciar outra rodada.', true);
+              button.disabled = false;
+              button.textContent = `Iniciar nova rodada de ${discipline}`;
+            }
+          }
+        });
       }
       atualizarProgressoTreino(0, 0);
       return;
@@ -398,6 +423,7 @@ window.submitPracticeAnswer = async (questionId) => {
     const res = await window.api.post('/questions/practice/answer', {
       questionId,
       selectedOptionId,
+      practiceRound: q.practiceRound,
     });
     if (loadToken !== practiceLoadToken) return;
 
