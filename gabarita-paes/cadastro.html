@@ -47,11 +47,13 @@
       border-color: var(--primary);
     }
   </style>
+  <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
 </head>
-<body>
+<body class="gabarita-theme">
+  <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
 
   <header class="header">
-    <a href="index.html" class="brand">🎓 Gabarita PAES</a>
+    <a href="index.html" class="brand"><img class="brand-logo" src="../logo1.png" width="44" height="44" alt=""><span class="brand-copy"><strong>Gabarita PAES</strong><small>por Mestre Kira</small></span></a>
     <nav class="nav-links" aria-label="Seções do Gabarita PAES">
       <a href="index.html">Início</a>
       <a href="simulado.html">Simulado (60Q)</a>
@@ -60,9 +62,10 @@
       <a href="ranking.html">Classificação</a>
       <a href="perfil.html">Meu Perfil</a>
     </nav>
+    <div class="header-auth-links"><a href="login.html">Entrar</a><a class="header-signup" href="cadastro.html">Criar conta</a></div>
   </header>
 
-  <main class="container">
+  <main class="container" id="main-content">
     <div class="card auth-card">
       <h1 style="text-align: center; margin-bottom: 0.5rem;">Crie sua Conta</h1>
       <p style="text-align: center; color: var(--text-muted); margin-bottom: 1.5rem;">
@@ -195,5 +198,6 @@
       }
     });
   </script>
+  <footer class="site-footer"><p><strong>Gabarita PAES</strong> · Preparação para PAES UEMA e ENEM</p><a href="https://www.mestrekira.com.br/">Conheça o Mestre Kira</a></footer>
 </body>
 </html>
