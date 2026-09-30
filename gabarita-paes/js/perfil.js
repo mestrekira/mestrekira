@@ -1,302 +1,166 @@
 let currentEssayHistory = [];
+let currentProfile = null;
+let correctionLoad = 0;
+const profileNode = (id) => document.getElementById(id);
+const profileEscape = (value) => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const profileScore = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value).toFixed(2) : '—';
+function profileText(id, value) { const node = profileNode(id); if (node) node.textContent = value; }
+function profileNotice(message, error = false) {
+  const node = profileNode('profile-notice');
+  node.textContent = message; node.hidden = !message; node.dataset.error = String(error);
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (!window.api || !window.api.getToken()) {
-    window.location.href = 'login.html';
-    return;
-  }
+function applyProfile(user) {
+  const name = user.name || 'Aluno';
+  profileText('user-name-header', name.trim().split(/\s+/)[0]);
+  profileText('user-avatar-header', name.charAt(0).toUpperCase());
+  profileText('profile-name', name); profileText('profile-email', user.email || '');
+  profileText('profile-avatar', name.charAt(0).toUpperCase());
+  const labels = { PREMIUM:'Assinatura ativa', TRIAL:'Teste gratuito ativo', PRELAUNCH:'Acesso de testes', EXPIRED:'Acesso gratuito' };
+  profileText('plan-badge', labels[user.paesAccess?.accessReason] || 'Acesso não confirmado');
+  profileNode('plan-cta').hidden = user.paesAccess?.accessReason === 'PREMIUM';
+  const language = user.foreignLanguage;
+  if (!['INGLES','ESPANHOL'].includes(language)) throw new Error('Não foi possível confirmar seu idioma cadastrado.');
+  profileText('lang-badge', `Opção: ${language === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa'}`);
+  profileNode('select-language').value = language;
+  profileNode('select-language').disabled = false;
+  profileNode('btn-save-lang').disabled = false;
+  currentProfile = user;
+}
 
-  loadUserData();
-  loadEssayHistory();
-  loadSimulationHistory();
-  setupLanguagePreference();
-  setupDeleteAccountListener();
-});
-
-// Carrega informações cadastrais do Aluno
-function loadUserData() {
+async function loadUserData() {
   try {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return;
-    const user = JSON.parse(userStr);
-
-    const name = user.name || user.email?.split('@')[0] || 'Aluno';
-    const email = user.email || '';
-    const isPremium = !!user.isPremium;
-    const language = user.foreignLanguage || localStorage.getItem('foreignLanguage') || 'INGLES';
-
-    // Header
-    const nameHeader = document.getElementById('user-name-header');
-    const avatarHeader = document.getElementById('user-avatar-header');
-    if (nameHeader) nameHeader.innerText = name.split(' ')[0];
-    if (avatarHeader) avatarHeader.innerText = name.charAt(0).toUpperCase();
-
-    // Card Perfil
-    const nameEl = document.getElementById('profile-name');
-    const emailEl = document.getElementById('profile-email');
-    const avatarEl = document.getElementById('profile-avatar');
-    if (nameEl) nameEl.innerText = name;
-    if (emailEl) emailEl.innerText = email;
-    if (avatarEl) avatarEl.innerText = name.charAt(0).toUpperCase();
-
-    // Badges de Plano e Idioma
-    const planBadge = document.getElementById('plan-badge');
-    const planCta = document.getElementById('plan-cta');
-    if (planBadge) {
-      if (isPremium) {
-        planBadge.innerText = '⭐ Assinante Premium';
-        planBadge.style.background = '#dcfce7';
-        planBadge.style.color = '#166534';
-        if (planCta) planCta.style.display = 'none';
-      } else {
-        planBadge.innerText = 'Plano Gratuito';
-      }
+    const user = await window.api.get('/users/me');
+    if (!user) return;
+    applyProfile(user);
+    localStorage.setItem('user', JSON.stringify(user));
+    if (user.paesAccess?.canAccess === false) {
+      for (const id of ['essays-history-container','simulations-history-container']) profileText(id, 'A consulta deste módulo exige acesso completo. Confira a situação do seu acesso acima.');
+      return;
     }
-
-    const langBadge = document.getElementById('lang-badge');
-    const selectLang = document.getElementById('select-language');
-    if (langBadge) {
-      langBadge.innerText = `Opção: ${language === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa'}`;
-    }
-    if (selectLang) {
-      selectLang.value = language;
-    }
-  } catch (err) {
-    console.error('Erro ao carregar dados do usuário:', err);
+    if (user.paesAccess?.canAccess !== true) throw new Error('Não foi possível confirmar o acesso aos seus resultados.');
+    await Promise.allSettled([loadEssayHistory(), loadSimulationHistory()]);
+  } catch (error) {
+    profileText('profile-name','Não foi possível carregar o perfil');
+    profileText('profile-email','Atualize a página para tentar novamente.');
+    profileNotice(error.message || 'Não foi possível consultar sua conta.',true);
   }
 }
 
-// Configuração da Língua Estrangeira
 function setupLanguagePreference() {
-  const btn = document.getElementById('btn-save-lang');
-  const select = document.getElementById('select-language');
-
-  if (btn && select) {
-    btn.addEventListener('click', async () => {
-      const selected = select.value;
-      try {
-        const updated = await window.api.patch('/users/me', { foreignLanguage: selected });
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        localStorage.setItem('user', JSON.stringify({ ...user, ...updated, foreignLanguage: selected }));
-        localStorage.setItem('foreignLanguage', selected);
-        alert('Preferência de Língua Estrangeira salva com sucesso!');
-      } catch (e) {
-        alert(e.message || 'Não foi possível salvar a preferência.');
-        return;
-      }
-      loadUserData();
-    });
-  }
-}
-
-// Carrega histórico e indicadores de Redação do ciclo
-async function loadEssayHistory() {
-  const container = document.getElementById('essays-history-container');
-  const statEssays = document.getElementById('stat-essays');
-  const statBest = document.getElementById('stat-best-essay');
-
-  try {
-    const res = await window.api.get('/essays/cycle-status');
-    if (!res || !res.prompts) {
-      if (container) container.innerHTML = '<p style="color: var(--text-muted, #64748b);">Nenhuma redação encontrada.</p>';
-      return;
-    }
-
-    const prompts = res.prompts || [];
-    const submitted = prompts.filter((p) => p.isSubmitted);
-    currentEssayHistory = submitted;
-
-    if (statEssays) statEssays.innerText = `${submitted.length} / 2`;
-
-    let bestScore = 0;
-    submitted.forEach((p) => {
-      const s = Number(p.score || 0);
-      if (s > bestScore) bestScore = s;
-    });
-    if (statBest) statBest.innerText = bestScore > 0 ? `${bestScore.toFixed(2)}` : '0.00';
-
-    if (submitted.length === 0) {
-      if (container) {
-        container.innerHTML = `
-          <div style="text-align: center; padding: 1.5rem; background: #f8fafc; border-radius: 8px;">
-            <p style="color: #64748b; margin-bottom: 0.75rem;">Você ainda não enviou redações neste ciclo.</p>
-            <a href="redacao.html" class="btn" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Produzir Primeira Redação</a>
-          </div>
-        `;
-      }
-      return;
-    }
-
-    if (container) {
-      container.innerHTML = submitted
-        .map(
-          (p) => `
-        <div class="history-card">
-          <div>
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary, #2563eb); text-transform: uppercase;">
-              Tema ${p.themeNumber}
-            </span>
-            <h4 style="margin: 0.2rem 0; color: #1e293b;">${p.title}</h4>
-            <span style="font-size: 0.85rem; color: #64748b;">Avaliado nos 5 critérios da UEMA</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <div style="text-align: right;">
-              <span style="font-size: 0.75rem; color: #64748b; display: block;">Nota Final</span>
-              <strong style="font-size: 1.35rem; color: var(--accent, #10b981);">
-                ${Number(p.score || 0).toFixed(2)} / 10.0
-              </strong>
-            </div>
-            <button class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.85rem;" onclick="viewEssayDetails('${p.id}')">
-              Ver Espelho
-            </button>
-          </div>
-        </div>
-      `,
-        )
-        .join('');
-    }
-  } catch (err) {
-    if (container) {
-      container.innerHTML = `<p style="color: #ef4444;">Erro ao carregar histórico de redações: ${err.message}</p>`;
-    }
-  }
-}
-
-// Carrega histórico e indicadores de Simulado
-async function loadSimulationHistory() {
-  const container = document.getElementById('simulations-history-container');
-  const statSimulations = document.getElementById('stat-simulations');
-  const statBestSim = document.getElementById('stat-best-sim');
-
-  let simData = null;
-  try {
-    const res = await window.api.get('/simulations/my-status');
-    if (res && res.submitted) simData = res;
-  } catch (e) {
-    console.error('Não foi possível consultar o simulado:', e);
-  }
-
-  if (simData && (simData.score !== undefined || simData.submitted)) {
-    const score = Number(simData.score || 0);
-    const total = Number(simData.totalQuestions || 60);
-    const perc = Math.round((score / total) * 100);
-
-    if (statSimulations) statSimulations.innerText = '1';
-    if (statBestSim) statBestSim.innerText = `${perc}%`;
-
-    if (container) {
-      container.innerHTML = `
-        <div class="history-card">
-          <div>
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary, #2563eb); text-transform: uppercase;">
-              Simulado Oficial PAES UEMA
-            </span>
-            <h4 style="margin: 0.2rem 0; color: #1e293b;">Tentativa Concluída</h4>
-            <span style="font-size: 0.85rem; color: #64748b;">Ciclo: ${simData.cycleCode}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <div style="text-align: right;">
-              <span style="font-size: 0.75rem; color: #64748b; display: block;">Pontuação</span>
-              <strong style="font-size: 1.35rem; color: var(--primary, #2563eb);">
-                ${score} / ${total}
-              </strong>
-            </div>
-            <a href="simulado.html" class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.45rem 0.85rem; text-decoration: none;">
-              Revisar Gabarito
-            </a>
-          </div>
-        </div>
-      `;
-    }
-  } else {
-    if (statSimulations) statSimulations.innerText = '0';
-    if (statBestSim) statBestSim.innerText = '--%';
-    if (container) {
-      container.innerHTML = '<p style="color: var(--text-muted, #64748b); font-size: 0.95rem;">Nenhum simulado finalizado neste ciclo.</p>';
-    }
-  }
-}
-
-// Exclusão Segura de Conta (Frontend + Backend)
-function setupDeleteAccountListener() {
-  const btnDelete = document.getElementById('btn-delete-account');
-  if (!btnDelete) return;
-
-  btnDelete.addEventListener('click', async () => {
-    const firstConfirm = confirm(
-      '⚠️ ATENÇÃO: Esta ação é definitiva e irreversível!\n\n' +
-      'Ao confirmar, sua conta, dados cadastrais, notas de simulados e espelhos de redação serão totalmente excluídos do banco de dados.\n\n' +
-      'Deseja prosseguir?'
-    );
-    if (!firstConfirm) return;
-
-    const secondConfirm = prompt('Para confirmar a exclusão permanente da sua conta, digite exatamente a palavra EXCLUIR:');
-    if (secondConfirm !== 'EXCLUIR') {
-      alert('Operação cancelada. A palavra digitada não confere.');
-      return;
-    }
-
-    btnDelete.disabled = true;
-    btnDelete.innerText = 'Excluindo conta do sistema...';
-
+  const button = profileNode('btn-save-lang');
+  button.addEventListener('click', async () => {
+    if (button.disabled) return;
+    const select = profileNode('select-language');
+    const selected = select.value;
+    button.disabled = true; select.disabled = true;
     try {
-      // Dispara a requisição DELETE para o backend NestJS
-      const token = window.api.getToken ? window.api.getToken() : localStorage.getItem('token');
-      const response = await fetch(`${window.api.BASE_URL || 'https://mestrekira-api.onrender.com'}/users/me`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Erro HTTP ${response.status}`);
-      }
-
-      // Limpa os dados de sessão apenas se o banco de dados confirmar a deleção
-      localStorage.clear();
-      alert('Sua conta e todos os registros foram excluídos com sucesso.');
-      window.location.href = 'login.html';
-    } catch (err) {
-      console.error('Falha ao excluir conta:', err);
-      alert('Não foi possível excluir a conta: ' + (err.message || 'Erro de conexão com o servidor.'));
-      btnDelete.disabled = false;
-      btnDelete.innerText = '🗑️ Excluir Minha Conta Permanentemente';
-    }
+      const updated = await window.api.patch('/users/me', {foreignLanguage:selected});
+      if (!updated) return;
+      // O perfil retornado pelo servidor é a fonte da preferência.
+      const fresh = { ...currentProfile, ...updated.user };
+      if (!updated.user?.foreignLanguage) throw new Error('A resposta do servidor não confirmou o idioma. Atualize a página.');
+      applyProfile(fresh);
+      localStorage.setItem('user',JSON.stringify(fresh));
+      localStorage.removeItem('foreignLanguage');
+      profileNotice('Preferência de língua estrangeira salva. Confira o idioma antes de iniciar o simulado.');
+      if (fresh.paesAccess?.canAccess === true) await Promise.allSettled([loadEssayHistory(),loadSimulationHistory()]);
+    } catch (error) {
+      if (currentProfile) select.value = currentProfile.foreignLanguage;
+      profileNotice(error.message || 'Não foi possível salvar sua preferência.',true);
+    } finally { button.disabled = false; select.disabled = false; }
   });
 }
 
-// Modal do Espelho
-window.viewEssayDetails = (promptId) => {
-  const prompt = currentEssayHistory.find((p) => p.id === promptId);
-  if (!prompt) return;
+async function loadEssayHistory() {
+  const container=profileNode('essays-history-container');
+  try {
+    const res = await window.api.get('/essays/cycle-status');
+    if (!res) return;
+    if (!Array.isArray(res.prompts)) {
+      profileText('stat-essays','—'); profileText('stat-best-essay','—');
+      container.textContent=res.message || 'Conclua o simulado do ciclo para consultar as propostas de redação.';
+      currentEssayHistory=[]; return;
+    }
+    currentEssayHistory=res.prompts.filter(p=>p.isSubmitted);
+    profileText('stat-essays',`${currentEssayHistory.length} / ${res.prompts.length}`);
+    const scores=currentEssayHistory.map(p=>p.score).filter(s=>s!==null&&s!==undefined&&Number.isFinite(Number(s))).map(Number);
+    profileText('stat-best-essay',scores.length ? profileScore(Math.max(...scores)) : '—');
+    if (!currentEssayHistory.length) {container.textContent='Você ainda não enviou redações neste ciclo.';return;}
+    container.innerHTML=currentEssayHistory.map(p=>`<div class="history-card"><div><span>Tema ${profileEscape(p.themeNumber)}</span><h4>${profileEscape(p.title)}</h4><span>Avaliado nos 5 critérios da UEMA</span></div><div class="history-actions"><strong>${profileScore(p.score)} / 10,0</strong><button class="btn btn-secondary" data-essay-id="${profileEscape(p.id)}">Ver Espelho</button></div></div>`).join('');
+    container.querySelectorAll('[data-essay-id]').forEach(button=>button.addEventListener('click',()=>window.viewEssayDetails(button.dataset.essayId)));
+  } catch (error) { container.textContent=`Não foi possível consultar as redações: ${error.message || 'tente novamente.'}`; }
+}
 
-  const modal = document.getElementById('essay-modal');
-  const titleEl = document.getElementById('modal-theme-title');
-  const scoreEl = document.getElementById('modal-score');
-  const bodyEl = document.getElementById('modal-body-feedback');
+async function loadSimulationHistory() {
+  const container=profileNode('simulations-history-container');
+  try {
+    const res=await window.api.get('/simulations/my-status');
+    if (!res) return;
+    profileText('stat-simulations',res.submitted?'1':'0');
+    if (!res.submitted) {profileText('stat-best-sim','—');container.textContent='Nenhum simulado finalizado neste ciclo.';return;}
+    const score=Number(res.score); const total=Number(res.totalQuestions);
+    if (!Number.isFinite(score)||!Number.isFinite(total)||total<=0) throw new Error('Pontuação indisponível.');
+    profileText('stat-best-sim',`${Math.round(score/total*100)}%`);
+    container.innerHTML=`<div class="history-card"><div><h4>Simulado Oficial PAES UEMA</h4><span>Ciclo: ${profileEscape(res.cycleCode)}</span></div><div class="history-actions"><strong>${score} / ${total} acertos</strong><a href="simulado.html" class="btn btn-secondary">Revisar Gabarito</a></div></div>`;
+  } catch(error) {profileText('stat-simulations','—');profileText('stat-best-sim','—');container.textContent=`Não foi possível consultar o simulado: ${error.message || 'tente novamente.'}`;}
+}
 
-  if (titleEl) titleEl.innerText = `Tema ${prompt.themeNumber}: ${prompt.title}`;
-  if (scoreEl) scoreEl.innerText = `${Number(prompt.score || 0).toFixed(2)} / 10.0`;
-
-  if (bodyEl) {
-    bodyEl.innerHTML = `
-      <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary, #2563eb); margin-bottom: 1rem;">
-        <strong>Avaliação Registrada:</strong><br>
-        Esta nota foi atribuída com base nos 5 critérios analíticos do PAES UEMA (Atendimento ao Tema, Coesão das Partes, Coerência Argumentativa, Atendimento ao Tipo Textual com Título e Norma da Língua Portuguesa).
-      </div>
-      <p style="color: #475569; font-size: 0.9rem;">
-        Para consultar o texto e reenviar ou praticar outras propostas disponíveis no ciclo, acesse a aba <strong>Redação</strong>.
-      </p>
-    `;
-  }
-
-  if (modal) modal.style.display = 'flex';
+window.viewEssayDetails=async (promptId)=>{
+  const prompt=currentEssayHistory.find(p=>p.id===promptId); if(!prompt)return;
+  const token=++correctionLoad; const dialog=profileNode('essay-modal');
+  profileText('modal-theme-title',`Tema ${prompt.themeNumber}: ${prompt.title}`);
+  profileText('modal-score',`${profileScore(prompt.score)} / 10,0`);
+  profileText('modal-body-feedback','Consultando correção salva...');
+  dialog.showModal();
+  try {
+    if(!prompt.essayId)throw new Error('Correção não identificada. Acesse a página Redação para consultar.');
+    const correction=await window.api.get(`/essays/${encodeURIComponent(prompt.essayId)}`);
+    if(token!==correctionLoad||!dialog.open||!correction)return;
+    const feedback=correction.feedback || {};
+    profileText('modal-score',`${profileScore(correction.totalScore)} / 10,0`);
+    const criteria=[['theme','Atendimento ao tema'],['cohesion','Coesão'],['coherence','Coerência argumentativa'],['genre','Tipo dissertativo-argumentativo'],['grammarNorm','Norma padrão']];
+    const content=criteria.map(([key,label])=>{
+      const detail=feedback.criteria_details?.[key==='grammarNorm'?'grammar_norm':key] || {};
+      const findings=Array.isArray(detail.findings)?detail.findings:[];
+      return `<div class="card"><h4>${label} · ${profileScore(correction.criteria?.[key])} / 2,0</h4>
+        <p class="feedback-text">${profileEscape(detail.diagnosis || 'Análise detalhada não disponível.')}</p>
+        ${detail.student_quote?`<blockquote class="feedback-text">${profileEscape(detail.student_quote)}</blockquote>`:''}
+        ${findings.map(f=>`<blockquote class="feedback-text">${profileEscape(f.student_quote)}</blockquote><p class="feedback-text">${profileEscape(f.explanation)}</p><p class="feedback-text">${profileEscape(f.effect)}</p><p class="feedback-text">${profileEscape(f.suggestion)}</p>`).join('')}
+        ${detail.tip?`<p class="feedback-text"><strong>Próximo passo:</strong> ${profileEscape(detail.tip)}</p>`:''}</div>`;
+    }).join('');
+    profileNode('modal-body-feedback').innerHTML=`<p class="feedback-text">${profileEscape(feedback.pedagogical_feedback || 'Parecer geral não disponível nesta correção.')}</p>${content}<details><summary>Texto da redação</summary><p class="feedback-text">${profileEscape(correction.content)}</p></details><a href="redacao.html" class="btn btn-secondary">Abrir página de Redação</a>`;
+  }catch(error){if(token===correctionLoad&&dialog.open)profileText('modal-body-feedback',error.message || 'Não foi possível carregar a correção.');}
 };
+window.closeModal=()=>{correctionLoad++;profileNode('essay-modal').close();};
 
-window.closeModal = () => {
-  const modal = document.getElementById('essay-modal');
-  if (modal) modal.style.display = 'none';
-};
+function setupDeleteAccountListener() {
+  const dialog=profileNode('delete-dialog'); const form=profileNode('delete-form');
+  const button=profileNode('delete-submit'); let busy=false;
+  const notice=(text)=>{profileText('delete-notice',text);profileNode('delete-notice').hidden=!text;};
+  profileNode('btn-delete-account').addEventListener('click',()=>{form.reset();notice('');dialog.showModal();});
+  profileNode('delete-cancel').addEventListener('click',()=>{if(!busy)dialog.close();});
+  dialog.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
+  form.addEventListener('submit',async event=>{
+    event.preventDefault(); if(busy)return;
+    if(profileNode('delete-confirmation').value!=='EXCLUIR'){notice('Digite exatamente EXCLUIR para confirmar.');return;}
+    const password=profileNode('delete-password').value;
+    if(!password){notice('Informe sua senha atual.');return;}
+    busy=true;button.disabled=true;profileNode('delete-cancel').disabled=true;
+    try {
+      const result=await window.api.request('/users/me',{method:'DELETE',body:JSON.stringify({password})});
+      if(!result)return;
+      // Encerra apenas esta sessão, preservando outros dados do navegador.
+      localStorage.removeItem('token');localStorage.removeItem('user');localStorage.removeItem('foreignLanguage');
+      window.location.replace('login.html');
+    }catch(error){notice(error.message || 'Não foi possível excluir a conta.');}
+    finally {busy=false;button.disabled=false;profileNode('delete-cancel').disabled=false;profileNode('delete-password').value='';}
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!window.api?.getToken()){window.location.replace('login.html');return;}
+  setupLanguagePreference();setupDeleteAccountListener();
+  profileNode('essay-modal').addEventListener('close',()=>correctionLoad++);
+  loadUserData();
+});
