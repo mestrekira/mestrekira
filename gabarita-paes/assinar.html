@@ -46,6 +46,7 @@
     }
   </style>
   <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
+  <link rel="stylesheet" href="css/acesso-conta.css?v=20260930-01">
 </head>
 <body class="gabarita-theme">
   <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
@@ -63,23 +64,25 @@
   </header>
 
   <main class="container" id="main-content" style="max-width: 700px;">
+    <section id="account-access" class="card account-access" data-access-page="plan" aria-label="Situação do seu acesso" aria-live="polite" hidden></section>
+
     <div class="card plan-card">
       <span class="badge" style="font-size: 1rem; padding: 0.4rem 1rem;">Reta Final PAES UEMA</span>
       <h1 style="margin-top: 1rem;">Plano Mensal Premium</h1>
-      <p style="color: var(--text-muted);">Acesso completo até o dia da sua aprovação</p>
+      <p style="color: var(--text-muted);">Acesso completo durante a vigência da assinatura mensal</p>
       
       <div class="price">R$ 24,99 <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">/ mês após o lançamento das assinaturas</span></div>
 
       <ul class="benefits-list">
-        <li>✅ <strong>100% do Banco de Questões</strong> liberado (PAES UEMA e ENEM)</li>
-        <li>✅ <strong>Simulado Oficial de 60 Questões</strong> com pontuação isonômica</li>
-        <li>✅ <strong>Plataforma de Redação UEMA</strong> com propostas por ciclo e avaliação pedagógica por IA</li>
-        <li>✅ <strong>Ranqueamento por Curso</strong> entre seus concorrentes reais</li>
-        <li>✅ <strong>Diagnóstico de Erros</strong> com links para os artigos do Mestre Kira</li>
+        <li><span class="benefit-check" aria-hidden="true">✓</span><span><strong>100% do Banco de Questões</strong> liberado (PAES UEMA e ENEM)</span></li>
+        <li><span class="benefit-check" aria-hidden="true">✓</span><span><strong>Simulado Oficial de 60 Questões</strong> com pontuação isonômica</span></li>
+        <li><span class="benefit-check" aria-hidden="true">✓</span><span><strong>Plataforma de Redação UEMA</strong> com propostas por ciclo e avaliação pedagógica por IA</span></li>
+        <li><span class="benefit-check" aria-hidden="true">✓</span><span><strong>Ranqueamento por Curso</strong> entre participantes da plataforma</span></li>
+        <li><span class="benefit-check" aria-hidden="true">✓</span><span><strong>Diagnóstico de Erros</strong> com links para os artigos do Mestre Kira</span></li>
       </ul>
 
       <p class="card" style="margin-top: 1.5rem; background: #eff6ff; color: #1e3a8a;">
-        As assinaturas ainda não estão disponíveis. Continue estudando nas áreas liberadas da plataforma.
+        As assinaturas ainda não estão disponíveis. Toda conta recebe 7 dias de teste gratuito; depois, o treino ENEM continua disponível com 50% do banco. O simulado PAES, a redação e o ranking exigem acesso completo.
       </p>
       <a class="btn" href="index.html">Voltar à plataforma</a>
     </div>
@@ -87,5 +90,7 @@
 
 
   <footer class="site-footer"><p><strong>Gabarita PAES</strong> · Preparação para PAES UEMA e ENEM</p><a href="https://www.mestrekira.com.br/">Conheça o Mestre Kira</a></footer>
+  <script src="js/api.js"></script>
+  <script src="js/acesso-conta.js?v=20260930-01"></script>
 </body>
 </html>
