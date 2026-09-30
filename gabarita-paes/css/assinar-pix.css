@@ -1,0 +1,13 @@
+.pix-payment {text-align:left; margin-top:1.5rem; padding:1.25rem; border:1px solid var(--border); border-radius:16px; background:var(--surface,#fff)}
+.pix-payment h2 {font-size:1.3rem; margin:0 0 .75rem}
+.pix-payment p {line-height:1.6; overflow-wrap:anywhere}
+.pix-payment [hidden] {display:none!important}
+.pix-test {background:#fff7ed; color:#7c2d12; padding:1rem; border:1px solid #fdba74; border-radius:10px}
+.pix-actions {display:flex; flex-wrap:wrap; gap:.75rem; margin-top:1rem}
+.pix-actions .btn {white-space:normal; min-height:44px; text-align:center}
+.pix-qr {display:block; width:240px; max-width:100%; height:auto; margin:1rem auto; border-radius:8px}
+.pix-payment textarea {display:block; box-sizing:border-box; width:100%; resize:vertical; min-height:110px; padding:.75rem; margin:.5rem 0; font:inherit; overflow-wrap:anywhere; color:#162c46; background:#fff; border:1px solid #b9c9d8; border-radius:8px}
+.pix-message {padding:.75rem; background:#eff6ff; color:#1e3a8a; border-radius:8px}
+.pix-message.is-error {color:#991b1b; background:#fef2f2}
+.pix-payment button:disabled {opacity:.65; cursor:wait}
+@media(max-width:480px){.plan-card{padding:1.5rem 1rem}.price{font-size:2.5rem}.pix-payment{padding:1rem}.pix-actions .btn{width:100%}}
