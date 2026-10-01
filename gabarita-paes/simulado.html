@@ -290,6 +290,7 @@
     .exam-notice[hidden] { display: none; }
   </style>
   <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
+  <link rel="stylesheet" href="css/acesso-conta.css?v=20260930-01">
 </head>
 <body class="gabarita-theme">
   <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
@@ -315,13 +316,14 @@
   </header>
 
   <main class="container" id="main-content">
+    <section id="account-access" class="card account-access" aria-label="Situação do seu acesso" aria-live="polite" hidden></section>
     <div id="exam-notice" class="card exam-notice" role="status" aria-live="polite" hidden></div>
     <!-- Bloqueio para Usuários Gratuitos fora da Fase de Testes -->
     <div id="premium-gate-view" class="card" style="display: none; max-width: 650px; margin: 3rem auto; text-align: center; padding: 2.5rem;">
       <span style="font-size: 3.5rem;">⭐</span>
       <h2 style="color: #1e293b; margin: 0.75rem 0;">Módulo de Simulado Premium</h2>
       <p style="color: #64748b; line-height: 1.7; font-size: 1.05rem; margin-bottom: 1.5rem;">
-        Os cadernos oficiais com 60 questões, gabaritos comentados e planos de estudo com IA estão disponíveis durante o teste gratuito ou com uma assinatura ativa.
+        Os cadernos oficiais com 60 questões, gabaritos comentados e planos de estudo com IA estão disponíveis gratuitamente durante o lançamento.
       </p>
       <p id="premium-gate-status" role="status"></p>
       <a href="assinar.html" class="btn" style="background: var(--accent, #10b981); padding: 0.85rem 1.75rem; font-size: 1.1rem; font-weight: 700;">
@@ -560,5 +562,6 @@
   <script src="js/api.js"></script>
   <script src="js/simulado.js?v=20260929-04"></script>
   <footer class="site-footer"><p><strong>Gabarita PAES</strong> · Preparação para PAES UEMA e ENEM</p><a href="https://www.mestrekira.com.br/">Conheça o Mestre Kira</a></footer>
+  <script src="js/acesso-conta.js?v=20261001-02"></script>
 </body>
 </html>
