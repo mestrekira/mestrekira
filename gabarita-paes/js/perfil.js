@@ -1,6 +1,7 @@
 let currentEssayHistory = [];
 let currentProfile = null;
 let correctionLoad = 0;
+let performanceLoading = false;
 const profileNode = (id) => document.getElementById(id);
 const profileEscape = (value) => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const profileScore = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value).toFixed(2) : '—';
@@ -16,34 +17,39 @@ function applyProfile(user) {
   profileText('user-avatar-header', name.charAt(0).toUpperCase());
   profileText('profile-name', name); profileText('profile-email', user.email || '');
   profileText('profile-avatar', name.charAt(0).toUpperCase());
-  const labels = { TEMPORARY_FREE:'Gratuito por tempo limitado', PREMIUM:'Assinatura ativa', TRIAL:'Teste gratuito ativo', PRELAUNCH:'Acesso de testes', EXPIRED:'Acesso gratuito' };
-  profileText('plan-badge', labels[user.paesAccess?.accessReason] || 'Acesso não confirmado');
-  profileNode('plan-cta').hidden = ['PREMIUM', 'TEMPORARY_FREE'].includes(user.paesAccess?.accessReason);
-  const language = user.foreignLanguage;
-  if (!['INGLES','ESPANHOL'].includes(language)) throw new Error('Não foi possível confirmar seu idioma cadastrado.');
-  profileText('lang-badge', `Opção: ${language === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa'}`);
-  profileNode('select-language').value = language;
-  profileNode('select-language').disabled = false;
-  profileNode('btn-save-lang').disabled = false;
+  profileText('plan-badge', user.paesAccess?.accessReason === 'TEMPORARY_FREE' ? 'Participante da fase gratuita' : 'Conta cadastrada');
+  profileNode('plan-cta').hidden = true;
   currentProfile = user;
+  const language = user.foreignLanguage;
+  if (['INGLES','ESPANHOL'].includes(language)) {
+    profileText('lang-badge', `Opção: ${language === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa'}`);
+    profileNode('select-language').value = language;
+    profileNode('select-language').disabled = false;
+    profileNode('btn-save-lang').disabled = false;
+  } else {
+    profileText('lang-badge', 'Atualize o perfil para conferir seu idioma');
+  }
 }
 
 async function loadUserData() {
+  if (performanceLoading) return;
+  performanceLoading = true;
+  profileNode('refresh-performance').disabled = true;
   try {
     const user = await window.api.get('/users/me');
     if (!user) return;
     applyProfile(user);
     localStorage.setItem('user', JSON.stringify(user));
-    if (user.paesAccess?.canAccess === false) {
-      for (const id of ['essays-history-container','simulations-history-container']) profileText(id, 'A consulta deste módulo exige acesso completo. Confira a situação do seu acesso acima.');
-      return;
-    }
-    if (user.paesAccess?.canAccess !== true) throw new Error('Não foi possível confirmar o acesso aos seus resultados.');
-    await Promise.allSettled([loadEssayHistory(), loadSimulationHistory()]);
+    profileNotice('');
   } catch (error) {
     profileText('profile-name','Não foi possível carregar o perfil');
     profileText('profile-email','Atualize a página para tentar novamente.');
-    profileNotice(error.message || 'Não foi possível consultar sua conta.',true);
+    profileNotice('Seus dados cadastrais não foram atualizados. Você pode tentar novamente pelo botão abaixo.',true);
+  } finally {
+    // Cada módulo consulta o servidor independentemente dos metadados de assinatura.
+    await Promise.allSettled([loadEssayHistory(), loadSimulationHistory(), loadEnemPerformance()]);
+    performanceLoading = false;
+    profileNode('refresh-performance').disabled = false;
   }
 }
 
@@ -64,12 +70,33 @@ function setupLanguagePreference() {
       localStorage.setItem('user',JSON.stringify(fresh));
       localStorage.removeItem('foreignLanguage');
       profileNotice('Preferência de língua estrangeira salva. Confira o idioma antes de iniciar o simulado.');
-      if (fresh.paesAccess?.canAccess === true) await Promise.allSettled([loadEssayHistory(),loadSimulationHistory()]);
+      await Promise.allSettled([loadEssayHistory(),loadSimulationHistory(),loadEnemPerformance()]);
     } catch (error) {
       if (currentProfile) select.value = currentProfile.foreignLanguage;
       profileNotice(error.message || 'Não foi possível salvar sua preferência.',true);
     } finally { button.disabled = false; select.disabled = false; }
   });
+}
+
+async function loadEnemPerformance() {
+  const container = profileNode('enem-performance');
+  try {
+    const data = await window.api.get('/questions/practice/history?page=1');
+    if (!data) return;
+    if (!Number.isSafeInteger(data.total) || data.total < 0 || !Array.isArray(data.items)) throw new Error('Histórico indisponível.');
+    profileText('stat-enem-total', String(data.total));
+    if (!data.items.length) {
+      profileText('stat-enem-recent', '—');
+      container.textContent = 'Você ainda não registrou respostas no treino ENEM. Comece por uma disciplina de sua escolha.';
+      return;
+    }
+    const correct = data.items.filter(item => item.isCorrect === true).length;
+    profileText('stat-enem-recent', `${Math.round(correct / data.items.length * 100)}%`);
+    container.textContent = `${correct} acertos em ${data.items.length} respostas mais recentes. O total de respostas inclui as rodadas de treino registradas, e não apenas questões distintas.`;
+  } catch (_) {
+    profileText('stat-enem-total', '—'); profileText('stat-enem-recent', '—');
+    container.textContent = 'O desempenho do treino ENEM não foi atualizado. Tente novamente.';
+  }
 }
 
 async function loadEssayHistory() {
@@ -162,5 +189,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(!window.api?.getToken()){window.location.replace('login.html');return;}
   setupLanguagePreference();setupDeleteAccountListener();
   profileNode('essay-modal').addEventListener('close',()=>correctionLoad++);
+  profileNode('refresh-performance').addEventListener('click', loadUserData);
   loadUserData();
 });
