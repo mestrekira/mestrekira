@@ -16,9 +16,9 @@ function applyProfile(user) {
   profileText('user-avatar-header', name.charAt(0).toUpperCase());
   profileText('profile-name', name); profileText('profile-email', user.email || '');
   profileText('profile-avatar', name.charAt(0).toUpperCase());
-  const labels = { PREMIUM:'Assinatura ativa', TRIAL:'Teste gratuito ativo', PRELAUNCH:'Acesso de testes', EXPIRED:'Acesso gratuito' };
+  const labels = { TEMPORARY_FREE:'Gratuito por tempo limitado', PREMIUM:'Assinatura ativa', TRIAL:'Teste gratuito ativo', PRELAUNCH:'Acesso de testes', EXPIRED:'Acesso gratuito' };
   profileText('plan-badge', labels[user.paesAccess?.accessReason] || 'Acesso não confirmado');
-  profileNode('plan-cta').hidden = user.paesAccess?.accessReason === 'PREMIUM';
+  profileNode('plan-cta').hidden = ['PREMIUM', 'TEMPORARY_FREE'].includes(user.paesAccess?.accessReason);
   const language = user.foreignLanguage;
   if (!['INGLES','ESPANHOL'].includes(language)) throw new Error('Não foi possível confirmar seu idioma cadastrado.');
   profileText('lang-badge', `Opção: ${language === 'ESPANHOL' ? 'Língua Espanhola' : 'Língua Inglesa'}`);

@@ -13,6 +13,10 @@
     if (!access || typeof access.canAccess !== 'boolean') throw new Error('Acesso indisponível.');
     const full = 'Simulado PAES, redação, ranking e banco ENEM completo disponíveis.';
     switch (access.accessReason) {
+      case 'TEMPORARY_FREE':
+        if (!access.canAccess) throw new Error('Acesso inconsistente.');
+        return { state: 'trial', title: 'Gratuito por tempo limitado',
+          detail: 'Acesso completo gratuito durante o lançamento. Depois, R$ 24,99 por 30 dias. A mudança será comunicada com antecedência. Não haverá cobrança automática.', features: full };
       case 'PRELAUNCH':
         if (!access.canAccess) throw new Error('Acesso inconsistente.');
         return { state: 'trial', title: 'Acesso liberado durante os testes',
@@ -71,7 +75,7 @@
     try {
       if (!window.api?.getToken()) {
         render(panel, { state: 'guest', title: 'Conheça seu acesso',
-          detail: 'Toda conta recebe 7 dias de teste gratuito com acesso completo. Depois, o treino ENEM continua disponível com 50% do banco.',
+          detail: 'O Gabarita PAES está gratuito por tempo limitado. Depois, o acesso completo custará R$ 24,99 por 30 dias. A mudança será comunicada com antecedência. Não haverá cobrança automática.',
           link: { href: 'login.html', text: 'Entrar na minha conta' } });
         return;
       }
