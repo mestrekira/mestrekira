@@ -17,7 +17,9 @@ function applyProfile(user) {
   profileText('user-avatar-header', name.charAt(0).toUpperCase());
   profileText('profile-name', name); profileText('profile-email', user.email || '');
   profileText('profile-avatar', name.charAt(0).toUpperCase());
-  profileText('plan-badge', user.paesAccess?.accessReason === 'TEMPORARY_FREE' ? 'Participante da fase gratuita' : 'Conta cadastrada');
+  const schoolUntil = user.paesAccess?.schoolEndsAt ? new Date(user.paesAccess.schoolEndsAt) : null;
+  profileText('school-benefit', schoolUntil && schoolUntil.getTime() > Date.now() ? `Benefício escolar garantido até ${schoolUntil.toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'})}, às 23h59 (horário de Brasília), sem cobrança automática.` : '');
+  profileText('plan-badge', schoolUntil && schoolUntil.getTime() > Date.now() ? 'Participante do projeto escolar' : user.paesAccess?.accessReason === 'TEMPORARY_FREE' ? 'Participante da fase gratuita' : 'Conta cadastrada');
   profileNode('plan-cta').hidden = true;
   currentProfile = user;
   const language = user.foreignLanguage;
