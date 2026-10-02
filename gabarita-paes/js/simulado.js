@@ -4,6 +4,17 @@ function escapeHtml(value) {
   })[c]);
 }
 
+function safeSimulationImageUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value, window.location.href);
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) return null;
+    // HTTP fica restrito ao desenvolvimento local; produção utiliza HTTPS.
+    if (url.protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) return null;
+    return url.href;
+  } catch { return null; }
+}
+
 // ================= CONFIGURAÇÃO DO CICLO E ACESSO =================
 const CURRENT_CYCLE = {
   cycleCode: '',
@@ -398,9 +409,9 @@ function renderCurrentQuestion() {
   const prevBtn = document.getElementById('btn-prev-q');
   const nextBtn = document.getElementById('btn-next-q');
 
-  if (metaEl) metaEl.innerText = `${escapeHtml(q.discipline || 'Geral')} • ${escapeHtml(q.topic || 'Conhecimentos Gerais')}`;
+  if (metaEl) metaEl.innerText = `${q.discipline || 'Geral'} • ${q.topic || 'Conhecimentos Gerais'}`;
   if (progressEl) progressEl.innerText = `Questão ${currentIndex + 1} de ${activeQuestions.length}`;
-  if (statementEl) statementEl.innerHTML = (q.statement || '').replace(/\n/g, '<br>');
+  if (statementEl) statementEl.innerHTML = escapeHtml(q.statement || '').replace(/\n/g, '<br>');
 
   if (imagesContainer) {
     const images = [];
@@ -408,19 +419,30 @@ function renderCurrentQuestion() {
     if (q.imageUrlB) images.push({ url: q.imageUrlB, label: 'Figura 2' });
     if (q.image && !q.imageUrl) images.push({ url: q.image, label: 'Figura da Questão' });
 
-    if (images.length > 0) {
-      imagesContainer.style.display = 'block';
-      imagesContainer.innerHTML = images
-        .map((img) => `
-        <div class="question-image-box">
-          <img src="${img.url}" alt="${img.label}" class="question-image" loading="lazy" onclick="window.open('${img.url}', '_blank')">
-          <div class="question-image-caption">🔍 ${img.label} (clique para ampliar)</div>
-        </div>
-      `).join('');
-    } else {
-      imagesContainer.style.display = 'none';
-      imagesContainer.innerHTML = '';
+    imagesContainer.replaceChildren();
+    for (const image of images) {
+      const url = safeSimulationImageUrl(image.url);
+      if (!url) continue;
+      const box = document.createElement('div');
+      box.className = 'question-image-box';
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.title = 'Abrir imagem em tamanho original';
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = image.label;
+      img.className = 'question-image';
+      img.loading = 'lazy';
+      link.appendChild(img);
+      const caption = document.createElement('div');
+      caption.className = 'question-image-caption';
+      caption.textContent = `🔍 ${image.label} (clique para ampliar)`;
+      box.append(link, caption);
+      imagesContainer.appendChild(box);
     }
+    imagesContainer.style.display = imagesContainer.childElementCount ? 'block' : 'none';
   }
 
   const isFlagged = !!flaggedQuestions[q.id || q.order || currentIndex];
@@ -439,13 +461,22 @@ function renderCurrentQuestion() {
 
   const selected = userAnswers[q.id || q.order || currentIndex];
   if (optionsEl) {
-    optionsEl.innerHTML = options
-      .map((opt) => `
-      <div class="option-item ${selected === opt.letter ? 'selected' : ''}" onclick="selectOption('${opt.letter}')">
-        <span class="option-letter">${opt.letter}</span>
-        <span class="option-text">${opt.text}</span>
-      </div>
-    `).join('');
+    optionsEl.replaceChildren();
+    for (const opt of options) {
+      const letter = String(opt.letter || '');
+      if (!/^[A-E]$/.test(letter)) continue;
+      const item = document.createElement('div');
+      item.className = `option-item ${selected === letter ? 'selected' : ''}`;
+      item.addEventListener('click', () => window.selectOption(letter));
+      const label = document.createElement('span');
+      label.className = 'option-letter';
+      label.textContent = letter;
+      const text = document.createElement('span');
+      text.className = 'option-text';
+      text.textContent = String(opt.text || '');
+      item.append(label, text);
+      optionsEl.appendChild(item);
+    }
   }
 
   if (prevBtn) prevBtn.disabled = currentIndex === 0;
