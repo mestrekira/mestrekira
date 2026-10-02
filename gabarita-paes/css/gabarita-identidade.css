@@ -104,3 +104,56 @@ body.gabarita-theme {
 @media (prefers-reduced-motion: reduce) {
   .gabarita-theme *, .gabarita-theme *::before, .gabarita-theme *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+@media (max-width: 600px) {
+  .gabarita-theme .header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.5rem;
+  }
+
+  .gabarita-theme .header > .brand {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .gabarita-theme #user-menu,
+  .gabarita-theme .header-auth-links {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .gabarita-theme #user-name {
+    display: block;
+    max-width: clamp(55px, 18vw, 105px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gabarita-theme #user-menu .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .gabarita-theme .nav-links {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 380px) {
+  .gabarita-theme .brand-logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .gabarita-theme .brand-copy strong {
+    font-size: 0.85rem;
+  }
+}
