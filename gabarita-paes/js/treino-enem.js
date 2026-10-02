@@ -158,7 +158,7 @@ window.buscarNovasQuestoes = async () => {
 
   filterOnlyPending = false;
   document.getElementById('btn-filter-pending')?.classList.remove('active');
-  window.practiceSelections = {};
+  window.practiceSelections = Object.create(null);
   practiceQuestions = [];
   atualizarProgressoTreino(0, 0);
 
@@ -299,10 +299,25 @@ function exibirBannerConclusaoTreino(acertos, erros, total) {
 // ==========================================
 // 3. Renderização das Questões
 // ==========================================
+const boundPracticeContainers = new WeakSet();
+function bindPracticeActions(container) {
+  if (boundPracticeContainers.has(container)) return;
+  boundPracticeContainers.add(container);
+  container.addEventListener('click', (event) => {
+    const target = event.target.closest?.('[data-practice-action]');
+    if (!target || !container.contains(target) || target.disabled) return;
+    const { practiceAction, questionId, optionId } = target.dataset;
+    if (practiceAction === 'select') window.selectPracticeOption(questionId, optionId);
+    else if (practiceAction === 'submit') window.submitPracticeAnswer(questionId);
+    else if (practiceAction === 'next') window.rolarParaQuestao(questionId);
+  });
+}
+
 function renderPractice() {
   const container = document.getElementById('practice-container');
   if (!container) return;
 
+  bindPracticeActions(container);
   const list = filterOnlyPending
     ? practiceQuestions.filter((q) => !q.isAnswered)
     : practiceQuestions;
@@ -322,7 +337,7 @@ function renderPractice() {
   container.innerHTML = list
     .map(
       (q, idx) => `
-    <div class="card" id="practice-card-${q.id}">
+    <div class="card" id="practice-card-${escapeHtml(q.id)}">
       <div class="question-header">
         <span class="badge ${q.isAnswered ? (q.isCorrect ? 'badge-success' : 'badge-danger') : ''}">
           Questão ${practiceQuestions.indexOf(q) + 1} de ${practiceQuestions.length} • ENEM ${escapeHtml(q.year || '')} • ${escapeHtml(q.discipline)}
@@ -332,13 +347,13 @@ function renderPractice() {
 
       ${renderQuestionContent(q)}
 
-      <div class="options-list" id="opts-${q.id}">
+      <div class="options-list" id="opts-${escapeHtml(q.id)}">
         ${q.options
           .map(
             (opt) => `
           <div class="option-item ${q.selectedOptionId === opt.id ? 'selected' : ''}" 
-               onclick="${q.isAnswered ? '' : `selectPracticeOption('${q.id}', '${opt.id}')`}" 
-               id="opt-${opt.id}">
+               data-practice-action="select" data-question-id="${escapeHtml(q.id)}" data-option-id="${escapeHtml(opt.id)}" 
+               id="opt-${escapeHtml(opt.id)}">
             <span class="option-letter">${escapeHtml(opt.letter)}</span>
             <span class="option-text">${escapeHtml(opt.text)}</span>
           </div>
@@ -347,15 +362,15 @@ function renderPractice() {
           .join('')}
       </div>
 
-      <button class="btn" id="btn-submit-${q.id}" 
-              onclick="submitPracticeAnswer('${q.id}')"
+      <button class="btn" id="btn-submit-${escapeHtml(q.id)}" 
+              data-practice-action="submit" data-question-id="${escapeHtml(q.id)}"
               ${q.isSubmitting ? 'disabled' : ''}
               ${q.isAnswered ? 'style="display:none;"' : ''}>
         ${q.isSubmitting ? 'Corrigindo...' : 'Responder e Conferir'}
       </button>
 
       <!-- Feedback e Recomendações -->
-      <div id="feedback-${q.id}" style="${q.isAnswered ? 'display:block;' : 'display:none;'} margin-top: 1rem;">
+      <div id="feedback-${escapeHtml(q.id)}" style="${q.isAnswered ? 'display:block;' : 'display:none;'} margin-top: 1rem;">
         ${q.isAnswered ? gerarHtmlFeedback(q) : ''}
       </div>
     </div>
@@ -374,7 +389,7 @@ function gerarHtmlFeedback(q, nextQId = null) {
 
       ${nextQId ? `
         <div style="margin-top: 0.75rem; text-align: right;">
-          <button class="next-q-btn" onclick="rolarParaQuestao('${nextQId}')">
+          <button class="next-q-btn" data-practice-action="next" data-question-id="${escapeHtml(nextQId)}">
             Próxima Questão ➔
           </button>
         </div>
@@ -386,10 +401,10 @@ function gerarHtmlFeedback(q, nextQId = null) {
 // ==========================================
 // 4. Seleção e Envio de Resposta
 // ==========================================
-window.practiceSelections = {};
+window.practiceSelections = Object.create(null);
 window.selectPracticeOption = (questionId, optionId) => {
   const question = practiceQuestions.find((item) => item.id === questionId);
-  if (!question || question.isAnswered || question.isSubmitting) return;
+  if (!question || question.isAnswered || question.isSubmitting || !question.options.some(option => option.id === optionId)) return;
   const optsContainer = document.getElementById(`opts-${questionId}`);
   if (!optsContainer) return;
 

@@ -1,7 +1,7 @@
 let promptsData = [];
 let selectedPromptId = null;
 let themeLoadToken = 0;
-const essayDrafts = {};
+const essayDrafts = Object.create(null);
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -110,16 +110,15 @@ function renderThemes() {
   const container = document.getElementById('theme-selector');
   if (!container) return;
 
-  container.innerHTML = promptsData
-    .map(
-      (p) => `
-    <button class="btn ${p.id === selectedPromptId ? '' : 'btn-secondary'}" 
-            onclick="selectTheme('${p.id}')">
-      Tema ${p.themeNumber} ${p.isSubmitted ? `(Nota: ${Number(p.score || 0).toFixed(2)})` : '• Disponível'}
-    </button>
-  `,
-    )
-    .join('');
+  container.replaceChildren();
+  for (const prompt of promptsData) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `btn ${prompt.id === selectedPromptId ? '' : 'btn-secondary'}`;
+    button.textContent = `Tema ${prompt.themeNumber} ${prompt.isSubmitted ? `(Nota: ${Number(prompt.score || 0).toFixed(2)})` : '• Disponível'}`;
+    button.addEventListener('click', () => window.selectTheme(prompt.id));
+    container.append(button);
+  }
 
   if (promptsData.length > 0 && !selectedPromptId) {
     selectTheme(promptsData[0].id);

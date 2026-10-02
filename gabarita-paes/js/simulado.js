@@ -629,9 +629,9 @@ function displayResult(data) {
     areasContainer.innerHTML = Object.entries(data.areas)
       .map(([area, val]) => `
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem;">
-        <strong style="color: #1e293b; font-size: 0.85rem; display: block;">${area}</strong>
+        <strong style="color: #1e293b; font-size: 0.85rem; display: block;">${escapeHtml(area)}</strong>
         <span style="font-size: 1.25rem; font-weight: 800; color: var(--primary, #2563eb);">
-          ${val.correct} / ${val.total}
+          ${escapeHtml(val.correct)} / ${escapeHtml(val.total)}
         </span>
       </div>
     `).join('');
@@ -718,21 +718,18 @@ function renderReviewList(data) {
           ${escapeHtml(q.statement || '').replace(/\n/g, '<br>')}
         </div>
 
-        ${q.imageUrl ? `
-          <div style="text-align: center; margin: 0.75rem 0;">
-            <img src="${q.imageUrl}" style="max-width: 100%; max-height: 280px; border-radius: 6px;" loading="lazy">
-          </div>
-        ` : ''}
-
-        ${q.imageUrlB ? `<img src="${q.imageUrlB}" alt="Segunda figura da questão" style="max-width: 100%; max-height: 280px; border-radius: 6px;" loading="lazy">` : ''}
+        ${[q.imageUrl, q.imageUrlB].map((value, index) => {
+          const url = safeSimulationImageUrl(value);
+          return url ? `<div style="text-align: center; margin: 0.75rem 0;"><img src="${escapeHtml(url)}" alt="Figura ${index + 1} da questão" style="max-width: 100%; max-height: 280px; border-radius: 6px;" loading="lazy"></div>` : '';
+        }).join('')}
         ${q.options?.length ? `<ul style="margin: 0.75rem 0; padding-left: 1.5rem;">${q.options.map((opt) => `<li><strong>${escapeHtml(opt.letter)}.</strong> ${escapeHtml(opt.text)}</li>`).join('')}</ul>` : ''}
         <div style="display: flex; flex-direction: column; gap: 0.35rem; margin: 0.75rem 0;">
           <div class="ans-tag ${item.isCorrect ? 'ans-correct' : 'ans-wrong'}">
-            <strong>Sua Marcação:</strong> Alternativa ${item.userChoice}
+            <strong>Sua Marcação:</strong> Alternativa ${escapeHtml(item.userChoice)}
           </div>
           ${!item.isCorrect ? `
             <div class="ans-tag ans-correct">
-              <strong>Gabarito Oficial da Banca:</strong> Alternativa ${item.correctChoice}
+              <strong>Gabarito Oficial da Banca:</strong> Alternativa ${escapeHtml(item.correctChoice)}
             </div>
           ` : ''}
         </div>
@@ -771,7 +768,7 @@ function renderReviewList(data) {
 function getTargetedRecommendations(q) {
   if (Array.isArray(q.studyResources)) {
     const safe = q.studyResources.filter((resource) => {
-      try { return new URL(resource.url).protocol === 'https:'; } catch { return false; }
+      try { const url = new URL(resource.url); return url.protocol === 'https:' && !url.username && !url.password; } catch { return false; }
     });
     const web = safe.find((r) => r.kind === 'article' || r.kind === 'article_search');
     const video = safe.find((r) => r.kind === 'video_search');
@@ -854,7 +851,7 @@ function renderStudyPlan(plan, output) {
     for (const resource of item.resources || []) {
       try {
         const url = new URL(resource.url);
-        if (url.protocol !== 'https:' || !['www.google.com', 'www.youtube.com',
+        if (url.protocol !== 'https:' || url.username || url.password || !['www.google.com', 'www.youtube.com',
           'www.mestrekira.com.br', 'learnenglish.britishcouncil.org', 'cvc.cervantes.es',
           'brasilescola.uol.com.br', 'mundoeducacao.uol.com.br', 'todamateria.com.br',
           'www.todamateria.com.br', 'educa.ibge.gov.br', 'enciclopedia.itaucultural.org.br',
@@ -903,7 +900,7 @@ function generateLocalSmartPlan(wrongQuestions) {
     <h4 style="color: #1e40af; margin-top: 0;">🎯 Diagnóstico de Prioridades PAES UEMA:</h4>
     <p>Com base nos seus erros nesta sessão, priorize as seguintes disciplinas nos próximos 7 dias:</p>
     <ul>
-      ${sorted.map(([disc, count]) => `<li><strong>${disc}</strong>:${count} questão(ões) para revisar.</li>`).join('')}
+      ${sorted.map(([disc, count]) => `<li><strong>${escapeHtml(disc)}</strong>:${count} questão(ões) para revisar.</li>`).join('')}
     </ul>
     <h4 style="color: #1e40af;">📚 Recomendações de Reta Final:</h4>
     <ul>
