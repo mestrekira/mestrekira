@@ -21,6 +21,20 @@
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/gabarita-paes/cadastro.html</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <url>
+    <loc>https://www.mestrekira.com.br/gabarita-paes/login.html</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
   
   <url>
     <loc>https://www.mestrekira.com.br/conteudos-fonetica.html</loc>
