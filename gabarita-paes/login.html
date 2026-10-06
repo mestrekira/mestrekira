@@ -100,6 +100,30 @@
 
   <script src="js/api.js"></script>
   <script src="js/login.js"></script>
+  <script>
+  (() => {
+    if (new URLSearchParams(window.location.search).get('cadastro') !== 'concluido') return;
+    const form = document.getElementById('form-login') || document.querySelector('main form');
+    if (!form || document.getElementById('cadastro-confirmado')) return;
+    const notice = document.createElement('div');
+    notice.id = 'cadastro-confirmado';
+    notice.setAttribute('role', 'status');
+    notice.setAttribute('aria-live', 'polite');
+    notice.setAttribute('tabindex', '-1');
+    notice.style.cssText = 'padding:1rem;border-radius:8px;margin-bottom:1rem;background:#dcfce7;color:#166534;line-height:1.6;';
+    const title = document.createElement('strong');
+    title.textContent = 'Conta criada! Verifique seu e-mail antes de entrar.';
+    const instructions = document.createElement('p');
+    instructions.textContent = 'Abra a mensagem de confirmação e clique no link para verificar seu e-mail. Depois, volte a esta página e faça login com seu e-mail e senha. Confira também o spam ou lixo eletrônico.';
+    const resend = document.createElement('a');
+    resend.href = 'verificar-email.html';
+    resend.textContent = 'Não recebeu a mensagem? Solicite o reenvio.';
+    resend.style.fontWeight = '600';
+    notice.append(title, instructions, resend);
+    form.before(notice);
+    notice.focus();
+  })();
+</script>
   <footer class="site-footer"><p><strong>Gabarita PAES</strong> · Preparação para PAES UEMA e ENEM</p><a href="https://www.mestrekira.com.br/">Conheça o Mestre Kira</a></footer>
 </body>
 </html>
