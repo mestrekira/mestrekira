@@ -162,38 +162,60 @@
 
   <script src="js/api.js"></script>
   <script>
-    document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    (() => {
+      const form = document.getElementById('form-cadastro');
       const alertBox = document.getElementById('alert-box');
-      alertBox.style.display = 'none';
+      const submitButton = form.querySelector('button[type="submit"]');
+      const originalButtonText = submitButton.textContent;
+      let submitting = false;
+      const loginUrl = 'login.html?cadastro=concluido';
 
-      const payload = {
-        name: document.getElementById('nome').value,
-        email: document.getElementById('email').value,
-        password: document.getElementById('senha').value,
-        targetCourse: document.getElementById('curso').value,
-        foreignLanguage: document.getElementById('lingua').value,
-      };
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (submitting) return;
+        submitting = true;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Criando sua conta…';
+        alertBox.style.display = 'none';
 
-      try {
-        const res = await window.api.post('/auth/register', payload);
-        if (res?.ok === false) throw new Error(res.error || res.message || 'Falha ao cadastrar.');
-        alertBox.style.display = 'block';
-        alertBox.style.background = '#dcfce7';
-        alertBox.style.color = '#166534';
-        alertBox.innerText = 'Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail.';
-        document.getElementById('form-cadastro').reset();
-        const loginLink = document.createElement('a');
-        loginLink.href = 'login.html';
-        loginLink.textContent = ' Ir para o login';
-        alertBox.appendChild(loginLink);
-      } catch (err) {
-        alertBox.style.display = 'block';
-        alertBox.style.background = '#fee2e2';
-        alertBox.style.color = '#991b1b';
-        alertBox.innerText = err.message || 'Falha ao cadastrar.';
-      }
-    });
+        const payload = {
+          name: document.getElementById('nome').value,
+          email: document.getElementById('email').value,
+          password: document.getElementById('senha').value,
+          targetCourse: document.getElementById('curso').value,
+          foreignLanguage: document.getElementById('lingua').value,
+        };
+
+        try {
+          const res = await window.api.post('/auth/register', payload);
+          if (!res || res.ok === false) {
+            throw new Error(res?.error || res?.message || 'Não foi possível confirmar o cadastro.');
+          }
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#dcfce7';
+          alertBox.style.color = '#166534';
+          alertBox.setAttribute('tabindex', '-1');
+          alertBox.textContent = 'Conta criada com sucesso! Antes de fazer login, abra seu e-mail e clique no link de confirmação. Confira também a caixa de spam ou lixo eletrônico. Você será direcionado para o login em 5 segundos.';
+          const loginLink = document.createElement('a');
+          loginLink.href = loginUrl;
+          loginLink.textContent = ' Ir para o login agora';
+          loginLink.style.fontWeight = '600';
+          alertBox.appendChild(loginLink);
+          form.reset();
+          submitButton.textContent = 'Conta criada! Verifique seu e-mail';
+          alertBox.focus();
+          window.setTimeout(() => window.location.replace(loginUrl), 5000);
+        } catch (err) {
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#fee2e2';
+          alertBox.style.color = '#991b1b';
+          alertBox.textContent = err.message || 'Falha ao cadastrar.';
+          submitting = false;
+          submitButton.disabled = false;
+          submitButton.textContent = originalButtonText;
+        }
+      });
+    })();
   </script>
   <footer class="site-footer"><p><strong>Gabarita PAES</strong> · Preparação para PAES UEMA e ENEM</p><a href="https://www.mestrekira.com.br/">Conheça o Mestre Kira</a></footer>
 </body>
