@@ -5,6 +5,7 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Correção de Redações</title>
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/writing-tools.css">
    <link rel="stylesheet" href="css/ui-feedback.css">
 <link rel="icon" href="logo1.png" type="image/png">
 </head>
@@ -89,6 +90,14 @@
   <h4>Redação</h4>
   <p id="essayContent" class="box"></p>
 
+  <section class="writing-tool" aria-label="Análise assistida por IA">
+    <h4>Análise assistida por IA</h4>
+    <p>A IA sugere observações de ortografia, norma padrão e competências do ENEM. Revise e valide cada sugestão antes de incluí-la no feedback. As notas são de responsabilidade do professor.</p>
+    <button id="analyzeEssayBtn" type="button">Analisar com IA</button>
+    <p id="aiReviewStatus" role="status" aria-live="polite"></p>
+    <div id="aiReviewList"></div>
+    <button id="applyAiReviewBtn" type="button" hidden>Incluir observações validadas no feedback</button>
+  </section>
   <h4>Correção</h4>
   <p><strong>Competências (0 a 200 cada)</strong></p>
   
@@ -177,7 +186,8 @@
 
   <textarea
     id="feedback"
-    placeholder="Escreva o feedback aqui..."
+    aria-label="Feedback e comentários do professor"
+    placeholder="Escreva seus comentários e revise as observações validadas aqui..."
     rows="6"
   ></textarea>
 

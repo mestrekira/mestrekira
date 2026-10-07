@@ -5,6 +5,7 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redação</title>
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/writing-tools.css">
    <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
@@ -79,6 +80,15 @@
     placeholder="Título da redação (obrigatório)"
   />
 
+  <section class="writing-tool" aria-label="Ditado por voz">
+    <h4>Ditado por voz</h4>
+    <p>Fale sua redação e depois revise as palavras, os parágrafos e a pontuação. O ditado não corrige nem pontua o texto para você. O reconhecimento pode usar o serviço de voz do navegador.</p>
+    <button id="dictationStart" type="button">Iniciar ditado</button>
+    <button id="dictationStop" type="button" disabled>Parar ditado</button>
+    <button id="dictationParagraph" type="button" disabled>Novo parágrafo</button>
+    <p id="dictationStatus" role="status" aria-live="polite">Posicione o cursor onde deseja inserir o texto e permita o microfone ao iniciar.</p>
+    <p id="dictationPreview" class="muted" aria-label="Fala em reconhecimento"></p>
+  </section>
   <textarea
     id="essayText"
     class="essay-textarea"
