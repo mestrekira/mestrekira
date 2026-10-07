@@ -7,6 +7,8 @@ const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
 const focusStudentId = params.get('studentId');
 
+// Este é um comentário de uma única linha.
+
 requireProfessorSession({ redirectTo: 'login-professor.html' });
 
 if (!taskId) {
