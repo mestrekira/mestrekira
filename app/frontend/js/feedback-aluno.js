@@ -247,7 +247,7 @@ function patchCompetencyLabels() {
 // ---------------- fetch helpers ----------------
 async function fetchEssayById(id) {
   const res = await authFetch(
-    `${API_URL}/essays/student/${encodeURIComponent(String(id))}`,
+    `${API_URL}/writing/student/${encodeURIComponent(String(id))}`,
     { method: 'GET' },
     { redirectTo: 'login-aluno.html' }
   );

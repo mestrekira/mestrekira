@@ -1,3 +1,4 @@
+import { initAiReview } from './analise-ia.js';
 import { API_URL } from './config.js';
 import { confirmDialog as uiConfirmDialog } from './ui-feedback.js';
 import { notify, requireProfessorSession, authFetch, readErrorMessage } from './auth.js';
@@ -124,7 +125,7 @@ async function fetchActiveStudentsSet(roomId) {
 
 async function fetchEssaysWithStudent() {
   const data = await apiJson(
-    `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/with-student`,
+    `${API_URL}/writing/by-task/${encodeURIComponent(taskId)}/with-student`,
     { method: 'GET' }
   );
 
@@ -134,7 +135,7 @@ async function fetchEssaysWithStudent() {
 }
 
 async function fetchEssayById(essayId) {
-  const data = await apiJson(`${API_URL}/essays/${encodeURIComponent(String(essayId))}`, {
+  const data = await apiJson(`${API_URL}/writing/${encodeURIComponent(String(essayId))}`, {
     method: 'GET',
   });
 
@@ -143,7 +144,7 @@ async function fetchEssayById(essayId) {
 
 async function saveCorrection(essayId, payload) {
   const res = await authFetch(
-    `${API_URL}/essays/${encodeURIComponent(String(essayId))}/correct`,
+    `${API_URL}/writing/${encodeURIComponent(String(essayId))}/correct`,
     { method: 'POST', body: JSON.stringify(payload) },
     { redirectTo: 'login-professor.html' }
   );
@@ -754,7 +755,10 @@ function restoreCorrectionSection() {
   } catch {}
 }
 
+const aiReview = initAiReview({ getEssayId: () => currentEssayId, feedback: feedbackEl });
+
 function closeCorrection(silent = true) {
+  aiReview.reset();
   currentEssayId = null;
   currentAnchorLi = null;
   loadedSnapshot = null;
@@ -798,6 +802,7 @@ function isDirty() {
 }
 
 async function abrirCorrecao(item, anchorLi) {
+  aiReview.reset();
   currentEssayId = String(item?.id || '').trim();
   currentAnchorLi = anchorLi || null;
 

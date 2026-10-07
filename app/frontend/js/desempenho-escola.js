@@ -1,3 +1,4 @@
+import { initPerformancePdf } from './pdf-desempenho.js';
 import { API_URL } from './config.js';
 import {
   requireSchoolSession,
@@ -470,3 +471,5 @@ backBtn?.addEventListener('click', () => {
   requireSchoolSession({ redirectTo: 'login-escola.html' });
   load();
 })();
+
+initPerformancePdf({ roomId, role: 'school' });

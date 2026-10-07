@@ -1,3 +1,4 @@
+import { initPerformancePdf } from './pdf-desempenho.js';
 import { API_URL } from './config.js';
 import {
   requireProfessorSession,
@@ -1077,7 +1078,7 @@ async function carregarDados() {
     cachedNewestTaskId = computeNewestTaskIdFromTasksMeta(cachedTasksMeta);
 
     const dataRaw = await authFetchJson(
-      `${API_URL}/essays/performance/by-room?roomId=${encodeURIComponent(roomId)}`,
+      `${API_URL}/writing/performance/by-room?roomId=${encodeURIComponent(roomId)}`,
     );
 
     let data = unwrapResult(dataRaw);
@@ -1184,3 +1185,5 @@ if (toggleStudentRankingBtn) {
   carregarSala();
   carregarDados();
 })();
+
+initPerformancePdf({ roomId, role: 'professor' });

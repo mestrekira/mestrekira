@@ -1,3 +1,4 @@
+import { initDictation } from './ditado.js';
 import { API_URL } from './config.js';
 import { notify, requireStudentSession, authFetch, readErrorMessage } from './auth.js';
 
@@ -171,12 +172,13 @@ function antiPaste(el, fieldName, options = {}) {
 
 const antiTitle = antiPaste(titleInput, 'Título', { maxJump: 15 });
 const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
+const dictation = initDictation({ textarea, actions: [saveBtn, sendBtn], onCommit: () => antiEssay.sync() });
 
 // =====================
 // BACKEND (ESSAYS)
 // =====================
 async function getMyEssayByTask() {
-  const url = `${API_URL}/essays/by-task/${encodeURIComponent(taskId)}/by-student`;
+  const url = `${API_URL}/writing/by-task/${encodeURIComponent(taskId)}/by-student`;
 
   const res = await authFetch(url, {}, { redirectTo: 'login-aluno.html' });
 
@@ -189,7 +191,7 @@ async function getMyEssayByTask() {
 
 async function saveDraftServerPacked(packedContent) {
   const res = await authFetch(
-    `${API_URL}/essays/draft`,
+    `${API_URL}/writing/draft`,
     {
       method: 'POST',
       body: JSON.stringify({
@@ -448,7 +450,7 @@ sendBtn.addEventListener('click', async () => {
     setStatus('Enviando redação...');
 
     const res = await authFetch(
-      `${API_URL}/essays`,
+      `${API_URL}/writing`,
       {
         method: 'POST',
         body: JSON.stringify({
@@ -542,6 +544,7 @@ window.addEventListener('pagehide', () => {
     await carregarRascunho();
     setStatus('');
     updateCount();
+    dictation?.enable();
   } catch (e) {
     console.error(e);
     setStatus('Erro ao inicializar a página.');

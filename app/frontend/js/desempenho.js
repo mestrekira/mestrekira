@@ -795,7 +795,7 @@ async function carregarDesempenho(roomId) {
 
   try {
     const res = await authFetch(
-      `${API_URL}/essays/performance/by-room-for-student?roomId=${encodeURIComponent(
+      `${API_URL}/writing/performance/by-room-for-student?roomId=${encodeURIComponent(
         roomId
       )}&studentId=${encodeURIComponent(studentId)}`,
       { method: 'GET' },

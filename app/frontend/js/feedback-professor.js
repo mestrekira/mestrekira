@@ -234,7 +234,7 @@ async function apiJson(url, options) {
 }
 
 async function fetchEssayByIdWithStudent(id) {
-  const data = await apiJson(`${API_URL}/essays/${encodeURIComponent(String(id))}/with-student`, {
+  const data = await apiJson(`${API_URL}/writing/${encodeURIComponent(String(id))}/with-student`, {
     method: 'GET',
   });
   return unwrapResult(data);
