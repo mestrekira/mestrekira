@@ -9,6 +9,21 @@ export function initAiReview({ getEssayId, feedback }) {
   let generation = 0;
   let abort = null;
   let rows = [];
+  const includeValidated = row => {
+    if (!row.checked.checked || row.checked.disabled) return;
+    if (!row.edit.value.trim()) {
+      row.checked.checked = false;
+      status.textContent = 'Preencha a observação antes de validá-la.';
+      return;
+    }
+    const text = `${row.observation.competency} — ${row.observation.category}${row.observation.excerpt ? '\nTrecho: “' + row.observation.excerpt + '”' : ''}\n${row.edit.value.trim()}`;
+    feedback.value = `${feedback.value.trim()}${feedback.value.trim() ? '\n\n' : ''}${text}`;
+    feedback.dispatchEvent(new Event('input', { bubbles: true }));
+    row.checked.disabled = true;
+    row.edit.disabled = true;
+    row.card.dataset.included = 'true';
+    status.textContent = 'Observação validada e incluída nos comentários do professor. Edite ou remova o texto no campo de feedback, se necessário. Atribua as notas e salve a correção para publicar ao aluno.';
+  };
   const reset = () => {
     generation++; abort?.abort(); abort = null;
     rows = []; list.replaceChildren(); apply.hidden = true; button.disabled = false;
@@ -31,28 +46,24 @@ export function initAiReview({ getEssayId, feedback }) {
         const card = document.createElement('article'); card.className = 'ai-review-card';
         const label = document.createElement('label');
         const checked = document.createElement('input'); checked.type = 'checkbox';
-        label.append(checked, document.createTextNode(` Validar para incluir — ${observation.competency} · ${observation.category}`));
+        label.append(checked, document.createTextNode(` Validar e incluir nos comentários — ${observation.competency} · ${observation.category}`));
         const excerpt = document.createElement('blockquote'); excerpt.textContent = observation.excerpt || 'Observação sobre um elemento ausente ou sobre o texto como um todo.';
         const edit = document.createElement('textarea'); edit.rows = 4;
         edit.setAttribute('aria-label', `Editar observação de ${observation.competency}`);
         edit.value = `${observation.observation}${observation.suggestion ? '\nSugestão: ' + observation.suggestion : ''}`;
         card.append(label, excerpt, edit); list.append(card);
-        rows.push({ checked, edit, observation, card });
+        const row = { checked, edit, observation, card };
+        rows.push(row);
+        checked.addEventListener('change', () => includeValidated(row));
       }
-      status.textContent = 'Revise cada observação, edite se necessário e marque apenas as que você valida. Nenhuma nota foi atribuída pela IA.';
-      apply.hidden = false;
+      status.textContent = 'Edite cada observação antes de validá-la. Ao marcar a caixa, ela será incluída automaticamente nos comentários do professor. Nenhuma nota foi atribuída pela IA.';
+      apply.hidden = true;
     } catch (error) {
       if (generation === requestGeneration && error.name !== 'AbortError') status.textContent = `${error.message} Você pode continuar a correção manualmente.`;
     } finally { if (generation === requestGeneration) button.disabled = false; }
   });
-  apply.addEventListener('click', () => {
-    const selected = rows.filter(row => row.checked.checked && !row.checked.disabled && row.edit.value.trim());
-    if (!selected.length) { status.textContent = 'Marque as observações que você revisou e deseja incluir.'; return; }
-    const text = selected.map(row => `${row.observation.competency} — ${row.observation.category}${row.observation.excerpt ? '\nTrecho: “' + row.observation.excerpt + '”' : ''}\n${row.edit.value.trim()}`).join('\n\n');
-    feedback.value = `${feedback.value.trim()}${feedback.value.trim() ? '\n\n' : ''}${text}`;
-    feedback.dispatchEvent(new Event('input', { bubbles: true }));
-    selected.forEach(row => { row.checked.checked = false; row.checked.disabled = true; row.edit.disabled = true; row.card.dataset.included = 'true'; });
-    status.textContent = 'Observações validadas incluídas no campo de feedback. Você pode editá-las ou removê-las ali. O estudante só as verá após salvar a correção.';
-  });
+  // Compatibilidade com o botão presente no HTML anterior; não é necessário clicar nele.
+  apply.hidden = true;
+  apply.addEventListener('click', () => rows.forEach(includeValidated));
   return { reset };
 }
