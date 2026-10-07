@@ -11,7 +11,7 @@
     brand: 'Gabarita Paes',
     badge: 'Gratuito por tempo limitado',
     title: 'Vai fazer o PAES UEMA?',
-    description: 'Pratique com simulados e questões do ENEM, receba feedback de redação por IA e organize sua revisão.',
+    description: 'Pratique com simulados inéditos e treine com questões do ENEM, receba feedback de redação por IA e organize sua revisão.',
     button: 'Criar minha conta',
     destination: 'https://mestrekira.com.br/gabarita-paes/cadastro.html',
     logo: 'https://mestrekira.com.br/logo1.png',
