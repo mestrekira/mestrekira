@@ -15,7 +15,7 @@ if (!roomId) {
   window.location.replace('painel-escola.html');
   throw new Error('roomId ausente');
 }
-
+//comentário
 const backBtn = document.getElementById('backBtn');
 const statusEl = document.getElementById('status');
 
