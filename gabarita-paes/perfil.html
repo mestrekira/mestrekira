@@ -99,6 +99,21 @@
       padding: 1.75rem;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
     }
+    #account-access {display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+    #account-access[hidden] {display:none;}
+    #account-access[data-access-state="renewal"], #account-access[data-access-state="expired"] {border:1px solid #d97706;background:#fffbeb;color:#78350f;}
+    #account-access h2 {margin:0 0 .5rem;font-size:1.15rem;}
+    #account-access p {margin:.3rem 0;line-height:1.6;}
+    .profile-support {display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+    .profile-support h2 {margin-top:0;}
+    .profile-support p {overflow-wrap:anywhere;}
+    .support-hint {font-size:.875rem;color:#475569;}
+    .account-access-actions {display:flex;flex-wrap:wrap;gap:.5rem;}
+    @media(max-width:600px) {
+      .profile-support .btn, #account-access .btn {width:100%;text-align:center;white-space:normal;}
+      .account-access-actions {width:100%;}
+      .profile-support {align-items:stretch;}
+    }
   </style>
   <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
   <link rel="stylesheet" href="css/acesso-conta.css?v=20260930-01">
@@ -126,7 +141,7 @@
 
   <main class="container" id="main-content">
     <div id="profile-notice" class="card profile-notice" role="status" aria-live="polite" hidden></div>
-    <section id="account-access" class="card account-access" data-access-page="profile" aria-label="Situação do seu acesso" aria-live="polite" hidden></section>
+    <section id="account-access" class="card account-access" aria-label="Situação do seu acesso" aria-live="polite" hidden></section>
     <!-- Card Principal do Usuário -->
     <div class="profile-header-card">
       <div class="profile-person">
@@ -141,8 +156,8 @@
         </div>
       </div>
       <div id="plan-cta" hidden>
-        <a href="assinar.html" class="btn" style="background: #facc15; color: #1b2d59; font-weight: 600; padding: 0.6rem 1.25rem;">
-          Conhecer o plano
+        <a href="assinatura.html" class="btn" style="background: #facc15; color: #1b2d59; font-weight: 600; padding: 0.6rem 1.25rem;">
+          Consultar assinatura
         </a>
       </div>
     </div>
@@ -221,6 +236,11 @@
       </div>
     </div>
 
+    <section class="card profile-support" aria-labelledby="support-title">
+      <div><h2 id="support-title">Precisa de ajuda?</h2><p>Envie dúvidas, sugestões ou relate problemas no Gabarita Paes.</p><p><strong>Mestre Kira</strong> · <a href="mailto:contato@mestrekira.com.br">contato@mestrekira.com.br</a></p><p class="support-hint">Ao relatar um problema, informe a página e o que aconteceu. Não envie senhas ou dados de cartão.</p></div>
+      <a class="btn btn-secondary" href="mailto:contato@mestrekira.com.br?subject=Suporte%20%E2%80%94%20Gabarita%20Paes">Entrar em contato com o suporte</a>
+    </section>
+
     <!-- Zona de Perigo: Exclusão de Conta -->
     <div class="card" style="border: 1px solid #fecaca; background: #fffaf0;">
       <h3 style="margin-top: 0; color: #b91c1c;">⚠️ Zona de Perigo</h3>
@@ -273,7 +293,7 @@
   </dialog>
   <footer class="site-footer"><p><strong>Gabarita PAES</strong> · Preparação para PAES UEMA e ENEM</p><a href="https://www.mestrekira.com.br/">Conheça o Mestre Kira</a></footer>
   <script src="js/api.js"></script>
-  <script src="js/perfil.js?v=20261001-04"></script>
-  <script src="js/acesso-conta.js?v=20261001-03"></script>
+  <script src="js/perfil.js?v=20261009-05"></script>
+  <!-- O perfil renderiza a situação de acesso em perfil.js, evitando avisos duplicados. -->
 </body>
 </html>
