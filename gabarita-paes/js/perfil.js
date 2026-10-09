@@ -1,3 +1,87 @@
+let currentAccess = null;
+let accessLoading = false;
+const PROFILE_PAID_START = Date.parse('2026-10-22T03:00:00.000Z');
+const PROFILE_DAY = 24 * 60 * 60 * 1000;
+function profileDate(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? time : null;
+}
+function profileDateLabel(time) {
+  return new Date(time).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}) + ' (horário de Brasília)';
+}
+function renderProfileAccess(user, access, now = Date.now()) {
+  const panel = profileNode('account-access');
+  if (!panel) return;
+  const premiumUntil = profileDate(access?.premiumEndsAt);
+  const schoolUntil = profileDate(access?.schoolEndsAt);
+  const premiumActive = user?.planTier === 'PREMIUM' && premiumUntil !== null && premiumUntil > now;
+  const schoolActive = schoolUntil !== null && schoolUntil > now;
+  let title, text, detail = '', badge = 'Conta cadastrada', action = null, state = 'info';
+  if (!access) {
+    title = 'Seu acesso';
+    text = 'A validade do acesso não foi atualizada nesta consulta. Use “Atualizar desempenho” para consultar novamente ou entre em contato com o suporte.';
+  } else if (premiumActive) {
+    badge = 'Assinatura ativa'; title = 'Assinatura ativa';
+    text = `Acesso integral válido até ${profileDateLabel(premiumUntil)}.`;
+    const remaining = premiumUntil - now;
+    const days = Math.ceil(remaining / PROFILE_DAY);
+    if (remaining <= 5 * PROFILE_DAY) {
+      state = 'renewal'; title = days === 1 ? 'Sua assinatura vence em até 1 dia' : `Sua assinatura vence em até ${days} dias`;
+    }
+    detail = 'Você pode renovar antes do vencimento. Os novos 30 dias serão somados à validade atual, sem perder os dias restantes. Não há renovação automática.';
+    action = now >= PROFILE_PAID_START ? 'Renovar acesso' : 'Consultar assinatura';
+    if (now < PROFILE_PAID_START) detail += ' A cobrança comercial estará disponível a partir de 22/10/2026.';
+  } else if (schoolActive) {
+    badge = 'Participante do projeto escolar'; title = 'Acesso escolar ativo';
+    text = `Acesso integral garantido até ${profileDateLabel(schoolUntil)}, sem cobrança automática.`;
+  } else if (access.accessReason === 'TEMPORARY_FREE' && now < PROFILE_PAID_START) {
+    badge = 'Participante da fase gratuita'; title = 'Acesso geral gratuito até 21/10/2026';
+    text = 'Continue praticando com acesso completo até 21/10. A partir de 22/10/2026, o acesso integral custará R$ 24,99 por 30 dias. Não haverá cobrança automática.';
+    action = 'Consultar assinatura';
+  } else if (access.canAccess === true) {
+    badge = 'Acesso integral disponível'; title = 'Acesso integral disponível';
+    text = 'Seu acesso está liberado conforme a condição informada pelo servidor.';
+    const trialEnd = profileDate(access.trialEndsAt);
+    if (access.accessReason === 'TRIAL' && trialEnd !== null) text = `Período de teste válido até ${profileDateLabel(trialEnd)}.`;
+  } else if (access.canAccess === false) {
+    state = 'expired'; badge = 'Acesso gratuito ENEM';
+    const expiredPaid = user?.planTier === 'PREMIUM' && premiumUntil !== null && premiumUntil <= now;
+    title = expiredPaid ? 'Sua assinatura venceu' : 'Acesso integral indisponível';
+    text = expiredPaid ? `A assinatura venceu em ${profileDateLabel(premiumUntil)}. Renove para retomar o acesso integral.` : 'Assine para acessar simulados PAES, redação, ranking e todo o banco ENEM.';
+    detail = 'Você pode continuar praticando com a seleção gratuita de 50% do banco ENEM.';
+    action = expiredPaid ? 'Renovar acesso' : 'Assinar por R$ 24,99';
+  } else {
+    title = 'Seu acesso'; text = 'Atualize o perfil para consultar a validade do acesso.';
+  }
+  profileText('plan-badge', badge);
+  profileText('school-benefit', schoolActive ? `Benefício escolar válido até ${profileDateLabel(schoolUntil)}. Este benefício é preservado mesmo ao renovar uma assinatura.` : '');
+  profileNode('plan-cta').hidden = true;
+  panel.replaceChildren(); panel.dataset.accessState = state;
+  const copy = document.createElement('div'); copy.className = 'account-access-copy';
+  const heading = document.createElement('h2'); heading.textContent = title;
+  const paragraph = document.createElement('p'); paragraph.textContent = text;
+  copy.append(heading, paragraph);
+  if (detail) { const note = document.createElement('p'); note.textContent = detail; copy.append(note); }
+  panel.append(copy);
+  if (action) {
+    const actions = document.createElement('div'); actions.className = 'account-access-actions';
+    const link = document.createElement('a'); link.className = 'btn'; link.href = 'assinatura.html'; link.textContent = action;
+    actions.append(link); panel.append(actions);
+  }
+  panel.hidden = false;
+}
+async function loadProfileAccess() {
+  if (accessLoading) return;
+  accessLoading = true;
+  try {
+    // Endpoint existente: consulta somente a situação do plano, sem gerar cobrança.
+    const status = await window.api.get('/payments/status');
+    currentAccess = status && typeof status.canAccess === 'boolean' ? status : null;
+  } catch (_) { currentAccess = null; }
+  finally { accessLoading = false; renderProfileAccess(currentProfile, currentAccess); }
+}
+
 let currentEssayHistory = [];
 let currentProfile = null;
 let correctionLoad = 0;
@@ -17,10 +101,7 @@ function applyProfile(user) {
   profileText('user-avatar-header', name.charAt(0).toUpperCase());
   profileText('profile-name', name); profileText('profile-email', user.email || '');
   profileText('profile-avatar', name.charAt(0).toUpperCase());
-  const schoolUntil = user.paesAccess?.schoolEndsAt ? new Date(user.paesAccess.schoolEndsAt) : null;
-  profileText('school-benefit', schoolUntil && schoolUntil.getTime() > Date.now() ? `Benefício escolar garantido até ${schoolUntil.toLocaleDateString('pt-BR', {timeZone:'America/Sao_Paulo'})}, às 23h59 (horário de Brasília), sem cobrança automática.` : '');
-  profileText('plan-badge', schoolUntil && schoolUntil.getTime() > Date.now() ? 'Participante do projeto escolar' : user.paesAccess?.accessReason === 'TEMPORARY_FREE' ? 'Participante da fase gratuita' : 'Conta cadastrada');
-  profileNode('plan-cta').hidden = true;
+  renderProfileAccess(user, currentAccess);
   currentProfile = user;
   const language = user.foreignLanguage;
   if (['INGLES','ESPANHOL'].includes(language)) {
@@ -40,12 +121,16 @@ async function loadUserData() {
   try {
     const user = await window.api.get('/users/me');
     if (!user) return;
+    currentProfile = user;
     applyProfile(user);
+    await loadProfileAccess();
     localStorage.setItem('user', JSON.stringify(user));
     profileNotice('');
   } catch (error) {
     profileText('profile-name','Não foi possível carregar o perfil');
     profileText('profile-email','Atualize a página para tentar novamente.');
+    currentAccess = null;
+    renderProfileAccess(null, null);
     profileNotice('Seus dados cadastrais não foram atualizados. Você pode tentar novamente pelo botão abaixo.',true);
   } finally {
     // Cada módulo consulta o servidor independentemente dos metadados de assinatura.
@@ -193,4 +278,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   profileNode('essay-modal').addEventListener('close',()=>correctionLoad++);
   profileNode('refresh-performance').addEventListener('click', loadUserData);
   loadUserData();
+  // Atualiza os avisos ao voltar à aba e ao cruzar a faixa de cinco dias.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && currentProfile) loadProfileAccess();
+  });
+  setInterval(() => {
+    if (!document.hidden && currentProfile) renderProfileAccess(currentProfile, currentAccess);
+  }, 60000);
 });
