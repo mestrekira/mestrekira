@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin">
+<title>Teste controlado de Pix | Gabarita Paes</title>
+<link rel="icon" href="../logo1.png"><link rel="stylesheet" href="css/gabarita.css">
+<style>
+body{margin:0;background:#f4f7fb;color:#172554;font-family:Arial,sans-serif}.test-header{padding:18px;background:#1e3a8a;color:white}.test-header a{color:white}.test-wrap{max-width:700px;margin:24px auto;padding:0 16px}.test-card{background:white;border:1px solid #dbe4f4;border-radius:14px;padding:24px;line-height:1.6}.test-card h1{font-size:26px;line-height:1.2}.test-message{padding:14px;background:#eff6ff;border-radius:8px;margin:18px 0;overflow-wrap:anywhere}.test-actions{display:flex;flex-wrap:wrap;gap:12px}.test-button{background:#1e3a8a;color:white;border:0;border-radius:8px;padding:12px 16px;font-size:16px;min-height:44px;cursor:pointer}.test-button:disabled{opacity:.55;cursor:default}.test-button:focus-visible{outline:3px solid #ca8a04;outline-offset:3px}.test-code{display:block;width:100%;min-height:110px;padding:12px;box-sizing:border-box;font-size:14px}.test-qr{display:block;max-width:240px;width:100%;height:auto;margin:16px auto}.test-card [hidden]{display:none!important}
+</style>
+<script defer src="js/api.js"></script><script defer src="js/teste-pagamento.js?v=20261009-01"></script>
+</head>
+<body><header class="test-header"><strong>Gabarita Paes · Teste de integração Pix</strong> · <a href="index.html">Voltar à plataforma</a></header>
+<main class="test-wrap"><section class="test-card"><h1>Checkout de teste controlado</h1>
+<p>Esta página é exclusiva para a conta autorizada no backend. O acesso gratuito da plataforma continua disponível para os demais usuários.</p>
+<p><strong>Ambiente de teste:</strong> não transfira dinheiro para o QR Code desta página. A confirmação simulada não ativa Premium real.</p>
+<div id="test-message" class="test-message" role="status" aria-live="polite">Consultando a autorização da sua conta…</div>
+<div class="test-actions"><button id="test-create" class="test-button" type="button" disabled>Gerar Pix de teste · R$ 24,99</button><button id="test-refresh" class="test-button" type="button" disabled>Consultar cobrança</button></div>
+<section id="test-result" hidden aria-labelledby="test-result-title"><h2 id="test-result-title">Pedido de teste</h2><p id="test-status"></p><p id="test-charge-id"></p><img id="test-qr" class="test-qr" alt="QR Code de Pix do ambiente de teste" hidden><label for="test-code">Código Pix de teste</label><textarea id="test-code" class="test-code" readonly></textarea><button id="test-copy" class="test-button" type="button">Copiar código de teste</button></section>
+<p>Faça login antes de acessar esta página. <a href="login.html">Ir para o login</a></p>
+</section></main></body></html>
