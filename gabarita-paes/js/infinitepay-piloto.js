@@ -7,18 +7,21 @@
   const create = get('payment-create');
   const consent = get('payment-consent');
   const login = get('payment-login');
+  const recover = get('payment-recover');
+  const recoverConsent = get('payment-recover-consent');
   let busy = false, enabled = false, charge = null, requestKey = null, references = null;
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   function say(text) { message.textContent = text; }
   function buttons() {
     if (create) create.disabled = busy || !enabled || !consent.checked || !!charge;
     check.disabled = busy;
+    if (recover) recover.disabled = busy || !enabled || !recoverConsent.checked || charge?.canRetryLink !== true;
     const submit = login.querySelector('button');
     submit.disabled = busy;
   }
   function askLogin() { enabled = false; login.hidden = false; say('Entre com sua conta do Gabarita Paes para continuar nesta página.'); buttons(); }
   // Mesmo token do api.js. Esta requisição mantém a página de retorno aberta em
- 
+  // caso de sessão expirada, em vez de perder as referências no redirecionamento.
   async function request(path, body) {
     if (!window.api || !window.api.getToken()) { askLogin(); return null; }
     const response = await fetch('https://mestrekira-api.onrender.com' + path, {
@@ -42,15 +45,17 @@
     get('payment-status').textContent = labels[value.status] || 'Status não reconhecido';
     get('payment-open').hidden = true;
     get('payment-open').removeAttribute('href');
+    if (get('payment-recovery')) get('payment-recovery').hidden = !(mode === 'test' && enabled && value.canRetryLink === true);
     if (value.checkoutUrl && value.status === 'PENDING') {
       let url;
       try { url = new URL(value.checkoutUrl); } catch { throw new Error('Link de pagamento inválido.'); }
-      if (url.protocol !== 'https:' || url.hostname !== 'checkout.infinitepay.com.br' || url.username || url.password || url.port) throw new Error('Link fora do domínio autorizado.');
+      if (url.protocol !== 'https:' || !['checkout.infinitepay.com.br', 'checkout.infinitepay.io'].includes(url.hostname) || url.username || url.password || url.port) throw new Error('Link fora do domínio autorizado.');
       get('payment-open').href = url.href;
       get('payment-open').hidden = false;
     }
     if (value.status === 'PAID') say('Pagamento real confirmado. Este piloto não ativa assinatura nem modifica seu acesso gratuito. Confira no Render se a confirmação ocorreu pelo webhook ou pela consulta.');
-    else if (value.status === 'CREATING') say('O pedido foi reservado e precisa de conferência. Não tente criar outro pagamento.');
+    else if (value.blockedCheckoutHost) say(`O link foi preservado, mas o domínio precisa de conferência: ${value.blockedCheckoutHost}. Não crie outro pedido.`);
+    else if (value.status === 'CREATING') say(value.canRetryLink === true ? 'O pedido ficou sem link salvo. Se você não recebeu o link e não efetuou pagamento, pode autorizar uma única tentativa de recuperação abaixo.' : 'O pedido foi reservado e precisa de conferência. Aguarde e consulte novamente; não crie outro pagamento.');
     else say('Pedido registrado. Ao abrir o checkout, confira o recebedor e o valor de R$ 24,99 antes de pagar.');
     buttons();
   }
@@ -99,6 +104,17 @@
   }
   check.addEventListener('click', () => run(load));
   if (consent) consent.addEventListener('change', buttons);
+  if (recoverConsent) recoverConsent.addEventListener('change', buttons);
+  if (recover) recover.addEventListener('click', () => run(async () => {
+    if (!enabled || !recoverConsent.checked || charge?.canRetryLink !== true) return;
+    say('Solicitando uma única recuperação do link para o pedido existente…');
+    // Desabilita uma segunda tentativa local mesmo se a resposta for perdida.
+    const chargeId = charge.chargeId;
+    charge.canRetryLink = false;
+    buttons();
+    const result = await request(`/payments/infinitepay/charges/${encodeURIComponent(chargeId)}/retry-link`, { acknowledgeNoLinkAndNoPayment: true });
+    if (result) renderCharge(result);
+  }));
   if (create) create.addEventListener('click', () => run(async () => {
     if (!enabled || !consent.checked || charge) return;
     requestKey = requestKey || crypto.randomUUID();
