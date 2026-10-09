@@ -1,0 +1,9 @@
+#account-access {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;padding:1.25rem;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff;color:#172554;}
+#account-access[hidden] {display:none;}
+#account-access[data-access-state="renewal"],#account-access[data-access-state="expired"] {border-color:#d97706;background:#fffbeb;color:#78350f;}
+#account-access .account-access-copy {flex:1 1 280px;min-width:0;}
+#account-access h2 {margin:0 0 .5rem;font-size:1.15rem;color:inherit;}
+#account-access p {margin:.35rem 0;line-height:1.6;overflow-wrap:anywhere;}
+#account-access .account-access-actions {display:flex;flex-wrap:wrap;gap:.5rem;}
+#account-access a:focus-visible {outline:3px solid #1e3a8a;outline-offset:3px;}
+@media(max-width:600px) {#account-access .account-access-actions {width:100%;}#account-access .btn {width:100%;white-space:normal;text-align:center;}}
