@@ -18,7 +18,7 @@
   }
   function askLogin() { enabled = false; login.hidden = false; say('Entre com sua conta do Gabarita Paes para continuar nesta página.'); buttons(); }
   // Mesmo token do api.js. Esta requisição mantém a página de retorno aberta em
-  // caso de sessão expirada, em vez de perder as referências no redirecionamento.
+ 
   async function request(path, body) {
     if (!window.api || !window.api.getToken()) { askLogin(); return null; }
     const response = await fetch('https://mestrekira-api.onrender.com' + path, {
