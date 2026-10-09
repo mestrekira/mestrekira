@@ -37,7 +37,7 @@
     return data;
   }
   function renderCharge(value) {
-    if (!value || value.provider !== 'infinitepay' || value.environment !== 'production' || value.pilot !== true || value.realPayment !== true || value.amount !== 24.99 || !uuid.test(value.chargeId || '')) throw new Error('A resposta do pedido não corresponde a este piloto.');
+    if (!value || value.provider !== 'infinitepay' || value.environment !== 'production' || typeof value.pilot !== 'boolean' || (mode === 'test' && value.pilot !== true) || (mode === 'commercial' && value.pilot !== false) || value.realPayment !== true || value.amount !== 24.99 || !uuid.test(value.chargeId || '')) throw new Error('A resposta do pedido não corresponde a esta página de pagamento.');
     charge = value;
     get('payment-result').hidden = false;
     get('payment-order').textContent = `Pedido: ${value.chargeId}`;
@@ -53,7 +53,7 @@
       get('payment-open').href = url.href;
       get('payment-open').hidden = false;
     }
-    if (value.status === 'PAID') say('Pagamento real confirmado. Este piloto não ativa assinatura nem modifica seu acesso gratuito. Confira no Render se a confirmação ocorreu pelo webhook ou pela consulta.');
+    if (value.status === 'PAID') say(value.pilot ? 'Pagamento de piloto confirmado. Este pedido não ativa assinatura.' : value.accessActivated && value.accessGrantedUntil ? `Pagamento confirmado. Acesso integral válido até ${new Date(value.accessGrantedUntil).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}.` : 'Pagamento registrado. A ativação do acesso precisa de conferência.');
     else if (value.blockedCheckoutHost) say(`O link foi preservado, mas o domínio precisa de conferência: ${value.blockedCheckoutHost}. Não crie outro pedido.`);
     else if (value.status === 'CREATING') say(value.canRetryLink === true ? 'O pedido ficou sem link salvo. Se você não recebeu o link e não efetuou pagamento, pode autorizar uma única tentativa de recuperação abaixo.' : 'O pedido foi reservado e precisa de conferência. Aguarde e consulte novamente; não crie outro pagamento.');
     else say('Pedido registrado. Ao abrir o checkout, confira o recebedor e o valor de R$ 24,99 antes de pagar.');
@@ -96,9 +96,9 @@
     const result = await request('/payments/infinitepay/status');
     if (!result) return;
     const config = result.checkout;
-    enabled = config?.enabled === true && config?.provider === 'infinitepay' && config?.pilot === true && config?.environment === 'production' && config?.realPayment === true && config?.accessActivationEnabled === false && config?.amount === 24.99;
+    enabled = config?.enabled === true && config?.provider === 'infinitepay' && config?.pilot === (mode !== 'commercial') && config?.environment === 'production' && config?.realPayment === true && config?.accessActivationEnabled === (mode === 'commercial') && config?.amount === 24.99;
     login.hidden = true;
-    say(enabled ? 'Conta autorizada. Marque a confirmação abaixo para habilitar a geração de um único link.' : 'A geração de pagamento está desativada ou esta conta não está autorizada. O acesso gratuito à plataforma continua disponível.');
+    say(enabled ? 'Conta autorizada. Marque a confirmação abaixo para habilitar a geração de um único link.' : (mode === 'commercial' ? 'A assinatura será disponibilizada a partir de 22/10/2026. Se essa data já chegou, a cobrança ainda está desativada; entre em contato com o suporte.' : 'O piloto está desativado ou esta conta não está autorizada.'));
     if (result.pendingCharge) renderCharge(result.pendingCharge);
     buttons();
   }
