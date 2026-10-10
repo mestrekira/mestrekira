@@ -53,7 +53,8 @@
       get('payment-open').href = url.href;
       get('payment-open').hidden = false;
     }
-    if (value.status === 'PAID') say(value.pilot ? 'Pagamento de piloto confirmado. Este pedido não ativa assinatura.' : value.accessActivated && value.accessGrantedUntil ? `Pagamento confirmado. Acesso integral válido até ${new Date(value.accessGrantedUntil).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}.` : 'Pagamento registrado. A ativação do acesso precisa de conferência.');
+    if (value.accessRevoked === true) say('Devolução registrada para este pedido. Consulte o perfil para conferir sua situação de acesso ou entre em contato com o suporte.');
+    else if (value.status === 'PAID') say(value.pilot ? 'Pagamento de piloto confirmado. Este pedido não ativa assinatura.' : value.accessActivated && value.accessGrantedUntil ? `Pagamento confirmado. Acesso integral válido até ${new Date(value.accessGrantedUntil).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}.` : 'Pagamento registrado. A ativação do acesso precisa de conferência.');
     else if (value.blockedCheckoutHost) say(`O link foi preservado, mas o domínio precisa de conferência: ${value.blockedCheckoutHost}. Não crie outro pedido.`);
     else if (value.status === 'CREATING') say(value.canRetryLink === true ? 'O pedido ficou sem link salvo. Se você não recebeu o link e não efetuou pagamento, pode autorizar uma única tentativa de recuperação abaixo.' : 'O pedido foi reservado e precisa de conferência. Aguarde e consulte novamente; não crie outro pagamento.');
     else say('Pedido registrado. Ao abrir o checkout, confira o recebedor e o valor de R$ 24,99 antes de pagar.');
