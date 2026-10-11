@@ -40,6 +40,57 @@ let reviewData = null;
 let activeAttemptId = null;
 let officialCompleted = false;
 let pendingSave = Promise.resolve();
+let statusReady = null;
+let examRunning = false;
+let simulationUserId = null;
+let eligibleQuestionIds = null;
+
+// Apenas preferências de interface; respostas continuam exclusivamente no banco.
+function preferenceKey() {
+  return simulationUserId && CURRENT_CYCLE.cycleCode
+    ? `paes-simulation-preferences:${simulationUserId}:${CURRENT_CYCLE.cycleCode}` : null;
+}
+function saveSimulationPreferences() {
+  try {
+    const key = preferenceKey();
+    if (key) localStorage.setItem(key, JSON.stringify({ mode: examMode,
+      disciplines: Array.from(document.querySelectorAll('input[name="disc-filter"]:checked')).map(c => c.value) }));
+  } catch { /* Preferências indisponíveis não impedem o simulado. */ }
+}
+function restoreSimulationPreferences() {
+  try {
+    const key = preferenceKey();
+    const saved = key ? JSON.parse(localStorage.getItem(key) || 'null') : null;
+    if (!saved) return;
+    if (['FULL', 'DISCIPLINE'].includes(saved.mode)) window.setExamMode(saved.mode);
+    if (Array.isArray(saved.disciplines)) document.querySelectorAll('input[name="disc-filter"]').forEach(c => {
+      c.checked = saved.disciplines.includes(c.value);
+    });
+  } catch { /* Sem preferências válidas, usa a interface inicial. */ }
+}
+function matchesDiscipline(q, value) {
+  const disc = String(q.discipline || '').toLowerCase();
+  const foreign = disc.includes('estrangeira') || disc.startsWith('língua inglesa') || disc.startsWith('língua espanhola');
+  if (foreign) return value.toLowerCase() === 'estrangeira' &&
+    normalizeLanguage(selectedLanguage) === (disc.includes('espanh') ? 'ESPANHOL' : disc.includes('ingl') ? 'INGLES' : null);
+  return disc.includes(value.toLowerCase());
+}
+function refreshDisciplineChoices() {
+  document.querySelectorAll('input[name="disc-filter"]').forEach(c => {
+    const questions = allQuestions.filter(q => (!eligibleQuestionIds || eligibleQuestionIds.has(q.id)) && matchesDiscipline(q, c.value));
+    const complete = questions.length > 0 && questions.every(q => /^[A-E]$/.test(userAnswers[q.id] || ''));
+    c.disabled = complete;
+    if (complete) c.checked = false;
+    const label = c.closest('label');
+    if (label) label.hidden = complete;
+    else c.hidden = complete;
+  });
+}
+window.addEventListener('beforeunload', event => {
+  if (!examRunning || examMode !== 'FULL' || officialCompleted) return;
+  event.preventDefault();
+  event.returnValue = '';
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (!window.api || !window.api.getToken()) {
@@ -50,8 +101,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupUserData();
   languageReady = loadSavedLanguage();
   if (!await languageReady) return;
-  checkCycleSubmissionStatus();
   setupEventListeners();
+  statusReady = checkCycleSubmissionStatus();
+  await statusReady;
 });
 
 function showPremiumGate(access) {
@@ -90,6 +142,7 @@ async function loadSavedLanguage() {
   try {
     const profile = await window.api.get('/users/me');
     if (!profile) return null;
+    simulationUserId = profile.id || profile.sub || null;
     if (profile.paesAccess?.canAccess === false) {
       showPremiumGate(profile.paesAccess);
       return null;
@@ -142,6 +195,7 @@ window.setExamMode = (mode) => {
     showExamNotice('O simulado deste ciclo já foi concluído. Consulte a revisão.');
     return;
   }
+  if (!['FULL', 'DISCIPLINE'].includes(mode) || examRunning) return;
   examMode = mode;
   document.getElementById('card-mode-full')?.classList.toggle('active', mode === 'FULL');
   document.getElementById('card-mode-practice')?.classList.toggle('active', mode === 'DISCIPLINE');
@@ -155,6 +209,8 @@ window.setExamMode = (mode) => {
   if (startBtn) {
     startBtn.innerText = mode === 'FULL' ? '⏱️ Resolver as 60 questões' : '🎯 Resolver por disciplina';
   }
+  saveSimulationPreferences();
+  showExamNotice(mode === 'FULL' ? 'O simulado tem prazo de 5 horas desde o início. Ao sair ou fechar a página, o tempo continua correndo; somente as respostas confirmadas pelo servidor ficam salvas.' : '', false);
 };
 
 function updateCycleDate() {
@@ -175,6 +231,7 @@ async function checkCycleSubmissionStatus() {
     CURRENT_CYCLE.cycleCode = res.cycleCode;
     CURRENT_CYCLE.endDate = res.endDate;
     updateCycleDate();
+    restoreSimulationPreferences();
     officialCompleted = !!res.submitted;
     const existing = await window.api.get(`/simulations/attempts/official/current?cycle=${encodeURIComponent(res.cycleCode)}`);
     if (officialCompleted) {
@@ -197,9 +254,20 @@ async function checkCycleSubmissionStatus() {
             userAnswers: Object.fromEntries(review.questions.map((q) => [q.id, q.selectedLetter])) });
         } catch (error) { showExamNotice(error.message || 'Não foi possível abrir a revisão.'); }
       });
-    } else if (existing?.status === 'IN_PROGRESS') {
+    } else {
+      await ensureQuestionsLoaded();
+      if (existing?.status === 'IN_PROGRESS') {
+        activeAttemptId = existing.attemptId;
+        userAnswers = existing.answers || {};
+        eligibleQuestionIds = new Set(existing.questionIds || []);
+        if (['FULL', 'DISCIPLINE'].includes(existing.resolutionMode)) window.setExamMode(existing.resolutionMode);
+      }
+      refreshDisciplineChoices();
+      saveSimulationPreferences();
+      if (existing?.status === 'IN_PROGRESS') {
       const btn = document.getElementById('btn-start-exam');
-      if (btn) btn.innerText = 'Continuar simulado';
+      if (btn) btn.innerText = examMode === 'DISCIPLINE' ? 'Continuar por disciplina' : 'Continuar simulado';
+      }
     }
   } catch (error) {
     console.error('Não foi possível carregar o status do simulado:', error);
@@ -207,10 +275,14 @@ async function checkCycleSubmissionStatus() {
 }
 
 function setupEventListeners() {
+  document.querySelectorAll('input[name="disc-filter"]').forEach(c => c.addEventListener('change', saveSimulationPreferences));
   document.getElementById('btn-start-exam')?.addEventListener('click', startExam);
   document.getElementById('btn-change-discipline')?.addEventListener('click', async () => {
     try {
       await pendingSave;
+      examRunning = false;
+      refreshDisciplineChoices();
+      saveSimulationPreferences();
       if (timerInterval) clearInterval(timerInterval);
       document.getElementById('exam-view').style.display = 'none';
       document.getElementById('intro-view').style.display = 'block';
@@ -253,6 +325,7 @@ async function ensureQuestionsLoaded() {
 
 // Início do Simulado / Treino
 async function startExam() {
+  if (statusReady) await statusReady;
   if (languageReady) await languageReady;
   const currentLanguage = await loadSavedLanguage();
   if (!currentLanguage) return;
@@ -271,6 +344,14 @@ async function startExam() {
 
   try {
     await ensureQuestionsLoaded();
+    if (activeAttemptId) {
+      filterFullExamQuestions();
+      if (activeQuestions.length && activeQuestions.every(q => /^[A-E]$/.test(userAnswers[q.id] || ''))) {
+        if (startBtn) { startBtn.disabled = false; startBtn.innerText = 'Entregar simulado'; }
+        confirmFinishExam();
+        return;
+      }
+    }
 
     if (examMode === 'FULL') {
       filterFullExamQuestions();
@@ -298,8 +379,18 @@ async function startExam() {
     });
     activeAttemptId = attempt.attemptId;
     const eligible = new Set(attempt.questionIds);
+    eligibleQuestionIds = eligible;
     activeQuestions = activeQuestions.filter((q) => eligible.has(q.id));
     userAnswers = attempt.answers || {};
+    if (examMode === 'DISCIPLINE') activeQuestions = activeQuestions.filter(q => !/^[A-E]$/.test(userAnswers[q.id] || ''));
+    refreshDisciplineChoices();
+    saveSimulationPreferences();
+    if (!activeQuestions.length) {
+      showExamNotice('As disciplinas selecionadas já foram respondidas. Escolha outra disciplina ou entregue o simulado.', false);
+      if (startBtn) { startBtn.disabled = false; startBtn.innerText = 'Selecionar outras disciplinas'; }
+      return;
+    }
+    examRunning = true;
     currentIndex = 0;
     flaggedQuestions = {};
     document.getElementById('btn-change-discipline').style.display = examMode === 'DISCIPLINE' ? 'block' : 'none';
@@ -587,7 +678,7 @@ async function finishExam() {
     await pendingSave;
     const result = await window.api.post(`/simulations/attempts/${activeAttemptId}/finish`, {});
     if (timerInterval) clearInterval(timerInterval);
-    if (result.submitted) officialCompleted = true;
+    if (result.submitted) { officialCompleted = true; examRunning = false; }
     const review = await window.api.get(`/simulations/attempts/${activeAttemptId}/review`);
     displayResult({ ...result, ...review, isOfficial: result.submitted,
       userAnswers: Object.fromEntries(review.questions.map((q) => [q.id, q.selectedLetter])) });
