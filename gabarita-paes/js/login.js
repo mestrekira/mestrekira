@@ -1,11 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('form-login');
   const alertBox = document.getElementById('alert-box');
+  if (!form || !alertBox) return;
+  const verificationLink = document.createElement('a');
+  verificationLink.href = 'verificar-email.html';
+  verificationLink.textContent = 'Solicitar novo link de confirmação';
+  verificationLink.hidden = true;
+  verificationLink.style.display = 'none';
+  alertBox.after(verificationLink);
   const btnSubmit = form.querySelector('button[type="submit"]');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     alertBox.style.display = 'none';
+    verificationLink.hidden = true;
+    verificationLink.style.display = 'none';
 
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('senha').value;
@@ -18,6 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Se o servidor avisar que a senha/usuário são inválidos ou se ok for false
       if (res?.ok === false || res?.error) {
+        if (res.emailVerified === false) {
+          verificationLink.hidden = false;
+          verificationLink.style.display = 'block';
+        }
         throw new Error(res.error || res.message || 'Usuário ou senha inválidos.');
       }
 
