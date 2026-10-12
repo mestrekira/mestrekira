@@ -24,7 +24,7 @@
     }
     return result;
   }
-
+//comentário
   if (page === 'verify') {
     const ok = params.get('ok') === '1';
     const failed = params.get('ok') === '0';
