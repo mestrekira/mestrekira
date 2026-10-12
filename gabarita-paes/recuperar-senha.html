@@ -41,6 +41,7 @@
     <section class="card auth-card">
       <h1>Recuperar senha</h1>
       <p>Informe o e-mail cadastrado. Se houver uma conta, enviaremos um link válido por 30 minutos.</p>
+      <p>Redefinir a senha não confirma seu e-mail. Para entrar, você também precisa abrir o link de confirmação recebido no cadastro. <a href="verificar-email.html">Solicitar novo link de confirmação</a>.</p>
       <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
       <form id="recover-form">
         <div class="form-group">
@@ -65,7 +66,7 @@
         await window.api.post('/auth/request-password-reset', {
           email: document.getElementById('email').value.trim(), origin: 'GABARITA',
         });
-        feedback.textContent = 'Se o e-mail estiver cadastrado, você receberá um link. Confira também a pasta de spam.';
+        feedback.textContent = 'Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Confira também a pasta de spam. Se ainda não confirmou seu e-mail, essa confirmação continua necessária para entrar.';
         feedback.className = 'feedback success';
       } catch (error) {
         feedback.textContent = error.message || 'Não foi possível solicitar o link. Tente novamente.';
