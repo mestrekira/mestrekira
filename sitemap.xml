@@ -8,13 +8,6 @@
     <priority>1.0</priority>
   </url>
 
-  <url>
-    <loc>https://www.mestrekira.com.br/plataforma-de-redacao-mestre-kira.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-
    <url>
     <loc>https://www.mestrekira.com.br/gabarita-paes/apresentacao.html</loc>
     <lastmod>2026-10-02</lastmod>
@@ -194,48 +187,6 @@
     <lastmod>2026-07-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.95</priority>
-  </url>
-
-  <url>
-    <loc>https://www.mestrekira.com.br/app/frontend/index.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://www.mestrekira.com.br/app/frontend/login-escola.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://www.mestrekira.com.br/app/frontend/cadastro-escola.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
-  </url>
-
-  <url>
-    <loc>https://www.mestrekira.com.br/app/frontend/login-professor.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://www.mestrekira.com.br/app/frontend/login-aluno.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://www.mestrekira.com.br/app/frontend/cadastro-aluno.html</loc>
-    <lastmod>2026-03-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
 
 </urlset>
