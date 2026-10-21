@@ -40,7 +40,7 @@
     <div id="ranking-panel" class="card">
       <h2 id="ranking-course">Ranking do simulado PAES UEMA</h2>
       <p id="ranking-summary" style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
-        Classificação por curso: mais acertos primeiro; a redação corrigida mais recente desempata candidatos com os mesmos acertos.
+        Classificação por curso: mais acertos primeiro; a maior nota de redação corrigida no ciclo desempata candidatos com os mesmos acertos.
       </p>
       <p style="color: var(--text-muted); margin: -0.75rem 0 1rem; font-size: 0.875rem;">
         Pontos do simulado = acertos ÷ 60 × 1000. A redação não acrescenta pontos. Este ranking inclui todos que concluíram o simulado; a situação indica as exigências mínimas do PAES, cuja classificação oficial segue outros critérios.
@@ -53,7 +53,7 @@
             <th>Posição</th>
             <th>Candidato</th>
             <th>Acertos (60Q)</th>
-            <th>Redação recente (0 a 10)</th>
+            <th>Melhor redação do ciclo (0 a 10)</th>
             <th>Pontos (0 a 1000)</th>
             <th>Situação</th>
           </tr>
@@ -105,7 +105,8 @@
       const hasCourse = data.targetCourse && data.targetCourse !== 'Geral';
       title.textContent = hasCourse ? `Ranking do simulado - ${data.targetCourse}` : 'Ranking geral do simulado';
       summary.textContent = `${data.cycleCode ? `Ciclo ${data.cycleCode} · ` : ''}${data.ranking.length} participante(s) com o simulado concluído. ` +
-        (hasCourse ? `Sua posição no simulado: ${data.myPosition ?? 'ainda sem posição'}.` : 'Seu curso não está informado; exibindo participantes de todos os cursos.');
+        (hasCourse ? `Sua posição no simulado: ${data.myPosition ?? 'ainda sem posição'}.` : 'Seu curso não está informado; exibindo participantes de todos os cursos.') +
+        ' Mais acertos primeiro; a maior nota de redação corrigida neste ciclo é usada como desempate.';
 
       body.replaceChildren();
       if (!data.ranking.length) {
