@@ -39,6 +39,13 @@
     </div>
     <div id="ranking-panel" class="card">
       <h2 id="ranking-course">Ranking do simulado PAES UEMA</h2>
+      <div style="margin:1rem 0;max-width:100%;">
+        <label for="ranking-cycle" style="display:block;margin-bottom:.4rem;font-weight:600;">Ciclo do ranking</label>
+        <select id="ranking-cycle" disabled style="width:100%;max-width:34rem;padding:.65rem;font:inherit;">
+          <option>Carregando ciclos...</option>
+        </select>
+        <p style="font-size:.875rem;color:var(--text-muted);">Selecione um ciclo anterior para consultar sua classificação. Os acertos e a melhor redação pertencem ao ciclo escolhido.</p>
+      </div>
       <p id="ranking-summary" style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
         Classificação por curso: mais acertos primeiro; a maior nota de redação corrigida no ciclo desempata candidatos com os mesmos acertos.
       </p>
@@ -70,6 +77,39 @@
 
   <script src="js/api.js"></script>
   <script>
+    let rankingLoad = 0;
+    async function loadSelectedRanking() {
+      const token = ++rankingLoad;
+      const select = document.getElementById('ranking-cycle');
+      const cycle = select.value;
+      if (!cycle) return;
+      rankingStatus('Consultando classificação do ciclo selecionado...');
+      try {
+        const data = await window.api.get(`/rankings/my-course?cycle=${encodeURIComponent(cycle)}`);
+        if (token === rankingLoad) renderCourseRanking(data);
+      } catch (error) {
+        if (token === rankingLoad) rankingStatus('Não foi possível consultar esse ciclo. Selecione novamente ou atualize a página.');
+      }
+    }
+
+    async function setupRankingCycles() {
+      const data = await window.api.get('/rankings/cycles');
+      if (!data || !Array.isArray(data.cycles)) throw new Error('Lista de ciclos indisponível.');
+      const select = document.getElementById('ranking-cycle');
+      select.replaceChildren();
+      for (const cycle of data.cycles) {
+        const option = document.createElement('option');
+        option.value = cycle.cycleCode;
+        option.textContent = `${cycle.title || cycle.cycleCode}${cycle.isCurrent ? ' — ciclo atual' : ' — histórico'}`;
+        select.appendChild(option);
+      }
+      if (!data.cycles.length) { rankingStatus('Ainda não há ciclos disponíveis para consulta.'); return; }
+      select.value = (data.cycles.find(c => c.isCurrent) || data.cycles[0]).cycleCode;
+      select.disabled = false;
+      select.addEventListener('change', loadSelectedRanking);
+      await loadSelectedRanking();
+    }
+
     function rankingStatus(message) {
       const body = document.getElementById('ranking-body');
       body.replaceChildren();
@@ -148,8 +188,7 @@
           document.getElementById('ranking-access').style.display = 'block';
           return;
         }
-        const courseData = await window.api.get('/rankings/my-course');
-        renderCourseRanking(courseData);
+        await setupRankingCycles();
       } catch (err) {
         console.error('[Ranking] Erro ao carregar classificação:', err);
         rankingStatus('Não foi possível carregar a classificação. Atualize a página e tente novamente.');
