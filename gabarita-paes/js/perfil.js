@@ -83,6 +83,38 @@ async function loadProfileAccess() {
 }
 
 let currentEssayHistory = [];
+let profileHistoryCycle = '';
+let historyLoadToken = 0;
+let historyReviewToken = 0;
+const profileHistoryQuery = () => profileHistoryCycle ? `?cycle=${encodeURIComponent(profileHistoryCycle)}` : '';
+async function loadProfileCycles() {
+  const select = profileNode('profile-history-cycle');
+  try {
+    const data = await window.api.get('/simulations/cycles');
+    if (!data || !Array.isArray(data.cycles)) throw new Error('Lista de ciclos indisponível.');
+    select.replaceChildren();
+    const all = document.createElement('option'); all.value = ''; all.textContent = 'Todos os ciclos'; select.append(all);
+    for (const cycle of data.cycles) {
+      const option = document.createElement('option'); option.value = cycle.cycleCode;
+      option.textContent = `${cycle.title || cycle.cycleCode}${cycle.isCurrent ? ' — ciclo atual' : ' — histórico'}`;
+      select.append(option);
+    }
+    if (profileHistoryCycle && !data.cycles.some(c => c.cycleCode === profileHistoryCycle)) profileHistoryCycle = '';
+    select.value = profileHistoryCycle; select.disabled = false;
+    profileText('profile-history-status', profileHistoryCycle ? `Exibindo o ciclo ${profileHistoryCycle}.` : 'Exibindo os registros disponíveis de todos os ciclos.');
+  } catch (_) {
+    select.disabled = true;
+    profileText('profile-history-status', 'Não foi possível atualizar a lista de ciclos. Tentando consultar o histórico salvo; use Atualizar desempenho para tentar novamente.');
+  }
+}
+async function refreshProfileHistory() {
+  const token = ++historyLoadToken;
+  currentEssayHistory = [];
+  for (const id of ['stat-essays','stat-best-essay','stat-simulations','stat-best-sim']) profileText(id, '—');
+  profileText('essays-history-container', 'Consultando redações salvas...');
+  profileText('simulations-history-container', 'Consultando simulados salvos...');
+  await Promise.allSettled([loadEssayHistory(token), loadSimulationHistory(token)]);
+}
 let currentProfile = null;
 let correctionLoad = 0;
 let performanceLoading = false;
@@ -134,7 +166,8 @@ async function loadUserData() {
     profileNotice('Seus dados cadastrais não foram atualizados. Você pode tentar novamente pelo botão abaixo.',true);
   } finally {
     // Cada módulo consulta o servidor independentemente dos metadados de assinatura.
-    await Promise.allSettled([loadEssayHistory(), loadSimulationHistory(), loadEnemPerformance()]);
+    await loadProfileCycles();
+    await Promise.allSettled([refreshProfileHistory(), loadEnemPerformance()]);
     performanceLoading = false;
     profileNode('refresh-performance').disabled = false;
   }
@@ -157,7 +190,7 @@ function setupLanguagePreference() {
       localStorage.setItem('user',JSON.stringify(fresh));
       localStorage.removeItem('foreignLanguage');
       profileNotice('Preferência de língua estrangeira salva. Confira o idioma antes de iniciar o simulado.');
-      await Promise.allSettled([loadEssayHistory(),loadSimulationHistory(),loadEnemPerformance()]);
+      await Promise.allSettled([refreshProfileHistory(),loadEnemPerformance()]);
     } catch (error) {
       if (currentProfile) select.value = currentProfile.foreignLanguage;
       profileNotice(error.message || 'Não foi possível salvar sua preferência.',true);
@@ -186,44 +219,66 @@ async function loadEnemPerformance() {
   }
 }
 
-async function loadEssayHistory() {
-  const container=profileNode('essays-history-container');
+async function loadEssayHistory(token = historyLoadToken) {
+  const container = profileNode('essays-history-container');
   try {
-    const res = await window.api.get('/essays/cycle-status');
-    if (!res) return;
-    if (!Array.isArray(res.prompts)) {
-      profileText('stat-essays','—'); profileText('stat-best-essay','—');
-      container.textContent=res.message || 'Conclua o simulado do ciclo para consultar as propostas de redação.';
-      currentEssayHistory=[]; return;
-    }
-    currentEssayHistory=res.prompts.filter(p=>p.isSubmitted);
-    profileText('stat-essays',`${currentEssayHistory.length} / ${res.prompts.length}`);
-    const scores=currentEssayHistory.map(p=>p.score).filter(s=>s!==null&&s!==undefined&&Number.isFinite(Number(s))).map(Number);
-    profileText('stat-best-essay',scores.length ? profileScore(Math.max(...scores)) : '—');
-    if (!currentEssayHistory.length) {container.textContent='Você ainda não enviou redações neste ciclo.';return;}
-    container.innerHTML=currentEssayHistory.map(p=>`<div class="history-card"><div><span>Tema ${profileEscape(p.themeNumber)}</span><h4>${profileEscape(p.title)}</h4><span>Avaliado nos 5 critérios da UEMA</span></div><div class="history-actions"><strong>${profileScore(p.score)} / 10,0</strong><button class="btn btn-secondary" data-essay-id="${profileEscape(p.id)}">Ver Espelho</button></div></div>`).join('');
-    container.querySelectorAll('[data-essay-id]').forEach(button=>button.addEventListener('click',()=>window.viewEssayDetails(button.dataset.essayId)));
-  } catch (error) { container.textContent=`Não foi possível consultar as redações: ${error.message || 'tente novamente.'}`; }
+    const res = await window.api.get(`/essays/history${profileHistoryQuery()}`);
+    if (token !== historyLoadToken) return;
+    if (!res || !Array.isArray(res.items)) throw new Error('Histórico indisponível.');
+    currentEssayHistory = res.items;
+    profileText('stat-essays', String(res.items.length));
+    const scores = res.items.map(p => p.score).filter(s => s !== null && s !== undefined && Number.isFinite(Number(s))).map(Number);
+    profileText('stat-best-essay', scores.length ? profileScore(Math.max(...scores)) : '—');
+    if (!res.items.length) { container.textContent = 'Nenhuma redação corrigida foi encontrada no período selecionado.'; return; }
+    container.innerHTML = res.items.map(p => `<div class="history-card"><div><span>Ciclo ${profileEscape(p.cycleCode)}</span><h4>${p.themeNumber ? `Tema ${profileEscape(p.themeNumber)}: ` : ''}${profileEscape(p.title)}</h4><span>${p.correctedAt ? profileEscape(profileDateLabel(Date.parse(p.correctedAt))) : 'Correção salva'}</span></div><div class="history-actions"><strong>${profileScore(p.score)} / 10,0</strong><button type="button" class="btn btn-secondary" data-essay-id="${profileEscape(p.id)}">Ver Espelho</button></div></div>`).join('');
+    container.querySelectorAll('[data-essay-id]').forEach(button => button.addEventListener('click', () => window.viewEssayDetails(button.dataset.essayId)));
+  } catch (error) {
+    if (token === historyLoadToken) container.textContent = `Não foi possível consultar as redações salvas: ${error.message || 'tente novamente.'}`;
+  }
 }
 
-async function loadSimulationHistory() {
-  const container=profileNode('simulations-history-container');
+async function loadSimulationHistory(token = historyLoadToken) {
+  const container = profileNode('simulations-history-container');
   try {
-    const res=await window.api.get('/simulations/my-status');
-    if (!res) return;
-    profileText('stat-simulations',res.submitted?'1':'0');
-    if (!res.submitted) {profileText('stat-best-sim','—');container.textContent='Nenhum simulado finalizado neste ciclo.';return;}
-    const score=Number(res.score); const total=Number(res.totalQuestions);
-    if (!Number.isFinite(score)||!Number.isFinite(total)||total<=0) throw new Error('Pontuação indisponível.');
-    profileText('stat-best-sim',`${Math.round(score/total*100)}%`);
-    container.innerHTML=`<div class="history-card"><div><h4>Simulado Oficial PAES UEMA</h4><span>Ciclo: ${profileEscape(res.cycleCode)}</span></div><div class="history-actions"><strong>${score} / ${total} acertos</strong><a href="simulado.html" class="btn btn-secondary">Revisar Gabarito</a></div></div>`;
-  } catch(error) {profileText('stat-simulations','—');profileText('stat-best-sim','—');container.textContent=`Não foi possível consultar o simulado: ${error.message || 'tente novamente.'}`;}
+    const res = await window.api.get(`/simulations/attempts/history${profileHistoryQuery()}`);
+    if (token !== historyLoadToken) return;
+    if (!res || !Array.isArray(res.items)) throw new Error('Histórico indisponível.');
+    const completed = res.items.filter(item => item.submitted === true);
+    profileText('stat-simulations', String(completed.length));
+    const rates = completed.filter(item => item.score !== null && Number.isFinite(Number(item.score)) && Number(item.totalQuestions) > 0).map(item => Number(item.score) / Number(item.totalQuestions));
+    profileText('stat-best-sim', rates.length ? `${Math.round(Math.max(...rates) * 100)}%` : '—');
+    if (!res.items.length) { container.textContent = 'Nenhum simulado foi encontrado no período selecionado.'; return; }
+    container.innerHTML = res.items.map(item => `<div class="history-card"><div><h4>${profileEscape(item.title || 'Simulado PAES UEMA')}</h4><span>Ciclo ${profileEscape(item.cycleCode)} · ${item.submitted ? 'Concluído' : 'Não concluído'}</span>${item.finishedAt ? `<p>${profileEscape(profileDateLabel(Date.parse(item.finishedAt)))}</p>` : ''}</div><div class="history-actions"><strong>${item.submitted ? `${profileScore(item.score)} / ${profileEscape(item.totalQuestions)} acertos` : 'Sem resultado final'}</strong>${item.submitted && item.attemptId ? `<button type="button" class="btn btn-secondary" data-attempt-id="${profileEscape(item.attemptId)}">Ver desempenho por área</button>` : ''}</div></div>`).join('');
+    container.querySelectorAll('[data-attempt-id]').forEach(button => button.addEventListener('click', () => viewHistoricalSimulation(button.dataset.attemptId)));
+  } catch (error) {
+    if (token === historyLoadToken) container.textContent = `Não foi possível consultar os simulados salvos: ${error.message || 'tente novamente.'}`;
+  }
+}
+
+async function viewHistoricalSimulation(attemptId) {
+  const token = ++historyReviewToken;
+  const dialog = profileNode('simulation-history-modal');
+  profileText('simulation-history-body', 'Consultando o resultado salvo...');
+  dialog.showModal();
+  try {
+    const res = await window.api.get(`/simulations/attempts/${encodeURIComponent(attemptId)}/review`);
+    if (token !== historyReviewToken || !dialog.open) return;
+    if (!res || !res.areas || !Number.isFinite(Number(res.score))) throw new Error('Resultado indisponível.');
+    const body = profileNode('simulation-history-body'); body.replaceChildren();
+    const score = document.createElement('p'); score.textContent = `${res.score} acertos em ${res.totalQuestions} questões.`; body.append(score);
+    for (const [area, values] of Object.entries(res.areas)) {
+      const line = document.createElement('p'); line.textContent = `${area}: ${values.correct} / ${values.total} acertos.`; body.append(line);
+    }
+  } catch (error) {
+    if (token === historyReviewToken && dialog.open) profileText('simulation-history-body', error.message || 'Não foi possível carregar o resultado salvo.');
+  }
 }
 
 window.viewEssayDetails=async (promptId)=>{
   const prompt=currentEssayHistory.find(p=>p.id===promptId); if(!prompt)return;
   const token=++correctionLoad; const dialog=profileNode('essay-modal');
-  profileText('modal-theme-title',`Tema ${prompt.themeNumber}: ${prompt.title}`);
+  profileText('modal-theme-title',`${prompt.themeNumber ? `Tema ${prompt.themeNumber}: ` : ''}${prompt.title}`);
+  profileText('modal-date', `Ciclo ${prompt.cycleCode || 'não informado'}${prompt.correctedAt ? ` · ${profileDateLabel(Date.parse(prompt.correctedAt))}` : ''}`);
   profileText('modal-score',`${profileScore(prompt.score)} / 10,0`);
   profileText('modal-body-feedback','Consultando correção salva...');
   dialog.showModal();
@@ -275,6 +330,13 @@ function setupDeleteAccountListener() {
 document.addEventListener('DOMContentLoaded',()=>{
   if(!window.api?.getToken()){window.location.replace('login.html');return;}
   setupLanguagePreference();setupDeleteAccountListener();
+  profileNode('profile-history-cycle').addEventListener('change', event => {
+    profileHistoryCycle = event.target.value;
+    profileText('profile-history-status', profileHistoryCycle ? `Exibindo o ciclo ${profileHistoryCycle}.` : 'Exibindo os registros disponíveis de todos os ciclos.');
+    refreshProfileHistory();
+  });
+  profileNode('simulation-history-close').addEventListener('click', () => profileNode('simulation-history-modal').close());
+  profileNode('simulation-history-modal').addEventListener('close', () => historyReviewToken++);
   profileNode('essay-modal').addEventListener('close',()=>correctionLoad++);
   profileNode('refresh-performance').addEventListener('click', loadUserData);
   loadUserData();
