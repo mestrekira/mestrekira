@@ -5,7 +5,7 @@
  const valid=typeof token==='string' && /^[a-f0-9]{64}$/.test(token);
  if(!valid){$('notice').textContent='Abra o link completo que recebeu por e-mail para aceitar o convite.';return;}
  if(window.api?.getToken()){$('accept').hidden=false;$('guest-actions').hidden=true;}
- else $('notice').textContent='Depois de confirmar o cadastro e fazer login, retorne a este convite.';
+ else $('notice').textContent='Crie sua conta com o e-mail convidado, confirme o endereço e faça login. O acesso escolar será reconhecido automaticamente.';
  $('accept').addEventListener('click',async()=>{
   $('accept').disabled=true;
   try{

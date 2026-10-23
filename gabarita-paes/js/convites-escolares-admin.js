@@ -20,16 +20,30 @@
  async function refresh(){
   const data=await request('/school-invites/admin');$('campaign').textContent=`${data.reserved} de ${data.capacity} vagas reservadas. Benefício até 29/11/2026.`;
   $('participants').replaceChildren();for(const item of data.invites){const row=document.createElement('div');row.className='list-row';const text=document.createElement('p');text.textContent=`${item.email} — ${item.acceptedAt?'Convite aceito':'Aguardando aceitação'}`;row.append(text);
-  if(!item.acceptedAt){const button=document.createElement('button');button.type='button';button.className='btn btn-secondary';button.textContent='Gerar novo link';button.addEventListener('click',()=>run(async()=>{if(button.dataset.confirm!=='true'){button.dataset.confirm='true';button.textContent='Confirmar substituição do link anterior';return;}const result=await request(`/school-invites/admin/${encodeURIComponent(item.id)}/reissue`,{});showLinks([result]);notice('Novo link gerado. Guarde-o antes de sair.');}));row.append(button);}$('participants').append(row);}
+  if(!item.acceptedAt){const button=document.createElement('button');button.type='button';button.className='btn btn-secondary';button.textContent='Gerar novo link';button.addEventListener('click',()=>run(async()=>{if(button.dataset.confirm!=='true'){button.dataset.confirm='true';button.textContent='Confirmar substituição do link anterior';return;}const result=await request(`/school-invites/admin/${encodeURIComponent(item.id)}/reissue`,{});showLinks([result]);notice('Novo link gerado. Guarde-o antes de sair.');}));row.append(button);}const send=document.createElement('button');send.type='button';send.className='btn';send.textContent='Enviar convite por e-mail';send.addEventListener('click',()=>run(async()=>{const result=await request(`/school-invites/admin/${encodeURIComponent(item.id)}/send`,{});showLinks([result]);notice(result.message);await refresh();}));row.append(send);$('participants').append(row);}
  }
  $('admin-login').addEventListener('submit',event=>{event.preventDefault();run(async()=>{
  const data=await request('/admin/auth/login',{email:$('admin-email').value,password:$('admin-password').value});$('admin-password').value='';token=data.token;armInactivity();
- $('admin-login').hidden=true;$('admin-panel').hidden=false;notice('Administração conectada. Os links serão gerados sem envio de e-mails.');await refresh();
+ $('admin-login').hidden=true;$('admin-panel').hidden=false;notice('Administração conectada. Revise os destinatários antes de reservar e enviar os convites.');await refresh();
  });});
  $('import').addEventListener('click',()=>run(async()=>{
  const emails=$('emails').value.split(/[\n;,]+/).map(v=>v.trim()).filter(Boolean);
  const data=await request('/school-invites/admin/import',{emails});showLinks(data.created);await refresh();
  notice(`${data.created.length} convites gerados; ${data.alreadyReserved.length} e-mails já estavam reservados. Baixe os links: eles não ficam armazenados em texto aberto no servidor.`);
+ }));
+ $('import-send').addEventListener('click',()=>run(async()=>{
+ const emails=$('emails').value.split(/[\n;,]+/).map(v=>v.trim()).filter(Boolean);
+ const data=await request('/school-invites/admin/import',{emails});
+ const generated=[...data.created];showLinks(generated);
+ let sent=0,failed=0;
+ for(let i=0;i<data.created.length;i++){
+  const item=data.created[i];notice(`Enviando convite ${i+1} de ${data.created.length}… Não feche a página.`);
+  try{const result=await request(`/school-invites/admin/${encodeURIComponent(item.id)}/send`,{});Object.assign(generated[i],result);if(result.sent)sent++;else failed++;}
+  catch(_){failed++;generated[i].url='';}
+  showLinks(generated.filter(v=>v.url));
+  if(i+1<data.created.length)await new Promise(resolve=>setTimeout(resolve,700));
+ }
+ await refresh();notice(`${sent} envios aceitos pelo serviço de e-mail; ${failed} falhas. ${data.alreadyReserved.length} e-mails já estavam reservados: para eles, use o botão de envio na lista. Confira também Spam. Se houver falha de rede, gere um novo link ou reenvie pela lista.`);
  }));
  $('refresh').addEventListener('click',()=>run(refresh));
  $('logout').addEventListener('click',()=>run(async()=>{
