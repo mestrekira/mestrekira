@@ -1,5 +1,59 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#1e3a8a"><title>Assinatura Gabarita Paes | Gabarita Paes</title><link rel="icon" href="/logo1.png"><link rel="stylesheet" href="css/infinitepay-piloto.css?v=20261009-01"><script defer src="js/api.js"></script><script defer src="js/infinitepay-piloto.js?v=20261009-03"></script></head>
-<body data-payment-page="commercial"><header><a class="brand" href="index.html"><img src="/logo1.png" alt="" width="38" height="38">Gabarita Paes</a><a href="index.html">Voltar à plataforma</a></header><main><section class="card" aria-labelledby="page-title"><span class="badge">Acesso integral • 30 dias</span><h1 id="page-title">Assinatura Gabarita Paes</h1><p class="notice"><strong>Pagamento real de R$ 24,99.</strong> Acesso geral gratuito até 21/10/2026. A partir de 22/10, a assinatura libera simulados PAES, redação, ranking e todo o banco ENEM por 30 dias. Os acessos escolares válidos são preservados. Não há renovação automática.</p><p class="notice">O pagamento é processado pela InfinitePay e recebido em nome de <strong>Leildo do Nascimento Gonçalves</strong>, criador e responsável pelo Gabarita Paes. Por isso, esse nome poderá aparecer no checkout e no comprovante. Após a confirmação do pagamento, seu acesso à plataforma será liberado automaticamente.</p><p id="payment-message" class="message" role="status" aria-live="polite">Consultando o backend…</p>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#1e3a8a"><title>Assinatura Gabarita Paes | Gabarita Paes</title><link rel="icon" href="/logo1.png"><link rel="stylesheet" href="css/infinitepay-piloto.css?v=20261009-01"><script defer src="js/api.js"></script><script defer src="js/infinitepay-piloto.js?v=20261009-03"></script><style>
+[hidden]{display:none!important}
+.payment-steps{padding-left:1.4rem;line-height:1.7;color:#334155}
+.payment-steps li{margin:.35rem 0}
+#payment-result.checkout-ready{padding:1.4rem;border:2px solid #1e3a8a;border-radius:14px;background:#f0f5ff;margin:1.5rem 0}
+#payment-next-step{font-size:1.1rem;line-height:1.6;margin:.6rem 0 1rem;color:#172554}
+#payment-open{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:.85rem 1.2rem;box-sizing:border-box;font-weight:700;text-decoration:none;background:#1e3a8a;color:#fff;border-radius:10px;text-align:center;max-width:100%;line-height:1.4}
+#payment-open:hover{background:#172554}
+#payment-open:focus-visible{outline:3px solid #e6a82e;outline-offset:4px}
+#payment-order{overflow-wrap:anywhere}
+#payment-message:empty{display:none}
+@media(max-width:600px){#payment-result.checkout-ready{padding:1rem}#payment-open{width:100%}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head>
+<body data-payment-page="commercial"><header><a class="brand" href="index.html"><img src="/logo1.png" alt="" width="38" height="38">Gabarita Paes</a><a href="index.html">Voltar à plataforma</a></header><main><section class="card" aria-labelledby="page-title"><span class="badge">Acesso integral • 30 dias</span><h1 id="page-title">Assinatura Gabarita Paes</h1><p class="notice"><strong>Pagamento real de R$ 24,99.</strong> A assinatura libera simulados PAES, redação, ranking e todo o banco ENEM por 30 dias. Os acessos escolares válidos são preservados. Não há renovação automática.</p><p class="notice">O pagamento é processado pela InfinitePay e recebido em nome de <strong>Leildo do Nascimento Gonçalves</strong>, criador e responsável pelo Gabarita Paes. Por isso, esse nome poderá aparecer no checkout e no comprovante. Após a confirmação do pagamento, seu acesso à plataforma será liberado automaticamente.</p><p id="payment-message" class="message" role="status" aria-live="polite">Consultando o backend…</p>
 <form id="payment-login" hidden><h2>Entrar com sua conta</h2><p class="small">Use o mesmo login do Gabarita Paes. Você continuará nesta página.</p><label for="payment-email">E-mail</label><input id="payment-email" type="email" autocomplete="username" required><label for="payment-password">Senha</label><input id="payment-password" type="password" autocomplete="current-password" required><div class="actions"><button type="submit">Entrar e continuar</button><a href="recuperar-senha.html">Recuperar senha</a></div></form>
-<label class="consent"><input id="payment-consent" type="checkbox"><span>Entendo que o pagamento é <strong>real, no valor de R$ 24,99</strong>, por 30 dias de acesso integral, sem cobrança automática recorrente.</span></label><button id="payment-create" type="button" disabled>Gerar link de pagamento real</button><div class="actions"><button id="payment-check" class="secondary" type="button">Consultar novamente</button></div><section id="payment-result" class="result" hidden><h2 id="payment-status">Pedido</h2><p id="payment-order" class="order"></p><a id="payment-open" class="button" target="_blank" rel="noopener noreferrer" hidden>Abrir checkout InfinitePay</a><p class="small">Se o pedido já existir, use o mesmo link. Após pagar, clique em “Continuar” no checkout para voltar à página de conferência.</p></section><section id="payment-recovery" class="result" hidden><h2>Recuperar o pedido sem link</h2><p class="notice">Esta ação faz uma nova solicitação de link à InfinitePay. O pedido anterior é mantido. Use somente se não recebeu o link e não efetuou pagamento.</p><label class="consent"><input id="payment-recover-consent" type="checkbox"><span>Confirmo que não recebi o link deste pedido e não efetuei pagamento. Autorizo uma única nova solicitação para recuperar o link.</span></label><button id="payment-recover" type="button" disabled>Recuperar link uma única vez</button></section><noscript><p>Ative o JavaScript para consultar o pagamento.</p></noscript></section></main><footer>Gabarita Paes • Gabarita Paes • Pagamento confirmado no backend.</footer></body></html>
+<section id="payment-result" class="result" hidden><h2 id="payment-status">Pedido</h2><p id="payment-next-step" hidden><strong>Próximo passo: clique no botão abaixo para pagar.</strong><br>O pagamento será concluído no ambiente da InfinitePay, em uma nova aba. Gerar o link ainda não confirma o pagamento.</p><p id="payment-order" class="order"></p><a id="payment-open" class="button" target="_blank" rel="noopener noreferrer" hidden aria-describedby="payment-next-step">Continuar para pagamento na InfinitePay ↗</a><p id="payment-checkout-help" class="small" hidden>Confira o recebedor e o valor de R$ 24,99 na InfinitePay. Após pagar, clique em “Continuar” para retornar à conferência. Se voltar a esta página, use “Já paguei / consultar pagamento”. Não gere outro pedido.</p></section><div id="payment-start"><p class="small">Marque a confirmação e gere o link. Em seguida, clique em <strong>Continuar para pagamento na InfinitePay</strong>.</p><label class="consent"><input id="payment-consent" type="checkbox"><span>Entendo que o pagamento é <strong>real, no valor de R$ 24,99</strong>, por 30 dias de acesso integral, sem cobrança automática recorrente.</span></label><button id="payment-create" type="button" disabled>1. Gerar link para pagar R$ 24,99</button></div><div class="actions"><button id="payment-check" class="secondary" type="button">Consultar novamente</button></div><section id="payment-recovery" class="result" hidden><h2>Recuperar o pedido sem link</h2><p class="notice">Esta ação faz uma nova solicitação de link à InfinitePay. O pedido anterior é mantido. Use somente se não recebeu o link e não efetuou pagamento.</p><label class="consent"><input id="payment-recover-consent" type="checkbox"><span>Confirmo que não recebi o link deste pedido e não efetuei pagamento. Autorizo uma única nova solicitação para recuperar o link.</span></label><button id="payment-recover" type="button" disabled>Recuperar link uma única vez</button></section><noscript><p>Ative o JavaScript para consultar o pagamento.</p></noscript></section></main><footer>Gabarita Paes • Pagamento processado pela InfinitePay.</footer><script>
+// Apenas apresentação: a criação, a validação do link e a confirmação continuam
+// a cargo de js/infinitepay-piloto.js e do backend. Nenhum pagamento é criado aqui.
+(() => {
+  'use strict';
+  function initPaymentGuidance() {
+    const result = document.getElementById('payment-result');
+    const open = document.getElementById('payment-open');
+    const start = document.getElementById('payment-start');
+    const step = document.getElementById('payment-next-step');
+    const check = document.getElementById('payment-check');
+    const help = document.getElementById('payment-checkout-help');
+    let lastLink = '';
+    function sync() {
+      let checkoutReady = false;
+      try {
+        const url = new URL(open.getAttribute('href') || '', location.href);
+        checkoutReady = !result.hidden && !open.hidden && url.protocol === 'https:' &&
+          ['checkout.infinitepay.com.br', 'checkout.infinitepay.io'].includes(url.hostname) &&
+          !url.username && !url.password && !url.port;
+      } catch (_) {}
+      result.classList.toggle('checkout-ready', checkoutReady);
+      step.hidden = !checkoutReady;
+      help.hidden = !checkoutReady;
+      // A cobrança existente permanece sob controle do script de pagamento.
+      start.hidden = !result.hidden;
+      check.textContent = checkoutReady ? 'Já paguei / consultar pagamento' : 'Consultar novamente';
+      if (checkoutReady && open.href !== lastLink) {
+        lastLink = open.href;
+        open.focus({preventScroll:true});
+        result.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',block:'center'});
+      }
+    }
+    const observer = new MutationObserver(sync);
+    observer.observe(result, {attributes:true,attributeFilter:['hidden']});
+    observer.observe(open, {attributes:true,attributeFilter:['hidden','href']});
+    sync();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPaymentGuidance, {once:true});
+  else initPaymentGuidance();
+})();
+</script></body></html>
