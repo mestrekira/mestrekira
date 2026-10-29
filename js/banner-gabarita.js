@@ -7,17 +7,16 @@
   'use strict';
 
   const config = {
-    enabled: true,
-    brand: 'Gabarita Paes',
-    badge: 'Gratuito por tempo limitado',
-    title: 'Vai fazer o PAES UEMA?',
-    description: 'Pratique com simulados inéditos e treine com questões do ENEM, receba feedback de redação por IA e organize sua revisão.',
-    button: 'Criar minha conta',
-    destination: 'https://mestrekira.com.br/gabarita-paes/cadastro.html',
-    logo: 'https://mestrekira.com.br/logo1.png',
-    // Evita divulgação sobre formulários e atividades das próprias plataformas.
-    excludedPaths: ['/gabarita-paes', '/app'],
-  };
+  enabled: true,
+  brand: 'Gabarita Paes',
+  badge: 'Reta final de preparação',
+  title: 'PAES UEMA: transforme seus erros em revisão!',
+  description: 'Descubra o que precisa revisar antes da prova. Faça simulados inéditos, pratique com questões do ENEM e aprimore sua redação com feedback por inteligência artificial. Acesso integral por R$ 24,99 durante 30 dias, sem renovação automática.',
+  button: 'Quero me preparar',
+  destination: 'https://www.mestrekira.com.br/gabarita-paes/cadastro.html',
+  logo: 'https://www.mestrekira.com.br/logo1.png',
+  excludedPaths: ['/gabarita-paes', '/app'],
+};
 
   function render() {
     if (!config.enabled || document.getElementById('mk-gabarita-banner')) return;
