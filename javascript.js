@@ -587,9 +587,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const path = window.location.pathname.toLowerCase();
     if (config.excludedPaths.some(prefix => path === prefix || path.startsWith(prefix + '/'))) return;
 
-    const host = document.createElement('aside');
-    host.id = 'mk-gabarita-banner';
-    host.setAttribute('aria-label', 'Conheça o Gabarita Paes');
+const host = document.createElement('div');
+host.id = 'mk-gabarita-banner';
+host.setAttribute('role', 'complementary');
+host.setAttribute('aria-label', 'Conheça o Gabarita Paes');
     // Isola o visual das regras de imagens, links e títulos do site existente.
     const root = host.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
