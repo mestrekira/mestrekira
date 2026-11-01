@@ -685,27 +685,39 @@ host.setAttribute('aria-label', 'Conheça o Gabarita Paes');
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Card atualizado com os dados do Kit e o seu link de associado
-  const cardProduto = `
-    <div style="display: flex; flex-wrap: wrap; align-items: center; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 32px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-family: sans-serif;">
+  // Estrutura agrupando os dois cards de produtos
+  const cardsProdutos = `
+    <!-- Anúncio 1: Colleen Hoover -->
+    <div style="display: flex; flex-wrap: wrap; align-items: center; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 32px 0 16px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-family: sans-serif;">
       <img src="https://m.media-amazon.com/images/I/71sdFEHoRGL._SY342_.jpg" alt="Kit: É Assim que Acaba + É Assim que Começa" style="width: 100px; min-width: 100px; height: auto; margin-right: 20px; margin-bottom: 10px; border-radius: 4px;">
       <div style="display: flex; flex-direction: column; flex: 1; min-width: 200px;">
         <h3 style="color: #1e3a8a; font-size: 1.2rem; margin: 0 0 8px 0;">Kit: É Assim que Acaba + É Assim que Começa</h3>
-        <p style="color: #555555; font-size: 0.95rem; margin: 0 0 16px 0; line-height: 1.4;">Edição em capa comum de um dos maiores sucessos literários do momento. Ótima opção de leitura para os intervalos de estudo.</p>
-        
+        <p style="color: #555555; font-size: 0.95rem; margin: 0 0 16px 0; line-height: 1.4;">Edição em capa comum de um dos maiores sucessos literários do momento.</p>
         <a href="https://link.amazon/B06PAlgjq" target="_blank" rel="noopener noreferrer" style="background-color: #ff8c00; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; text-align: center; width: fit-content; transition: background-color 0.3s;">
+          Ver na Amazon
+        </a>
+      </div>
+    </div>
+
+    <!-- Anúncio 2: George Orwell -->
+    <div style="display: flex; flex-wrap: wrap; align-items: center; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 0 0 32px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-family: sans-serif;">
+      <img src="https://a.co/d/00PR90iN" alt="Biblioteca George Orwell - Box com 02 Livros" style="width: 100px; min-width: 100px; height: auto; margin-right: 20px; margin-bottom: 10px; border-radius: 4px;">
+      <div style="display: flex; flex-direction: column; flex: 1; min-width: 200px;">
+        <h3 style="color: #1e3a8a; font-size: 1.2rem; margin: 0 0 8px 0;">Biblioteca George Orwell - Box com 02 Livros</h3>
+        <p style="color: #555555; font-size: 0.95rem; margin: 0 0 16px 0; line-height: 1.4;">Edição de luxo em capa dura. Clássico essencial para repertório de redação e análises críticas.</p>
+        <a href="https://link.amazon/B0gkcJprG" target="_blank" rel="noopener noreferrer" style="background-color: #ff8c00; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; text-align: center; width: fit-content; transition: background-color 0.3s;">
           Ver na Amazon
         </a>
       </div>
     </div>
   `;
 
-  // Seleciona os parágrafos do artigo (ajuste 'article p' para a classe correta do seu layout)
+  // Seleciona os parágrafos do artigo
   const paragrafos = document.querySelectorAll('article p');
 
-  // Injeta o anúncio no meio do texto apenas se houver mais de 3 parágrafos
+  // Injeta os dois anúncios juntos no meio do texto
   if (paragrafos.length > 3) {
     const meioDoTexto = Math.floor(paragrafos.length / 2);
-    paragrafos[meioDoTexto].insertAdjacentHTML('afterend', cardProduto);
+    paragrafos[meioDoTexto].insertAdjacentHTML('afterend', cardsProdutos);
   }
 });
