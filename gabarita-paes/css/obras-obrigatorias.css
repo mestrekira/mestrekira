@@ -582,3 +582,12 @@
     padding: 1.15rem;
   }
 }
+
+/* Mantém o conteúdo oculto até a autorização do backend. */
+html:not([data-obras-access="granted"]) main {
+  display: none !important;
+}
+
+#obras-access-message[hidden] {
+  display: none !important;
+}
