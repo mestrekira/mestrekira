@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Obras Obrigatórias PAES UEMA 2027 | Gabarita PAES</title>
+  <title>Obras Obrigatórias — PAES UEMA 2027 | Gabarita PAES</title>
   <meta name="theme-color" content="#1b2d59">
   <link rel="icon" href="../logo1.png">
   <link rel="stylesheet" href="css/gabarita.css">
@@ -18,10 +18,10 @@
     <a href="index.html" class="brand"><img class="brand-logo" src="../logo1.png" width="44" height="44" alt=""><span class="brand-copy"><strong>Gabarita PAES</strong><small>por Mestre Kira</small></span></a>
     <nav class="nav-links" aria-label="Seções do Gabarita PAES">
       <a href="index.html">Início</a>
+      <a href="obras-obrigatorias.html" class="active" aria-current="page">Obras Obrigatórias</a>
       <a href="simulado.html">Simulado (60Q)</a>
       <a href="treino-enem.html">Treino ENEM</a>
       <a href="redacao.html">Redação UEMA</a>
-      <a href="obras-obrigatorias.html" class="active" aria-current="page">Obras obrigatórias</a>
       <a href="ranking.html">Classificação</a>
       <a href="perfil.html">Meu Perfil</a>
     </nav>
@@ -31,114 +31,103 @@
     </div>
   </header>
 
-  <main class="container" id="main-content">
-    <section id="account-access" class="card account-access" data-access-page="home" aria-label="Situação do seu acesso" aria-live="polite" hidden></section>
+  <main class="obras-container" id="main-content">
+    <nav class="obras-breadcrumb" aria-label="Navegação estrutural">
+      <a href="index.html">Início</a>
+      <span>/</span>
+      <span aria-current="page">Obras Obrigatórias — PAES UEMA 2027</span>
+    </nav>
 
     <header class="obras-hero">
-      <span class="obras-hero-badge">PAES UEMA 2027 · Literatura & Interpretação</span>
-      <h1 class="obras-hero-title">Obras Obrigatórias — PAES UEMA 2027</h1>
-      <p class="obras-hero-subtitle">
-        Estudo aprofundado, análise estética e prática interpretativa das três obras literárias exigidas pelo vestibular da Universidade Estadual do Maranhão: crônicas, memórias e poesia de matriz popular.
+      <span class="badge">Leituras Oficiais • Processo Seletivo UEMA 2027</span>
+      <h1>Obras Obrigatórias — PAES UEMA 2027</h1>
+      <p>
+        Preparação literária completa com rigor analítico, fidelidade às obras integrais, leituras guiadas e banco de 30 questões inéditas comentadas para gabaritar a prova de Língua Portuguesa e Literatura e fundamentar sua redação.
       </p>
     </header>
 
-    <div class="obras-notice-card" role="note">
-      <div class="obras-notice-icon">💡</div>
-      <div class="obras-notice-content">
-        <h4>Como funciona este ambiente de estudo</h4>
-        <p>
-          Aqui você encontra sínteses críticas, eixos temáticos comentados, leituras guiadas com análise de recursos linguísticos, questões inéditas de fixação e conexões com a prova de Redação. 
-          <strong>Nota de privacidade e treino:</strong> seu progresso nas questões é salvo individualmente na memória do seu navegador (armazenamento local) e não interfere na sua pontuação no Simulado Oficial nem na classificação geral da plataforma.
-        </p>
-      </div>
+    <nav class="obras-nav-pills" aria-label="Navegação rápida entre obras">
+      <a href="obras-obrigatorias.html" class="active">Visão Geral</a>
+      <a href="obra-lucy-teixeira.html">Crônicas de Lucy Teixeira</a>
+      <a href="obra-infancia.html">Infância (Graciliano Ramos)</a>
+      <a href="obra-meu-livro-de-cordel.html">Meu livro de cordel (Cora Coralina)</a>
+      <a href="obras-comparativo.html">Módulo Comparativo</a>
+    </nav>
+
+    <!-- Cards das Três Obras + Módulo Comparativo -->
+    <div class="obras-card-grid">
+      <!-- Card Lucy Teixeira -->
+      <article class="obra-item-card">
+        <div>
+          <span class="obra-genre">Crônica Literária • Literatura Maranhense</span>
+          <h2>Crônicas de Lucy Teixeira</h2>
+          <div class="obra-author">Lucy Teixeira (Org. Ceres Costa Fernandes)</div>
+          <p>
+            Coletânea de 118 crônicas publicadas em 1947 no <em>Diário de S. Luiz</em>. Flânerie lírica pela Ilha do Maranhão, ironia sobre o patriarcado provinciano e afirmação pioneira da autoria feminina.
+          </p>
+        </div>
+        <a href="obra-lucy-teixeira.html" class="btn" style="width: 100%; justify-content: center;">Acessar Módulo Completo →</a>
+      </article>
+
+      <!-- Card Infância -->
+      <article class="obra-item-card">
+        <div>
+          <span class="obra-genre">Memórias Literárias • Geração de 30</span>
+          <h2>Infância</h2>
+          <div class="obra-author">Graciliano Ramos</div>
+          <p>
+            Reconstrução memorialística rigorosa e despojada da infância sertaneja. O autoritarismo familiar, a escola opressora, a descoberta dolorosa da leitura e a crítica ao compadrio oligárquico.
+          </p>
+        </div>
+        <a href="obra-infancia.html" class="btn" style="width: 100%; justify-content: center;">Acessar Módulo Completo →</a>
+      </article>
+
+      <!-- Card Cora Coralina -->
+      <article class="obra-item-card">
+        <div>
+          <span class="obra-genre">Poesia & Literatura Popular de Cordel</span>
+          <h2>Meu livro de cordel</h2>
+          <div class="obra-author">Cora Coralina</div>
+          <p>
+            Apropriação livre e afetiva da cantoria popular. A exaltação do trabalho braçal da mulher doceira e lavadeira, a denúncia das chagas sociais da infância e a poética da "palavra pobre".
+          </p>
+        </div>
+        <a href="obra-meu-livro-de-cordel.html" class="btn" style="width: 100%; justify-content: center;">Acessar Módulo Completo →</a>
+      </article>
+
+      <!-- Card Módulo Comparativo -->
+      <article class="obra-item-card" style="border: 2px dashed var(--obras-accent); background: #fdfefe;">
+        <div>
+          <span class="obra-genre" style="background: #e0e7ff; color: var(--obras-primary);">Intertextualidade • Estudo Transversal</span>
+          <h2>Módulo Comparativo: As Três Obras</h2>
+          <div class="obra-author">Análise Integrada para o PAES UEMA</div>
+          <p>
+            Quadro sinóptico em 6 dimensões e 6 questões comparativas abordando memória, trabalho, espaço, relações de poder e estratégias de linguagem das três vozes literárias.
+          </p>
+        </div>
+        <a href="obras-comparativo.html" class="btn btn-secondary" style="width: 100%; justify-content: center; background: #e0e7ff; color: var(--obras-primary);">Explorar Comparativo →</a>
+      </article>
     </div>
 
-    <section aria-labelledby="sec-obras-individuais">
-      <h2 id="sec-obras-individuais" class="sr-only">Módulos das Obras Individuais</h2>
-      <div class="obras-grid">
-
-        <!-- Card 1: Lucy Teixeira -->
-        <article class="obras-card">
-          <div class="obras-card-header">
-            <span class="obras-genre-tag">Crônica Ludovicense · 1947</span>
-            <h3 class="obras-card-title">Crônicas de Lucy Teixeira</h3>
-            <p class="obras-card-author">Lucy Teixeira (Org. Ceres Costa Fernandes)</p>
-            <p class="obras-card-desc">
-              Painel lírico e social da São Luís do pós-guerra. A autora transforma cenas do cotidiano urbano, bondes, praças e tipos populares anônimos em profunda reflexão sobre memória, tempo e dignidade humana.
-            </p>
-          </div>
-          <div>
-            <div class="obras-card-stats">
-              <span>8 questões comentadas</span>
-              <span class="obras-stat-badge">2 temas de redação</span>
-            </div>
-            <a href="obra-lucy-teixeira.html" class="btn" style="width: 100%; justify-content: center;">
-              Acessar Módulo da Obra →
-            </a>
-          </div>
-        </article>
-
-        <!-- Card 2: Graciliano Ramos -->
-        <article class="obras-card">
-          <div class="obras-card-header">
-            <span class="obras-genre-tag">Memórias · Geração de 30</span>
-            <h3 class="obras-card-title">Infância</h3>
-            <p class="obras-card-author">Graciliano Ramos</p>
-            <p class="obras-card-desc">
-              Reconstrução psicológica rigorosa e desmistificadora dos primeiros anos no sertão nordestino. Uma investigação sobre autoritarismo familiar, o medo como ordenador social e o poder libertador da palavra escrita.
-            </p>
-          </div>
-          <div>
-            <div class="obras-card-stats">
-              <span>8 questões comentadas</span>
-              <span class="obras-stat-badge">2 temas de redação</span>
-            </div>
-            <a href="obra-infancia.html" class="btn" style="width: 100%; justify-content: center;">
-              Acessar Módulo da Obra →
-            </a>
-          </div>
-        </article>
-
-        <!-- Card 3: Cora Coralina -->
-        <article class="obras-card">
-          <div class="obras-card-header">
-            <span class="obras-genre-tag">Poesia · Matriz Popular</span>
-            <h3 class="obras-card-title">Meu livro de cordel</h3>
-            <p class="obras-card-author">Cora Coralina</p>
-            <p class="obras-card-desc">
-              Poética da terra, do trabalho manual e da voz das mulheres simples de Goiás. Celebração da oralidade, das pedras como matéria de resistência e da dignidade encontrada nas tarefas cotidianas.
-            </p>
-          </div>
-          <div>
-            <div class="obras-card-stats">
-              <span>8 questões comentadas</span>
-              <span class="obras-stat-badge">2 temas de redação</span>
-            </div>
-            <a href="obra-meu-livro-de-cordel.html" class="btn" style="width: 100%; justify-content: center;">
-              Acessar Módulo da Obra →
-            </a>
-          </div>
-        </article>
-
-        <!-- Card Especial: Módulo Comparativo -->
-        <article class="obras-card obras-card-comparativo">
-          <div style="max-width: 650px;">
-            <span class="obras-genre-tag" style="background: #e0e7ff; color: #3730a3;">Análise Intertextual</span>
-            <h3 class="obras-card-title" style="margin-top: 0.4rem;">Módulo Comparativo: Relações Entre as Obras</h3>
-            <p class="obras-card-desc" style="margin-bottom: 0.5rem;">
-              Compare as três obras nos eixos de <strong>memória, trabalho, cotidiano, autoritarismo e representação feminina</strong>. Entenda como gêneros distintos (crônica jornalística, narrativa memorialística e lírica de tom popular) dialogam sem forçar equivalências temáticas artificiais.
-            </p>
-            <div style="font-size: 0.88rem; color: var(--obras-neutral-600); margin-top: 0.5rem;">
-              Quadro sinóptico detalhado + <strong>6 questões comparativas</strong> inéditas com resolução justificada.
-            </div>
-          </div>
-          <div>
-            <a href="obras-comparativo.html" class="btn btn-secondary" style="background: #1b2d59; color: #ffffff; padding: 0.75rem 1.5rem; white-space: nowrap;">
-              Explorar Comparativo →
-            </a>
-          </div>
-        </article>
-
+    <!-- Seção de Metodologia -->
+    <section class="pedagogical-section">
+      <div class="section-header">
+        <h2>Metodologia de Estudo Baseada na Prova da UEMA</h2>
+        <p>Como aproveitar ao máximo os módulos de obras do Gabarita PAES</p>
+      </div>
+      <div class="axis-grid">
+        <div class="axis-card">
+          <h3>1. Análise Fiel ao Texto</h3>
+          <p>Trechos e episódios conferidos diretamente nos livros oficiais indicados pela banca, evitando generalizações biográficas e resumos simplificadores de internet.</p>
+        </div>
+        <div class="axis-card">
+          <h3>2. Foco em Efeitos de Sentido</h3>
+          <p>Investigação de ironia, escolhas lexicais, foco narrativo, recursos expressivos e relações entre forma e conteúdo cobradas no vestibular.</p>
+        </div>
+        <div class="axis-card">
+          <h3>3. Conexão Leitura-Redação</h3>
+          <p>Exercícios práticos para transpor situações literárias concretas em argumentos fundamentados e produtivos para a proposta de produção textual da UEMA.</p>
+        </div>
       </div>
     </section>
   </main>
