@@ -1,7 +1,4 @@
-/**
- * Gabarita PAES — Obras Obrigatórias
- * Autorização pelo backend, exercícios e autoavaliação.
- */
+
 (function () {
   'use strict';
 
