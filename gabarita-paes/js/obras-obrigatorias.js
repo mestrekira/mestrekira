@@ -1,274 +1,321 @@
 /**
- * Obras Obrigatórias - PAES UEMA 2027
- * Gerenciamento de estado, acessibilidade e interatividade pedagógica
- * Isolado no navegador (localStorage) sem impacto em notas de simulados ou backend
+ * Gabarita PAES - Seção Obras Obrigatórias (PAES UEMA 2027)
+ * Controle de Autenticação, Interface e Motor Universal de Questões
  */
 
 (function () {
   'use strict';
 
-  function getCurrentUserId() {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return user.id || user.email || (user.name ? user.name.trim().toLowerCase().replace(/\s+/g, '_') : 'aluno_padrao');
-      }
-    } catch (e) {
-      console.warn('Erro ao acessar dados de usuário no localStorage:', e);
-    }
-    return 'aluno_padrao';
-  }
-
-  function getStorageKey(moduleId) {
-    return `gabarita_obras_${getCurrentUserId()}_${moduleId}`;
-  }
-
-  function loadModuleProgress(moduleId) {
-    try {
-      const saved = localStorage.getItem(getStorageKey(moduleId));
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error('Falha ao ler progresso do módulo:', e);
-    }
-    return { answeredCount: 0, correctCount: 0, answers: {} };
-  }
-
-  function saveModuleProgress(moduleId, progressData) {
-    try {
-      localStorage.setItem(getStorageKey(moduleId), JSON.stringify(progressData));
-    } catch (e) {
-      console.error('Falha ao salvar progresso no localStorage:', e);
-    }
-  }
-
-  window.initObrasPage = function () {
+  // 1. Verificação de Autenticação e Usuário
+  function inicializarAutenticacao() {
     if (window.api && typeof window.api.getToken === 'function') {
-      if (!window.api.getToken()) {
+      const token = window.api.getToken();
+      if (!token) {
         window.location.href = 'login.html';
         return;
       }
     }
+
     try {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
         if (user && user.name) {
           const userEl = document.getElementById('user-name');
-          if (userEl) userEl.innerText = `👤 ${user.name.split(' ')[0]}`;
+          if (userEl) {
+            userEl.innerText = `👤 ${user.name.split(' ')[0]}`;
+          }
         }
       }
     } catch (e) {
-      console.warn('Erro ao carregar nome do usuário:', e);
+      console.warn('Erro ao processar dados de usuário do localStorage:', e);
     }
-  };
+  }
 
-  window.initObrasQuiz = function (moduleId, questionsList) {
-    const container = document.getElementById(`quiz-container-${moduleId}`);
-    const statsContainer = document.getElementById(`quiz-stats-${moduleId}`);
-    if (!container) return;
+  function getUserId() {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.id || user.email || 'anonimo';
+      }
+    } catch (e) {}
+    return 'padrao';
+  }
 
-    let progress = loadModuleProgress(moduleId);
+  // 2. Motor de Questões para Elementos no DOM
+  function inicializarQuizParaContainer(quizContainer, moduleId) {
+    if (!quizContainer) return;
 
-    function updateStatsDisplay() {
-      if (!statsContainer) return;
-      const total = questionsList.length;
-      const answered = Object.keys(progress.answers).length;
-      const correct = Object.values(progress.answers).filter(a => a.isCorrect).length;
-      const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+    const userId = getUserId();
+    const storageKey = `gabarita_obras_${userId}_${moduleId}`;
 
-      statsContainer.innerHTML = `
-        <div class="obras-quiz-header" role="region" aria-label="Resumo do seu progresso">
-          <div class="obras-quiz-status">
-            <div class="obras-quiz-stat-item">
-              <span class="obras-quiz-stat-label">Respondidas</span>
-              <span class="obras-quiz-stat-val">${answered} de ${total}</span>
-            </div>
-            <div class="obras-quiz-stat-item">
-              <span class="obras-quiz-stat-label">Acertos</span>
-              <span class="obras-quiz-stat-val">${correct} (${percent}%)</span>
-            </div>
-          </div>
-          <div>
-            <button type="button" class="btn btn-secondary" id="btn-reset-${moduleId}" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;" aria-label="Reiniciar respostas deste módulo">
-              🔄 Refazer questões
-            </button>
-          </div>
-        </div>
-      `;
+    const questionBlocks = quizContainer.querySelectorAll('.question-block');
+    const totalQuestions = questionBlocks.length;
+    const scoreBadge = document.getElementById('quiz-score-badge') || document.getElementById(`quiz-stats-${moduleId}`);
+    const resetBtn = document.getElementById('btn-reset-quiz') || document.getElementById(`btn-reset-${moduleId}`);
 
-      const resetBtn = document.getElementById(`btn-reset-${moduleId}`);
-      if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-          if (confirm('Deseja reiniciar suas tentativas neste módulo? Suas marcações atuais serão limpas para novo treino.')) {
-            progress = { answeredCount: 0, correctCount: 0, answers: {} };
-            saveModuleProgress(moduleId, progress);
-            renderAllQuestions();
+    let savedState = {};
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) savedState = JSON.parse(raw);
+    } catch (e) {
+      savedState = {};
+    }
+
+    function atualizarPlacar() {
+      if (!scoreBadge) return;
+      const respondidas = Object.keys(savedState).length;
+      let acertos = 0;
+      for (const qId in savedState) {
+        if (savedState[qId].isCorrect) acertos++;
+      }
+      scoreBadge.innerHTML = `<strong>${respondidas} de ${totalQuestions} respondidas | ${acertos} acerto(s)</strong>`;
+    }
+
+    questionBlocks.forEach((block) => {
+      const qId = block.getAttribute('data-question-id');
+      const correctKey = block.getAttribute('data-correct-answer');
+      const radioInputs = block.querySelectorAll(`input[name="q_${qId}"]`);
+      const checkBtn = block.querySelector('.btn-check-answer');
+      const feedbackBox = block.querySelector('.question-feedback');
+      const warningEl = block.querySelector('.selection-warning');
+
+      if (savedState[qId]) {
+        const savedAnswer = savedState[qId].chosen;
+        radioInputs.forEach((input) => {
+          if (input.value === savedAnswer) {
+            input.checked = true;
           }
+          input.disabled = true;
         });
-      }
-    }
 
-    function renderQuestion(q, index) {
-      const qId = q.id;
-      const savedAns = progress.answers[qId];
-      const isAnswered = !!savedAns;
-
-      const qCard = document.createElement('article');
-      qCard.className = 'obras-question-card';
-      qCard.id = `q-card-${qId}`;
-
-      let html = `
-        <div class="obras-q-meta">
-          <span class="obras-q-number" id="q-title-${qId}">Questão ${index + 1} de ${questionsList.length}</span>
-          <span class="obras-q-skill">Habilidade: ${q.habilidade}</span>
-        </div>
-        <div class="obras-q-ref">
-          <strong>Referência textual:</strong> ${q.referencia}
-        </div>
-        <div class="obras-q-statement">
-          ${q.enunciado}
-        </div>
-        <fieldset class="obras-options-list">
-          <legend class="sr-only">Alternativas da Questão ${index + 1}</legend>
-      `;
-
-      const letters = ['A', 'B', 'C', 'D', 'E'];
-      q.alternativas.forEach((alt, idx) => {
-        const letter = letters[idx];
-        const isSelected = isAnswered && savedAns.selected === letter;
-        const isCorrectChoice = isAnswered && letter === q.gabarito;
-        const isWrongChoice = isAnswered && isSelected && !isCorrectChoice;
-
-        let labelClass = 'obras-option-label';
-        let statusBadge = '';
-
-        if (isAnswered) {
-          if (isCorrectChoice) {
-            labelClass += ' is-correct';
-            statusBadge = '<span class="obras-status-badge correct">✔ Correto</span>';
-          } else if (isWrongChoice) {
-            labelClass += ' is-incorrect';
-            statusBadge = '<span class="obras-status-badge incorrect">✖ Incorreto</span>';
-          }
+        if (checkBtn) {
+          checkBtn.disabled = true;
+          checkBtn.innerText = 'Resposta Registrada';
         }
 
-        html += `
-          <label class="${labelClass}">
-            <input type="radio" name="opt-${qId}" value="${letter}" ${isSelected ? 'checked' : ''} ${isAnswered ? 'disabled' : ''}>
-            <span class="obras-option-text">
-              <strong class="obras-option-letter">(${letter})</strong> ${alt.texto}
-            </span>
-            ${statusBadge}
-          </label>
-        `;
-      });
-
-      html += `</fieldset>`;
-
-      if (!isAnswered) {
-        html += `
-          <div style="margin-top: 1.25rem;">
-            <button type="button" class="btn" id="btn-check-${qId}" style="padding: 0.55rem 1.25rem;">
-              Conferir resposta
-            </button>
-            <span id="msg-warn-${qId}" style="margin-left: 0.75rem; color: #b91c1c; font-size: 0.88rem; display: none;" role="alert">
-              ⚠️ Selecione uma alternativa antes de conferir.
-            </span>
-          </div>
-        `;
+        destacarOpcoes(block, savedAnswer, correctKey);
+        if (feedbackBox) {
+          feedbackBox.hidden = false;
+        }
       }
 
-      html += `
-        <div class="obras-commentary-box ${isAnswered ? 'is-visible' : ''}" id="comm-${qId}">
-          <h5 class="obras-commentary-title">Justificativa e Análise Pedagógica</h5>
-          <div class="obras-correct-reason">
-            <strong>Gabarito Oficial: Alternativa (${q.gabarito})</strong><br>
-            ${q.explicacaoGabarito}
-          </div>
-          <div class="obras-distractors-list">
-            <strong>Por que as outras alternativas estão incorretas:</strong>
-            <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
-      `;
+      if (checkBtn) {
+        checkBtn.onclick = function () {
+          let selectedValue = null;
+          radioInputs.forEach((r) => {
+            if (r.checked) selectedValue = r.value;
+          });
 
-      letters.forEach((l, i) => {
-        if (l !== q.gabarito && q.alternativas[i]) {
-          html += `<li class="obras-distractor-item"><strong>(${l}):</strong> ${q.alternativas[i].explicacaoErro}</li>`;
-        }
-      });
-
-      html += `
-            </ul>
-          </div>
-          <div style="margin-top: 0.85rem; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 0.5rem;">
-            <strong>Tema de revisão:</strong> ${q.temaRevisao} · <em>Questão autoral de preparação para o PAES UEMA 2027.</em>
-          </div>
-        </div>
-      `;
-
-      qCard.innerHTML = html;
-
-      if (!isAnswered) {
-        const checkBtn = qCard.querySelector(`#btn-check-${qId}`);
-        const warnMsg = qCard.querySelector(`#msg-warn-${qId}`);
-
-        checkBtn.addEventListener('click', () => {
-          const selectedRadio = qCard.querySelector(`input[name="opt-${qId}"]:checked`);
-          if (!selectedRadio) {
-            warnMsg.style.display = 'inline';
+          if (!selectedValue) {
+            if (warningEl) {
+              warningEl.hidden = false;
+            } else {
+              alert('Por favor, selecione uma alternativa antes de conferir.');
+            }
             return;
           }
-          warnMsg.style.display = 'none';
 
-          const chosenLetter = selectedRadio.value;
-          progress.answers[qId] = {
-            selected: chosenLetter,
-            isCorrect: chosenLetter === q.gabarito
+          if (warningEl) warningEl.hidden = true;
+
+          const isCorrect = selectedValue === correctKey;
+
+          radioInputs.forEach((input) => {
+            input.disabled = true;
+          });
+          checkBtn.disabled = true;
+          checkBtn.innerText = 'Resposta Registrada';
+
+          savedState[qId] = {
+            chosen: selectedValue,
+            isCorrect: isCorrect,
+            timestamp: new Date().toISOString()
           };
-          saveModuleProgress(moduleId, progress);
 
-          const updatedCard = renderQuestion(q, index);
-          qCard.replaceWith(updatedCard);
-          updateStatsDisplay();
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(savedState));
+          } catch (e) {}
 
-          const comm = document.getElementById(`comm-${qId}`);
-          if (comm) {
-            comm.setAttribute('tabindex', '-1');
-            comm.focus();
+          destacarOpcoes(block, selectedValue, correctKey);
+          if (feedbackBox) {
+            feedbackBox.hidden = false;
           }
-        });
+
+          atualizarPlacar();
+        };
       }
+    });
 
-      return qCard;
-    }
+    function destacarOpcoes(block, chosenVal, correctVal) {
+      const labels = block.querySelectorAll('.option-label');
+      labels.forEach((lbl) => {
+        const radio = lbl.querySelector('input[type="radio"]');
+        if (!radio) return;
+        const val = radio.value;
 
-    function renderAllQuestions() {
-      container.innerHTML = '';
-      updateStatsDisplay();
-      questionsList.forEach((q, idx) => {
-        container.appendChild(renderQuestion(q, idx));
+        lbl.classList.remove('is-correct', 'is-wrong');
+
+        if (val === correctVal) {
+          lbl.classList.add('is-correct');
+          if (!lbl.querySelector('.answer-indicator')) {
+            const ind = document.createElement('span');
+            ind.className = 'answer-indicator';
+            ind.style.marginLeft = 'auto';
+            ind.style.fontWeight = '700';
+            ind.style.color = '#059669';
+            ind.innerText = ' [✓ Gabarito]';
+            lbl.appendChild(ind);
+          }
+        }
+
+        if (val === chosenVal && val !== correctVal) {
+          lbl.classList.add('is-wrong');
+          if (!lbl.querySelector('.answer-indicator')) {
+            const ind = document.createElement('span');
+            ind.className = 'answer-indicator';
+            ind.style.marginLeft = 'auto';
+            ind.style.fontWeight = '700';
+            ind.style.color = '#dc2626';
+            ind.innerText = ' [✗ Sua escolha]';
+            lbl.appendChild(ind);
+          }
+        }
       });
     }
 
-    renderAllQuestions();
+    if (resetBtn) {
+      resetBtn.onclick = function () {
+        if (!confirm('Deseja refazer todas as questões deste módulo? Seu histórico local será reiniciado.')) {
+          return;
+        }
+
+        try {
+          localStorage.removeItem(storageKey);
+        } catch (e) {}
+        savedState = {};
+
+        questionBlocks.forEach((block) => {
+          const qId = block.getAttribute('data-question-id');
+          const radioInputs = block.querySelectorAll(`input[name="q_${qId}"]`);
+          const checkBtn = block.querySelector('.btn-check-answer');
+          const feedbackBox = block.querySelector('.question-feedback');
+          const warningEl = block.querySelector('.selection-warning');
+          const labels = block.querySelectorAll('.option-label');
+
+          radioInputs.forEach((input) => {
+            input.checked = false;
+            input.disabled = false;
+          });
+
+          labels.forEach((lbl) => {
+            lbl.classList.remove('is-correct', 'is-wrong');
+            const ind = lbl.querySelector('.answer-indicator');
+            if (ind) ind.remove();
+          });
+
+          if (checkBtn) {
+            checkBtn.disabled = false;
+            checkBtn.innerText = 'Conferir Resposta';
+          }
+
+          if (feedbackBox) {
+            feedbackBox.hidden = true;
+          }
+
+          if (warningEl) {
+            warningEl.hidden = true;
+          }
+        });
+
+        atualizarPlacar();
+      };
+    }
+
+    atualizarPlacar();
+  }
+
+  // 3. API Dinâmica: window.initObrasQuiz (para módulos que passam dados em array)
+  window.initObrasQuiz = function (moduleId, questions) {
+    const targetEl = document.getElementById(`quiz-container-${moduleId}`) || document.querySelector('[data-quiz-module]');
+    if (!targetEl || !Array.isArray(questions)) return;
+
+    let html = '';
+    questions.forEach((q, index) => {
+      const qNum = index + 1;
+      html += `
+        <article class="question-block" data-question-id="${q.id}" data-correct-answer="${q.gabarito}">
+          <div class="question-meta-tags">
+            <span class="tag">Questão ${qNum}</span>
+            <span class="tag">${q.referencia || ''}</span>
+            <span class="tag">Habilidade: ${q.habilidade || ''}</span>
+          </div>
+          <p class="question-text">${q.enunciado}</p>
+          <div class="options-group">
+            ${q.alternativas.map(alt => `
+              <label class="option-label">
+                <input type="radio" name="q_${q.id}" value="${alt.letra}">
+                <span><strong>${alt.letra})</strong> ${alt.texto}</span>
+              </label>
+            `).join('')}
+          </div>
+          <button type="button" class="btn btn-check-answer" style="padding: 0.5rem 1rem;">Conferir Resposta</button>
+          <div class="selection-warning" style="color: #dc2626; font-size: 0.85rem; margin-top: 0.5rem;" hidden>⚠️ Selecione uma alternativa antes de conferir.</div>
+
+          <div class="question-feedback" hidden>
+            <div class="feedback-status correct">Gabarito: ${q.gabarito}</div>
+            <div class="feedback-body">
+              <h4>Análise da Alternativa Correta</h4>
+              <p>${q.explicacaoGabarito}</p>
+              <div class="feedback-distractors">
+                <h4>Por que os outros distratores estão incorretos?</h4>
+                <ul>
+                  ${q.alternativas.filter(alt => alt.letra !== q.gabarito).map(alt => `
+                    <li><strong>${alt.letra}:</strong> ${alt.explicacaoErro}</li>
+                  `).join('')}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </article>
+      `;
+    });
+
+    targetEl.innerHTML = html;
+    inicializarQuizParaContainer(targetEl, moduleId);
   };
 
-  window.toggleObrasCriteria = function (btnElement, contentId) {
-    const box = document.getElementById(contentId);
-    if (!box) return;
-    const isOpen = box.classList.contains('is-open');
-    if (isOpen) {
-      box.classList.remove('is-open');
-      btnElement.setAttribute('aria-expanded', 'false');
-      btnElement.innerText = 'Ver resposta esperada e critérios';
-    } else {
-      box.classList.add('is-open');
-      btnElement.setAttribute('aria-expanded', 'true');
-      btnElement.innerText = 'Ocultar critérios de avaliação';
-    }
-  };
+  // 4. Inicialização de Módulos Estáticos
+  function inicializarQuizesEstaticos() {
+    const staticContainers = document.querySelectorAll('[data-quiz-module]');
+    staticContainers.forEach((container) => {
+      const moduleId = container.getAttribute('data-quiz-module');
+      inicializarQuizParaContainer(container, moduleId);
+    });
+  }
+
+  // 5. Critérios de Redação com Autoavaliação (Drawer Toggle)
+  function inicializarDrawersRedacao() {
+    const toggleButtons = document.querySelectorAll('.btn-toggle-criteria');
+    toggleButtons.forEach((btn) => {
+      btn.onclick = function () {
+        const targetId = btn.getAttribute('data-target');
+        const drawer = document.getElementById(targetId);
+        if (!drawer) return;
+
+        const isHidden = drawer.hidden;
+        drawer.hidden = !isHidden;
+        btn.setAttribute('aria-expanded', String(isHidden));
+        btn.innerText = isHidden
+          ? 'Ocultar Resposta-Modelo e Critérios ▲'
+          : 'Ver Resposta-Modelo e Critérios de Autoavaliação ▼';
+      };
+    });
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
-    window.initObrasPage();
+    inicializarAutenticacao();
+    inicializarQuizesEstaticos();
+    inicializarDrawersRedacao();
   });
 })();
