@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crônicas de Lucy Teixeira | Gabarita PAES</title>
+  <meta name="theme-color" content="#1b2d59">
+  <link rel="icon" href="../logo1.png">
+  <link rel="stylesheet" href="css/gabarita.css">
+  <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
+  <link rel="stylesheet" href="css/acesso-conta.css?v=20260930-01">
+  <link rel="stylesheet" href="css/obras-obrigatorias.css">
+</head>
+<body class="gabarita-theme">
+  <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
+
+  <header class="header">
+    <a href="index.html" class="brand"><img class="brand-logo" src="../logo1.png" width="44" height="44" alt=""><span class="brand-copy"><strong>Gabarita PAES</strong><small>por Mestre Kira</small></span></a>
+    <nav class="nav-links" aria-label="Seções do Gabarita PAES">
+      <a href="index.html">Início</a>
+      <a href="simulado.html">Simulado (60Q)</a>
+      <a href="treino-enem.html">Treino ENEM</a>
+      <a href="redacao.html">Redação UEMA</a>
+      <a href="obras-obrigatorias.html" class="active" aria-current="page">Obras obrigatórias</a>
+      <a href="ranking.html">Classificação</a>
+      <a href="perfil.html">Meu Perfil</a>
+    </nav>
+    <div id="user-menu" style="display: flex; align-items: center; gap: 0.75rem;">
+      <a href="perfil.html" id="user-name" style="text-decoration: none; font-weight: 600; font-size: 0.9rem; color: var(--primary);">👤 Aluno</a>
+      <button onclick="window.api.logout()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">Sair</button>
+    </div>
+  </header>
+
+  <main class="container" id="main-content">
+    <section id="account-access" class="card account-access" data-access-page="home" aria-label="Situação do seu acesso" aria-live="polite" hidden></section>
+
+    <nav class="obras-subnav" aria-label="Navegação estrutural">
+      <a href="obras-obrigatorias.html">← Voltar para Obras Obrigatórias</a>
+      <span aria-hidden="true">/</span>
+      <span>Crônicas de Lucy Teixeira</span>
+    </nav>
+
+    <header class="obras-hero">
+      <span class="obras-hero-badge">PAES UEMA 2027 · Crônica e Modernismo Maranhense</span>
+      <h1 class="obras-hero-title">Crônicas de Lucy Teixeira</h1>
+      <p class="obras-hero-subtitle">
+        Autora: Lucy Teixeira · Organização: Ceres Costa Fernandes (Edições AML) · São Luís, 1947
+      </p>
+    </header>
+
+    <section class="obras-section" id="entenda-a-obra" aria-labelledby="title-entenda">
+      <h2 class="obras-section-title" id="title-entenda">📖 Entenda a Obra</h2>
+      <div class="obras-content-text">
+        <p>
+          Publicadas originalmente ao longo do ano de 1947 nas páginas do jornal maranhense <em>O Imparcial</em> (algumas assinadas sob o pseudônimo de Maria Karla), as <strong>Crônicas de Lucy Teixeira</strong> constituem um dos mais refinados painéis literários da cidade de São Luís no imediato pós-Segunda Guerra Mundial. Reunidas e organizadas criticamente por Ceres Costa Fernandes em edição da Academia Maranhense de Letras (AML), a obra não configura romance nem narrativa de enredo contínuo, mas sim uma coletânea de 118 crônicas autônomas, datadas cronologicamente de janeiro a dezembro de 1947. Cada texto nasceu vinculado às exigências materiais da imprensa da época: colunas estreitas, limitadas a duas colunas tipográficas, disputando espaço com reclames comerciais e notícias do cotidiano.
+        </p>
+        <p>
+          A formação intelectual de Lucy Teixeira é decisiva para compreender a originalidade estética da coletânea. Entre 1942 e 1946, a autora viveu no eixo Belo Horizonte–Rio de Janeiro, onde cursou Direito e conviveu intimamente com os jovens escritores da Terceira Geração Modernista (Geração de 45), como Fernando Sabino, Otto Lara Resende, Murilo Rubião e Paulo Mendes Campos, além de mestres como Manuel Bandeira, Carlos Drummond de Andrade, Rubem Braga e o crítico de arte Mário Pedrosa. Ao regressar a São Luís no final de 1946, Lucy deparou-se com um ambiente letrado ainda apegado a reminiscências parnasianas e românticas. Ao lado de Bandeira Tribuzi, Floriano Teixeira e outros jovens intelectuais, tornou-se catalisadora da renovação moderna no Maranhão, imprimindo à crônica uma dicção que funde o lirismo introspectivo, a sensibilidade visual das artes plásticas e a observação social perspicaz.
+        </p>
+        <p>
+          Em suas mãos, a crônica transcende o relato factual efêmero. A autora desloca o olhar das solenidades cívicas e das elites políticas para a pulsação viva da urbe: o ritmo vagaroso dos bondes, os encontros fortuitos nos abrigos de passageiros da Praça João Lisboa, a agitação portuária na Praia Grande, a dor muda dos vendedores ambulantes, os dilemas da aposentadoria e o papel intelectual da mulher. Lucy adota uma postura dialógica e confessional, conversando diretamente com o leitor com leveza e ironia sutil, revelando que os pequenos episódios da vida comum contêm as maiores verdades sobre a dignidade humana, a passagem do tempo e a permanência da memória.
+        </p>
+      </div>
+    </section>
+
+    <section class="obras-section" id="principais-ideias" aria-labelledby="title-ideias">
+      <h2 class="obras-section-title" id="title-ideias">💡 Principais Ideias e Eixos Temáticos</h2>
+      <div class="obras-eixos-grid">
+
+        <div class="obras-eixo-card">
+          <h3 class="obras-eixo-title">1. A Transfiguração Literária do Cotidiano e o Valor do Efêmero</h3>
+          <p class="obras-eixo-text">
+            Lucy rejeita expressamente o intelectualismo pedante e sisudo (o que chama satiricamente de <em>"schopenhauerismos"</em>). Em textos como <em>Os Cronistas</em> e <em>Os Objetos Frágeis</em>, a autora defende que qualquer aspecto da vida ordinária — o preço do pão, um chapéu de palha, uma conversa ao pé do balcão ou a chuva no vidro — é matéria nobre de poesia. Em vez de fugir da rotina, a literatura revela a espantosa densidade escondida sob as aparências banais.
+          </p>
+        </div>
+
+        <div class="obras-eixo-card">
+          <h3 class="obras-eixo-title">2. A Dignidade do Trabalho versus a Caridade Paternalista</h3>
+          <p class="obras-eixo-text">
+            A crônica social de Lucy não cai no assistencialismo condescendente. Na emblemática crônica <em>Leopoldo</em>, ao retratar o pequeno vendedor de jornais com deficiência física no Largo do Carmo, a narradora recusa a piedade estéril da esmola. A autora reivindica das autoridades condições justas e espaciais ("um ponto reservado") para que o garoto exerça seu ofício com autonomia, convertendo o trabalho em afirmação irrevogável de respeito próprio.
+          </p>
+        </div>
+
+        <div class="obras-eixo-card">
+          <h3 class="obras-eixo-title">3. Crítica à Misoginia e Afirmação da Mulher Intelectual</h3>
+          <p class="obras-eixo-text">
+            Em <em>Mulheres Literatas</em> e <em>Casa de Bonecas</em>, Lucy combate diretamente a ideologia patriarcal que associava a feminilidade à ignorância e à fragilidade decorativa. Com ironia cortante, refuta a tese machista de que o estudo masculiniza a mulher, demonstrando que o cultivo do espírito não anula o afeto, mas alarga a consciência e liberta a mulher da condição de sombra ou objeto doméstico.
+          </p>
+        </div>
+
+        <div class="obras-eixo-card">
+          <h3 class="obras-eixo-title">4. A Construção da Identidade Pelo Ofício e o Vazio da Inação</h3>
+          <p class="obras-eixo-text">
+            Em <em>A Segunda Natureza</em>, a aposentadoria compulsória de um escriturário classe J desvela como as funções burocráticas moldam a subjetividade ao longo de décadas. Ao ser desligado da repartição, o homem não experimenta alívio, mas o desenraizamento e a perda de seu lugar no mundo. O trabalho revela-se não apenas um ganha-pão, mas a própria tessitura psicológica que organiza os gestos e sentidos da existência.
+          </p>
+        </div>
+
+        <div class="obras-eixo-card">
+          <h3 class="obras-eixo-title">5. Memória, Sensibilidade Lírica e o Tempo Psicológico</h3>
+          <p class="obras-eixo-text">
+            Nas crônicas líricas, como <em>O Canto da Chuva</em> e <em>Rondó Quase Triste</em>, o tempo deixa de ser cronológico e torna-se interior. A chuva ou uma melodia ouvida ao longe funcionam como disparadores involuntários que trazem à tona paisagens remotas da infância, reflexões sobre perdas e a melancólica percepção de que recordar é também reinventar o passado sob a luz madura do presente.
+          </p>
+        </div>
+
+        <div class="obras-eixo-card">
+          <h3 class="obras-eixo-title">6. São Luís Como Espaço de Convivência e Tensão Social</h3>
+          <p class="obras-eixo-text">
+            A capital maranhense é retratada em sua dupla face: de um lado, a atmosfera colonial, poética e acolhedora dos bondes, da Praça João Lisboa e dos casarões de azulejo; de outro, as tensões do pós-guerra, a carestia dos alimentos, a exploração fabril (<em>As Máquinas</em>), a pobreza periférica e o desamparo à infância (<em>Odisséia de Antônia</em> e <em>Guia</em>).
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="obras-section" id="leitura-guiada" aria-labelledby="title-leitura">
+      <h2 class="obras-section-title" id="title-leitura">🔍 Leitura Guiada: Análise de Três Crônicas Fundamentais</h2>
+
+      <article class="obras-guided-item">
+        <div class="obras-guided-header">
+          <h3 class="obras-guided-title">1. "Leopoldo" (04/02/1947 · Páginas 39-40 da edição AML)</h3>
+          <span class="obras-guided-meta">Eixo: Dignidade Humana e Trabalho</span>
+        </div>
+        <div class="obras-content-text">
+          <p>
+            <strong>Contexto do texto:</strong> Lucy observa o movimento do entardecer no Largo do Carmo, espaço movimentado de São Luís, e detém seu olhar sobre Leopoldo, um menino com deficiência física que vende jornais disputando clientes com outros garotos mais ágeis.
+          </p>
+          <div class="obras-callout-quote">
+            "Outro pediria esmolas, outro ficaria à porta de uma igreja a implorar a caridade pública. Decerto não lhe negariam níqueis. Teria, assim, o menino aleijado resolvido facilmente o problema pessoal de sobrevivência. Outro, disse eu, mas não Leopoldo [...] O que não quer é pedir esmolas, explorar-se desse jeito, viver da própria fraqueza."
+          </div>
+          <p>
+            <strong>Interpretação detalhada:</strong> A narradora estabelece uma oposição enfática entre duas saídas diante da vulnerabilidade física: a mendicância humilhante (apoiada na caridade religiosa tradicional) e a escolha ativa pelo trabalho. Leopoldo não se vitimiza nem explora sua condição para angariar compaixão; ele prefere a fadiga das calçadas ao comodismo da dependência. O riso do garoto é qualificado como "milagroso" porque resiste à desolação das circunstâncias.
+          </p>
+          <p>
+            <strong>Recurso de linguagem e como chegar à interpretação:</strong> Observe o uso da antítese e da repetição disjuntiva no início do texto (<em>"Outro... Outro... mas não Leopoldo"</em>). A cronista recorre ainda a um hábil jogo de palavras com a expressão popular: sugere às autoridades <em>"um lugar ao sol (que deve ser à sombra)"</em>. A aparente contradição literal entre "sol" e "sombra" funciona no plano figurado: "lugar ao sol" expressa oportunidade e reconhecimento de direitos; o parêntese "à sombra" resgata a necessidade material de proteção física do trabalhador exposto ao calor equatorial da cidade. A reivindicação, portanto, não é de benesse ou favor, mas de justiça estrutural.
+          </p>
+        </div>
+      </article>
+
+      <article class="obras-guided-item">
+        <div class="obras-guided-header">
+          <h3 class="obras-guided-title">2. "Mulheres Literatas" (06/02/1947 · Páginas 41-42 da edição AML)</h3>
+          <span class="obras-guided-meta">Eixo: Emancipação Feminina e Ironia Social</span>
+        </div>
+        <div class="obras-content-text">
+          <p>
+            <strong>Contexto do texto:</strong> Disfarçada atrás de um jornal e de um sorvete em um bar ludovicense, a narradora escuta a conversa discreta de dois homens que criticam duramente as mulheres letradas, acusando-as de perderem o "encanto feminino".
+          </p>
+          <div class="obras-callout-quote">
+            "Diziam os referidos senhores que mulher literata é coisa mais antipática desse mundo, por assim perder o decantado sexo aquelas qualidades feminis encerradoras de eterna atração. E quais sejam: inocência (pelo menos a aparente), fragilidade, insegurança e uma boa dose de natural ignorância, base mesma de tão apreciável inconsciência..."
+          </div>
+          <p>
+            <strong>Interpretação detalhada:</strong> Lucy desmonta o discurso paternalista que idealiza a mulher submissa. A narradora classifica a pretensa "mulher decorativa" vivendo em mundo alienado como algo "enjoativo e nauseante". Ao rebater os argumentos dos cavalheiros, a cronista afirma que a erudição não retira a sensibilidade da mulher, mas enriquece sua humanidade e suas relações com companheiros maduros.
+          </p>
+          <p>
+            <strong>Recurso de linguagem e como chegar à interpretação:</strong> O principal mecanismo argumentativo é a <em>ironia sarcástica</em> construída por acumulação de substantivos depreciativos mascarados de elogio (<em>"boa dose de natural ignorância, base mesma de tão apreciável inconsciência"</em>). Ao fingir concordar com a terminologia conservadora, a autora expõe o ridículo do padrão masculino, que busca uma parceira ignorante apenas para manter sua posição de domínio. No desfecho, o uso da referência histórica metonímica — o <em>"nariz de Cleópatra"</em> em contraste com a <em>"eterna afirmação do espírito"</em> — consolida o triunfo da inteligência interior sobre os atributos físicos passageiros.
+          </p>
+        </div>
+      </article>
+
+      <article class="obras-guided-item">
+        <div class="obras-guided-header">
+          <h3 class="obras-guided-title">3. "A Segunda Natureza" (07/02/1947 · Páginas 43-44 da edição AML)</h3>
+          <span class="obras-guided-meta">Eixo: Alienação Burocrática e Terceira Idade</span>
+        </div>
+        <div class="obras-content-text">
+          <p>
+            <strong>Contexto do texto:</strong> Um funcionário público atinge a idade limite e é aposentado compulsoriamente pela legislação. Após os primeiros dias de liberdade aparente, ele vagueia sem rumo pelas ruas de São Luís e retorna involuntariamente ao antigo local de serviço.
+          </p>
+          <div class="obras-callout-quote">
+            "Aquela mudança trazia-lhe a liberdade tão sonhada, mas, como um pássaro longo tempo em gaiola desaprende os voos altos, ele, ao ensaiar as primeiras subidas, sentiu-se fraco, ansiado como se ousasse contra o próprio ser gratuitas violências [...] sua natureza escrava de antigas horas; revelava que ele continuaria para todo o sempre escriturário classe J..."
+          </div>
+          <p>
+            <strong>Interpretação detalhada:</strong> A crônica investiga o drama da identidade reduzida à função ocupacional. Ao ser barrado no corredor pelo porteiro que não o reconhece ("O senhor deseja alguma coisa? / Eu... não"), o aposentado se depara com a despersonalização. A rotina repetitiva da repartição, antes percebida como fardo, havia se tornado sua "segunda natureza". Privado do ofício, a liberdade converte-se em solidão e vazio existencial.
+          </p>
+          <p>
+            <strong>Recurso de linguagem e como chegar à interpretação:</strong> Atente para a <em>analogia zoológica</em> do pássaro engaiolado. A gaiola é metáfora ambivalente: representa o cárcere da burocracia estatal, mas também a única segurança que o indivíduo conheceu. Quando as grades se abrem, o corpo já está encurvado e os reflexos habituados. As frases curtas e vacilantes no diálogo com o porteiro mimetizam a perda da voz social do personagem, encerrando a narrativa com a imagem trágica de um ser cuja alma foi definitivamente talhada pelo carimbo institucional.
+          </p>
+        </div>
+      </article>
+
+    </section>
+
+    <section class="obras-section" id="questoes-lucy" aria-labelledby="title-questoes">
+      <h2 class="obras-section-title" id="title-questoes">✍️ Pratique a Interpretação: 8 Questões Inéditas</h2>
+      <p style="color: var(--obras-neutral-600); margin-bottom: 1.5rem;">
+        Questões autorais preparatórias elaboradas nos moldes do vestibular PAES UEMA. Selecione a alternativa que julgar correta e clique em <strong>Conferir resposta</strong> para visualizar o gabarito comentado com evidência textual e análise dos distratores.
+      </p>
+
+      <div id="quiz-stats-lucy"></div>
+      <div id="quiz-container-lucy"></div>
+    </section>
+
+    <section class="obras-section" id="leitura-a-redacao" aria-labelledby="title-redacao">
+      <h2 class="obras-section-title" id="title-redacao">📝 Da Leitura à Redação: Conexões Sociais para a Prova da UEMA</h2>
+      <p style="color: var(--obras-neutral-600); margin-bottom: 1.5rem;">
+        A banca do PAES UEMA costuma utilizar situações representadas nas obras obrigatórias como ponto de partida temático para a proposta de Redação. Desenvolva as articulações abaixo e confira a devolutiva esperada.
+      </p>
+
+      <article class="obras-essay-card">
+        <h3 style="color: var(--obras-primary); font-size: 1.15rem; margin-top: 0;">
+          Tema 1: A superação do assistencialismo na inclusão social e laboral das pessoas com deficiência
+        </h3>
+        <p class="obras-essay-prompt">
+          <strong>Exercício de conexão:</strong> Na crônica <em>Leopoldo</em>, Lucy Teixeira opõe a mendicância passiva à dignidade conquistada pelo pequeno jornaleiro com deficiência por meio do trabalho, propondo a garantia de condições materiais justas pelas autoridades. Relacione essa reflexão literária aos desafios contemporâneos da inclusão sociolaboral das pessoas com deficiência no Brasil, demonstrando por que o assistencialismo paternalista é insuficiente para assegurar a cidadania plena.
+        </p>
+        <button type="button" class="btn btn-secondary" onclick="window.toggleObrasCriteria(this, 'box-crit-1')" aria-expanded="false" aria-controls="box-crit-1">
+          Ver resposta esperada e critérios
+        </button>
+        <div class="obras-criteria-box" id="box-crit-1">
+          <h4 style="color: var(--obras-primary); margin: 0 0 0.5rem 0;">Possibilidade de Construção Argumentativa</h4>
+          <p style="font-size: 0.92rem; line-height: 1.6; color: var(--obras-neutral-800);">
+            O estudante pode mobilizar a figura de Leopoldo como contraponto à visão histórica que reduz indivíduos com deficiência a objetos de caridade ou incapacidade civil. Argumenta-se que, assim como a cronista reivindicava não esmolas, mas "um ponto ao sol (que seja à sombra)" com limites respeitados, o Estado contemporâneo deve transitar de políticas meramente assistencialistas (como repasses compensatórios isolados) para garantias efetivas de acessibilidade urbanística, educação profissionalizante e cumprimento rigoroso da Lei de Cotas (Lei nº 8.213/91). Dessa forma, a autonomia produtiva e o protagonismo econômico consolidam a dignidade humana como direito constitucional inalienável, e não como concessão piedosa da sociedade.
+          </p>
+          <h4 style="color: var(--obras-primary); margin: 0.85rem 0 0.5rem 0;">Critérios de Autoavaliação (Padrão UEMA)</h4>
+          <ul style="font-size: 0.88rem; color: var(--obras-neutral-600); margin: 0; padding-left: 1.25rem; line-height: 1.55;">
+            <li><strong>Adequação ao tema:</strong> Supera a descrição puramente médica da deficiência e discute o preconceito social e as barreiras de acesso ao trabalho.</li>
+            <li><strong>Uso produtivo da obra:</strong> Articula expressamente o conceito de dignidade em <em>Leopoldo</em> sem resumir a crônica em paráfrase oca.</li>
+            <li><strong>Consistência argumentativa:</strong> Defende a transição da tutela paternalista para a garantia de direitos humanos e autonomia cidadã.</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="obras-essay-card">
+        <h3 style="color: var(--obras-primary); font-size: 1.15rem; margin-top: 0;">
+          Tema 2: O envelhecimento populacional e a crise de pertencimento social na pós-aposentadoria
+        </h3>
+        <p class="obras-essay-prompt">
+          <strong>Exercício de conexão:</strong> Em <em>A Segunda Natureza</em>, a aposentadoria do escriturário culmina em desorientação e sentimento de inutilidade, evidenciando como as sociedades modernas condicionam o valor do indivíduo exclusivamente à sua capacidade produtiva ativa. Articule esse conflito com os desafios do rápido envelhecimento demográfico brasileiro e a necessidade de valorização social e reinserção comunitária dos idosos.
+        </p>
+        <button type="button" class="btn btn-secondary" onclick="window.toggleObrasCriteria(this, 'box-crit-2')" aria-expanded="false" aria-controls="box-crit-2">
+          Ver resposta esperada e critérios
+        </button>
+        <div class="obras-criteria-box" id="box-crit-2">
+          <h4 style="color: var(--obras-primary); margin: 0 0 0.5rem 0;">Possibilidade de Construção Argumentativa</h4>
+          <p style="font-size: 0.92rem; line-height: 1.6; color: var(--obras-neutral-800);">
+            Pode-se sustentar que a lógica capitalista hiperprodutivista opera uma associação direta entre utilidade econômica e dignidade existencial. Ao narrar o retorno quase mecânico do aposentado aos corredores da repartição, Lucy Teixeira diagnostica a morte social daqueles que deixam o mercado formal de trabalho. Em termos contemporâneos, em um país cuja população idosa cresce aceleradamente, a falta de espaços culturais, de convivência intergeracional e de políticas públicas voltadas à saúde mental na terceira idade reproduz o isolamento sofrido pelo personagem. Urge, portanto, desvincular a identidade cidadã da condição de força de trabalho, promovendo o protagonismo dos idosos como guardiões da memória e agentes ativos da sociedade civil.
+          </p>
+          <h4 style="color: var(--obras-primary); margin: 0.85rem 0 0.5rem 0;">Critérios de Autoavaliação (Padrão UEMA)</h4>
+          <ul style="font-size: 0.88rem; color: var(--obras-neutral-600); margin: 0; padding-left: 1.25rem; line-height: 1.55;">
+            <li><strong>Adequação ao tema:</strong> Analisa as causas psicológicas e estruturais da exclusão social e do isolamento da pessoa idosa.</li>
+            <li><strong>Uso produtivo da obra:</strong> Mobiliza a metáfora da "segunda natureza" e do "pássaro engaiolado" para fundamentar a crise de identidade do sujeito contemporâneo.</li>
+            <li><strong>Proposta reflexiva:</strong> Aponta a necessidade de redes comunitárias, políticas de acolhimento e valorização para além do consumo e da produção.</li>
+          </ul>
+        </div>
+      </article>
+
+    </section>
+
+    <section class="obras-section" id="aprofundamento" aria-labelledby="title-aprofundamento">
+      <h2 class="obras-section-title" id="title-aprofundamento">🔗 Aprofunde seu Estudo no Mestre Kira</h2>
+      <div class="obras-deepen-card">
+        <div class="obras-deepen-info">
+          <h4>Análise Completa de Crônicas de Lucy Teixeira</h4>
+          <p>
+            Consulte a monografia crítica publicada no portal Mestre Kira com biografia detalhada da autora, contexto sociocultural maranhense de 1947, relações de Lucy com a Geração de 45 e novos repertórios de redação.
+          </p>
+        </div>
+        <a href="https://www.mestrekira.com.br/analise-cronicas-lucy-teixeira-ceres-costa-fernandes-paes-uema-2027.html" target="_blank" rel="noopener noreferrer" class="btn" style="white-space: nowrap;">
+          Ler Análise no Mestre Kira ↗
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p><strong>Gabarita PAES</strong> · Preparação para PAES UEMA e ENEM</p>
+    <a href="https://www.mestrekira.com.br/">Conheça o Mestre Kira</a>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/acesso-conta.js?v=20261001-03"></script>
+  <script src="js/obras-obrigatorias.js"></script>
+
+  <script>
+    const QUESTOES_LUCY = [
+      {
+        id: "lucy_q1",
+        referencia: "Crônica 'O Canto da Chuva' (03/01/1947 · p. 9 da edição AML)",
+        habilidade: "Identificar efeitos de sentido decorrentes da prosa poética e da intertextualidade lírica",
+        temaRevisao: "Memória involuntária, sinestesia e modernismo intimista",
+        enunciado: "No texto de abertura da coletânea, intitulado 'O Canto da Chuva', a narradora observa a precipitação pluviométrica sobre as vidraças e dialoga com versos do poeta francês Paul Verlaine (<em>'Pour un coeur que s'ennuie / Ô le chant doux de la pluie...'</em>). A partir da análise dos recursos expressivos empregados, infere-se que a chuva atua na narrativa predominantemente como:",
+        alternativas: [
+          {
+            texto: "um obstáculo de ordem meteorológica que inviabiliza as atividades laborais da escritora e impõe a paralisação forçada do jornalismo local.",
+            explicacaoErro: "A chuva não é descrita como obstáculo impeditivo do trabalho da imprensa, mas como ritmo brando que desacelera a consciência e desperta a criação literária."
+          },
+          {
+            texto: "uma denúncia das precárias condições de drenagem urbana e dos alagamentos constantes no centro histórico da capital maranhense.",
+            explicacaoErro: "O texto adota tom predominantemente intimista e lírico; os problemas viários de São Luís aparecem em outras crônicas (como 'As Chuvas'), mas não em 'O Canto da Chuva'."
+          },
+          {
+            texto: "um elemento sinestésico e catalisador da memória involuntária, fundindo percepções sensoriais presentes a fragmentos afetivos do passado.",
+            explicacaoErro: ""
+          },
+          {
+            texto: "um pretexto cômico para ridicularizar as reações exageradas da população de São Luís diante da chegada da estação invernal.",
+            explicacaoErro: "Não há tom cômico ou zombeteiro; a atmosfera da crônica é contemplativa, suave e profundamente nostálgica."
+          },
+          {
+            texto: "uma alegoria sociopolítica sobre a censura que silenciava a liberdade de expressão dos intelectuais no ambiente do pós-Segunda Guerra.",
+            explicacaoErro: "A menção ao silêncio e às 'sombras' liga-se à introspecção e ao recolhimento da memória individual, e não a alegorias de censura política estatal."
+          }
+        ],
+        gabarito: "C",
+        explicacaoGabarito: "A crônica constrói uma atmosfera em que o ritmo suave e constante das gotas nas vidraças estimula a introspecção e a sinestesia (<em>'palavras finas, cujo colorido atinge a consciência com hesitações de bruma'</em>, <em>'a chuva parece fecundar o lado cinzento da memória'</em>). Ao citar Verlaine, a autora reforça a fusão entre a paisagem exterior e a paisagem interior da alma."
+      },
+      {
+        id: "lucy_q2",
+        referencia: "Crônica 'Leopoldo' (04/02/1947 · pp. 39-40 da edição AML)",
+        habilidade: "Analisar o ponto de vista da narradora sobre marginalização social e relações de trabalho",
+        temaRevisao: "Crítica social, representação da deficiência física e ética do trabalho",
+        enunciado: "Ao retratar o garoto Leopoldo, que vende jornais no Largo do Carmo apesar de sua limitação física, a narradora propõe às autoridades que lhe concedam 'um ponto' para a venda de seus exemplares. O fundamento ético dessa proposta sustenta-se:",
+        alternativas: [
+          {
+            texto: "na valorização da dignidade humana conquistada pelo empenho laboral autônomo, em oposição à condescendência passiva da esmola.",
+            explicacaoErro: ""
+          },
+          {
+            texto: "na convicção de que o trabalho infantil precoce é salutar e deve substituir a obrigatoriedade de frequência à escola formal.",
+            explicacaoErro: "Lucy não defende a substituição da escola pelo trabalho infantil (inclusive em 'Centro Pio XII' celebra a alfabetização de garotos de rua), mas valoriza a recusa de Leopoldo em transformar sua deficiência em moeda de caridade."
+          },
+          {
+            texto: "no receio higienista de que a circulação de pessoas com deficiência pudesse afugentar os frequentadores da Igreja do Carmo.",
+            explicacaoErro: "A autora não adota postura higienista de exclusão; pelo contrário, critica a indiferença dos transeuntes e apoia abertamente o garoto contra a desolação."
+          },
+          {
+            texto: "na necessidade de garantir a hegemonia de vendas dos jornais associados frente à concorrência dos periódicos cariocas.",
+            explicacaoErro: "A crônica não trata de disputas de mercado editorial corporativo, mas da luta concreta de um vendedor ambulante humilde por subsistência e honradez."
+          },
+          {
+            texto: "no reconhecimento da caridade religiosa tradicional como único instrumento eficaz para erradicar a pobreza na sociedade ludovicense.",
+            explicacaoErro: "A narradora afirma o oposto: diz textualmente que 'outro ficaria à porta de uma igreja a implorar a caridade pública... mas não Leopoldo', recusando a lógica da mendicância."
+          }
+        ],
+        gabarito: "A",
+        explicacaoGabarito: "Lucy Teixeira enfatiza que Leopoldo se recusa a 'viver da própria fraqueza' e a 'explorar-se desse jeito' pedindo esmolas nas escadarias do templo religioso. A concessão de um espaço regular de trabalho ('um lugar ao sol que deve ser à sombra') representa o reconhecimento da sociedade à coragem e ao respeito próprio do jovem trabalhador."
+      },
+      {
+        id: "lucy_q3",
+        referencia: "Crônica 'Mulheres Literatas' (06/02/1947 · pp. 41-42 da edição AML)",
+        habilidade: "Reconhecer recursos argumentativos e irônicos na discussão sobre papéis sociais de gênero",
+        temaRevisao: "Condição feminina, ironia discursiva e crítica ao patriarcalismo",
+        enunciado: "Em 'Mulheres Literatas', a cronista reproduz o diálogo de dois frequentadores de um bar que qualificam a mulher instruída como 'a coisa mais antipática desse mundo'. Para desconstruir o posicionamento dos interlocutores masculinos, a narradora recorre ao seguinte procedimento discursivo:",
+        alternativas: [
+          {
+            texto: "adota um tom laudatório irrestrito à erudição exibicionista de mulheres que citam filósofos para humilhar seus maridos.",
+            explicacaoErro: "Lucy critica abertamente o pedantismo e o esnobismo, esclarecendo que não defende a mulher que 'a cada momento replicasse Dostoievski, Shakespeare... e Rui Barbosa'."
+          },
+          {
+            texto: "recomenda às leitoras que ocultem suas leituras e finjam fragilidade para garantir o casamento com homens abastados.",
+            explicacaoErro: "A cronista refuta com veemência a dissimulação feminina, apontando que manter um padrão de 'criaturinha' ignorante é enfadonho e insustentável."
+          },
+          {
+            texto: "reivindica a superioridade intelectual feminina como justificativa moral para afastar os homens da vida pública e política.",
+            explicacaoErro: "A autora não prega a exclusão masculina nem a supremacia de gênero, mas sim o companheirismo simétrico entre indivíduos cultos."
+          },
+          {
+            texto: "emprega a ironia ao expor que o ideal masculino de submissão repousa na conveniência de manter a mulher na ignorância e na alienação.",
+            explicacaoErro: ""
+          },
+          {
+            texto: "defende que a mulher letrada renuncie aos cuidados estéticos, visto que a cultura substitui integralmente a sociabilidade humana.",
+            explicacaoErro: "A autora pondera que 'cultura não desgasta feminilidade, saber não masculiniza Eva', mostrando que espírito e sensibilidade coexistem de forma equilibrada."
+          }
+        ],
+        gabarito: "D",
+        explicacaoGabarito: "A autora utiliza ironia sutil ao resumir a pretensa 'atração eterna' desejada pelos homens como resultante de 'uma boa dose de natural ignorância, base mesma de tão apreciável inconsciência'. Em seguida, argumenta com firmeza que 'um homem inteligente admira, antes de tudo, a cultura e a experiência da companheira', pois o saber alarga as bases psicológicas do ser humano."
+      },
+      {
+        id: "lucy_q4",
+        referencia: "Crônica 'A Segunda Natureza' (07/02/1947 · pp. 43-44 da edição AML)",
+        habilidade: "Inferir o impacto de transformações sociais e institucionais na formação da subjetividade",
+        temaRevisao: "Burocracia, aposentadoria compulsória e alienação existencial",
+        enunciado: "Na narrativa de 'A Segunda Natureza', o funcionário público recém-aposentado depara-se com a impossibilidade de usufruir a tão almejada liberdade. A imagem metafórica utilizada pela autora para traduzir a inadaptação do protagonista é a de:",
+        alternativas: [
+          {
+            texto: "uma embarcação à deriva no mar revolto que sucumbe diante da fúria das tempestades equatoriais.",
+            explicacaoErro: "Imagens marítimas são comuns na obra, mas a metáfora específica empregada para o aposentado é a do pássaro aprisionado."
+          },
+          {
+            texto: "um pássaro que, após longo confinamento em gaiola, perde a capacidade e a força para executar voos elevados.",
+            explicacaoErro: ""
+          },
+          {
+            texto: "um soldado derrotado em batalha que se recusa a entregar suas armas e condecorações militares.",
+            explicacaoErro: "O personagem é um pacato funcionário civil ('escriturário classe J'), sem nenhuma conotação de heroísmo bélico."
+          },
+          {
+            texto: "uma árvore frondosa cujas raízes apodrecem rapidamente ao ser transplantada para um solo arenoso.",
+            explicacaoErro: "A metáfora vegetal não é utilizada no episódio do escriturário, e sim a comparação ornitológica com a gaiola."
+          },
+          {
+            texto: "um ator que esquece suas falas durante a representação de uma comédia ligeira em palco provinciano.",
+            explicacaoErro: "Embora o teatro seja tema frequente nas crônicas de Lucy, não é essa a imagem que estrutura o drama existencial do servidor aposentado."
+          }
+        ],
+        gabarito: "B",
+        explicacaoGabarito: "O texto expressa com clareza: <em>'Aquela mudança trazia-lhe a liberdade tão sonhada, mas, como um pássaro longo tempo em gaiola desaprende os voos altos, ele, ao ensaiar as primeiras subidas, sentiu-se fraco, ansiado como se ousasse contra o próprio ser gratuitas violências'</em>. A rotina do trabalho tornou-se uma prisão tão incorporada que sua ausência gera desamparo."
+      },
+      {
+        id: "lucy_q5",
+        referencia: "Crônica 'O Circo' (23/01/1947 · pp. 25-26 da edição AML)",
+        habilidade: "Interpretar o contraste entre perspectivas distintas de observação da realidade",
+        temaRevisao: "Infância, imaginação poética e racionalismo desencantador",
+        enunciado: "Na crônica 'O Circo', a experiência de assistir a um espetáculo circense é marcada pela tensão entre dois modos de percepção do mundo. Essa polaridade manifesta-se formalmente no contraste entre:",
+        alternativas: [
+          {
+            texto: "a habilidade física do jovem equilibrista no trapézio e a completa imperícia acrobática demonstrada pelos palhaços.",
+            explicacaoErro: "A tensão central não reside no confronto técnico entre trapezista e palhaço, mas na divergência entre o olhar do adulto e o da criança."
+          },
+          {
+            texto: "a luxúria das cadeiras numeradas dos setores aristocráticos e a superlotação insalubre das arquibancadas de madeira.",
+            explicacaoErro: "Embora haja distinção espacial (cadeiras numeradas x arquibancada), o foco narrativo não é a crítica à infraestrutura do circo, mas a atitude espiritual dos espectadores."
+          },
+          {
+            texto: "o entusiasmo dos artistas estrangeiros da companhia e o desinteresse cultural generalizado do público ludovicense.",
+            explicacaoErro: "O público participa intensamente; as crianças gritam e batem palmas com entusiasmo incontido."
+          },
+          {
+            texto: "o tom melancólico das marchas executadas pela orquestra e a aparente agressividade das feras enjauladas.",
+            explicacaoErro: "Não há menção a feras agressivas; a orquestra toca marchas festivas e acompanha a dança dos acrobatas e palhaços."
+          },
+          {
+            texto: "o hiper-racionalismo cético do adulto ao lado e a capacidade infantil de maravilhar-se poeticamente com a ilusão do show.",
+            explicacaoErro: ""
+          }
+        ],
+        gabarito: "E",
+        explicacaoGabarito: "A crônica opõe o homem 'longo e fúnebre' sentado ao lado da narradora — que se recusa a rir, reclama que o palhaço é sem graça e vangloria-se dolorosamente de 'descobrir o truque' do trapezista — à menina alegre que, na saída, enxerga o rosto pintado do palhaço como 'uma estrela', resgatando a pureza poética da infância."
+      },
+      {
+        id: "lucy_q6",
+        referencia: "Crônica 'Praia Grande' (20/04/1947 · pp. 84-85 da edição AML)",
+        habilidade: "Relacionar elementos de caracterização espacial à dinâmica social e econômica urbana",
+        temaRevisao: "Espaço urbano de São Luís, divisão do trabalho e sensorialidade",
+        enunciado: "Ao descrever o ambiente da Praia Grande, polo histórico do comércio e das atividades portuárias em São Luís, a cronista constrói um mosaico do mundo do trabalho. Essa ambientação se caracteriza textualmente por:",
+        alternativas: [
+          {
+            texto: "uma apreensão sensorial rica que justapõe o esforço manual pesado dos carregadores e catraieiros à rotina burocrática dos escritórios de contabilidade.",
+            explicacaoErro: ""
+          },
+          {
+            texto: "uma exaltação ufanista das tecnologias industriais modernas importadas dos Estados Unidos que automatizaram totalmente o porto maranhense.",
+            explicacaoErro: "O trabalho retratado na Praia Grande é artesanal e braçal: homens costuram sacas de babaçu com enormes agulhas, conduzem carroças e operam catraias manuais."
+          },
+          {
+            texto: "uma condenação moral estrita dos tipos populares, como vendedoras de mingau e sorveteiros, acusados de perturbar o silêncio urbano.",
+            explicacaoErro: "A narradora trata os trabalhadores populares com evidente simpatia e afeto, qualificando seu descanso na rampa como momento de autêntica humanidade."
+          },
+          {
+            texto: "uma narrativa centrada na elite mercantil de origem portuguesa, ignorando a presença de funcionários subalternos e mulheres trabalhadoras.",
+            explicacaoErro: "O protagonismo do texto pertence justamente aos anônimos: carregadores, catraieiros, a jovem datilógrafa que suja as mãos de carbono e as vendedoras de laranjas."
+          },
+          {
+            texto: "um relato estritamente etnográfico que desconsidera as impressões líricas e subjetivas da narradora em relação à paisagem costeira.",
+            explicacaoErro: "Lucy não faz mero registro etnográfico impessoal; sua linguagem é marcadamente poética e pessoal (<em>'Praia Grande é mesmo uma grande praia... trabalho santificado na árdua luta... tão plena de heroicidade'</em>)."
+          }
+        ],
+        gabarito: "A",
+        explicacaoGabarito: "A crônica capta a diversidade da Praia Grande articulando os sons de carroças, sacas de babaçu e apitos de bonde ao cansaço da datilógrafa nos escritórios ('Deve e Haver') e à pausa dos catraieiros e vendedoras de mingau na escadaria da rampa, celebrando a heroicidade anônima do trabalho diário."
+      },
+      {
+        id: "lucy_q7",
+        referencia: "Crônica 'As Máquinas' (05/11/1947 · pp. 188-189 da edição AML)",
+        habilidade: "Avaliar a crítica aos efeitos da mecanização do trabalho e da cultura de massa sobre o operariado",
+        temaRevisao: "Trabalho fabril, alienação operária feminina e indústria cultural",
+        enunciado: "Na crônica 'As Máquinas', a autora descreve o cotidiano de jovens costureiras que operam num ateliê montado no corredor de um sobrado tradicional de azulejos. Diante do contraste entre o ritmo monótono das costuras e a música americana irradiada pelo rádio, a narradora conclui que:",
+        alternativas: [
+          {
+            texto: "as operárias encontram nas canções em inglês um estímulo pedagógico que as capacita a ascender profissionalmente no comércio exterior.",
+            explicacaoErro: "O texto indica que as moças cantam as palavras sem compreender o significado exato ('you rimando com blue... sem entender'), funcionando como mero som de fundo."
+          },
+          {
+            texto: "a atmosfera fabril moderna garante a libertação integral da mulher ao suprimir as tarefas domésticas patriarcais.",
+            explicacaoErro: "A crônica descreve um ambiente opressivo, seco e exaustivo, no qual o trabalho fabril desgasta os corpos jovens sem trazer emancipação real."
+          },
+          {
+            texto: "o proprietário do ateliê é um empresário generoso que utiliza a tecnologia para reduzir drasticamente a jornada das trabalhadoras.",
+            explicacaoErro: "A menção inicial ao casal proprietário é irônica; a realidade das jovens é descrita com palidez, pés inchados e submissão à velocidade da encomenda."
+          },
+          {
+            texto: "a cadência mecânica das agulhas e engrenagens tende a transformar a própria subjetividade das trabalhadoras em extensão repetitiva do maquinário.",
+            explicacaoErro: ""
+          },
+          {
+            texto: "a introdução do rádio no espaço laboral maranhense provocou a imediata rebelião grevista das costureiras contra o patrão.",
+            explicacaoErro: "Não há revolta ou greve na narrativa; as moças permanecem caladas, curvadas sobre os tecidos, absorvidas pela imposição mecânica da tarefa."
+          }
+        ],
+        gabarito: "D",
+        explicacaoGabarito: "Lucy formula uma das mais pungentes reflexões sobre a alienação operária: a repetição contínua faz com que as moças nem consigam desviar o olhar para a rua. No desfecho, a autora sintetiza esse processo em tom interrogativo: <em>'se é apenas o coração máquina igual a outra, máquina a embainhar a fazenda descolorida dos dias?...'</em>."
+      },
+      {
+        id: "lucy_q8",
+        referencia: "Crônicas 'Os Cronistas' (10/05/1947) e 'Por que se escreve?' (12/03/1947) · Edição AML",
+        habilidade: "Identificar a concepção metalinguística de crônica moderna formulada pela escritora",
+        temaRevisao: "Gênero crônica, metalinguagem e diálogo com o leitor",
+        enunciado: "Em diversos momentos da coletânea, Lucy Teixeira reflete sobre o próprio ato de escrever para o jornal diário, dialogando com leitores e delimitando o território da crônica. Segundo as ponderações da autora nesses textos metalinguísticos, a crônica moderna se define primordialmente como:",
+        alternativas: [
+          {
+            texto: "um tratado filosófico rigoroso que deve guiar as massas populares por meio de normas morais inflexíveis.",
+            explicacaoErro: "A autora repele textualmente o dogmatismo doutrinário, afirmando que um cronista sisudo destilando filosofias pesadas pela manhã não seria tolerado pelo leitor."
+          },
+          {
+            texto: "uma conversa despretensiosa, ágil e cúmplice com o leitor, capaz de extrair beleza, lirismo e reflexão das ocorrências efêmeras do cotidiano.",
+            explicacaoErro: ""
+          },
+          {
+            texto: "uma reportagem puramente objetiva e policial, desprovida de qualquer interferência lírica, adjetivação ou estilo pessoal.",
+            explicacaoErro: "A cronista distingue sua arte do 'frio profissionalismo de um repórter', reivindicando justamente a subjetividade, o lirismo e a sensibilidade emotiva."
+          },
+          {
+            texto: "um panfleto político partidário destinado exclusivamente a defender candidaturas governamentais nas eleições estaduais.",
+            explicacaoErro: "Em 'Depois das Eleições' e em 'Os Cronistas', Lucy lamenta a intromissão do partidarismo cego e recusa subordinar sua literatura à propaganda partidária."
+          },
+          {
+            texto: "uma transposição mimética do romance naturalista do século XIX, com predomínio do determinismo biológico sobre a imaginação poética.",
+            explicacaoErro: "A estética de Lucy Teixeira está vinculada ao Modernismo intimista e lírico da década de 1940, muito distante das teses deterministas do Naturalismo oitocentista."
+          }
+        ],
+        gabarito: "B",
+        explicacaoGabarito: "Em 'Os Cronistas', Lucy explicita que a missão do cronista não é a gravidade do repórter nem a sisudez do filósofo, mas 'a maneira de tratar o possível aspecto das manhãs... das coisas verdes e amarelas, estranhas e banais'. Em 'Por que se escreve?', conclui com singeleza: escreve-se 'porque se gosta' e pelo desejo de comunicar a sensibilidade ao leitor matinal."
+      }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.initObrasQuiz('lucy', QUESTOES_LUCY);
+    });
+  </script>
+</body>
+</html>
