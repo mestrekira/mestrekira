@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Admin | Mestre Kira</title>
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/ui-feedback.css" />
+  <link rel="stylesheet" href="css/auth-recovery.css" />
+  <link rel="icon" href="logo1.png" type="image/png" />
+</head>
+<body>
+  <main class="auth-page">
+    <section class="auth-card" aria-labelledby="pageTitle">
+      <div class="auth-card__header">
+        <h1 id="pageTitle">Administração</h1>
+        <p class="auth-card__subtitle">
+          Acesso restrito. Use sua conta administrativa, separada dos perfis de professor, estudante e escola.
+        </p>
+      </div>
+
+      <form id="adminLoginForm" class="auth-form" novalidate>
+        <div class="auth-field">
+          <label for="adminEmail">E-mail</label>
+          <input
+            id="adminEmail"
+            type="email"
+            placeholder="admin@..."
+            autocomplete="email"
+            inputmode="email"
+            required
+          />
+        </div>
+
+        <div class="auth-field">
+          <label for="adminPass">Senha</label>
+          <input
+            id="adminPass"
+            type="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <div class="auth-actions">
+          <button id="adminLoginBtn" class="auth-btn" type="submit">
+            Entrar
+          </button>
+
+          <button id="adminClearBtn" class="auth-link-btn auth-link-btn--ghost" type="button">
+            Limpar
+          </button>
+        </div>
+
+        <p id="adminStatus" class="auth-status" aria-live="polite"></p>
+      </form>
+
+      <div class="auth-links">
+        <a href="index.html">Voltar ao início</a>
+        <a href="login-professor.html">Login de professor</a>
+        <a href="login-aluno.html">Login de aluno</a>
+        <a href="login-escola.html">Login da escola</a>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/admin-auth.js"></script>
+  <script src="js/footer.js"></script>
+</body>
+</html>

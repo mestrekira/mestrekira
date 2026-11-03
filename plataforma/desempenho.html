@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desempenho</title>
+  <link rel="stylesheet" href="css/base.css">
+   <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="icon" href="logo1.png" type="image/png">
+</head>
+<body>
+
+<button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
+
+<aside id="menuPanel" class="menu-panel">
+  <div class="menu-header">
+    <strong>Meu perfil</strong>
+    <button id="menuCloseBtn" class="menu-close" title="Fechar">✕</button>
+  </div>
+
+  <div class="menu-body">
+    <div class="menu-photo">
+      <img id="menuPhotoImg" class="menu-photo-img" alt="Foto do perfil" />
+
+      <div class="menu-photo-actions">
+        <label class="menu-photo-label" title="Alterar foto do perfil">
+          Alterar foto
+          <input id="menuPhotoInput" type="file" accept="image/png,image/jpeg" />
+        </label>
+
+        <a
+          href="suporte.html"
+          class="menu-photo-support"
+          title="Abrir página de suporte"
+        >
+          Suporte
+        </a>
+      </div>
+    </div>
+
+    <p><strong>Nome:</strong> <span id="meName">...</span></p>
+    <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
+    <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
+
+    <hr>
+
+    <h4>Atualizar dados</h4>
+    <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
+    <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
+    <button id="saveProfileBtn">Salvar</button>
+
+    <p id="menuStatus"></p>
+
+    <hr>
+
+    <button id="logoutMenuBtn">Sair</button>
+    <button id="deleteAccountBtn" class="danger">Excluir conta</button>
+  </div>
+</aside>
+
+<h2>Desempenho</h2>
+
+<section>
+  <h3>Filtros</h3>
+
+  <label>
+    Sala:
+    <select id="roomSelect"></select>
+  </label>
+
+  <p id="status"></p>
+</section>
+
+<hr>
+
+<section>
+  <h3>Resumo</h3>
+  <button id="downloadPdfBtn">Baixar desempenho (PDF)</button>
+  <ul class="lista">
+    <li>Média total (0–1000): <strong id="avgTotal">—</strong></li>
+    <li>Média C1 Domínio da norma culta: <strong id="avgC1">—</strong></li>
+    <li>Média C2 Compreensão do tema e repertório: <strong id="avgC2">—</strong></li>
+    <li>Média C3 Argumentação e projeto de texto: <strong id="avgC3">—</strong></li>
+    <li>Média C4 Coesão e mecanismos linguísticos: <strong id="avgC4">—</strong></li>
+    <li>Média C5 Proposta de Intervenção: <strong id="avgC5">—</strong></li>
+  </ul>
+</section>
+
+<hr>
+
+<section>
+  <h3>Gráfico (Média geral)</h3>
+  <p class="muted">Cada fatia representa uma competência; a parte branca é sua margem de evolução até 1000.</p>
+
+  <div class="box" style="padding:12px;">
+    <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
+      <div id="avgDonut" style="min-width:160px; display:flex; justify-content:center;"></div>
+      <div id="avgLegend" style="display:flex; align-items:flex-start;"></div>
+    </div>
+  </div>
+</section>
+
+
+<hr>
+
+<section>
+  <h3>Redações</h3>
+  <ul id="historyList" class="lista"></ul>
+</section>
+
+<script type="module">
+  import { initMenuPerfil } from './js/menu-perfil.js';
+  initMenuPerfil({
+    loginRedirect: 'index.html',
+    logoutRedirectProfessor: 'login-professor.html',
+    logoutRedirectStudent: 'login-aluno.html'
+  });
+</script>
+  
+<script type="module" src="js/desempenho.js"></script>
+<script src="js/footer.js"></script>
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

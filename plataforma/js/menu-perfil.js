@@ -1,0 +1,918 @@
+import { revokeSession } from './session.js';
+import { storage as localStorage, session as sessionStorage } from './storage.js';
+import { API_URL, apiFetch as fetch } from './config.js';
+import { toast, confirmDialog } from './ui-feedback.js';
+
+
+const BILLING_ENABLED = false;
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function safeText(el, value, fallback = '—') {
+  if (!el) return;
+  const ok = value !== undefined && value !== null && String(value).trim() !== '';
+  el.textContent = ok ? String(value) : fallback;
+}
+
+function normalizeRole(role) {
+  if (!role) return null;
+  const r = String(role).trim().toUpperCase();
+
+  if (r === 'PROFESSOR' || r === 'TEACHER') return 'professor';
+  if (r === 'ALUNO' || r === 'STUDENT') return 'student';
+  if (r === 'SCHOOL' || r === 'ESCOLA') return 'school';
+
+  const low = String(role).trim().toLowerCase();
+  if (low === 'professor') return 'professor';
+  if (low === 'student') return 'student';
+  if (low === 'school' || low === 'escola') return 'school';
+
+  return null;
+}
+
+function normalizeProfessorType(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function isSchoolLinkedProfessor(userLike) {
+  const role = normalizeRole(userLike?.role);
+  if (role !== 'professor') return false;
+
+  const professorType = normalizeProfessorType(
+    userLike?.professorType ?? userLike?.professor_type
+  );
+
+  const schoolId = String(
+    userLike?.schoolId ?? userLike?.school_id ?? ''
+  ).trim();
+
+  return professorType === 'SCHOOL' || !!schoolId;
+}
+
+function canDeleteOwnAccount(userLike, fallbackRole = null) {
+  const role = normalizeRole(userLike?.role) || normalizeRole(fallbackRole);
+
+  if (role === 'student') return true;
+  if (role === 'school') return true;
+
+  if (role === 'professor') {
+    return !isSchoolLinkedProfessor(userLike);
+  }
+
+  return false;
+}
+
+function roleLabel(roleNormalized) {
+  if (roleNormalized === 'professor') return 'Professor(a)';
+  if (roleNormalized === 'student') return 'Estudante';
+  if (roleNormalized === 'school') return 'Escola';
+  return '';
+}
+
+const LS = {
+  token: 'token',
+  user: 'user',
+  professorId: 'professorId',
+  studentId: 'studentId',
+  schoolId: 'schoolId',
+};
+
+function safeJsonParse(s) {
+  try {
+    return s ? JSON.parse(s) : null;
+  } catch {
+    return null;
+  }
+}
+
+function sanitizeToken(value) {
+  let t = String(value || '').trim();
+
+  if (/^Bearer\s+/i.test(t)) {
+    t = t.replace(/^Bearer\s+/i, '').trim();
+  }
+
+  t = t.replace(/^['"]+|['"]+$/g, '').trim();
+
+  return t;
+}
+
+function clearAuthStorage() {
+  localStorage.removeItem(LS.token);
+  localStorage.removeItem(LS.user);
+  localStorage.removeItem(LS.professorId);
+  localStorage.removeItem(LS.studentId);
+  localStorage.removeItem(LS.schoolId);
+}
+
+function getSession() {
+  const token = sanitizeToken(localStorage.getItem(LS.token) || '');
+  const user = safeJsonParse(localStorage.getItem(LS.user));
+
+  if (token) {
+    localStorage.setItem(LS.token, token);
+  }
+
+  const roleFromUser = normalizeRole(user?.role);
+  const idFromUser = user?.id ? String(user.id).trim() : null;
+
+  if (
+    roleFromUser &&
+    idFromUser &&
+    idFromUser !== 'undefined' &&
+    idFromUser !== 'null'
+  ) {
+    if (roleFromUser === 'school') {
+      localStorage.setItem(LS.schoolId, idFromUser);
+      localStorage.removeItem(LS.professorId);
+      localStorage.removeItem(LS.studentId);
+    }
+
+    if (roleFromUser === 'professor') {
+      localStorage.setItem(LS.professorId, idFromUser);
+      localStorage.removeItem(LS.studentId);
+      localStorage.removeItem(LS.schoolId);
+    }
+
+    if (roleFromUser === 'student') {
+      localStorage.setItem(LS.studentId, idFromUser);
+      localStorage.removeItem(LS.professorId);
+      localStorage.removeItem(LS.schoolId);
+    }
+
+    return { role: roleFromUser, id: idFromUser, token, user };
+  }
+
+  const professorId = localStorage.getItem(LS.professorId);
+  if (professorId && professorId !== 'undefined' && professorId !== 'null') {
+    localStorage.removeItem(LS.studentId);
+    localStorage.removeItem(LS.schoolId);
+    return { role: 'professor', id: String(professorId), token, user: null };
+  }
+
+  const studentId = localStorage.getItem(LS.studentId);
+  if (studentId && studentId !== 'undefined' && studentId !== 'null') {
+    localStorage.removeItem(LS.professorId);
+    localStorage.removeItem(LS.schoolId);
+    return { role: 'student', id: String(studentId), token, user: null };
+  }
+
+  const schoolId = localStorage.getItem(LS.schoolId);
+  if (schoolId && schoolId !== 'undefined' && schoolId !== 'null') {
+    localStorage.removeItem(LS.professorId);
+    localStorage.removeItem(LS.studentId);
+    return { role: 'school', id: String(schoolId), token, user: null };
+  }
+
+  return { role: null, id: null, token: '', user: null };
+}
+
+
+function photoKey(role, id) {
+  return role && id ? `mk_photo_${role}_${id}` : 'mk_photo_guest';
+}
+
+function placeholderAvatar(size = 72) {
+  return (
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+        <rect width="100%" height="100%" fill="#eee"/>
+        <text x="50%" y="55%" font-size="${Math.round(
+          size * 0.35
+        )}" text-anchor="middle" fill="#888">👤</text>
+      </svg>`
+    )
+  );
+}
+
+function loadPhoto(role, id) {
+  const img = $('menuPhotoImg');
+  if (!img) return;
+
+  const dataUrl = localStorage.getItem(photoKey(role, id));
+  img.src = dataUrl || placeholderAvatar(84);
+  img.style.display = 'inline-block';
+}
+
+function passwordConfirmationDialog({
+  title = 'Confirmar exclusão',
+  message = 'Digite sua senha para continuar.',
+  okText = 'Excluir conta',
+  cancelText = 'Cancelar',
+} = {}) {
+  if (document.getElementById('mk-password-confirm-overlay')) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.id = 'mk-password-confirm-overlay';
+    overlay.className = 'confirm-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 'confirm-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'mk-password-confirm-title');
+
+    const heading = document.createElement('h3');
+    heading.id = 'mk-password-confirm-title';
+    heading.textContent = title;
+
+    const description = document.createElement('p');
+    description.textContent = message;
+
+    const label = document.createElement('label');
+    label.htmlFor = 'mk-password-confirm-input';
+    label.textContent = 'Senha atual';
+    label.style.cssText =
+      'display:block;margin-top:14px;margin-bottom:6px;font-weight:700;';
+
+    const input = document.createElement('input');
+    input.id = 'mk-password-confirm-input';
+    input.type = 'password';
+    input.autocomplete = 'current-password';
+    input.placeholder = 'Digite sua senha atual';
+    input.style.cssText =
+      'width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;';
+
+    const error = document.createElement('p');
+    error.setAttribute('role', 'alert');
+    error.style.cssText =
+      'min-height:20px;margin-top:6px;color:#b91c1c;font-size:.9rem;';
+
+    const actions = document.createElement('div');
+    actions.className = 'confirm-actions';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'btn-outline';
+    cancelButton.textContent = cancelText;
+
+    const confirmButton = document.createElement('button');
+    confirmButton.type = 'button';
+    confirmButton.className = 'btn-danger';
+    confirmButton.textContent = okText;
+
+    actions.append(cancelButton, confirmButton);
+    modal.append(heading, description, label, input, error, actions);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const finish = (value) => {
+      document.removeEventListener('keydown', onKeydown);
+      overlay.remove();
+      resolve(value);
+    };
+
+    const confirm = () => {
+      const password = String(input.value || '');
+
+      if (!password) {
+        error.textContent = 'Digite sua senha atual.';
+        input.focus();
+        return;
+      }
+
+      finish(password);
+    };
+
+    const onKeydown = (event) => {
+      if (event.key === 'Escape') finish(null);
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        confirm();
+      }
+    };
+
+    cancelButton.addEventListener('click', () => finish(null));
+    confirmButton.addEventListener('click', confirm);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) finish(null);
+    });
+    document.addEventListener('keydown', onKeydown);
+
+    requestAnimationFrame(() => input.focus());
+  });
+}
+
+function redirectAfterLogout(
+  role,
+  logoutRedirectProfessor,
+  logoutRedirectStudent,
+  logoutRedirectSchool,
+  fallback = 'index.html'
+) {
+  if (role === 'professor') window.location.href = logoutRedirectProfessor;
+  else if (role === 'student') window.location.href = logoutRedirectStudent;
+  else if (role === 'school') window.location.href = logoutRedirectSchool;
+  else window.location.href = fallback;
+}
+
+async function authFetchMenu(path, { method = 'GET', token, body } = {}) {
+  const cleanToken = sanitizeToken(token);
+
+  const headers = {};
+  if (body) headers['Content-Type'] = 'application/json';
+  if (cleanToken) headers.Authorization = `Bearer ${cleanToken}`;
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    throw new Error(`AUTH_${res.status}`);
+  }
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const msg = data?.message || data?.error || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+async function tryFetchMe(token) {
+  const cleanToken = sanitizeToken(token);
+  if (!cleanToken) return null;
+
+  try {
+    return await authFetchMenu('/users/me', { token: cleanToken, method: 'GET' });
+  } catch {
+    return null;
+  }
+}
+
+async function tryFetchUserById(id, token) {
+  const cleanToken = sanitizeToken(token);
+  if (!id || id === 'undefined' || id === 'null' || !cleanToken) return null;
+
+  try {
+    return await authFetchMenu(`/users/${encodeURIComponent(id)}`, {
+      token: cleanToken,
+      method: 'GET',
+    });
+  } catch {
+    return null;
+  }
+}
+
+export function initMenuPerfil(options = {}) {
+  const {
+    loginRedirect = 'index.html',
+    logoutRedirectProfessor = 'login-professor.html',
+    logoutRedirectStudent = 'login-aluno.html',
+    logoutRedirectSchool = 'login-escola.html',
+  } = options;
+
+  const menuBtn = $('menuBtn');
+  const menuPanel = $('menuPanel');
+  const closeBtn = $('menuCloseBtn');
+
+  if (!menuBtn || !menuPanel) return;
+  if (menuPanel.dataset.mkInit === '1') return;
+  menuPanel.dataset.mkInit = '1';
+
+  menuBtn.addEventListener('click', () => menuPanel.classList.toggle('open'));
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => menuPanel.classList.remove('open'));
+  }
+
+  const session = getSession();
+  const role = session.role;
+  const id = session.id;
+  const token = sanitizeToken(session.token);
+
+  if (token) {
+    localStorage.setItem(LS.token, token);
+  }
+
+  const manageAccountLink = $('manageAccountLink');
+  if (manageAccountLink) {
+    manageAccountLink.style.display = BILLING_ENABLED ? '' : 'none';
+  }
+
+  const meIdEl = $('meId');
+  if (meIdEl) meIdEl.textContent = '';
+
+  const meNameEl = $('meName');
+  const meEmailEl = $('meEmail');
+  const meRoleEl = $('meRole');
+
+  const logoutBtn = $('logoutMenuBtn');
+  const deleteBtn = $('deleteAccountBtn');
+
+  const saveBtn = $('saveProfileBtn');
+  const newEmailEl = $('newEmail');
+  const newPassEl = $('newPass');
+  const statusEl = $('menuStatus');
+
+  if (!role || !id) {
+    safeText(meNameEl, 'Visitante', 'Visitante');
+    safeText(meEmailEl, '', '');
+    safeText(meRoleEl, '', '');
+    loadPhoto(null, null);
+
+    if (saveBtn) saveBtn.style.display = 'none';
+    if (newEmailEl) newEmailEl.style.display = 'none';
+    if (newPassEl) newPassEl.style.display = 'none';
+    if (deleteBtn) deleteBtn.style.display = 'none';
+
+    if (logoutBtn) {
+      logoutBtn.textContent = 'Entrar';
+      logoutBtn.addEventListener('click', async () => {
+      logoutBtn.disabled = true;
+      await revokeSession();
+        menuPanel.classList.remove('open');
+        window.location.href = loginRedirect;
+      });
+    }
+    return;
+  }
+
+  safeText(meRoleEl, roleLabel(role), '');
+  loadPhoto(role, id);
+
+  const initialDeleteAllowed = canDeleteOwnAccount(session.user || { role }, role);
+  if (deleteBtn) {
+    deleteBtn.style.display = initialDeleteAllowed ? '' : 'none';
+  }
+
+  const photoInput = $('menuPhotoInput');
+  if (photoInput) {
+    photoInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!['image/png', 'image/jpeg'].includes(file.type)) {
+        toast({
+          title: 'Formato inválido',
+          message: 'Use PNG ou JPG.',
+          type: 'warn',
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          localStorage.setItem(photoKey(role, id), reader.result);
+          loadPhoto(role, id);
+          toast({
+            title: 'Pronto!',
+            message: 'Foto atualizada.',
+            type: 'success',
+          });
+        } catch {
+          toast({
+            title: 'Erro',
+            message: 'Não foi possível salvar a foto.',
+            type: 'error',
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  (async () => {
+    const me = (await tryFetchMe(token)) || (await tryFetchUserById(id, token));
+
+    if (me) {
+      safeText(meNameEl, me.name);
+      safeText(meEmailEl, me.email);
+
+      const normalized = normalizeRole(me.role);
+      const resolvedRole = normalized || role;
+      safeText(meRoleEl, roleLabel(resolvedRole), '');
+
+      if (resolvedRole === 'school' && me?.id) {
+        localStorage.setItem(LS.schoolId, String(me.id));
+        localStorage.removeItem(LS.professorId);
+        localStorage.removeItem(LS.studentId);
+      }
+
+      if (resolvedRole === 'professor' && me?.id) {
+        localStorage.setItem(LS.professorId, String(me.id));
+        localStorage.removeItem(LS.studentId);
+        localStorage.removeItem(LS.schoolId);
+      }
+
+      if (resolvedRole === 'student' && me?.id) {
+        localStorage.setItem(LS.studentId, String(me.id));
+        localStorage.removeItem(LS.professorId);
+        localStorage.removeItem(LS.schoolId);
+      }
+
+      const merged = { ...(session.user || {}), ...me };
+      localStorage.setItem(LS.user, JSON.stringify(merged));
+
+      if (deleteBtn) {
+        deleteBtn.style.display = canDeleteOwnAccount(merged, resolvedRole) ? '' : 'none';
+      }
+    } else {
+      const u = session.user;
+      if (u) {
+        safeText(meNameEl, u.name, '—');
+        safeText(meEmailEl, u.email, '—');
+      } else {
+        safeText(meNameEl, '—', '—');
+        safeText(meEmailEl, '—', '—');
+      }
+      safeText(meRoleEl, roleLabel(role), '');
+
+      if (deleteBtn) {
+        deleteBtn.style.display = canDeleteOwnAccount(u || { role }, role) ? '' : 'none';
+      }
+    }
+  })();
+
+     if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      const email = String(newEmailEl?.value || '').trim();
+      const password = String(newPassEl?.value || '');
+
+      if (!email && !password) {
+        if (statusEl) {
+          statusEl.textContent = 'Nada para salvar.';
+        }
+
+        toast({
+          title: 'Nada a fazer',
+          message: 'Preencha e-mail ou senha para atualizar.',
+          type: 'info',
+        });
+
+        return;
+      }
+
+      if (email && password) {
+        if (statusEl) {
+          statusEl.textContent =
+            'Altere o e-mail e a senha separadamente.';
+        }
+
+        toast({
+          title: 'Uma alteração por vez',
+          message:
+            'Salve primeiro o e-mail ou a senha. Depois faça a outra alteração.',
+          type: 'info',
+        });
+
+        return;
+      }
+
+      if (password && password.length < 8) {
+        if (statusEl) {
+          statusEl.textContent =
+            'Senha deve ter no mínimo 8 caracteres.';
+        }
+
+        toast({
+          title: 'Senha inválida',
+          message: 'A senha deve ter no mínimo 8 caracteres.',
+          type: 'warn',
+        });
+
+        return;
+      }
+
+      let currentPassword = '';
+
+     if (password || email) {
+  const confirmedPassword = await passwordConfirmationDialog({
+    title: 'Confirme sua senha atual',
+    message: password
+      ? 'Digite sua senha atual para autorizar a alteração da senha.'
+      : 'Digite sua senha atual para autorizar a alteração do e-mail.',
+    okText: password ? 'Alterar senha' : 'Alterar e-mail',
+    cancelText: 'Cancelar',
+  });
+
+  if (confirmedPassword === null) {
+    if (statusEl) statusEl.textContent = 'Alteração cancelada.';
+    return;
+  }
+
+  currentPassword = String(confirmedPassword);
+}
+
+      try {
+        if (statusEl) {
+          statusEl.textContent = 'Salvando...';
+        }
+
+        saveBtn.disabled = true;
+
+        let updated = null;
+        let verificationEmailSent = false;
+
+        if (password) {
+          updated = await authFetchMenu(
+            '/auth/change-password',
+            {
+              method: 'POST',
+              token,
+              body: {
+                currentPassword,
+                newPassword: password,
+              },
+            }
+          );
+       } else if (email) {
+  updated = await authFetchMenu('/users/me', {
+    method: 'PATCH',
+    token,
+    body: {
+      email,
+      currentPassword,
+    },
+  });
+
+          if (updated?.emailChanged) {
+            try {
+              await authFetchMenu(
+                '/auth/request-verify',
+                {
+                  method: 'POST',
+                  token,
+                  body: {
+                    email,
+                    expectedRole: role,
+                  },
+                }
+              );
+
+              verificationEmailSent = true;
+            } catch {
+              verificationEmailSent = false;
+            }
+          }
+        }
+
+        const currentUser =
+          safeJsonParse(
+            localStorage.getItem(LS.user)
+          ) || {};
+
+        const merged = { ...currentUser };
+
+        if (email) {
+          merged.email = email;
+
+          if (updated?.emailChanged) {
+            merged.emailVerified = false;
+          }
+
+          safeText(meEmailEl, email);
+        }
+
+        if (password) {
+          merged.mustChangePassword = false;
+        }
+
+        localStorage.setItem(
+          LS.user,
+          JSON.stringify(merged)
+        );
+
+        if (deleteBtn) {
+          deleteBtn.style.display =
+            canDeleteOwnAccount(merged, role)
+              ? ''
+              : 'none';
+        }
+
+        const successMessage = password
+          ? String(
+              updated?.message ||
+                'Senha alterada com sucesso.'
+            )
+          : updated?.emailChanged
+            ? verificationEmailSent
+              ? 'E-mail atualizado. Enviamos um link de confirmação para o novo endereço.'
+              : 'E-mail atualizado. Reenvie o link de confirmação pela tela de login.'
+            : 'Nenhuma alteração de e-mail foi necessária.';
+
+        if (statusEl) {
+          statusEl.textContent = successMessage;
+        }
+
+        toast({
+          title: 'Atualizado',
+          message: successMessage,
+          type: 'success',
+        });
+
+        if (newEmailEl) {
+          newEmailEl.value = '';
+        }
+
+        if (newPassEl) {
+          newPassEl.value = '';
+        }
+
+        if (updated?.emailChanged) {
+          sessionStorage.setItem(
+            'mk_just_logged_out',
+            '1'
+          );
+
+          clearAuthStorage();
+
+          window.setTimeout(() => {
+            redirectAfterLogout(
+              role,
+              logoutRedirectProfessor,
+              logoutRedirectStudent,
+              logoutRedirectSchool,
+              loginRedirect
+            );
+          }, 1800);
+        }
+      } catch (e) {
+        const msg = String(
+          e?.message || 'Erro ao atualizar dados.'
+        );
+
+        if (msg.startsWith('AUTH_')) {
+          toast({
+            title: 'Sessão expirada',
+            message: 'Faça login novamente.',
+            type: 'warn',
+          });
+
+          sessionStorage.setItem(
+            'mk_just_logged_out',
+            '1'
+          );
+
+          clearAuthStorage();
+
+          redirectAfterLogout(
+            role,
+            logoutRedirectProfessor,
+            logoutRedirectStudent,
+            logoutRedirectSchool,
+            loginRedirect
+          );
+
+          return;
+        }
+
+        if (statusEl) {
+          statusEl.textContent =
+            'Erro ao atualizar dados.';
+        }
+
+        toast({
+          title: 'Erro',
+          message: msg,
+          type: 'error',
+        });
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      logoutBtn.disabled = true;
+      await revokeSession();
+      menuPanel.classList.remove('open');
+
+      toast({
+        title: 'Saindo...',
+        message: 'Você foi desconectado.',
+        type: 'info',
+        duration: 1200,
+      });
+
+      sessionStorage.setItem('mk_just_logged_out', '1');
+      clearAuthStorage();
+
+      redirectAfterLogout(
+        role,
+        logoutRedirectProfessor,
+        logoutRedirectStudent,
+        logoutRedirectSchool,
+        loginRedirect
+      );
+    });
+  }
+
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', async () => {
+      const currentUser = safeJsonParse(localStorage.getItem(LS.user)) || session.user || {};
+      const deleteAllowed = canDeleteOwnAccount(currentUser, role);
+
+      if (!deleteAllowed) {
+        toast({
+          title: 'Ação indisponível',
+          message:
+            'Professores cadastrados pela escola não podem excluir a conta por aqui.',
+          type: 'warn',
+        });
+        return;
+      }
+
+      const ok = await confirmDialog({
+        title: 'Excluir conta',
+        message:
+          'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
+        okText: 'Sim, excluir',
+        cancelText: 'Cancelar',
+      });
+
+      if (!ok) return;
+
+      const password = await passwordConfirmationDialog({
+        title: 'Confirme sua senha',
+        message:
+          'A exclusão é permanente. Digite sua senha atual para confirmar.',
+        okText: 'Excluir definitivamente',
+        cancelText: 'Cancelar',
+      });
+
+      if (!password) return;
+
+      try {
+        const currentRole = normalizeRole(currentUser?.role) || role;
+
+        if (currentRole === 'school') {
+          await authFetchMenu('/school-dashboard/account/confirm', {
+            method: 'DELETE',
+            token,
+            body: { password },
+          });
+        } else if (currentRole === 'student' || currentRole === 'professor') {
+          await authFetchMenu('/users/me/confirm', {
+            method: 'DELETE',
+            token,
+            body: { password },
+          });
+        } else {
+          toast({
+            title: 'Ação indisponível',
+            message: 'Este perfil não pode excluir a conta.',
+            type: 'warn',
+          });
+          return;
+        }
+
+        localStorage.removeItem(photoKey(role, id));
+        sessionStorage.setItem('mk_just_logged_out', '1');
+        clearAuthStorage();
+
+        toast({
+          title: 'Conta excluída',
+          message: 'Sua conta foi removida com sucesso.',
+          type: 'success',
+        });
+
+        redirectAfterLogout(
+          role,
+          logoutRedirectProfessor,
+          logoutRedirectStudent,
+          logoutRedirectSchool,
+          loginRedirect
+        );
+      } catch (e) {
+        const msg = String(e?.message || 'Erro ao excluir conta.');
+
+        if (msg.startsWith('AUTH_')) {
+          toast({
+            title: 'Sessão expirada',
+            message: 'Faça login novamente.',
+            type: 'warn',
+          });
+          sessionStorage.setItem('mk_just_logged_out', '1');
+          clearAuthStorage();
+          redirectAfterLogout(
+            role,
+            logoutRedirectProfessor,
+            logoutRedirectStudent,
+            logoutRedirectSchool,
+            loginRedirect
+          );
+          return;
+        }
+
+        toast({ title: 'Erro', message: msg, type: 'error' });
+      }
+    });
+  }
+}
