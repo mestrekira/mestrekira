@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificação de e-mail | Mestre Kira</title>
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/auth-recovery.css" />
+  <link rel="icon" href="logo1.png" type="image/png" />
+</head>
+<body>
+  <main class="auth-page">
+    <section class="auth-card" aria-labelledby="pageTitle">
+      <div class="auth-card__header">
+        <h1 id="pageTitle">Verificação de e-mail</h1>
+        <p class="auth-card__subtitle">
+          Estamos validando seu endereço de e-mail para concluir o acesso à plataforma.
+        </p>
+      </div>
+
+      <div class="auth-result">
+        <p id="status" class="auth-status auth-status--box" aria-live="polite">
+          Processando...
+        </p>
+
+        <div class="auth-actions">
+          <a id="goProfessor" class="auth-link-btn" href="login-professor.html" hidden>
+            Ir para login do professor
+          </a>
+
+          <a id="goAluno" class="auth-link-btn" href="login-aluno.html" hidden>
+            Ir para login do aluno
+          </a>
+
+          <a id="goEscola" class="auth-link-btn" href="login-escola.html" hidden>
+  Ir para login da escola
+</a>
+          
+          <a id="goHome" class="auth-link-btn auth-link-btn--ghost" href="index.html" hidden>
+            Voltar ao início
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/verificar-email.js"></script>
+  <script src="js/footer.js"></script>
+</body>
+</html>
