@@ -473,302 +473,289 @@ font-size: 0.9rem;
 font-weight: 900;
 }
 
-.tabela{
-width: 100%;
-margin: 24px 0;
-border-collapse: separate;
-border-spacing: 0;
-table-layout: auto;
-background: var(--surface, #ffffff);
-border: 1px solid rgba(15, 23, 42, 0.10);
-border-radius: var(--radius, 16px);
-overflow: hidden;
-box-shadow: var(--shadow-sm, 0 8px 24px rgba(15, 23, 42, 0.08));
-font-size: 0.98rem;
-line-height: 1.55;
+/* ==========================================================================
+   TABELAS E CONTAINERS RESPONSIVOS
+   ========================================================================== */
+
+/* A classe .tabela agora é inerentemente responsiva por si só (display: block + overflow-x: auto),
+   funcionando perfeitamente em qualquer dispositivo mesmo sem container externo. */
+.tabela {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 24px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: auto;
+    background: var(--surface, #ffffff);
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    border-radius: var(--radius, 16px);
+    box-shadow: var(--shadow-sm, 0 8px 24px rgba(15, 23, 42, 0.08));
+    font-size: 0.98rem;
+    line-height: 1.55;
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(129, 19, 235, 0.45)
+        rgba(15, 23, 42, 0.06);
 }
 
-.tabela caption{
-padding: 14px 16px;
-color: var(--navy, #151a2e);
-font-weight: 800;
-text-align: left;
-background: rgba(15, 23, 42, 0.03);
-border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+.tabela caption {
+    padding: 14px 16px;
+    color: var(--navy, #151a2e);
+    font-weight: 800;
+    text-align: left;
+    background: rgba(15, 23, 42, 0.03);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-.tabela thead{
-background: linear-gradient(
-135deg,
-var(--navy, #151a2e),
-var(--navy-2, #263359)
-);
-color: #fff;
+.tabela thead {
+    background: linear-gradient(
+        135deg,
+        var(--navy, #151a2e),
+        var(--navy-2, #263359)
+    );
+    color: #fff;
 }
 
-.tabela thead th{
-padding: 15px 16px;
-text-align: left;
-font-weight: 800;
-letter-spacing: 0.02em;
-border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-white-space: normal;
+.tabela thead th {
+    padding: 15px 16px;
+    text-align: left;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    white-space: normal;
 }
 
 .tabela td,
-.tabela th{
-padding: 14px 16px;
-vertical-align: top;
+.tabela th {
+    padding: 14px 16px;
+    vertical-align: top;
 }
 
-.tabela tbody td{
-color: var(--text, #1e293b);
-border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+.tabela tbody td {
+    color: var(--text, #1e293b);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-.tabela tbody tr:last-child td{
-border-bottom: none;
+.tabela tbody tr:last-child td {
+    border-bottom: none;
 }
 
-.tabela tbody tr:nth-child(even){
-background: rgba(15, 23, 42, 0.025);
+.tabela tbody tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.025);
 }
 
-.tabela tbody tr{
-transition:
-background-color 0.2s ease,
-box-shadow 0.2s ease;
+.tabela tbody tr {
+    transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.tabela tbody tr:hover{
-background: rgba(129, 19, 235, 0.055);
-box-shadow: inset 4px 0 0 rgba(129, 19, 235, 0.55);
+.tabela tbody tr:hover {
+    background: rgba(129, 19, 235, 0.055);
+    box-shadow: inset 4px 0 0 rgba(129, 19, 235, 0.55);
 }
 
-.tabela tbody td:first-child{
-font-weight: 800;
-color: var(--navy, #151a2e);
-background: rgba(21, 26, 46, 0.025);
+.tabela tbody td:first-child {
+    font-weight: 800;
+    color: var(--navy, #151a2e);
+    background: rgba(21, 26, 46, 0.025);
 }
 
-.tabela a{
-color: var(--purple, #8113eb);
-font-weight: 700;
-text-decoration: none;
-text-underline-offset: 3px;
+.tabela a {
+    color: var(--purple, #8113eb);
+    font-weight: 700;
+    text-decoration: none;
+    text-underline-offset: 3px;
 }
 
-.tabela a:hover{
-text-decoration: underline;
+.tabela a:hover {
+    text-decoration: underline;
 }
 
-.tabela a:focus-visible{
-outline: 3px solid rgba(129, 19, 235, 0.30);
-outline-offset: 3px;
-border-radius: 4px;
+.tabela a:focus-visible {
+    outline: 3px solid rgba(129, 19, 235, 0.30);
+    outline-offset: 3px;
+    border-radius: 4px;
 }
 
 .tabela td.num,
-.tabela th.num{
-text-align: right;
-font-variant-numeric: tabular-nums;
+.tabela th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
-.tabela .tag{
-display: inline-flex;
-align-items: center;
-justify-content: center;
-padding: 5px 11px;
-border-radius: 999px;
-font-size: 0.76rem;
-font-weight: 800;
-line-height: 1.2;
-white-space: nowrap;
-background: rgba(129, 19, 235, 0.10);
-border: 1px solid rgba(129, 19, 235, 0.20);
-color: var(--navy, #151a2e);
+.tabela .tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.2;
+    white-space: nowrap;
+    background: rgba(129, 19, 235, 0.10);
+    border: 1px solid rgba(129, 19, 235, 0.20);
+    color: var(--navy, #151a2e);
 }
 
-.tabela-container{
-position: relative;
-width: 100%;
-margin: 24px 0;
-overflow-x: auto;
-border-radius: var(--radius, 16px);
--webkit-overflow-scrolling: touch;
-scrollbar-width: thin;
-scrollbar-color:
-rgba(129, 19, 235, 0.45)
-rgba(15, 23, 42, 0.06);
-}
-
-.tabela-container .tabela{
-margin: 0;
-min-width: 620px;
-}
-
-.tabela-container::-webkit-scrollbar{
-height: 9px;
-}
-
-.tabela-container::-webkit-scrollbar-track{
-background: rgba(15, 23, 42, 0.06);
-border-radius: 999px;
-}
-
-.tabela-container::-webkit-scrollbar-thumb{
-background: rgba(129, 19, 235, 0.45);
-border-radius: 999px;
-}
-
-.tabela-container::-webkit-scrollbar-thumb:hover{
-background: rgba(129, 19, 235, 0.68);
-}
-
-@media (max-width: 720px){
-
-.exemplo,
-.questao,
-.resolucao{
-margin: 20px 0;
-padding: 18px 16px 18px 19px;
-border-radius: 13px;
-}
-
-.exemplo p,
-.questao p,
-.resolucao p{
-line-height: 1.65;
-}
-
-.questao > p:not(:first-child){
-padding: 8px 9px;
-}
-
-.questao > p:not(:first-child):hover{
-transform: none;
-}
-
-.tabela-container{
-margin: 20px 0;
-padding-bottom: 4px;
-}
-
-.tabela{
-min-width: 600px;
-margin: 20px 0;
-font-size: 0.91rem;
-border-radius: 13px;
-}
-
-.tabela thead th{
-padding: 12px 13px;
-white-space: nowrap;
-}
-
-.tabela td,
-.tabela th{
-padding: 12px 13px;
-}
-
-.tabela tbody tr:hover{
-box-shadow: none;
-}
-
-}
-
-
+/* Containers externos de tabelas (.tabela-container e .tabela-responsiva unificados) */
+.tabela-container,
 .tabela-responsiva {
+    position: relative;
     width: 100%;
-    margin: 25px 0;
+    margin: 24px 0;
     overflow-x: auto;
     overflow-y: hidden;
-    border-radius: 10px;
+    border-radius: var(--radius, 16px);
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(129, 19, 235, 0.45)
+        rgba(15, 23, 42, 0.06);
 }
 
-
+/* Quando .tabela está dentro de um container, o container cuida da rolagem horizontal,
+   evitando barras de rolagem duplas e margens duplicadas */
+.tabela-container .tabela,
 .tabela-responsiva .tabela {
+    display: table;
     width: 100%;
-    min-width: 650px;
-    border-collapse: collapse;
+    min-width: 620px;
+    margin: 0;
+    overflow-x: visible;
 }
 
-
-.tabela-responsiva .tabela th,
-.tabela-responsiva .tabela td {
-    padding: 14px 16px;
-    border: 1px solid #d9dee8;
-    text-align: left;
-    vertical-align: top;
-    line-height: 1.6;
+/* Suporte para tabelas sem classe dentro dos containers */
+.tabela-container > table:not(.tabela),
+.tabela-responsiva > table:not(.tabela) {
+    width: 100%;
+    min-width: 620px;
+    margin: 0;
 }
 
-
-.tabela-responsiva .tabela th {
-    background-color: #12366b;
-    color: #ffffff;
-    font-weight: 700;
+/* Customização da barra de rolagem (WebKit / Chrome / Safari / Edge) */
+.tabela::-webkit-scrollbar,
+.tabela-container::-webkit-scrollbar,
+.tabela-responsiva::-webkit-scrollbar {
+    height: 9px;
 }
 
-
-.tabela-responsiva .tabela tbody tr:nth-child(even) {
-    background-color: #f5f7fb;
+.tabela::-webkit-scrollbar-track,
+.tabela-container::-webkit-scrollbar-track,
+.tabela-responsiva::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.06);
+    border-radius: 999px;
 }
 
-
-.tabela-responsiva .tabela tbody tr:hover {
-    background-color: #eef3fa;
+.tabela::-webkit-scrollbar-thumb,
+.tabela-container::-webkit-scrollbar-thumb,
+.tabela-responsiva::-webkit-scrollbar-thumb {
+    background: rgba(129, 19, 235, 0.45);
+    border-radius: 999px;
 }
 
-@media (max-width: 768px) {
+.tabela::-webkit-scrollbar-thumb:hover,
+.tabela-container::-webkit-scrollbar-thumb:hover,
+.tabela-responsiva::-webkit-scrollbar-thumb:hover {
+    background: rgba(129, 19, 235, 0.68);
+}
 
-    .tabela-responsiva {
+@media (max-width: 720px) {
+
+    .exemplo,
+    .questao,
+    .resolucao {
         margin: 20px 0;
-        border: 1px solid #d9dee8;
+        padding: 18px 16px 18px 19px;
+        border-radius: 13px;
     }
 
+    .exemplo p,
+    .questao p,
+    .resolucao p {
+        line-height: 1.65;
+    }
+
+    .questao > p:not(:first-child) {
+        padding: 8px 9px;
+    }
+
+    .questao > p:not(:first-child):hover {
+        transform: none;
+    }
+
+    .tabela-container,
+    .tabela-responsiva {
+        margin: 20px 0;
+        padding-bottom: 4px;
+    }
+
+    .tabela {
+        margin: 20px 0;
+        font-size: 0.91rem;
+        border-radius: 13px;
+    }
+
+    .tabela-container .tabela,
     .tabela-responsiva .tabela {
+        margin: 0;
         min-width: 600px;
     }
 
-    .tabela-responsiva .tabela th,
-    .tabela-responsiva .tabela td {
-        padding: 12px;
-        font-size: 0.95rem;
+    .tabela thead th {
+        padding: 12px 13px;
+        white-space: nowrap;
+    }
+
+    .tabela td,
+    .tabela th {
+        padding: 12px 13px;
+    }
+
+    .tabela tbody tr:hover {
+        box-shadow: none;
     }
 
 }
 
-@media (max-width: 480px){
+@media (max-width: 480px) {
 
-.exemplo,
-.questao,
-.resolucao{
-padding: 16px 14px 16px 18px;
-}
+    .exemplo,
+    .questao,
+    .resolucao {
+        padding: 16px 14px 16px 18px;
+    }
 
-.resolucao > p:first-child{
-align-items: flex-start;
-font-size: 1rem;
-}
+    .resolucao > p:first-child {
+        align-items: flex-start;
+        font-size: 1rem;
+    }
 
-.resolucao > p:first-child::before{
-width: 25px;
-height: 25px;
-font-size: 0.8rem;
-}
+    .resolucao > p:first-child::before {
+        width: 25px;
+        height: 25px;
+        font-size: 0.8rem;
+    }
 
-.tabela{
-min-width: 560px;
-font-size: 0.88rem;
-}
+    .tabela {
+        font-size: 0.88rem;
+    }
 
-.tabela thead th,
-.tabela td,
-.tabela th{
-padding: 11px 12px;
-}
+    .tabela-container .tabela,
+    .tabela-responsiva .tabela {
+        min-width: 560px;
+    }
+
+    .tabela thead th,
+    .tabela td,
+    .tabela th {
+        padding: 11px 12px;
+    }
 
 }
 
