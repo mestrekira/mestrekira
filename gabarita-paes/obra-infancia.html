@@ -1116,5 +1116,356 @@
   <script src="js/api.js"></script>
   <script src="js/acesso-conta.js?v=20261001-03"></script>
  <script src="js/obras-obrigatorias.js?v=20261102-acesso-01"></script>
+  <script>
+  const QUESTOES_CORDEL = [
+    {
+      id: "cordel_revisao2_q1",
+      referencia: "Abertura da obra e poema Cantoria",
+      habilidade: "Relacionar pertencimento cultural e projeto poético",
+      temaRevisao: "Cordel, interlocução e escolha dos assuntos",
+      enunciado:
+        "A abertura do livro manifesta uma ligação com os cantadores anônimos do Nordeste. Em Cantoria, a voz reúne paisagens, objetos e pessoas que transformou em canto. A relação entre esses elementos permite compreender que:",
+      alternativas: [
+        {
+          texto:
+            "o pertencimento popular exige que todos os poemas reproduzam o mesmo esquema métrico e dispensem a expressão individual.",
+          explicacaoErro:
+            "O livro apresenta formas variadas e uma voz individual marcada. A ligação cultural não equivale à uniformidade formal."
+        },
+        {
+          texto:
+            "a afirmação da voz individual se articula ao reconhecimento de experiências e sujeitos que ultrapassam sua trajetória pessoal.",
+          explicacaoErro: ""
+        },
+        {
+          texto:
+            "a escolha de pessoas comuns torna o poema um registro documental sem seleção ou elaboração de linguagem.",
+          explicacaoErro:
+            "A enumeração, as repetições e a musicalidade demonstram organização literária. O assunto cotidiano não elimina a elaboração."
+        },
+        {
+          texto:
+            "a ligação com o Nordeste substitui a paisagem de Goiás e torna incompatíveis os dois pertencimentos.",
+          explicacaoErro:
+            "A ligação com os cantadores convive com a afirmação de Goiás em Cantoria. O texto não exige exclusão de um vínculo pelo outro."
+        },
+        {
+          texto:
+            "a apresentação da comunidade depende de ocultar dificuldades materiais para construir uma imagem harmoniosa.",
+          explicacaoErro:
+            "A presença de casas pobres e objetos gastos impede essa conclusão. A escolha do repertório inclui sinais de privação."
+        }
+      ],
+      gabarito: "B",
+      explicacaoGabarito:
+        "A abertura estabelece uma comunidade cultural, enquanto Cantoria apresenta escolhas de representação. A voz afirma sua capacidade de cantar e reúne pessoas, lugares e objetos pouco prestigiados. A dimensão individual funciona em relação com outras experiências, não isoladamente."
+    },
+
+    {
+      id: "cordel_revisao2_q2",
+      referencia: "Poema: Das Pedras",
+      habilidade: "Interpretar a transformação de um símbolo",
+      temaRevisao: "Dificuldade, construção e criação poética",
+      enunciado:
+        "Em Das Pedras, a mesma matéria aparece ligada ao que ameaça a voz, ao que ela constrói e à sua poesia. Essa recorrência produz principalmente:",
+      alternativas: [
+        {
+          texto:
+            "uma passagem em que a criação exige abandonar por completo os materiais associados ao sofrimento.",
+          explicacaoErro:
+            "As pedras permanecem na construção e na imagem dos versos. A transformação não consiste em apagar essa matéria."
+        },
+        {
+          texto:
+            "uma equivalência fixa pela qual toda pedra representa exclusivamente uma agressão identificável contra a mulher.",
+          explicacaoErro:
+            "O símbolo assume funções diferentes. O poema não atribui uma causa exclusiva a todas as dificuldades."
+        },
+        {
+          texto:
+            "uma oposição entre trabalho e poesia, na qual o primeiro impede a constituição da segunda.",
+          explicacaoErro:
+            "As imagens aproximam a ação de construir da criação poética. Não estabelecem incompatibilidade entre ambas."
+        },
+        {
+          texto:
+            "uma reorganização da experiência em que aquilo que pesa também pode integrar formas de sustentação e expressão.",
+          explicacaoErro: ""
+        },
+        {
+          texto:
+            "uma demonstração de que as dificuldades deixam de existir quando o indivíduo adota uma atitude positiva.",
+          explicacaoErro:
+            "A permanência das pedras e das imagens de esforço impede reduzir o poema à eliminação da dificuldade pela disposição individual."
+        }
+      ],
+      gabarito: "D",
+      explicacaoGabarito:
+        "A repetição acompanha mudanças de função. A pedra pode ameaçar e também participar da escada, da casa e do verso. O poema transforma o valor da matéria sem apagar sua dureza nem reduzir a experiência a uma superação sem marcas."
+    },
+
+    {
+      id: "cordel_revisao2_q3",
+      referencia: "Poema: Estas Mãos",
+      habilidade: "Reconhecer tensões na representação do trabalho",
+      temaRevisao: "Dignidade, desgaste e recompensa",
+      enunciado:
+        "Estas Mãos enumera tarefas e apresenta mãos capazes de produzir e ajudar, mas também feridas e afastadas dos benefícios da colheita. A articulação dessas imagens:",
+      alternativas: [
+        {
+          texto:
+            "reúne afirmação da capacidade de trabalhar e reconhecimento de uma trajetória marcada por desgaste e recompensa insuficiente.",
+          explicacaoErro: ""
+        },
+        {
+          texto:
+            "demonstra que o sofrimento desaparece quando a trabalhadora reconhece o valor de sua própria atividade.",
+          explicacaoErro:
+            "O reconhecimento não elimina as feridas, a solidão ou as construções inconclusas apresentadas."
+        },
+        {
+          texto:
+            "transforma a ausência de recompensa em prova de que o trabalho descrito não possui utilidade social.",
+          explicacaoErro:
+            "As tarefas sustentam a vida doméstica e os vínculos com outras pessoas. A falta de recompensa não comprova inutilidade."
+        },
+        {
+          texto:
+            "estabelece que o trabalho manual impede qualquer aproximação entre a experiência cotidiana e a criação literária.",
+          explicacaoErro:
+            "A trajetória das mãos é precisamente matéria do poema. A oposição proposta não se sustenta."
+        },
+        {
+          texto:
+            "justifica a sobrecarga como condição necessária para que uma mulher adquira dignidade.",
+          explicacaoErro:
+            "Valorizar as mãos não equivale a declarar a sobrecarga necessária ou justa."
+        }
+      ],
+      gabarito: "A",
+      explicacaoGabarito:
+        "A enumeração dá visibilidade às atividades e aos saberes, enquanto as imagens de feridas e de semeadura sem colheita preservam o custo da trajetória. O poema não obriga o leitor a escolher entre dignidade e sofrimento: apresenta sua coexistência."
+    },
+
+    {
+      id: "cordel_revisao2_q4",
+      referencia: "Poema: Vida das Lavadeiras",
+      habilidade: "Interpretar a autocrítica e a interrupção metapoética",
+      temaRevisao: "Idealização e responsabilidade da representação",
+      enunciado:
+        "Em Vida das Lavadeiras, a voz interrompe uma imagem de iaras nas águas e volta a atenção para mulheres pobres trabalhando. As perguntas finais mantêm em discussão a possibilidade de escrever sem mentir. Esse percurso:",
+      alternativas: [
+        {
+          texto:
+            "estabelece uma proibição de imagens imaginárias válida para todos os poemas da coletânea.",
+          explicacaoErro:
+            "O questionamento incide sobre uma escolha de representação nesta situação. Outros poemas utilizam amplamente a imaginação."
+        },
+        {
+          texto:
+            "resolve definitivamente o problema ao provar que a voz nunca mais idealizará uma experiência social.",
+          explicacaoErro:
+            "As perguntas finais conservam a inquietação. A voz não afirma ter alcançado imunidade contra a idealização."
+        },
+        {
+          texto:
+            "atribui exclusivamente a outros poetas a responsabilidade de ocultar o sofrimento das trabalhadoras.",
+          explicacaoErro:
+            "A própria voz examina o início de seus versos. A autocrítica é central."
+        },
+        {
+          texto:
+            "substitui a literatura por uma descrição neutra que não contém escolhas ou imagens.",
+          explicacaoErro:
+            "O novo tratamento continua sendo composição poética, inclusive pela imagem de lavar a pobreza."
+        },
+        {
+          texto:
+            "expõe o risco de uma imagem agradável encobrir o trabalho e transforma a revisão do próprio olhar em assunto do poema.",
+          explicacaoErro: ""
+        }
+      ],
+      gabarito: "E",
+      explicacaoGabarito:
+        "A interrupção permite acompanhar uma decisão de escrita: a paisagem encantada é revista porque deixaria as lavadeiras em segundo plano. As perguntas finais não desfazem a denúncia, mas acrescentam a consciência de que representar o outro exige vigilância sobre as próprias escolhas."
+    },
+
+    {
+      id: "cordel_revisao2_q5",
+      referencia: "Poema: Dolor",
+      habilidade: "Relacionar repetição e ampliação da escala social",
+      temaRevisao: "Privação infantil e recorrência da morte",
+      enunciado:
+        "Dolor apresenta uma criança por meio de sucessivas ausências e termina com a imagem de pequenos túmulos de crianças pobres. A passagem entre esses momentos:",
+      alternativas: [
+        {
+          texto:
+            "isola um acontecimento excepcional, sem relacioná-lo às condições materiais descritas anteriormente.",
+          explicacaoErro:
+            "O final amplia a cena e a vincula à repetição da pobreza e da desnutrição."
+        },
+        {
+          texto:
+            "atribui a morte à recusa da criança em participar das práticas escolares e familiares disponíveis.",
+          explicacaoErro:
+            "O poema enumera privações. Não apresenta essas possibilidades como disponíveis e recusadas."
+        },
+        {
+          texto:
+            "amplia uma figura inicialmente singular para evidenciar uma experiência recorrente de desproteção e morte.",
+          explicacaoErro: ""
+        },
+        {
+          texto:
+            "compensa as carências materiais com uma representação idealizada da felicidade infantil.",
+          explicacaoErro:
+            "Não há essa compensação. A organização intensifica a percepção das ausências."
+        },
+        {
+          texto:
+            "transforma a precariedade em uma característica natural da infância, independente das relações sociais.",
+          explicacaoErro:
+            "A identificação da pobreza e da desnutrição impede naturalizar a situação como condição universal das crianças."
+        }
+      ],
+      gabarito: "C",
+      explicacaoGabarito:
+        "A sequência de negativas torna perceptível a acumulação de privações. O final passa da criança do início para outras mortes semelhantes, mostrando recorrência. A organização faz a perda individual ser compreendida em uma dimensão social."
+    },
+
+    {
+      id: "cordel_revisao2_q6",
+      referencia: "Poema: Cora Coralina, Quem É Você?",
+      habilidade: "Interpretar a construção de um autorretrato poético",
+      temaRevisao: "Experiência, reconhecimento e elaboração literária",
+      enunciado:
+        "Ao apresentar a própria trajetória, a voz aproxima escrita, culinária, limitações escolares e falta de incentivo familiar, sem organizar sua legitimidade em torno de prêmios. Essa construção permite compreender que:",
+      alternativas: [
+        {
+          texto:
+            "a ausência de reconhecimento institucional demonstra que o texto não possui organização ou trabalho de linguagem.",
+          explicacaoErro:
+            "Prêmios e elaboração são aspectos diferentes. A composição do autorretrato evidencia seleção e articulação de experiências."
+        },
+        {
+          texto:
+            "o poema propõe critérios de valor ligados à experiência e à autenticidade, sem que isso elimine sua elaboração literária.",
+          explicacaoErro: ""
+        },
+        {
+          texto:
+            "a valorização da culinária implica renúncia definitiva à escrita e à interlocução com futuros leitores.",
+          explicacaoErro:
+            "A voz apresenta seu livro e se dirige a gerações futuras. A valorização da culinária convive com a afirmação poética."
+        },
+        {
+          texto:
+            "as dificuldades de formação são apresentadas como escolhas inteiramente livres, sem interferência do meio.",
+          explicacaoErro:
+            "O poema destaca preconceitos, limitações e falta de estímulo. Não descreve um percurso sem obstáculos sociais."
+        },
+        {
+          texto:
+            "o desejo de renovação apaga a participação do passado na identidade apresentada.",
+          explicacaoErro:
+            "A renovação é formulada a partir de uma trajetória lembrada. O passado continua constitutivo."
+        }
+      ],
+      gabarito: "B",
+      explicacaoGabarito:
+        "A voz confronta uma hierarquia que faria do reconhecimento formal o único critério de valor. Trabalho e experiência sustentam sua apresentação, mas o poema organiza essas afirmações por escolhas de linguagem. A declaração de espontaneidade não equivale à inexistência de composição."
+    },
+
+    {
+      id: "cordel_revisao2_q7",
+      referencia: "Poema: Mãe Didi",
+      habilidade: "Relacionar homenagem e perspectiva da memória",
+      temaRevisao: "Cuidado e desigualdade histórica",
+      enunciado:
+        "Em Mãe Didi, a lembrança da mulher anteriormente escravizada se associa à proteção, às histórias e ao imaginário de Borralheira. Ao final, seu nome recebe lugar no verso. Uma interpretação que preserve as dimensões do poema deve:",
+      alternativas: [
+        {
+          texto:
+            "tomar a presença do afeto como prova de que a história de escravização se torna irrelevante para a relação.",
+          explicacaoErro:
+            "O poema explicita essa história. O reconhecimento do cuidado não exige apagá-la."
+        },
+        {
+          texto:
+            "considerar a homenagem um relato completo da experiência de Mãe Didi, independente da perspectiva de quem recorda.",
+          explicacaoErro:
+            "A voz organiza as lembranças de quem recebeu o cuidado. O texto não oferece acesso integral à experiência da homenageada."
+        },
+        {
+          texto:
+            "interpretar a referência a Borralheira como rejeição do cuidado real em benefício de uma fantasia sem vínculo afetivo.",
+          explicacaoErro:
+            "O imaginário do conto intensifica o significado do acolhimento, não o nega."
+        },
+        {
+          texto:
+            "reconhecer a inscrição afetiva de uma pessoa decisiva para a formação da voz, mantendo visível a desigualdade histórica mencionada.",
+          explicacaoErro: ""
+        },
+        {
+          texto:
+            "concluir que a origem da poesia é apresentada como conquista individual sem participação de outras pessoas.",
+          explicacaoErro:
+            "O movimento do poema aproxima a reflexão sobre a poesia da lembrança de Mãe Didi e das histórias ouvidas."
+        }
+      ],
+      gabarito: "D",
+      explicacaoGabarito:
+        "A homenagem preserva um nome e reconhece a participação de outra mulher na trajetória narrada. As imagens do conto dão forma ao sentimento de proteção. Essa dimensão afetiva convive com a referência histórica e com o limite de uma memória construída pela pessoa cuidada."
+    },
+
+    {
+      id: "cordel_revisao2_q8",
+      referencia: "Poema: Oferta – Aos Novos que Poetizam",
+      habilidade: "Interpretar a reflexão sobre escolhas de linguagem",
+      temaRevisao: "Palavra comum, automatismo e composição",
+      enunciado:
+        "Em Oferta – Aos Novos que Poetizam, os alertas sobre rimas forçadas, frases feitas e palavras desgastadas convivem com a defesa do direito da palavra pobre de figurar no verso. Essas posições:",
+      alternativas: [
+        {
+          texto:
+            "articulam atenção ao uso dos recursos e abertura a palavras pouco prestigiadas, sem tornar o descuido uma exigência estética.",
+          explicacaoErro: ""
+        },
+        {
+          texto:
+            "se anulam, pois aceitar a palavra comum obriga a abandonar qualquer avaliação das escolhas linguísticas.",
+          explicacaoErro:
+            "O poema reúne inclusão e atenção. A legitimidade de uma palavra não torna indiferente seu uso."
+        },
+        {
+          texto:
+            "estabelecem que a poesia deve utilizar somente palavras sem história anterior na língua.",
+          explicacaoErro:
+            "A crítica ao desgaste não equivale a exigir palavras inéditas. O texto admite inclusive recuperação de usos."
+        },
+        {
+          texto:
+            "demonstram a rejeição de toda rima e de todo adjetivo como procedimentos incompatíveis com o poema.",
+          explicacaoErro:
+            "Os alertas incidem sobre usos forçados ou automáticos. Não constituem uma proibição absoluta dos recursos."
+        },
+        {
+          texto:
+            "fazem do vocabulário socialmente prestigiado a condição exclusiva para a existência da poesia.",
+          explicacaoErro:
+            "A defesa da palavra pobre contesta justamente essa exclusividade."
+        }
+      ],
+      gabarito: "A",
+      explicacaoGabarito:
+        "O poema exige atenção à matéria verbal e questiona uma seleção baseada apenas em prestígio. Uma palavra comum pode participar da criação sem que isso dispense composição. A personificação das palavras torna esse debate concreto e expressivo."
+    }
+  ];
+
+  document.addEventListener("DOMContentLoaded", () => {
+    window.initObrasQuiz("cordel", QUESTOES_CORDEL);
+  });
+</script>
 </body>
 </html>
