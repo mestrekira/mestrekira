@@ -9,7 +9,11 @@
   <link rel="stylesheet" href="css/gabarita.css">
   <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
   <link rel="stylesheet" href="css/acesso-conta.css?v=20260930-01">
- <link rel="stylesheet" href="css/obras-obrigatorias.css?v=20261102-acesso-01">
+ <link rel="stylesheet" href="css/obras-obrigatorias.css?v=20261106-02">
+<style>
+    html:not([data-obras-access="granted"]) main { display: none !important; }
+    #obras-access-message[hidden], #main-content [hidden] { display: none !important; }
+  </style>
 </head>
 <body class="gabarita-theme">
   <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
@@ -31,28 +35,30 @@
     </div>
   </header>
 
-  <main class="container" id="main-content">
+  <main class="obras-container" id="main-content">
     <section id="account-access" class="card account-access" data-access-page="home" aria-label="Situação do seu acesso" aria-live="polite" hidden></section>
 
-    <nav class="obras-subnav" aria-label="Navegação estrutural">
+    <nav class="obras-breadcrumb" aria-label="Navegação estrutural">
       <a href="obras-obrigatorias.html">← Voltar para Obras Obrigatórias</a>
       <span aria-hidden="true">/</span>
       <span>Crônicas de Lucy Teixeira</span>
     </nav>
 
     <header class="obras-hero">
-      <span class="obras-hero-badge">PAES UEMA 2027 · Crônica e Modernismo Maranhense</span>
-      <h1 class="obras-hero-title">Crônicas de Lucy Teixeira</h1>
-      <p class="obras-hero-subtitle">
+      <span class="badge">PAES UEMA 2027 · Crônica e Modernismo Maranhense</span>
+      <h1>Crônicas de Lucy Teixeira</h1>
+      <p>
   Autora: Lucy Teixeira · Organização: Ceres Costa Fernandes ·
   Crônicas publicadas na imprensa maranhense em 1947
 </p>
     </header>
-<!--comentário-->
-  <section class="obras-section" id="entenda-a-obra" aria-labelledby="title-entenda">
-  <h2 class="obras-section-title" id="title-entenda">📖 Entenda a obra</h2>
+<nav class="obras-nav-pills" aria-label="Navegação rápida entre obras"><a href="obras-obrigatorias.html">← Visão geral</a><a href="obra-lucy-teixeira.html" class="active" aria-current="page">Crônicas de Lucy Teixeira</a><a href="obra-infancia.html">Infância</a><a href="obra-meu-livro-de-cordel.html">Meu livro de cordel</a><a href="obras-comparativo.html">Comparativo</a></nav><!--comentário-->
+  <section class="pedagogical-section" id="entenda-a-obra" aria-labelledby="title-entenda">
+  <div class="section-header">
+<h2 id="title-entenda">📖 Entenda a obra</h2>
 
-  <div class="obras-content-text">
+  </div>
+<div class="synthesis-content">
     <p>
       <strong>Crônicas de Lucy Teixeira</strong>, organizada por Ceres Costa
       Fernandes, reúne textos que transformam acontecimentos cotidianos em
@@ -106,16 +112,18 @@
   </div>
 </section>
 
-<section class="obras-section" id="principais-ideias" aria-labelledby="title-ideias">
-  <h2 class="obras-section-title" id="title-ideias">
+<section class="pedagogical-section" id="principais-ideias" aria-labelledby="title-ideias">
+  <div class="section-header">
+<h2 id="title-ideias">
     💡 Principais ideias e eixos de leitura
   </h2>
 
-  <div class="obras-eixos-grid">
+  </div>
+<div class="axis-grid">
 
-    <article class="obras-eixo-card">
-      <h3 class="obras-eixo-title">1. O cotidiano como construção literária</h3>
-      <p class="obras-eixo-text">
+    <article class="axis-card">
+      <h3>1. O cotidiano como construção literária</h3>
+      <p>
         Em <em>Os Cronistas</em>, a relevância do texto depende menos da
         grandeza do assunto do que da maneira de abordá-lo. Objetos, gestos
         e pequenas ocorrências podem ganhar densidade pelo olhar de quem
@@ -123,15 +131,16 @@
         coisas da vulnerabilidade humana. O cotidiano não é apenas um
         cenário: oferece imagens para pensar a existência.
       </p>
-      <p class="obras-eixo-text">
+      <div class="axis-example">
+<p>
         <strong>Observe:</strong> como o texto passa de uma coisa visível
         para uma reflexão que ultrapassa aquela situação particular.
       </p>
-    </article>
+    </div></article>
 
-    <article class="obras-eixo-card">
-      <h3 class="obras-eixo-title">2. Memória, percepção e perda</h3>
-      <p class="obras-eixo-text">
+    <article class="axis-card">
+      <h3>2. Memória, percepção e perda</h3>
+      <p>
         Em <em>O Canto da Chuva</em>, as lembranças surgem sem localização
         temporal segura, associadas a cores, sons, gestos e cheiros.
         Em <em>Rondó Quase Triste</em>, a repetição do chamado à infância
@@ -139,15 +148,16 @@
         A memória pode trazer abrigo, mas também tornar sensível a perda.
         Recordar não significa restituir integralmente o passado.
       </p>
-      <p class="obras-eixo-text">
+      <div class="axis-example">
+<p>
         <strong>Observe:</strong> perguntas, repetições, associações
         sensoriais e marcas de incerteza.
       </p>
-    </article>
+    </div></article>
 
-    <article class="obras-eixo-card">
-      <h3 class="obras-eixo-title">3. Trabalho: reconhecimento, hábito e desgaste</h3>
-      <p class="obras-eixo-text">
+    <article class="axis-card">
+      <h3>3. Trabalho: reconhecimento, hábito e desgaste</h3>
+      <p>
         Em <em>Leopoldo</em>, a narradora pede condições específicas para
         um menino que enfrenta uma concorrência desigual. Em
         <em>A Segunda Natureza</em>, a rotina profissional permanece
@@ -156,15 +166,16 @@
         Os textos permitem discutir tanto o reconhecimento pelo trabalho
         quanto o risco de a vida ficar inteiramente submetida a ele.
       </p>
-      <p class="obras-eixo-text">
+      <div class="axis-example">
+<p>
         <strong>Observe:</strong> quem controla o tempo e quais
         possibilidades restam às personagens.
       </p>
-    </article>
+    </div></article>
 
-    <article class="obras-eixo-card">
-      <h3 class="obras-eixo-title">4. Cultura e autonomia das mulheres</h3>
-      <p class="obras-eixo-text">
+    <article class="axis-card">
+      <h3>4. Cultura e autonomia das mulheres</h3>
+      <p>
         <em>Mulheres Literatas</em> questiona a associação entre
         feminilidade e ignorância. A defesa da cultura, porém, não se
         confunde com aprovação do exibicionismo intelectual.
@@ -173,15 +184,16 @@
         oposição à submissão. A obra articula reflexão estética e
         questionamento das relações entre homens e mulheres.
       </p>
-      <p class="obras-eixo-text">
+      <div class="axis-example">
+<p>
         <strong>Observe:</strong> os argumentos atribuídos a outros
         interlocutores e a maneira como a narradora os contesta.
       </p>
-    </article>
+    </div></article>
 
-    <article class="obras-eixo-card">
-      <h3 class="obras-eixo-title">5. Infância e desigualdade de experiências</h3>
-      <p class="obras-eixo-text">
+    <article class="axis-card">
+      <h3>5. Infância e desigualdade de experiências</h3>
+      <p>
         A infância não recebe um tratamento uniforme. Em <em>O Circo</em>,
         a menina preserva a capacidade de encantamento que os adultos
         encontram dificuldade para recuperar. Em <em>Guia</em>, duas
@@ -189,15 +201,16 @@
         Em <em>Odisséia de Antônia</em>, a vulnerabilidade de uma criança
         se torna inseparável das condições materiais da família.
       </p>
-      <p class="obras-eixo-text">
+      <div class="axis-example">
+<p>
         <strong>Observe:</strong> quais crianças podem brincar,
         circular com segurança ou receber cuidado em tempo oportuno.
       </p>
-    </article>
+    </div></article>
 
-    <article class="obras-eixo-card">
-      <h3 class="obras-eixo-title">6. A cidade vivida por pessoas diferentes</h3>
-      <p class="obras-eixo-text">
+    <article class="axis-card">
+      <h3>6. A cidade vivida por pessoas diferentes</h3>
+      <p>
         Em <em>Praia Grande</em>, sons, atividades e momentos de descanso
         compõem uma paisagem de trabalho. Em <em>Guia</em>, as ruas são
         percebidas de acordo com o movimento de possíveis doadores e o
@@ -206,15 +219,16 @@
         cuidado. São Luís aparece como espaço de convivência, mas também
         de oportunidades e obstáculos distribuídos de maneira desigual.
       </p>
-      <p class="obras-eixo-text">
+      <div class="axis-example">
+<p>
         <strong>Observe:</strong> como uma mesma cidade muda de
         significado conforme a condição de quem a percorre.
       </p>
-    </article>
+    </div></article>
 
   </div>
 
-  <div class="obras-content-text">
+  <div class="synthesis-content">
     <p>
       <strong>Cuidado com as generalizações:</strong> reconhecer a crítica
       social da coletânea não significa atribuir à narradora todas as
@@ -225,18 +239,19 @@
   </div>
 </section>
 
-<section class="obras-section" id="leitura-guiada" aria-labelledby="title-leitura">
-  <h2 class="obras-section-title" id="title-leitura">
+<section class="pedagogical-section" id="leitura-guiada" aria-labelledby="title-leitura">
+  <div class="section-header">
+<h2 id="title-leitura">
     🔍 Leitura guiada: oito percursos de interpretação
   </h2>
 
-  <article class="obras-guided-item">
-    <div class="obras-guided-header">
-      <h3 class="obras-guided-title">1. O Canto da Chuva — 03/01/1947</h3>
-      <span class="obras-guided-meta">Percepção, memória e prosa poética</span>
+  </div>
+<article class="guided-reading-card">
+    <h3>1. O Canto da Chuva — 03/01/1947</h3>
+      <div class="guided-meta">
+<span>Percepção, memória e prosa poética</span>
     </div>
-
-    <div class="obras-content-text">
+<div class="guided-content">
       <p>
         <strong>Ponto de partida:</strong> a chuva modifica o ambiente
         doméstico e o ritmo da escrita. A partir dessa percepção, aparecem
@@ -267,13 +282,12 @@
     </div>
   </article>
 
-  <article class="obras-guided-item">
-    <div class="obras-guided-header">
-      <h3 class="obras-guided-title">2. Leopoldo — 04/02/1947</h3>
-      <span class="obras-guided-meta">Reconhecimento e desigualdade de condições</span>
+  <article class="guided-reading-card">
+    <h3>2. Leopoldo — 04/02/1947</h3>
+      <div class="guided-meta">
+<span>Reconhecimento e desigualdade de condições</span>
     </div>
-
-    <div class="obras-content-text">
+<div class="guided-content">
       <p>
         <strong>Ponto de partida:</strong> um menino com deficiência vende
         jornais no Largo do Carmo. A narradora observa que ele não pode
@@ -311,13 +325,12 @@
     </div>
   </article>
 
-  <article class="obras-guided-item">
-    <div class="obras-guided-header">
-      <h3 class="obras-guided-title">3. Mulheres Literatas — 06/02/1947</h3>
-      <span class="obras-guided-meta">Vozes em confronto e argumentação irônica</span>
+  <article class="guided-reading-card">
+    <h3>3. Mulheres Literatas — 06/02/1947</h3>
+      <div class="guided-meta">
+<span>Vozes em confronto e argumentação irônica</span>
     </div>
-
-    <div class="obras-content-text">
+<div class="guided-content">
       <p>
         <strong>Ponto de partida:</strong> a narradora acompanha uma
         conversa de dois homens sobre mulheres instruídas. Em seguida,
@@ -354,13 +367,12 @@
     </div>
   </article>
 
-  <article class="obras-guided-item">
-    <div class="obras-guided-header">
-      <h3 class="obras-guided-title">4. A Segunda Natureza — 07/02/1947</h3>
-      <span class="obras-guided-meta">Aposentadoria, pertencimento e identidade</span>
+  <article class="guided-reading-card">
+    <h3>4. A Segunda Natureza — 07/02/1947</h3>
+      <div class="guided-meta">
+<span>Aposentadoria, pertencimento e identidade</span>
     </div>
-
-    <div class="obras-content-text">
+<div class="guided-content">
       <p>
         <strong>Ponto de partida:</strong> um funcionário é aposentado
         compulsoriamente. A liberdade inicialmente aproveitada em visitas
@@ -396,13 +408,12 @@
     </div>
   </article>
 
-  <article class="obras-guided-item">
-    <div class="obras-guided-header">
-      <h3 class="obras-guided-title">5. As Máquinas — 05/11/1947</h3>
-      <span class="obras-guided-meta">Ritmo do trabalho e restrição da experiência</span>
+  <article class="guided-reading-card">
+    <h3>5. As Máquinas — 05/11/1947</h3>
+      <div class="guided-meta">
+<span>Ritmo do trabalho e restrição da experiência</span>
     </div>
-
-    <div class="obras-content-text">
+<div class="guided-content">
       <p>
         <strong>Ponto de partida:</strong> moças trabalham em máquinas
         de costura instaladas no corredor de um sobrado. A concentração
@@ -440,13 +451,12 @@
     </div>
   </article>
 
-  <article class="obras-guided-item">
-    <div class="obras-guided-header">
-      <h3 class="obras-guided-title">6. Odisséia de Antônia — 04/10/1947</h3>
-      <span class="obras-guided-meta">Urgência, deslocamento e acesso ao cuidado</span>
+  <article class="guided-reading-card">
+    <h3>6. Odisséia de Antônia — 04/10/1947</h3>
+      <div class="guided-meta">
+<span>Urgência, deslocamento e acesso ao cuidado</span>
     </div>
-
-    <div class="obras-content-text">
+<div class="guided-content">
       <p>
         <strong>Ponto de partida:</strong> Antônia não dispõe de
         dinheiro para alimentar adequadamente a filha. Ao saber da
@@ -486,13 +496,12 @@
     </div>
   </article>
 
-  <article class="obras-guided-item">
-    <div class="obras-guided-header">
-      <h3 class="obras-guided-title">7. Guia — 21/06/1947</h3>
-      <span class="obras-guided-meta">Revelação narrativa e vulnerabilidade infantil</span>
+  <article class="guided-reading-card">
+    <h3>7. Guia — 21/06/1947</h3>
+      <div class="guided-meta">
+<span>Revelação narrativa e vulnerabilidade infantil</span>
     </div>
-
-    <div class="obras-content-text">
+<div class="guided-content">
       <p>
         <strong>Ponto de partida:</strong> duas crianças descalças
         discutem enquanto caminham. Aos poucos, o texto informa que
@@ -522,13 +531,12 @@
     </div>
   </article>
 
-  <article class="obras-guided-item">
-    <div class="obras-guided-header">
-      <h3 class="obras-guided-title">8. Casa de Bonecas — 11/06/1947</h3>
-      <span class="obras-guided-meta">Arte, interlocução e condição feminina</span>
+  <article class="guided-reading-card">
+    <h3>8. Casa de Bonecas — 11/06/1947</h3>
+      <div class="guided-meta">
+<span>Arte, interlocução e condição feminina</span>
     </div>
-
-    <div class="obras-content-text">
+<div class="guided-content">
       <p>
         <strong>Ponto de partida:</strong> um leitor pergunta a opinião
         da cronista sobre um filme baseado na peça de Ibsen.
@@ -566,7 +574,7 @@
     </div>
   </article>
 
-  <div class="obras-content-text">
+  <div class="synthesis-content">
     <h3>Conexões para ampliar a leitura</h3>
 
     <p>
@@ -597,12 +605,14 @@
   </div>
 </section>
 
-<section class="obras-section" id="questoes-lucy" aria-labelledby="title-questoes">
-  <h2 class="obras-section-title" id="title-questoes">
+<section class="pedagogical-section" id="questoes-lucy" aria-labelledby="title-questoes">
+  <div class="section-header">
+<h2 id="title-questoes">
     ✍️ Pratique a interpretação: oito questões autorais
   </h2>
 
-  <p>
+  </div>
+<p>
     As questões trabalham situações e procedimentos das crônicas.
     Leia as alternativas observando o alcance de cada afirmação:
     uma resposta pode mencionar um tema presente e, ainda assim,
@@ -610,16 +620,21 @@
     Após responder, confira a explicação e os comentários das demais opções.
   </p>
 
-  <div id="quiz-stats-lucy"></div>
-  <div id="quiz-container-lucy"></div>
+  <div class="quiz-header-bar">
+<div id="quiz-stats-lucy" class="quiz-score-badge" aria-live="polite"></div>
+  <button type="button" class="btn btn-secondary" id="btn-reset-lucy">Refazer questões</button>
+</div>
+<div id="quiz-container-lucy"></div>
 </section>
 
-<section class="obras-section" id="leitura-a-redacao" aria-labelledby="title-redacao">
-  <h2 class="obras-section-title" id="title-redacao">
+<section class="pedagogical-section" id="leitura-a-redacao" aria-labelledby="title-redacao">
+  <div class="section-header">
+<h2 id="title-redacao">
     📝 Da leitura à redação
   </h2>
 
-  <div class="obras-content-text">
+  </div>
+<div class="synthesis-content">
     <p>
       Uma referência literária se torna produtiva quando ajuda a explicar
       o problema discutido. Apresente uma situação concreta, interprete
@@ -629,10 +644,10 @@
     </p>
   </div>
 
-  <article class="obras-essay-card">
+  <article class="writing-card">
     <h3>Tema 1: A distância entre oferecer um serviço e garantir acesso ao cuidado</h3>
 
-    <p class="obras-essay-prompt">
+    <p>
       <strong>Exercício:</strong> escreva um parágrafo argumentativo
       relacionando <em>Odisséia de Antônia</em> às dificuldades que
       pessoas em situação de pobreza podem enfrentar para receber
@@ -641,16 +656,11 @@
       individual não basta para superá-los.
     </p>
 
-    <button
-      type="button"
-      class="btn btn-secondary"
-      onclick="window.toggleObrasCriteria(this, 'box-crit-1')"
-      aria-expanded="false"
-      aria-controls="box-crit-1">
+    <button type="button" class="btn btn-secondary btn-toggle-criteria" aria-expanded="false" aria-controls="box-crit-1" data-target="box-crit-1">
       Ver possibilidade de resposta e critérios
     </button>
 
-    <div class="obras-criteria-box" id="box-crit-1">
+    <div class="criteria-drawer" id="box-crit-1" hidden="hidden">
       <h4>Possibilidade de desenvolvimento</h4>
 
       <p>
@@ -677,10 +687,10 @@
     </div>
   </article>
 
-  <article class="obras-essay-card">
+  <article class="writing-card">
     <h3>Tema 2: O trabalho e a construção de uma vida para além da produtividade</h3>
 
-    <p class="obras-essay-prompt">
+    <p>
       <strong>Exercício:</strong> escreva um parágrafo argumentativo
       aproximando <em>A Segunda Natureza</em> e <em>As Máquinas</em>.
       Explique como a rotina profissional pode ocupar a identidade
@@ -688,16 +698,11 @@
       o aposentado e as costureiras.
     </p>
 
-    <button
-      type="button"
-      class="btn btn-secondary"
-      onclick="window.toggleObrasCriteria(this, 'box-crit-2')"
-      aria-expanded="false"
-      aria-controls="box-crit-2">
+    <button type="button" class="btn btn-secondary btn-toggle-criteria" aria-expanded="false" aria-controls="box-crit-2" data-target="box-crit-2">
       Ver possibilidade de resposta e critérios
     </button>
 
-    <div class="obras-criteria-box" id="box-crit-2">
+    <div class="criteria-drawer" id="box-crit-2" hidden="hidden">
       <h4>Possibilidade de desenvolvimento</h4>
 
       <p>
@@ -726,13 +731,15 @@
   </article>
 </section>
 
-<section class="obras-section" id="aprofundamento" aria-labelledby="title-aprofundamento">
-  <h2 class="obras-section-title" id="title-aprofundamento">
+<section class="pedagogical-section" id="aprofundamento" aria-labelledby="title-aprofundamento">
+  <div class="section-header">
+<h2 id="title-aprofundamento">
     🔗 Aprofunde seu estudo no Mestre Kira
   </h2>
 
-  <div class="obras-deepen-card">
-    <div class="obras-deepen-info">
+  </div>
+<div class="study-link-card">
+    <div>
       <h3>Análise de Crônicas de Lucy Teixeira</h3>
       <p>
         Amplie o estudo do contexto, dos temas e dos recursos literários
@@ -741,11 +748,7 @@
       </p>
     </div>
 
-    <a
-      href="https://www.mestrekira.com.br/analise-cronicas-lucy-teixeira-ceres-costa-fernandes-paes-uema-2027.html"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="btn">
+    <a href="https://www.mestrekira.com.br/analise-cronicas-lucy-teixeira-ceres-costa-fernandes-paes-uema-2027.html" target="_blank" rel="noopener noreferrer" class="btn">
       Ler análise no Mestre Kira ↗
     </a>
   </div>
@@ -763,260 +766,310 @@
 <script src="js/obras-obrigatorias.js?v=20261106-02"></script>
 
   <script>
-    const QUESTOES_LUCY = [
+  const QUESTOES_LUCY = [
+  {
+    "id": "lucy_revisao2_q1",
+    "referencia": "O Canto da Chuva — 03/01/1947",
+    "habilidade": "Relacionar organização textual e representação da memória",
+    "temaRevisao": "Memória fragmentária e prosa poética",
+    "enunciado": "Em O Canto da Chuva, a percepção da chuva faz surgirem imagens antigas, mas a voz do texto não consegue situá-las com precisão no tempo. A organização dessas lembranças contribui para:",
+    "alternativas": [
       {
-        id: "lucy_q1",
-        referencia: "Crônica 'O Canto da Chuva' (03/01/1947 · p. 9 da edição AML)",
-        habilidade: "Identificar efeitos de sentido decorrentes da prosa poética e da intertextualidade lírica",
-        temaRevisao: "Memória involuntária, sinestesia e modernismo intimista",
-        enunciado: "No texto de abertura da coletânea, intitulado 'O Canto da Chuva', a narradora observa a precipitação pluviométrica sobre as vidraças e dialoga com versos do poeta francês Paul Verlaine (<em>'Pour un coeur que s'ennuie / Ô le chant doux de la pluie...'</em>). A partir da análise dos recursos expressivos empregados, infere-se que a chuva atua na narrativa predominantemente como:",
-        alternativas: [
-          {
-            texto: "um obstáculo de ordem meteorológica que inviabiliza as atividades laborais da escritora e impõe a paralisação forçada do jornalismo local.",
-            explicacaoErro: "A chuva não é descrita como obstáculo impeditivo do trabalho da imprensa, mas como ritmo brando que desacelera a consciência e desperta a criação literária."
-          },
-          {
-            texto: "uma denúncia das precárias condições de drenagem urbana e dos alagamentos constantes no centro histórico da capital maranhense.",
-            explicacaoErro: "O texto adota tom predominantemente intimista e lírico; os problemas viários de São Luís aparecem em outras crônicas (como 'As Chuvas'), mas não em 'O Canto da Chuva'."
-          },
-          {
-            texto: "um elemento sinestésico e catalisador da memória involuntária, fundindo percepções sensoriais presentes a fragmentos afetivos do passado.",
-            explicacaoErro: ""
-          },
-          {
-            texto: "um pretexto cômico para ridicularizar as reações exageradas da população de São Luís diante da chegada da estação invernal.",
-            explicacaoErro: "Não há tom cômico ou zombeteiro; a atmosfera da crônica é contemplativa, suave e profundamente nostálgica."
-          },
-          {
-            texto: "uma alegoria sociopolítica sobre a censura que silenciava a liberdade de expressão dos intelectuais no ambiente do pós-Segunda Guerra.",
-            explicacaoErro: "A menção ao silêncio e às 'sombras' liga-se à introspecção e ao recolhimento da memória individual, e não a alegorias de censura política estatal."
-          }
-        ],
-        gabarito: "C",
-        explicacaoGabarito: "A crônica constrói uma atmosfera em que o ritmo suave e constante das gotas nas vidraças estimula a introspecção e a sinestesia (<em>'palavras finas, cujo colorido atinge a consciência com hesitações de bruma'</em>, <em>'a chuva parece fecundar o lado cinzento da memória'</em>). Ao citar Verlaine, a autora reforça a fusão entre a paisagem exterior e a paisagem interior da alma."
+        "letra": "A",
+        "texto": "compor um percurso de amadurecimento no qual cada lembrança esclarece a causa do acontecimento seguinte.",
+        "explicacaoErro": "As imagens não se organizam como etapas sucessivas de uma formação. A ligação é predominantemente sensorial e afetiva."
       },
       {
-        id: "lucy_q2",
-        referencia: "Crônica 'Leopoldo' (04/02/1947 · pp. 39-40 da edição AML)",
-        habilidade: "Analisar o ponto de vista da narradora sobre marginalização social e relações de trabalho",
-        temaRevisao: "Crítica social, representação da deficiência física e ética do trabalho",
-        enunciado: "Ao retratar o garoto Leopoldo, que vende jornais no Largo do Carmo apesar de sua limitação física, a narradora propõe às autoridades que lhe concedam 'um ponto' para a venda de seus exemplares. O fundamento ético dessa proposta sustenta-se:",
-        alternativas: [
-          {
-            texto: "na valorização da dignidade humana conquistada pelo empenho laboral autônomo, em oposição à condescendência passiva da esmola.",
-            explicacaoErro: ""
-          },
-          {
-            texto: "na convicção de que o trabalho infantil precoce é salutar e deve substituir a obrigatoriedade de frequência à escola formal.",
-            explicacaoErro: "Lucy não defende a substituição da escola pelo trabalho infantil (inclusive em 'Centro Pio XII' celebra a alfabetização de garotos de rua), mas valoriza a recusa de Leopoldo em transformar sua deficiência em moeda de caridade."
-          },
-          {
-            texto: "no receio higienista de que a circulação de pessoas com deficiência pudesse afugentar os frequentadores da Igreja do Carmo.",
-            explicacaoErro: "A autora não adota postura higienista de exclusão; pelo contrário, critica a indiferença dos transeuntes e apoia abertamente o garoto contra a desolação."
-          },
-          {
-            texto: "na necessidade de garantir a hegemonia de vendas dos jornais associados frente à concorrência dos periódicos cariocas.",
-            explicacaoErro: "A crônica não trata de disputas de mercado editorial corporativo, mas da luta concreta de um vendedor ambulante humilde por subsistência e honradez."
-          },
-          {
-            texto: "no reconhecimento da caridade religiosa tradicional como único instrumento eficaz para erradicar a pobreza na sociedade ludovicense.",
-            explicacaoErro: "A narradora afirma o oposto: diz textualmente que 'outro ficaria à porta de uma igreja a implorar a caridade pública... mas não Leopoldo', recusando a lógica da mendicância."
-          }
-        ],
-        gabarito: "A",
-        explicacaoGabarito: "Lucy Teixeira enfatiza que Leopoldo se recusa a 'viver da própria fraqueza' e a 'explorar-se desse jeito' pedindo esmolas nas escadarias do templo religioso. A concessão de um espaço regular de trabalho ('um lugar ao sol que deve ser à sombra') representa o reconhecimento da sociedade à coragem e ao respeito próprio do jovem trabalhador."
+        "letra": "B",
+        "texto": "encenar a aproximação descontínua do passado, cuja presença afetiva não depende de uma localização cronológica segura.",
+        "explicacaoErro": ""
       },
       {
-        id: "lucy_q3",
-        referencia: "Crônica 'Mulheres Literatas' (06/02/1947 · pp. 41-42 da edição AML)",
-        habilidade: "Reconhecer recursos argumentativos e irônicos na discussão sobre papéis sociais de gênero",
-        temaRevisao: "Condição feminina, ironia discursiva e crítica ao patriarcalismo",
-        enunciado: "Em 'Mulheres Literatas', a cronista reproduz o diálogo de dois frequentadores de um bar que qualificam a mulher instruída como 'a coisa mais antipática desse mundo'. Para desconstruir o posicionamento dos interlocutores masculinos, a narradora recorre ao seguinte procedimento discursivo:",
-        alternativas: [
-          {
-            texto: "adota um tom laudatório irrestrito à erudição exibicionista de mulheres que citam filósofos para humilhar seus maridos.",
-            explicacaoErro: "Lucy critica abertamente o pedantismo e o esnobismo, esclarecendo que não defende a mulher que 'a cada momento replicasse Dostoievski, Shakespeare... e Rui Barbosa'."
-          },
-          {
-            texto: "recomenda às leitoras que ocultem suas leituras e finjam fragilidade para garantir o casamento com homens abastados.",
-            explicacaoErro: "A cronista refuta com veemência a dissimulação feminina, apontando que manter um padrão de 'criaturinha' ignorante é enfadonho e insustentável."
-          },
-          {
-            texto: "reivindica a superioridade intelectual feminina como justificativa moral para afastar os homens da vida pública e política.",
-            explicacaoErro: "A autora não prega a exclusão masculina nem a supremacia de gênero, mas sim o companheirismo simétrico entre indivíduos cultos."
-          },
-          {
-            texto: "emprega a ironia ao expor que o ideal masculino de submissão repousa na conveniência de manter a mulher na ignorância e na alienação.",
-            explicacaoErro: ""
-          },
-          {
-            texto: "defende que a mulher letrada renuncie aos cuidados estéticos, visto que a cultura substitui integralmente a sociabilidade humana.",
-            explicacaoErro: "A autora pondera que 'cultura não desgasta feminilidade, saber não masculiniza Eva', mostrando que espírito e sensibilidade coexistem de forma equilibrada."
-          }
-        ],
-        gabarito: "D",
-        explicacaoGabarito: "A autora utiliza ironia sutil ao resumir a pretensa 'atração eterna' desejada pelos homens como resultante de 'uma boa dose de natural ignorância, base mesma de tão apreciável inconsciência'. Em seguida, argumenta com firmeza que 'um homem inteligente admira, antes de tudo, a cultura e a experiência da companheira', pois o saber alarga as bases psicológicas do ser humano."
+        "letra": "C",
+        "texto": "distinguir as recordações verdadeiras das imaginadas, eliminando gradualmente as imagens que não podem ser confirmadas.",
+        "explicacaoErro": "O texto não estabelece esse procedimento de verificação nem elimina as lembranças duvidosas."
       },
       {
-        id: "lucy_q4",
-        referencia: "Crônica 'A Segunda Natureza' (07/02/1947 · pp. 43-44 da edição AML)",
-        habilidade: "Inferir o impacto de transformações sociais e institucionais na formação da subjetividade",
-        temaRevisao: "Burocracia, aposentadoria compulsória e alienação existencial",
-        enunciado: "Na narrativa de 'A Segunda Natureza', o funcionário público recém-aposentado depara-se com a impossibilidade de usufruir a tão almejada liberdade. A imagem metafórica utilizada pela autora para traduzir a inadaptação do protagonista é a de:",
-        alternativas: [
-          {
-            texto: "uma embarcação à deriva no mar revolto que sucumbe diante da fúria das tempestades equatoriais.",
-            explicacaoErro: "Imagens marítimas são comuns na obra, mas a metáfora específica empregada para o aposentado é a do pássaro aprisionado."
-          },
-          {
-            texto: "um pássaro que, após longo confinamento em gaiola, perde a capacidade e a força para executar voos elevados.",
-            explicacaoErro: ""
-          },
-          {
-            texto: "um soldado derrotado em batalha que se recusa a entregar suas armas e condecorações militares.",
-            explicacaoErro: "O personagem é um pacato funcionário civil ('escriturário classe J'), sem nenhuma conotação de heroísmo bélico."
-          },
-          {
-            texto: "uma árvore frondosa cujas raízes apodrecem rapidamente ao ser transplantada para um solo arenoso.",
-            explicacaoErro: "A metáfora vegetal não é utilizada no episódio do escriturário, e sim a comparação ornitológica com a gaiola."
-          },
-          {
-            texto: "um ator que esquece suas falas durante a representação de uma comédia ligeira em palco provinciano.",
-            explicacaoErro: "Embora o teatro seja tema frequente nas crônicas de Lucy, não é essa a imagem que estrutura o drama existencial do servidor aposentado."
-          }
-        ],
-        gabarito: "B",
-        explicacaoGabarito: "O texto expressa com clareza: <em>'Aquela mudança trazia-lhe a liberdade tão sonhada, mas, como um pássaro longo tempo em gaiola desaprende os voos altos, ele, ao ensaiar as primeiras subidas, sentiu-se fraco, ansiado como se ousasse contra o próprio ser gratuitas violências'</em>. A rotina do trabalho tornou-se uma prisão tão incorporada que sua ausência gera desamparo."
+        "letra": "D",
+        "texto": "transformar a chuva em explicação objetiva para os acontecimentos que determinaram a infância da narradora.",
+        "explicacaoErro": "A chuva desencadeia associações no presente, mas não explica causalmente os acontecimentos passados."
       },
       {
-        id: "lucy_q5",
-        referencia: "Crônica 'O Circo' (23/01/1947 · pp. 25-26 da edição AML)",
-        habilidade: "Interpretar o contraste entre perspectivas distintas de observação da realidade",
-        temaRevisao: "Infância, imaginação poética e racionalismo desencantador",
-        enunciado: "Na crônica 'O Circo', a experiência de assistir a um espetáculo circense é marcada pela tensão entre dois modos de percepção do mundo. Essa polaridade manifesta-se formalmente no contraste entre:",
-        alternativas: [
-          {
-            texto: "a habilidade física do jovem equilibrista no trapézio e a completa imperícia acrobática demonstrada pelos palhaços.",
-            explicacaoErro: "A tensão central não reside no confronto técnico entre trapezista e palhaço, mas na divergência entre o olhar do adulto e o da criança."
-          },
-          {
-            texto: "a luxúria das cadeiras numeradas dos setores aristocráticos e a superlotação insalubre das arquibancadas de madeira.",
-            explicacaoErro: "Embora haja distinção espacial (cadeiras numeradas x arquibancada), o foco narrativo não é a crítica à infraestrutura do circo, mas a atitude espiritual dos espectadores."
-          },
-          {
-            texto: "o entusiasmo dos artistas estrangeiros da companhia e o desinteresse cultural generalizado do público ludovicense.",
-            explicacaoErro: "O público participa intensamente; as crianças gritam e batem palmas com entusiasmo incontido."
-          },
-          {
-            texto: "o tom melancólico das marchas executadas pela orquestra e a aparente agressividade das feras enjauladas.",
-            explicacaoErro: "Não há menção a feras agressivas; a orquestra toca marchas festivas e acompanha a dança dos acrobatas e palhaços."
-          },
-          {
-            texto: "o hiper-racionalismo cético do adulto ao lado e a capacidade infantil de maravilhar-se poeticamente com a ilusão do show.",
-            explicacaoErro: ""
-          }
-        ],
-        gabarito: "E",
-        explicacaoGabarito: "A crônica opõe o homem 'longo e fúnebre' sentado ao lado da narradora — que se recusa a rir, reclama que o palhaço é sem graça e vangloria-se dolorosamente de 'descobrir o truque' do trapezista — à menina alegre que, na saída, enxerga o rosto pintado do palhaço como 'uma estrela', resgatando a pureza poética da infância."
-      },
-      {
-        id: "lucy_q6",
-        referencia: "Crônica 'Praia Grande' (20/04/1947 · pp. 84-85 da edição AML)",
-        habilidade: "Relacionar elementos de caracterização espacial à dinâmica social e econômica urbana",
-        temaRevisao: "Espaço urbano de São Luís, divisão do trabalho e sensorialidade",
-        enunciado: "Ao descrever o ambiente da Praia Grande, polo histórico do comércio e das atividades portuárias em São Luís, a cronista constrói um mosaico do mundo do trabalho. Essa ambientação se caracteriza textualmente por:",
-        alternativas: [
-          {
-            texto: "uma apreensão sensorial rica que justapõe o esforço manual pesado dos carregadores e catraieiros à rotina burocrática dos escritórios de contabilidade.",
-            explicacaoErro: ""
-          },
-          {
-            texto: "uma exaltação ufanista das tecnologias industriais modernas importadas dos Estados Unidos que automatizaram totalmente o porto maranhense.",
-            explicacaoErro: "O trabalho retratado na Praia Grande é artesanal e braçal: homens costuram sacas de babaçu com enormes agulhas, conduzem carroças e operam catraias manuais."
-          },
-          {
-            texto: "uma condenação moral estrita dos tipos populares, como vendedoras de mingau e sorveteiros, acusados de perturbar o silêncio urbano.",
-            explicacaoErro: "A narradora trata os trabalhadores populares com evidente simpatia e afeto, qualificando seu descanso na rampa como momento de autêntica humanidade."
-          },
-          {
-            texto: "uma narrativa centrada na elite mercantil de origem portuguesa, ignorando a presença de funcionários subalternos e mulheres trabalhadoras.",
-            explicacaoErro: "O protagonismo do texto pertence justamente aos anônimos: carregadores, catraieiros, a jovem datilógrafa que suja as mãos de carbono e as vendedoras de laranjas."
-          },
-          {
-            texto: "um relato estritamente etnográfico que desconsidera as impressões líricas e subjetivas da narradora em relação à paisagem costeira.",
-            explicacaoErro: "Lucy não faz mero registro etnográfico impessoal; sua linguagem é marcadamente poética e pessoal (<em>'Praia Grande é mesmo uma grande praia... trabalho santificado na árdua luta... tão plena de heroicidade'</em>)."
-          }
-        ],
-        gabarito: "A",
-        explicacaoGabarito: "A crônica capta a diversidade da Praia Grande articulando os sons de carroças, sacas de babaçu e apitos de bonde ao cansaço da datilógrafa nos escritórios ('Deve e Haver') e à pausa dos catraieiros e vendedoras de mingau na escadaria da rampa, celebrando a heroicidade anônima do trabalho diário."
-      },
-      {
-        id: "lucy_q7",
-        referencia: "Crônica 'As Máquinas' (05/11/1947 · pp. 188-189 da edição AML)",
-        habilidade: "Avaliar a crítica aos efeitos da mecanização do trabalho e da cultura de massa sobre o operariado",
-        temaRevisao: "Trabalho fabril, alienação operária feminina e indústria cultural",
-        enunciado: "Na crônica 'As Máquinas', a autora descreve o cotidiano de jovens costureiras que operam num ateliê montado no corredor de um sobrado tradicional de azulejos. Diante do contraste entre o ritmo monótono das costuras e a música americana irradiada pelo rádio, a narradora conclui que:",
-        alternativas: [
-          {
-            texto: "as operárias encontram nas canções em inglês um estímulo pedagógico que as capacita a ascender profissionalmente no comércio exterior.",
-            explicacaoErro: "O texto indica que as moças cantam as palavras sem compreender o significado exato ('you rimando com blue... sem entender'), funcionando como mero som de fundo."
-          },
-          {
-            texto: "a atmosfera fabril moderna garante a libertação integral da mulher ao suprimir as tarefas domésticas patriarcais.",
-            explicacaoErro: "A crônica descreve um ambiente opressivo, seco e exaustivo, no qual o trabalho fabril desgasta os corpos jovens sem trazer emancipação real."
-          },
-          {
-            texto: "o proprietário do ateliê é um empresário generoso que utiliza a tecnologia para reduzir drasticamente a jornada das trabalhadoras.",
-            explicacaoErro: "A menção inicial ao casal proprietário é irônica; a realidade das jovens é descrita com palidez, pés inchados e submissão à velocidade da encomenda."
-          },
-          {
-            texto: "a cadência mecânica das agulhas e engrenagens tende a transformar a própria subjetividade das trabalhadoras em extensão repetitiva do maquinário.",
-            explicacaoErro: ""
-          },
-          {
-            texto: "a introdução do rádio no espaço laboral maranhense provocou a imediata rebelião grevista das costureiras contra o patrão.",
-            explicacaoErro: "Não há revolta ou greve na narrativa; as moças permanecem caladas, curvadas sobre os tecidos, absorvidas pela imposição mecânica da tarefa."
-          }
-        ],
-        gabarito: "D",
-        explicacaoGabarito: "Lucy formula uma das mais pungentes reflexões sobre a alienação operária: a repetição contínua faz com que as moças nem consigam desviar o olhar para a rua. No desfecho, a autora sintetiza esse processo em tom interrogativo: <em>'se é apenas o coração máquina igual a outra, máquina a embainhar a fazenda descolorida dos dias?...'</em>."
-      },
-      {
-        id: "lucy_q8",
-        referencia: "Crônicas 'Os Cronistas' (10/05/1947) e 'Por que se escreve?' (12/03/1947) · Edição AML",
-        habilidade: "Identificar a concepção metalinguística de crônica moderna formulada pela escritora",
-        temaRevisao: "Gênero crônica, metalinguagem e diálogo com o leitor",
-        enunciado: "Em diversos momentos da coletânea, Lucy Teixeira reflete sobre o próprio ato de escrever para o jornal diário, dialogando com leitores e delimitando o território da crônica. Segundo as ponderações da autora nesses textos metalinguísticos, a crônica moderna se define primordialmente como:",
-        alternativas: [
-          {
-            texto: "um tratado filosófico rigoroso que deve guiar as massas populares por meio de normas morais inflexíveis.",
-            explicacaoErro: "A autora repele textualmente o dogmatismo doutrinário, afirmando que um cronista sisudo destilando filosofias pesadas pela manhã não seria tolerado pelo leitor."
-          },
-          {
-            texto: "uma conversa despretensiosa, ágil e cúmplice com o leitor, capaz de extrair beleza, lirismo e reflexão das ocorrências efêmeras do cotidiano.",
-            explicacaoErro: ""
-          },
-          {
-            texto: "uma reportagem puramente objetiva e policial, desprovida de qualquer interferência lírica, adjetivação ou estilo pessoal.",
-            explicacaoErro: "A cronista distingue sua arte do 'frio profissionalismo de um repórter', reivindicando justamente a subjetividade, o lirismo e a sensibilidade emotiva."
-          },
-          {
-            texto: "um panfleto político partidário destinado exclusivamente a defender candidaturas governamentais nas eleições estaduais.",
-            explicacaoErro: "Em 'Depois das Eleições' e em 'Os Cronistas', Lucy lamenta a intromissão do partidarismo cego e recusa subordinar sua literatura à propaganda partidária."
-          },
-          {
-            texto: "uma transposição mimética do romance naturalista do século XIX, com predomínio do determinismo biológico sobre a imaginação poética.",
-            explicacaoErro: "A estética de Lucy Teixeira está vinculada ao Modernismo intimista e lírico da década de 1940, muito distante das teses deterministas do Naturalismo oitocentista."
-          }
-        ],
-        gabarito: "B",
-        explicacaoGabarito: "Em 'Os Cronistas', Lucy explicita que a missão do cronista não é a gravidade do repórter nem a sisudez do filósofo, mas 'a maneira de tratar o possível aspecto das manhãs... das coisas verdes e amarelas, estranhas e banais'. Em 'Por que se escreve?', conclui com singeleza: escreve-se 'porque se gosta' e pelo desejo de comunicar a sensibilidade ao leitor matinal."
+        "letra": "E",
+        "texto": "mostrar que a escrita ordena inteiramente o passado e encerra a incerteza que acompanhava as primeiras lembranças.",
+        "explicacaoErro": "A escrita dá forma à experiência, mas não suprime suas lacunas."
       }
-    ];
+    ],
+    "gabarito": "B",
+    "explicacaoGabarito": "A sucessão de árvore, mãos, gestos e ambientes acompanha uma memória que aproxima imagens sem recuperar sua posição exata no tempo. As perguntas sobre onde situá-las explicitam essa incerteza. Forma e conteúdo convergem: a fragmentação faz o leitor experimentar o movimento da recordação."
+  },
+  {
+    "id": "lucy_revisao2_q2",
+    "referencia": "Leopoldo — 04/02/1947",
+    "habilidade": "Inferir a relação entre desigualdade e proposta de intervenção",
+    "temaRevisao": "Reconhecimento e condições de participação",
+    "enunciado": "Ao pedir um ponto de venda reservado para Leopoldo, depois de descrever a dificuldade do menino para acompanhar os demais jornaleiros, a narradora:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "considera que o elogio à coragem individual basta para neutralizar os efeitos da concorrência desigual.",
+        "explicacaoErro": "O elogio conduz a um pedido de mudança material, mostrando que reconhecer o esforço não basta."
+      },
+      {
+        "letra": "B",
+        "texto": "propõe retirar o menino do convívio com os outros vendedores, tomando a deficiência como incapacidade para qualquer trabalho.",
+        "explicacaoErro": "O ponto deve permitir a continuidade da venda de jornais. A narradora reconhece essa atividade."
+      },
+      {
+        "letra": "C",
+        "texto": "defende que todos os vendedores recebam condições idênticas, pois qualquer tratamento diferenciado produziria injustiça.",
+        "explicacaoErro": "A proposta é precisamente uma condição específica para responder à desigualdade observada."
+      },
+      {
+        "letra": "D",
+        "texto": "faz da admiração pelo menino o fundamento de uma medida concreta que procura compensar sua desvantagem na venda de jornais.",
+        "explicacaoErro": ""
+      },
+      {
+        "letra": "E",
+        "texto": "conclui que a necessidade de assistência decorre da falta de iniciativa, apresentando o menino como confirmação dessa regra.",
+        "explicacaoErro": "O texto pede proteção para um menino que demonstra iniciativa. Uma condenação geral de quem precisa de auxílio ultrapassa o episódio."
+      }
+    ],
+    "gabarito": "D",
+    "explicacaoGabarito": "A dificuldade de correr até clientes e veículos fundamenta o pedido de reservar um local de venda. A proposta não se limita à perseverança individual. O jogo entre lugar ao sol e proteção à sombra reúne reconhecimento social e necessidade material."
+  },
+  {
+    "id": "lucy_revisao2_q3",
+    "referencia": "Mulheres Literatas — 06/02/1947",
+    "habilidade": "Distinguir posições e identificar uma concessão argumentativa",
+    "temaRevisao": "Cultura, simplicidade e crítica ao pedantismo",
+    "enunciado": "Em Mulheres Literatas, a narradora contesta os homens que depreciam mulheres instruídas, mas também critica a exibição constante de referências literárias. Essas duas posições:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "são compatíveis, porque distinguem a formação que amplia a experiência da ostentação intelectual que prejudica a convivência.",
+        "explicacaoErro": ""
+      },
+      {
+        "letra": "B",
+        "texto": "se anulam, porque a crítica à ostentação obriga a narradora a reconhecer que o estudo compromete a feminilidade.",
+        "explicacaoErro": "Criticar o exibicionismo não implica admitir incompatibilidade entre saber e feminilidade."
+      },
+      {
+        "letra": "C",
+        "texto": "revelam uma mudança de opinião pela qual a narradora termina aceitando a ignorância feminina que antes rejeitava.",
+        "explicacaoErro": "O desfecho reafirma o valor da cultura e da experiência."
+      },
+      {
+        "letra": "D",
+        "texto": "restringem a defesa da educação às mulheres que conseguem esconder suas leituras e evitar qualquer debate com os homens.",
+        "explicacaoErro": "Simplicidade não equivale a ocultar o conhecimento nem a renunciar ao diálogo."
+      },
+      {
+        "letra": "E",
+        "texto": "substituem a discussão sobre o acesso à cultura por uma comparação destinada a provar a superioridade intelectual feminina.",
+        "explicacaoErro": "O texto defende a formação intelectual e o companheirismo, sem desenvolver uma tese de superioridade feminina."
+      }
+    ],
+    "gabarito": "A",
+    "explicacaoGabarito": "A narradora admite que a exibição de erudição pode ser desagradável, mas a separa da cultura em si. A distinção enfraquece a generalização dos interlocutores: o problema do pedantismo não justifica depreciar a mulher instruída."
+  },
+  {
+    "id": "lucy_revisao2_q4",
+    "referencia": "A Segunda Natureza — 07/02/1947",
+    "habilidade": "Interpretar a relação entre título, comparação e trajetória da personagem",
+    "temaRevisao": "Hábito profissional e identidade",
+    "enunciado": "A comparação do aposentado com um pássaro que desaprendeu os voos altos ajuda a compreender o título A Segunda Natureza porque sugere que:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "a incapacidade de reorganizar a vida comprova a adequação da regra institucional aplicada ao personagem.",
+        "explicacaoErro": "A comparação mostra o efeito do hábito, sem demonstrar que a regra administrativa é adequada."
+      },
+      {
+        "letra": "B",
+        "texto": "a permanência no trabalho preservaria todas as capacidades do personagem, eliminando os efeitos do envelhecimento.",
+        "explicacaoErro": "O texto não afirma que permanecer no cargo resolveria integralmente sua situação."
+      },
+      {
+        "letra": "C",
+        "texto": "o desejo de liberdade era apenas uma estratégia para obter reconhecimento dos antigos colegas.",
+        "explicacaoErro": "O início da aposentadoria inclui atividades efetivamente aproveitadas. A dificuldade posterior não demonstra fingimento."
+      },
+      {
+        "letra": "D",
+        "texto": "o afastamento do cargo permite recuperar imediatamente uma identidade anterior, preservada durante os anos de serviço.",
+        "explicacaoErro": "O conflito decorre justamente da dificuldade de encontrar outra forma de organizar a existência."
+      },
+      {
+        "letra": "E",
+        "texto": "a retirada de uma obrigação externa não desfaz os hábitos pelos quais a rotina profissional passou a organizar a existência.",
+        "explicacaoErro": ""
+      }
+    ],
+    "gabarito": "E",
+    "explicacaoGabarito": "O cargo termina, mas o personagem continua orientado por seus gestos, horários e referências. A comparação indica que abrir a gaiola não restitui automaticamente a capacidade de voar. O retorno à repartição desenvolve a distância entre desligamento formal e transformação interior."
+  },
+  {
+    "id": "lucy_revisao2_q5",
+    "referencia": "As Máquinas — 05/11/1947",
+    "habilidade": "Interpretar o papel de imagens contrastantes na crítica ao trabalho",
+    "temaRevisao": "Música, descanso imaginado e desgaste",
+    "enunciado": "Em As Máquinas, a música do rádio é associada a um rio no qual as trabalhadoras poderiam aliviar o cansaço e abandonar seus instrumentos. Entretanto, elas continuam concentradas nas encomendas. O contraste:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "indica que o lazer já está incorporado à jornada e compensa o esforço exigido pela produção.",
+        "explicacaoErro": "O alívio aparece como possibilidade distante, não como compensação efetivamente experimentada."
+      },
+      {
+        "letra": "B",
+        "texto": "apresenta a falta de compreensão do inglês como causa suficiente para a continuidade do sofrimento.",
+        "explicacaoErro": "O centro do conflito é o trabalho absorvente. A imagem de descanso não depende apenas da compreensão das palavras."
+      },
+      {
+        "letra": "C",
+        "texto": "acentua a distância entre uma experiência de alívio imaginável e uma rotina que restringe a disponibilidade para vivê-la.",
+        "explicacaoErro": ""
+      },
+      {
+        "letra": "D",
+        "texto": "revela que as costureiras rejeitam deliberadamente a arte por considerarem a produtividade um valor superior.",
+        "explicacaoErro": "A narradora mostra absorção e desgaste, sem atribuir às moças uma escolha consciente contra a arte."
+      },
+      {
+        "letra": "E",
+        "texto": "antecipa a interrupção coletiva do serviço, depois confirmada pela comparação entre coração e máquina.",
+        "explicacaoErro": "A crônica não apresenta paralisação. A comparação final intensifica a percepção da continuidade mecânica."
+      }
+    ],
+    "gabarito": "C",
+    "explicacaoGabarito": "O rio associado à melodia representa uma alternativa sensível à secura do ambiente. Como essa alternativa permanece inacessível enquanto as rodas continuam a girar, a música torna mais perceptível a privação. A imagem final aproxima o ritmo do trabalho da vida afetiva."
+  },
+  {
+    "id": "lucy_revisao2_q6",
+    "referencia": "Odisséia de Antônia — 04/10/1947",
+    "habilidade": "Relacionar transformação de um objeto e efeito do desfecho",
+    "temaRevisao": "Acesso ao cuidado e construção da denúncia",
+    "enunciado": "Antônia recebe latas de leite para a filha, mas retorna quando a criança já morreu. Depois, vende o leite para comprar uma vela. A mudança de finalidade do objeto:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "desloca a responsabilidade pela tragédia para a escolha materna de trocar o alimento por outro produto.",
+        "explicacaoErro": "A venda ocorre depois da morte. Inverter a sequência atribui à mãe uma culpa que o desfecho não estabelece."
+      },
+      {
+        "letra": "B",
+        "texto": "concentra o caráter irreversível da perda, pois aquilo que deveria sustentar a vida passa a financiar um gesto ligado à morte.",
+        "explicacaoErro": ""
+      },
+      {
+        "letra": "C",
+        "texto": "demonstra que a assistência foi recusada pela família, apesar de estar disponível antes do agravamento da situação.",
+        "explicacaoErro": "Antônia procura e aceita a ajuda assim que toma conhecimento do serviço."
+      },
+      {
+        "letra": "D",
+        "texto": "resolve o conflito econômico da protagonista e transforma a perda em possibilidade de reorganização material.",
+        "explicacaoErro": "A venda não resolve a pobreza nem compensa a morte."
+      },
+      {
+        "letra": "E",
+        "texto": "reduz a importância dos deslocamentos anteriores, mostrando que o resultado dependia apenas do destino individual.",
+        "explicacaoErro": "Distância, falta de dinheiro e desencontros de atendimento são centrais ao percurso narrativo."
+      }
+    ],
+    "gabarito": "B",
+    "explicacaoGabarito": "O mesmo objeto permanece, mas sua função muda radicalmente. O leite chega quando já não pode cumprir a finalidade da busca. A compra da vela torna perceptível a passagem da esperança ao luto e concentra a crítica aos obstáculos enfrentados pela mãe."
+  },
+  {
+    "id": "lucy_revisao2_q7",
+    "referencia": "Guia — 21/06/1947",
+    "habilidade": "Reinterpretar informações iniciais a partir do desenvolvimento narrativo",
+    "temaRevisao": "Revelação, dependência e desproteção infantil",
+    "enunciado": "Em Guia, a cegueira do menino e a busca por esmolas são esclarecidas durante a narrativa; no final, a menina manifesta medo dos automóveis. Essa distribuição de informações faz o leitor:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "confirmar que a menina controla o percurso por conhecer melhor a cidade e não enfrentar riscos próprios.",
+        "explicacaoErro": "O medo final evidencia sua vulnerabilidade. Ser guia não elimina os perigos que ela enfrenta."
+      },
+      {
+        "letra": "B",
+        "texto": "entender que o menino escolhe ruas movimentadas por interesse no espetáculo urbano que não consegue observar.",
+        "explicacaoErro": "A escolha se vincula à possibilidade de receber esmolas, e não principalmente à curiosidade sobre a paisagem."
+      },
+      {
+        "letra": "C",
+        "texto": "considerar que o conflito desaparece quando a identificação da rua permite às crianças encontrar o caminho de casa.",
+        "explicacaoErro": "O texto não termina com esse retorno. A tensão entre sobrevivência e perigo permanece."
+      },
+      {
+        "letra": "D",
+        "texto": "rever a aparência de simples teimosia e perceber um conflito entre a necessidade de obter ajuda e o receio do trânsito.",
+        "explicacaoErro": ""
+      },
+      {
+        "letra": "E",
+        "texto": "concluir que a dependência do menino o impede de exercer pressão sobre a companheira durante o deslocamento.",
+        "explicacaoErro": "Apesar de depender da menina, ele insiste no destino e a pressiona."
+      }
+    ],
+    "gabarito": "D",
+    "explicacaoGabarito": "A informação sobre a cegueira altera a leitura dos gestos e da orientação. As esmolas explicam a procura por movimento, enquanto a última fala revela seu custo para a menina. O desfecho impede reduzir a discussão ao temperamento das crianças."
+  },
+  {
+    "id": "lucy_revisao2_q8",
+    "referencia": "Casa de Bonecas — 11/06/1947; Os Cronistas — 10/05/1947",
+    "habilidade": "Relacionar concepções de criação artística em textos diferentes",
+    "temaRevisao": "Tratamento do assunto e elaboração literária",
+    "enunciado": "Em Casa de Bonecas, a narradora valoriza a maneira pela qual Ibsen trabalha uma ideia antiga. Em Os Cronistas, destaca a maneira de abordar assuntos aparentemente banais. Em conjunto, essas posições indicam que:",
+    "alternativas": [
+      {
+        "letra": "A",
+        "texto": "a elaboração artística pode renovar a experiência de um assunto, sem depender exclusivamente de sua novidade ou grandiosidade.",
+        "explicacaoErro": ""
+      },
+      {
+        "letra": "B",
+        "texto": "a permanência da arte exige abandonar os problemas sociais e privilegiar temas sem ligação com o cotidiano.",
+        "explicacaoErro": "Os dois textos trabalham assuntos sociais ou cotidianos; a elaboração não exige abandoná-los."
+      },
+      {
+        "letra": "C",
+        "texto": "a familiaridade do público com um tema dispensa o trabalho de linguagem, pois o reconhecimento assegura o valor da obra.",
+        "explicacaoErro": "Ambos atribuem importância à maneira de tratar o assunto. Reconhecê-lo não basta."
+      },
+      {
+        "letra": "D",
+        "texto": "a escolha de temas antigos impede a crítica social, enquanto os assuntos cotidianos a garantem por sua própria natureza.",
+        "explicacaoErro": "Uma discussão antiga pode ser atual, e um assunto cotidiano não se torna automaticamente crítico."
+      },
+      {
+        "letra": "E",
+        "texto": "a eficácia da criação pode ser medida pela transmissão direta de uma lição, independentemente da forma adotada.",
+        "explicacaoErro": "Essa conclusão separa mensagem e elaboração, contrariando a ênfase no modo de apresentação."
+      }
+    ],
+    "gabarito": "A",
+    "explicacaoGabarito": "O valor da criação não decorre apenas do assunto escolhido. Construir uma perspectiva pode renovar temas conhecidos e revelar sentidos em acontecimentos pequenos. O tema não é irrelevante: é transformado pela elaboração artística."
+  }
+];
 
-    document.addEventListener('DOMContentLoaded', () => {
-      window.initObrasQuiz('lucy', QUESTOES_LUCY);
-    });
-  </script>
+  function iniciarQuestoesLucy() {
+    if (typeof window.initObrasQuiz !== "function") {
+      document.getElementById("quiz-container-lucy").textContent = "Não foi possível carregar as questões. Recarregue a página para tentar novamente.";
+      return;
+    }
+    window.initObrasQuiz("lucy", QUESTOES_LUCY);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", iniciarQuestoesLucy, { once: true });
+  } else {
+    iniciarQuestoesLucy();
+  }
+</script>
 </body>
 </html>
