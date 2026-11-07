@@ -1,7 +1,4 @@
-// Única configuração pública: cole a origem HTTPS real da NOVA API após o deploy.
-// Exemplo: https://nome-atribuido.vercel.app (sem /api e sem barra final).
-// Nunca coloque senhas ou chaves de Resend/IA neste arquivo.
-const configuredApiUrl = '';
+const configuredApiUrl = 'https://plataforma-mestre-kira.vercel.app';
 
 export const API_URL = configuredApiUrl.trim().replace(/\/+$/, '');
 
