@@ -1,4 +1,4 @@
-const configuredApiUrl = 'https://plataforma-mestre-kira.vercel.app';
+const configuredApiUrl = 'https://plataforma-mestre-kira.onrender.com';
 
 export const API_URL = configuredApiUrl.trim().replace(/\/+$/, '');
 
