@@ -575,7 +575,7 @@ document.addEventListener("DOMContentLoaded", function () {
   brand: 'Gabarita Paes',
   badge: 'Reta final de preparação',
   title: 'PAES UEMA: transforme seus erros em revisão!',
-  description: 'Descubra o que precisa revisar antes da prova. Faça simulados inéditos, pratique com questões do ENEM e aprimore sua redação com feedback por inteligência artificial. Acesso integral por R$ 24,99 durante 30 dias, sem renovação automática.',
+  description: 'Descubra o que precisa revisar antes da prova. Faça simulados inéditos, pratique com questões do ENEM e aprimore sua redação com feedback por inteligência artificial e tenha acesso a análise exclusiva das obras para utilizar no repertório da redação. Acesso integral por R$ 24,99 durante 30 dias, sem renovação automática.',
   button: 'Quero me preparar',
   destination: 'https://www.mestrekira.com.br/gabarita-paes/cadastro.html',
   logo: 'https://www.mestrekira.com.br/logo1.png',
