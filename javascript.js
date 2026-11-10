@@ -23,7 +23,7 @@ incluirHTML("header", "header.html", () => {
 
 incluirHTML("aside", "aside.html");
 incluirHTML("footer", "footer.html");
-
+//comentário
 document.addEventListener("DOMContentLoaded", () => {
   inicializarPaginacao();
   inicializarPlayerAudio();
