@@ -3,26 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acesso da escola | Mestre Kira</title>
+  <title>Entrar — Escola | Mestre Kira</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="stylesheet" href="css/access.css?v=20261112">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
-<body>
-  <h1>Acesso da escola</h1>
-  <section aria-label="Entrar na conta da escola">
-    <label for="email">E-mail da escola</label>
-    <input id="email" type="email" autocomplete="email" placeholder="E-mail da escola">
-    <label for="password">Senha</label>
-    <input id="password" type="password" autocomplete="current-password" placeholder="Sua senha">
-    <button id="btnLogin" type="button">Entrar</button>
-    <button id="resendVerifyBtn" type="button" style="display:none">Reenviar link de verificação</button>
-    <p id="status" role="status" aria-live="polite"></p>
-    <p><a href="esqueci-senha.html?role=school">Esqueci minha senha</a></p>
-    <p><a href="cadastro-escola.html">Criar conta da escola</a></p>
-  </section>
-  <p><a href="index.html">Voltar aos acessos</a></p>
-  <script type="module" src="js/login-escola.js"></script>
+<body class="mk-access">
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="access-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Mestre Kira — escolher perfil">
+        <img src="logo1.png" alt="" width="55" height="43">
+        <span class="brand-text"><strong>Mestre Kira</strong><span>Plataforma de redação</span></span>
+      </a>
+      <a class="header-link" href="index.html">Escolher perfil <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main id="conteudo" class="access-main" tabindex="-1">
+    <div class="access-layout">
+      <div class="access-intro">
+        <p class="eyebrow">Escrita, revisão e aprendizagem</p>
+        <h1>Mais perto das turmas. Mais espaço para ensinar.</h1>
+        <p class="intro-copy">Organize professores e salas e acompanhe o trabalho com a escrita na sua instituição.</p>
+        <div class="intro-note"><strong>Uma visão do percurso.</strong><p>Consulte o desempenho das turmas e os relatórios para apoiar o acompanhamento pedagógico.</p></div>
+      </div>
+      <section class="access-card" aria-labelledby="formTitle">
+        <span class="profile-label"><span class="profile-dot" aria-hidden="true"></span>Escola</span>
+        <h2 id="formTitle">Que bom ter você aqui.</h2>
+        <p class="card-subtitle">Use o e-mail e a senha da sua conta.</p>
+        <form data-access-form aria-labelledby="formTitle">
+        <div class="field"><label for="email">E-mail da escola</label><input id="email" name="email" type="email" placeholder="voce@exemplo.com" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required></div>
+        <div class="field"><label for="password">Senha</label><div class="password-wrap"><input id="password" name="password" type="password" placeholder="Digite sua senha" autocomplete="current-password" required><button class="password-toggle" type="button" data-password-target="password" aria-controls="password" aria-pressed="false" aria-label="Mostrar senha">Mostrar</button></div></div>
+        <a class="forgot-link" href="esqueci-senha.html?role=school">Esqueci minha senha</a>
+        <button id="btnLogin" class="primary-button" type="submit" data-access-submit data-pending-label="Entrando…">Entrar</button>
+        <button id="resendVerifyBtn" class="secondary-button" type="button" style="display:none">Reenviar link de verificação</button>
+        <p id="status" class="form-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </form>
+      <div class="card-bottom"><span>Primeiro acesso?</span> <a href="cadastro-escola.html">Criar conta</a></div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="js/access-ui.js?v=20261112"></script>
+  <script type="module" src="js/login-escola.js?v=20261112"></script>
   <script src="js/footer.js"></script>
 </body>
 </html>

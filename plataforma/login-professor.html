@@ -3,39 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acesso do professor | Mestre Kira</title>
+  <title>Entrar — Professor(a) | Mestre Kira</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="stylesheet" href="css/access.css?v=20261112">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
-<body>
-  <h1>Acesso do professor</h1>
-  <section aria-labelledby="loginTitle">
-    <h2 id="loginTitle">Entrar</h2>
-    <label for="emailLogin">E-mail</label>
-    <input id="emailLogin" type="email" autocomplete="email" placeholder="Seu e-mail">
-    <label for="passwordLogin">Senha</label>
-    <input id="passwordLogin" type="password" autocomplete="current-password" placeholder="Sua senha">
-    <button id="loginBtn" type="button">Entrar</button>
-    <button id="resendVerifyBtn" type="button" style="display:none">Reenviar link de verificação</button>
-    <p><a href="esqueci-senha.html?role=professor">Esqueci minha senha</a></p>
-    <p>Se sua conta foi criada por uma escola, entre com as credenciais recebidas por e-mail. Se você já tinha cadastro, utilize sua senha atual.</p>
-  </section>
-  <hr>
-  <section aria-labelledby="registerTitle">
-    <h2 id="registerTitle">Criar conta de professor autônomo</h2>
-    <label for="nameRegister">Nome completo</label>
-    <input id="nameRegister" autocomplete="name" placeholder="Nome completo">
-    <label for="emailRegister">E-mail</label>
-    <input id="emailRegister" type="email" autocomplete="email" placeholder="Seu e-mail">
-    <label for="passwordRegister">Senha de acesso</label>
-    <input id="passwordRegister" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
-    <button id="registerBtn" type="button">Criar conta</button>
-    <p>Após o cadastro, confirme seu e-mail para acessar a plataforma.</p>
-  </section>
-  <p id="status" role="status" aria-live="polite"></p>
-  <p><a href="index.html">Voltar aos acessos</a></p>
-  <script type="module" src="js/login-professor.js"></script>
+<body class="mk-access">
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="access-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Mestre Kira — escolher perfil">
+        <img src="logo1.png" alt="" width="55" height="43">
+        <span class="brand-text"><strong>Mestre Kira</strong><span>Plataforma de redação</span></span>
+      </a>
+      <a class="header-link" href="index.html">Escolher perfil <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main id="conteudo" class="access-main" tabindex="-1">
+    <div class="access-layout">
+      <div class="access-intro">
+        <p class="eyebrow">Escrita, revisão e aprendizagem</p>
+        <h1>Ensinar também é acompanhar cada escrita.</h1>
+        <p class="intro-copy">Proponha tarefas, acompanhe suas turmas e transforme a correção em orientação para a próxima versão.</p>
+        <div class="intro-note"><strong>A palavra final é sua.</strong><p>A análise preliminar por IA apoia a leitura. Você valida as sugestões e define o feedback e as notas.</p></div>
+      </div>
+      <section class="access-card" aria-labelledby="formTitle">
+        <span class="profile-label"><span class="profile-dot" aria-hidden="true"></span>Professor(a)</span>
+        <h2 id="formTitle">Que bom ter você aqui.</h2>
+        <p class="card-subtitle">Use o e-mail e a senha da sua conta.</p>
+        <form data-access-form aria-labelledby="formTitle">
+        <div class="field"><label for="emailLogin">E-mail</label><input id="emailLogin" name="emailLogin" type="email" placeholder="voce@exemplo.com" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required></div>
+        <div class="field"><label for="passwordLogin">Senha</label><div class="password-wrap"><input id="passwordLogin" name="passwordLogin" type="password" placeholder="Digite sua senha" autocomplete="current-password" required><button class="password-toggle" type="button" data-password-target="passwordLogin" aria-controls="passwordLogin" aria-pressed="false" aria-label="Mostrar senha">Mostrar</button></div></div>
+        <a class="forgot-link" href="esqueci-senha.html?role=professor">Esqueci minha senha</a>
+        <button id="loginBtn" class="primary-button" type="submit" data-access-submit data-pending-label="Entrando…">Entrar</button>
+        <button id="resendVerifyBtn" class="secondary-button" type="button" style="display:none">Reenviar link de verificação</button>
+        <p id="status" class="form-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </form>
+      <p class="account-note">Conta criada pela escola? Entre com as credenciais recebidas por e-mail. Se você já tinha cadastro, use sua senha atual.</p>
+      <div class="card-bottom"><span>Primeiro acesso?</span> <a href="cadastro-professor.html">Cadastrar como autônomo</a></div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="js/access-ui.js?v=20261112"></script>
+  <script type="module" src="js/login-professor.js?v=20261112"></script>
   <script src="js/footer.js"></script>
 </body>
 </html>

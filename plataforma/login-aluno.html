@@ -1,43 +1,51 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Estudante</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar — Estudante | Mestre Kira</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="stylesheet" href="css/access.css?v=20261112">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
-<body>
-
-<h2>Login - Estudante</h2>
-
-<section>
-  <input type="email" id="email" placeholder="E-mail" autocomplete="email" />
-  <input type="password" id="password" placeholder="Senha" autocomplete="current-password" />
-  <button id="loginBtn">Entrar</button>
-<div style="margin-top:10px;">
-  <a href="esqueci-senha.html">Esqueci minha senha</a>
-</div>
- 
-  <div style="margin-top: 10px;">
-    <button id="resendVerifyBtn" style="display:none;">Reenviar link de verificação</button>
-  </div>
-
-  <p id="error"></p>
-</section>
-
-<hr>
-
-<section>
-  <p>Primeiro acesso?</p>
-  <a href="cadastro-aluno.html">Criar conta</a>
-</section>
-
-<script type="module" src="js/login-aluno.js"></script>
-<script src="js/footer.js"></script>
-
+<body class="mk-access">
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="access-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Mestre Kira — escolher perfil">
+        <img src="logo1.png" alt="" width="55" height="43">
+        <span class="brand-text"><strong>Mestre Kira</strong><span>Plataforma de redação</span></span>
+      </a>
+      <a class="header-link" href="index.html">Escolher perfil <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main id="conteudo" class="access-main" tabindex="-1">
+    <div class="access-layout">
+      <div class="access-intro">
+        <p class="eyebrow">Escrita, revisão e aprendizagem</p>
+        <h1>Sua próxima redação começa aqui.</h1>
+        <p class="intro-copy">Encontre as tarefas da sua turma, escreva e acompanhe as orientações do professor para aperfeiçoar seu texto.</p>
+        <div class="intro-note"><strong>Escrever é um processo.</strong><p>Cada texto e cada devolutiva ajudam você a entender o que já faz bem e o que pode melhorar.</p></div>
+      </div>
+      <section class="access-card" aria-labelledby="formTitle">
+        <span class="profile-label"><span class="profile-dot" aria-hidden="true"></span>Estudante</span>
+        <h2 id="formTitle">Que bom ter você aqui.</h2>
+        <p class="card-subtitle">Use o e-mail e a senha da sua conta.</p>
+        <form data-access-form aria-labelledby="formTitle">
+        <div class="field"><label for="email">E-mail</label><input id="email" name="email" type="email" placeholder="voce@exemplo.com" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required></div>
+        <div class="field"><label for="password">Senha</label><div class="password-wrap"><input id="password" name="password" type="password" placeholder="Digite sua senha" autocomplete="current-password" required><button class="password-toggle" type="button" data-password-target="password" aria-controls="password" aria-pressed="false" aria-label="Mostrar senha">Mostrar</button></div></div>
+        <a class="forgot-link" href="esqueci-senha.html?role=student">Esqueci minha senha</a>
+        <button id="loginBtn" class="primary-button" type="submit" data-access-submit data-pending-label="Entrando…">Entrar</button>
+        <button id="resendVerifyBtn" class="secondary-button" type="button" style="display:none">Reenviar link de verificação</button>
+        <p id="error" class="form-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </form>
+      <div class="card-bottom"><span>Primeiro acesso?</span> <a href="cadastro-aluno.html">Criar conta</a></div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="js/access-ui.js?v=20261112"></script>
+  <script type="module" src="js/login-aluno.js?v=20261112"></script>
+  <script src="js/footer.js"></script>
 </body>
 </html>
-
-

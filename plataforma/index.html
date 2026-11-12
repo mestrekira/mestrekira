@@ -1,49 +1,59 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mestre Kira — Plataforma</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escolha seu perfil | Mestre Kira</title>
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui-feedback.css">
+  <link rel="stylesheet" href="css/access.css?v=20261112">
   <link rel="icon" href="logo1.png" type="image/png">
 </head>
-<body>
-
-<h2>Plataforma de Redação — Mestre Kira</h2>
-
-<p>Escolha como deseja acessar:</p>
-
-<section>
-  <h3>Professor(a)</h3>
-  <p>Crie salas, proponha tarefas e corrija redações.</p>
-  <button id="goProfessorBtn">Entrar / Cadastrar como Professor(a)</button>
-</section>
-
-<hr>
-
-<!-- ✅ NOVO BLOCO: ESCOLA -->
-<section>
-  <h3>Escola</h3>
-  <p>Gerencie professores e salas da instituição.</p>
-
-  <button id="goSchoolLoginBtn">Entrar como Escola</button>
-  <button id="goSchoolSignupBtn">Criar conta da Escola</button>
-</section>
-
-<hr>
-
-<section>
-  <h3>Estudante</h3>
-  <p>Acesse sua conta e acompanhe suas redações.</p>
-
-  <button id="goStudentLoginBtn">Entrar com e-mail e senha</button>
-  <button id="goStudentSignupBtn">Criar conta (primeiro acesso)</button>
-</section>
-
-<p id="status"></p>
-
-<script type="module" src="js/login.js"></script>
-<script src="js/footer.js"></script>
-
+<body class="mk-access">
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="access-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Mestre Kira — escolher perfil">
+        <img src="logo1.png" alt="" width="55" height="43">
+        <span class="brand-text"><strong>Mestre Kira</strong><span>Plataforma de redação</span></span>
+      </a>
+      <a class="header-link" href="index.html">Escolher perfil <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main id="conteudo" class="access-main" tabindex="-1">
+    <div class="role-heading">
+      <p class="eyebrow">Plataforma de redação</p>
+      <h1>Um espaço para escrever.<br>Um caminho para aprender.</h1>
+      <p>Escolha seu perfil para continuar.</p>
+    </div>
+    <div class="role-grid">
+      <section class="access-card role-card" aria-labelledby="role-professor">
+        <span class="role-number">01 / ACESSO</span>
+        <h2 id="role-professor">Professor(a)</h2>
+        <p>Crie salas e tarefas, corrija redações e acompanhe a evolução de cada estudante.</p>
+        <a class="primary-button" href="login-professor.html">Entrar como professor(a)</a>
+        <a class="signup-link" href="cadastro-professor.html">Cadastrar como autônomo</a>
+      </section>
+      <section class="access-card role-card" aria-labelledby="role-aluno">
+        <span class="role-number">02 / ACESSO</span>
+        <h2 id="role-aluno">Estudante</h2>
+        <p>Acesse suas tarefas, envie redações e leia as orientações do seu professor.</p>
+        <a class="primary-button" href="login-aluno.html">Entrar como estudante</a>
+        <a class="signup-link" href="cadastro-aluno.html">Criar conta</a>
+      </section>
+      <section class="access-card role-card" aria-labelledby="role-escola">
+        <span class="role-number">03 / ACESSO</span>
+        <h2 id="role-escola">Escola</h2>
+        <p>Organize professores e turmas e consulte o desempenho da sua instituição.</p>
+        <a class="primary-button" href="login-escola.html">Entrar como escola</a>
+        <a class="signup-link" href="cadastro-escola.html">Criar conta</a>
+      </section>
+    </div>
+    <p class="role-caption">Redações, devolutivas e acompanhamento em um só lugar.</p>
+    <p id="status" class="form-status" role="status" aria-live="polite"></p>
+  </main>
+  <script type="module" src="js/access-ui.js?v=20261112"></script>
+  <script type="module" src="js/login.js?v=20261112"></script>
+  <script src="js/footer.js"></script>
 </body>
 </html>
