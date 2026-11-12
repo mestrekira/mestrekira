@@ -1,0 +1,109 @@
+/* Páginas públicas de acesso. Carregar após base.css. */
+body.mk-access {
+  --access-ink: #142447;
+  --access-muted: #52617a;
+  --access-purple: #6541b5;
+  padding: 0;
+  min-height: 100vh;
+  height: auto;
+  background: #f5f4f0;
+  color: var(--access-ink);
+}
+.mk-access [hidden] { display: none !important; }
+.mk-access .skip-link { position: absolute; top: -80px; left: 20px; z-index: 100; background: white; padding: 12px 18px; border-radius: 8px; }
+.mk-access .skip-link:focus { top: 12px; }
+.mk-access > .access-header { width: 100%; border-bottom: 1px solid #e0e3e7; background: #fff; }
+.mk-access .header-inner { max-width: 1180px; margin: auto; padding: 19px 30px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.mk-access a { color: #493191; text-underline-offset: 4px; }
+.mk-access .brand { display: inline-flex; align-items: center; gap: 13px; text-decoration: none; color: var(--access-ink); }
+.mk-access .brand img { width: 55px; height: 43px; object-fit: contain; }
+.mk-access .brand-text { display: flex; flex-direction: column; line-height: 1.3; }
+.mk-access .brand-text strong { font-size: 18px; color: var(--access-ink); }
+.mk-access .brand-text span { color: var(--access-muted); font-size: 12px; }
+.mk-access .header-link { color: var(--access-ink); font-size: 13px; font-weight: 650; text-decoration: none; }
+.mk-access a:hover { text-decoration: underline; }
+.mk-access > main.access-main { width: min(100% - 60px, 1120px); margin: auto; padding: 54px 0 48px; flex: 1; }
+.mk-access .access-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 78px; align-items: start; }
+.mk-access .access-intro { padding: 32px 0; }
+.mk-access .eyebrow { margin-bottom: 22px; color: #5a3b9c; text-transform: uppercase; letter-spacing: .15em; font-size: 11px; font-weight: 800; }
+.mk-access h1 { max-width: 560px; font-size: clamp(30px, 3.2vw, 44px); line-height: 1.15; font-weight: 750; color: var(--access-ink); letter-spacing: -.04em; margin: 0 0 22px; }
+.mk-access .intro-copy { max-width: 420px; color: var(--access-muted); line-height: 1.8; font-size: 16px; }
+.mk-access .intro-note { margin-top: 38px; padding: 0 0 0 18px; border-left: 3px solid #8764c3; max-width: 380px; }
+.mk-access .intro-note strong { display: block; font-size: 13px; color: var(--access-ink); margin-bottom: 6px; }
+.mk-access .intro-note p { margin: 0; font-size: 13px; color: var(--access-muted); line-height: 1.7; }
+.mk-access .access-card { margin: 0; padding: 32px; background: #fff; box-shadow: 0 8px 32px #14244708; border: 1px solid #dce1e8; border-radius: 16px; width: 100%; }
+.mk-access .profile-label { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #ded6ef; border-radius: 6px; padding: 4px 9px; background: #f5f1fc; font-size: 11px; color: #56358e; font-weight: 700; margin-bottom: 17px; }
+.mk-access .profile-dot { width: 6px; height: 6px; background: #7654b6; border-radius: 50%; }
+.mk-access h2 { font-size: 25px; line-height: 1.25; font-weight: 750; margin: 0 0 8px; color: var(--access-ink); }
+.mk-access .card-subtitle { font-size: 13px; color: var(--access-muted); margin-bottom: 25px; line-height: 1.7; }
+.mk-access form { display: grid; gap: 17px; }
+.mk-access .field { min-width: 0; }
+.mk-access label { display: block; margin: 0 0 7px; color: #253655; font-size: 13px; font-weight: 650; }
+.mk-access input { padding: 11px 13px; min-height: 47px; border: 1px solid #b9c3d2; border-radius: 8px; background: #fff; font: inherit; font-size: 15px; }
+.mk-access input::placeholder { color: #69768b; }
+.mk-access .password-wrap { position: relative; }
+.mk-access .password-wrap input { padding-right: 82px; }
+.mk-access .password-toggle { position: absolute; right: 5px; top: 5px; width: auto; min-height: 37px; margin: 0; padding: 6px 9px; border: 0; border-radius: 5px; background: transparent; color: #493191; box-shadow: none; font-size: 12px; font-weight: 700; }
+.mk-access .password-toggle:hover { background: #f1edf8; }
+.mk-access .field-help { display: block; margin-top: 6px; color: var(--access-muted); font-size: 12px; }
+.mk-access .forgot-link { justify-self: end; margin-top: -5px; font-size: 12px; font-weight: 600; }
+.mk-access .primary-button { width: 100%; min-height: 48px; margin: 0; border: 1px solid #12264b; border-radius: 8px; padding: 11px 18px; background: #12264b; color: white; box-shadow: none; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.mk-access .primary-button:hover { background: #233c67; text-decoration: none; }
+.mk-access button:disabled { cursor: wait; opacity: .65; }
+.mk-access .secondary-button { width: 100%; min-height: 44px; border: 1px solid #c7cddd; background: white; box-shadow: none; color: #29395a; margin: 0; border-radius: 8px; font-size: 13px; }
+.mk-access .secondary-button:hover { background: #f3f5f8; }
+.mk-access .form-status { padding: 11px 13px; background: #f0f3f8; border-left: 3px solid #6d81a2; border-radius: 4px; margin: 0; font-size: 13px; color: #253655; overflow-wrap: anywhere; line-height: 1.7; }
+.mk-access .form-status:empty { display: none; }
+.mk-access .form-status[data-tone='error'], .mk-access .form-status[data-tone='warn'] { background: #fff4f0; border-left-color: #ad4929; color: #8b351b; }
+.mk-access .form-status[data-tone='success'] { background: #edf7f2; border-left-color: #307650; color: #245d40; }
+.mk-access .card-bottom { border-top: 1px solid #e5e8ee; padding-top: 19px; margin-top: 24px; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; font-size: 13px; color: var(--access-muted); }
+.mk-access .card-bottom a { font-weight: 700; }
+.mk-access .account-note { color: var(--access-muted); font-size: 12px; line-height: 1.7; margin: 20px 0 0; }
+.mk-access :is(a,button,input):focus-visible { outline: 3px solid #7553b7; outline-offset: 3px; }
+.mk-access > .site-footer { width: min(100% - 60px, 1120px); padding: 20px 0; border-top: 1px solid #dce1e8; opacity: 1; }
+.mk-access .site-footer p { margin: 0; font-size: 11px; color: #667188; }
+.mk-access .role-heading { text-align: center; margin: 10px auto 38px; }
+.mk-access .role-heading h1 { margin: 0 auto 18px; max-width: 720px; }
+.mk-access .role-heading .eyebrow { margin-bottom: 18px; }
+.mk-access .role-heading p { color: var(--access-muted); font-size: 15px; }
+.mk-access .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.mk-access .role-card { display: flex; flex-direction: column; padding: 28px; }
+.mk-access .role-number { color: #756189; font-size: 11px; font-weight: 700; letter-spacing: .08em; margin-bottom: 30px; }
+.mk-access .role-card h2 { font-size: 23px; }
+.mk-access .role-card p { font-size: 13px; line-height: 1.8; color: var(--access-muted); margin-bottom: 25px; flex: 1; }
+.mk-access .signup-link { display: block; text-align: center; margin-top: 16px; font-size: 12px; font-weight: 650; }
+.mk-access .role-caption { text-align: center; margin-top: 28px; font-size: 12px; color: var(--access-muted); }
+.mk-access .toast-root { width: auto; margin: 0; max-width: calc(100vw - 32px); }
+.mk-access .toast { min-width: 0; width: min(380px, calc(100vw - 32px)); }
+@media (max-width: 900px) {
+  .mk-access .access-layout { gap: 36px; grid-template-columns: .85fr 1fr; }
+  .mk-access .access-card { padding: 26px; }
+  .mk-access .role-grid { gap: 14px; }
+  .mk-access .role-card { padding: 22px; }
+}
+@media (max-width: 700px) {
+  .mk-access .header-inner { padding: 16px 20px; }
+  .mk-access > main.access-main { width: calc(100% - 40px); padding: 30px 0; }
+  .mk-access .access-layout { display: block; }
+  .mk-access .access-intro { padding: 0 0 26px; }
+  .mk-access .eyebrow { margin-bottom: 12px; }
+  .mk-access h1 { font-size: 30px; max-width: 100%; margin-bottom: 12px; }
+  .mk-access .intro-copy { font-size: 14px; margin-bottom: 0; }
+  .mk-access .intro-note { display: none; }
+  .mk-access .role-grid { grid-template-columns: 1fr; }
+  .mk-access .role-heading { margin: 0 auto 25px; }
+  .mk-access .role-heading h1 { font-size: 30px; }
+  .mk-access .role-number { margin-bottom: 18px; }
+  .mk-access > .site-footer { width: calc(100% - 40px); }
+}
+@media (max-width: 390px) {
+  .mk-access .header-inner { padding: 14px 16px; gap: 8px; }
+  .mk-access .brand img { width: 44px; height: 35px; }
+  .mk-access .brand { gap: 9px; }
+  .mk-access .brand-text strong { font-size: 16px; }
+  .mk-access .brand-text span { font-size: 10px; }
+  .mk-access .header-link { font-size: 11px; }
+  .mk-access .access-card { padding: 22px; }
+  .mk-access > main.access-main { width: calc(100% - 28px); }
+}
+@media (prefers-reduced-motion: reduce) { .mk-access * { transition: none !important; scroll-behavior: auto !important; } }
