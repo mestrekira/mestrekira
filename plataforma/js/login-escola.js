@@ -19,6 +19,11 @@ const statusEl = $('status');
 const resendVerifyBtn = $('resendVerifyBtn');
 
 function notify(type, title, message, duration) {
+  const inlineStatus = $('status') || $('error');
+  if (inlineStatus) {
+    inlineStatus.textContent = String(message || '');
+    inlineStatus.dataset.tone = type;
+  }
   toast({
     type,
     title,
@@ -268,9 +273,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   btnLogin?.addEventListener('click', login);
 
-  passEl?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') login();
-  });
 
   resendVerifyBtn?.addEventListener('click', reenviarVerificacao);
   show(resendVerifyBtn, false);

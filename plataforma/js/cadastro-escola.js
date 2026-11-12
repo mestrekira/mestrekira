@@ -11,6 +11,11 @@ const btn = $('registerBtn');
 const statusEl = $('status');
 
 function notify(type, title, message, duration) {
+  const inlineStatus = $('status') || $('error');
+  if (inlineStatus) {
+    inlineStatus.textContent = String(message || '');
+    inlineStatus.dataset.tone = type;
+  }
   toast({
     type,
     title,
@@ -100,7 +105,4 @@ async function cadastrar() {
 document.addEventListener('DOMContentLoaded', () => {
   btn?.addEventListener('click', cadastrar);
 
-  passEl?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') cadastrar();
-  });
 });

@@ -34,6 +34,11 @@ function normRole(role) {
 }
 
 function notify(type, title, message, duration) {
+  const inlineStatus = $('status') || $('error');
+  if (inlineStatus) {
+    inlineStatus.textContent = String(message || '');
+    inlineStatus.dataset.tone = type;
+  }
   toast({
     type,
     title,
@@ -403,22 +408,14 @@ async function cadastrarProfessor() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const loginBtn = $('loginBtn');
-  const passLogin = $('passwordLogin');
   const resendVerifyBtn = $('resendVerifyBtn');
 
   const registerBtn = $('registerBtn');
-  const passRegister = $('passwordRegister');
 
   justLoggedOutGuard();
   if (await alreadyLoggedInGuard()) return;
 
   if (loginBtn) loginBtn.addEventListener('click', fazerLogin);
-
-  if (passLogin) {
-    passLogin.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') fazerLogin();
-    });
-  }
 
   if (resendVerifyBtn) {
     resendVerifyBtn.addEventListener('click', reenviarVerificacao);
@@ -427,9 +424,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (registerBtn) registerBtn.addEventListener('click', cadastrarProfessor);
 
-  if (passRegister) {
-    passRegister.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') cadastrarProfessor();
-    });
-  }
 });

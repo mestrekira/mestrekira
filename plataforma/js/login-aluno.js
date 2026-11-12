@@ -35,6 +35,11 @@ function getEmail() {
 }
 
 function notify(type, title, message, duration) {
+  const inlineStatus = $('status') || $('error');
+  if (inlineStatus) {
+    inlineStatus.textContent = String(message || '');
+    inlineStatus.dataset.tone = type;
+  }
   toast({
     type,
     title,
@@ -271,7 +276,6 @@ async function reenviarVerificacao() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const btn = $('loginBtn');
-  const pass = $('password');
   const resendVerifyBtn = $('resendVerifyBtn');
 
   justLoggedOutGuard();
@@ -304,12 +308,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (btn) btn.addEventListener('click', fazerLogin);
-
-  if (pass) {
-    pass.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') fazerLogin();
-    });
-  }
 
   if (resendVerifyBtn) {
     resendVerifyBtn.addEventListener('click', reenviarVerificacao);
