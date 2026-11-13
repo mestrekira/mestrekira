@@ -9,8 +9,9 @@
    <link rel="stylesheet" href="css/ui-feedback.css">
 <link rel="icon" href="logo1.png" type="image/png">
   <link rel="stylesheet" href="css/audio-feedback.css?v=20261112-audio1">
+  <link rel="stylesheet" href="css/internal.css?v=20261113">
 </head>
-<body>
+<body class="mk-internal">
 
 <button id="menuBtn" class="menu-btn" title="Menu do perfil">☰</button>
 
@@ -39,12 +40,13 @@
         </a>
       </div>
     </div>
+
     <p><strong>Nome:</strong> <span id="meName">...</span></p>
     <p><strong>E-mail:</strong> <span id="meEmail">...</span></p>
     <p><strong>Perfil:</strong> <span id="meRole">...</span></p>
 
     <hr>
-   
+    <!-- Este é um comentário em HTML -->
     <h4>Atualizar dados</h4>
     <input id="newEmail" type="email" placeholder="Novo e-mail (opcional)" autocomplete="email" />
     <input id="newPass" type="password" placeholder="Nova senha (mín. 8) (opcional)" autocomplete="new-password" />
@@ -198,7 +200,7 @@
   <div id="audioFeedbackEditor" class="writing-audio"></div>
 </section>
 
-<script type="module" src="js/correcao.js?v=20261112-audio1"></script>
+<script type="module" src="js/correcao.js?v=20261113"></script>
 
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
@@ -210,6 +212,7 @@
   });
 </script>
 <script src="js/footer.js"></script>
+<script type="module" src="js/internal-ui.js?v=20261113"></script>
 
 </body>
 </html>
