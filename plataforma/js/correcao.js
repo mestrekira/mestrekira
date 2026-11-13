@@ -1,5 +1,6 @@
 import { storage as localStorage } from './storage.js';
 import { initAiReview } from './analise-ia.js';
+import { initAudioRecorder } from './audio-feedback.js?v=20261112-audio1';
 import { API_URL } from './config.js';
 import { confirmDialog as uiConfirmDialog } from './ui-feedback.js';
 import { notify, requireProfessorSession, authFetch, readErrorMessage } from './auth.js';
@@ -759,9 +760,11 @@ function restoreCorrectionSection() {
 }
 
 const aiReview = initAiReview({ getEssayId: () => currentEssayId, feedback: feedbackEl });
+const audioReview = initAudioRecorder(document.getElementById('audioFeedbackEditor'));
 
 function closeCorrection(silent = true) {
   aiReview.reset();
+  audioReview.reset();
   currentEssayId = null;
   currentAnchorLi = null;
   loadedSnapshot = null;
@@ -805,7 +808,16 @@ function isDirty() {
 }
 
 async function abrirCorrecao(item, anchorLi) {
+  if (saveBtn.disabled || audioReview.isBusy()) {
+    setStatus('Finalize a gravação ou aguarde o envio antes de trocar de redação.');
+    return;
+  }
+  if (currentEssayId && (isDirty() || audioReview.isDirty())) {
+    const ok = await confirmDialog({ title: 'Trocar de redação?', message: 'Há alterações ou uma prévia de áudio ainda não enviada. Deseja descartá-las?', okText: 'Descartar e trocar', cancelText: 'Continuar nesta redação' });
+    if (!ok) return;
+  }
   aiReview.reset();
+  audioReview.reset();
   currentEssayId = String(item?.id || '').trim();
   currentAnchorLi = anchorLi || null;
 
@@ -821,11 +833,9 @@ async function abrirCorrecao(item, anchorLi) {
   setStatus('Carregando redação...');
 
   try {
-    let full = item?._raw || item;
-
-    if (!full?.content) {
-      full = await fetchEssayById(currentEssayId);
-    }
+    const openingId = currentEssayId;
+    const full = await fetchEssayById(openingId);
+    if (currentEssayId !== openingId) return;
 
     const name = String(
       item?.studentName ||
@@ -871,6 +881,7 @@ if (studentEmailEl) {
     feedbackEl.value = String(full?.feedback || '').replace(/\r\n/g, '\n');
 
     loadedSnapshot = snapshotCurrentForm();
+    void audioReview.load(currentEssayId);
 
     setStatus(
       isCorrected(full)
@@ -1081,10 +1092,12 @@ async function carregarRedacoes() {
         ? 'Ver redação/feedback'
         : 'Corrigir';
 
-      btn.addEventListener('click', (ev) => {
+      btn.addEventListener('click', async (ev) => {
         ev.stopPropagation();
 
         if (corrected) {
+          if (saveBtn.disabled || audioReview.isBusy()) { setStatus('Finalize a gravação ou aguarde o envio antes de sair.'); return; }
+          if (currentEssayId && (isDirty() || audioReview.isDirty()) && !await confirmDialog({ title: 'Sair desta correção?', message: 'As alterações ou a prévia de áudio não enviadas serão descartadas.', okText: 'Sair', cancelText: 'Continuar aqui' })) return;
           window.location.href =
             `feedback-professor.html?essayId=${encodeURIComponent(String(item.id))}`;
         } else {
@@ -1092,8 +1105,10 @@ async function carregarRedacoes() {
         }
       });
 
-      li.addEventListener('click', () => {
+      li.addEventListener('click', async () => {
         if (corrected) {
+          if (saveBtn.disabled || audioReview.isBusy()) { setStatus('Finalize a gravação ou aguarde o envio antes de sair.'); return; }
+          if (currentEssayId && (isDirty() || audioReview.isDirty()) && !await confirmDialog({ title: 'Sair desta correção?', message: 'As alterações ou a prévia de áudio não enviadas serão descartadas.', okText: 'Sair', cancelText: 'Continuar aqui' })) return;
           window.location.href =
             `feedback-professor.html?essayId=${encodeURIComponent(String(item.id))}`;
         } else {
@@ -1170,10 +1185,11 @@ async function carregarTemaDaTarefa() {
 
 if (closeBtn) {
   closeBtn.addEventListener('click', async () => {
-    if (currentEssayId && isDirty()) {
+    if (saveBtn.disabled || audioReview.isBusy()) { setStatus('Encerre a gravação ou aguarde o envio antes de fechar.'); return; }
+    if (currentEssayId && (isDirty() || audioReview.isDirty())) {
       const ok = await confirmDialog({
         title: 'Fechar correção',
-        message: 'Você tem alterações. Deseja fechar sem salvar?',
+        message: 'Há alterações ou uma prévia de áudio não enviada. Deseja fechar e descartar?',
         okText: 'Fechar',
         cancelText: 'Cancelar',
       });
@@ -1182,11 +1198,14 @@ if (closeBtn) {
     }
 
     closeCorrection(true);
+    await carregarRedacoes();
   });
 }
 
 if (saveBtn) {
   saveBtn.addEventListener('click', async () => {
+    if (saveBtn.disabled) return;
+    if (audioReview.isBusy() || audioReview.isDirty()) { setStatus('Envie ou descarte a gravação antes de salvar novas alterações no texto.'); return; }
     if (!currentEssayId) {
       notify(
         'warn',
@@ -1240,11 +1259,9 @@ if (saveBtn) {
         'A correção foi salva com sucesso.'
       );
 
-      setStatus('Correção salva com sucesso!');
-
-      closeCorrection(true);
-
-      await carregarRedacoes();
+      loadedSnapshot = snapshotCurrentForm();
+      setStatus('Feedback escrito e notas salvos. Você pode gravar uma orientação em áudio abaixo ou fechar a correção.');
+      await audioReview.load(currentEssayId);
     } catch (e) {
       console.error(e);
 

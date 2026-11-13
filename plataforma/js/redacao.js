@@ -100,79 +100,8 @@ function setMultilinePreserve(el, value, fallback = '') {
   el.style.setProperty('display', 'block', 'important');
 }
 
-// =====================
-// Anti-paste / anti-drop
-// =====================
-function antiPaste(el, fieldName, options = {}) {
-  if (!el) return null;
-
-  const maxJump = Number(options.maxJump ?? 25);
-  let lastValue = el.value || '';
-  let lastLen = lastValue.length;
-
-  function warn() {
-    notify(
-      'warn',
-      'Ação bloqueada',
-      `Colar texto não é permitido em ${fieldName}. Digite no sistema.`,
-      2600
-    );
-  }
-
-  el.addEventListener('paste', (e) => {
-    e.preventDefault();
-    warn();
-  });
-
-  el.addEventListener('drop', (e) => {
-    e.preventDefault();
-    warn();
-  });
-
-  el.addEventListener('dragover', (e) => e.preventDefault());
-
-  el.addEventListener('beforeinput', (e) => {
-    const t = e.inputType;
-    if (
-      t === 'insertFromPaste' ||
-      t === 'insertFromDrop' ||
-      t === 'insertFromYank' ||
-      t === 'insertReplacementText'
-    ) {
-      e.preventDefault();
-      warn();
-    }
-  });
-
-  el.addEventListener('input', () => {
-    const cur = el.value || '';
-    const curLen = cur.length;
-    const diff = curLen - lastLen;
-
-    if (diff > maxJump) {
-      el.value = lastValue;
-      try {
-        el.setSelectionRange(lastLen, lastLen);
-      } catch {}
-      warn();
-      return;
-    }
-
-    lastValue = cur;
-    lastLen = curLen;
-  });
-
-  function sync() {
-    lastValue = el.value || '';
-    lastLen = lastValue.length;
-  }
-
-  return { sync };
-}
-
-const antiTitle = antiPaste(titleInput, 'Título', { maxJump: 15 });
-const antiEssay = antiPaste(textarea, 'Redação', { maxJump: 25 });
-const dictation = initDictation({ textarea, actions: [saveBtn, sendBtn], onCommit: () => antiEssay.sync() });
+// Colagem e inserção de blocos de texto permitidas no título e na redação.
+const dictation = initDictation({ textarea, actions: [saveBtn, sendBtn], onCommit: updateCount });
 
 // =====================
 // BACKEND (ESSAYS)
@@ -210,8 +139,6 @@ async function clearDraftUXOnly() {
   titleInput.value = '';
   textarea.value = '';
   updateCount();
-  antiTitle?.sync?.();
-  antiEssay?.sync?.();
 }
 
 // =====================
@@ -295,8 +222,6 @@ async function carregarRascunho() {
     textarea.value = body || '';
     updateCount();
 
-    antiTitle?.sync?.();
-    antiEssay?.sync?.();
 
     setStatus('Rascunho carregado do servidor.');
   } catch (err) {
