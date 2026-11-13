@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/writing-tools.css">
    <link rel="stylesheet" href="css/ui-feedback.css">
 <link rel="icon" href="logo1.png" type="image/png">
+  <link rel="stylesheet" href="css/audio-feedback.css?v=20261112-audio1">
 </head>
 <body>
 
@@ -194,10 +195,11 @@
   <br><br>
   <button id="saveCorrectionBtn">Salvar correção</button>
 
-  <p id="status"></p>
+  <p id="status" role="status" aria-live="polite"></p>
+  <div id="audioFeedbackEditor" class="writing-audio"></div>
 </section>
 
-<script type="module" src="js/correcao.js"></script>
+<script type="module" src="js/correcao.js?v=20261112-audio1"></script>
 
 <script type="module">
   import { initMenuPerfil } from './js/menu-perfil.js';
