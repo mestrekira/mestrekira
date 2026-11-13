@@ -1,5 +1,5 @@
 import { storage as localStorage } from './storage.js';
-import { initAiReview } from './analise-ia.js';
+import { initAiReview } from './analise-ia-v3.js?v=20261113';
 import { initAudioRecorder } from './audio-feedback.js?v=20261112-audio1';
 import { API_URL } from './config.js';
 import { confirmDialog as uiConfirmDialog } from './ui-feedback.js';
@@ -8,6 +8,8 @@ import { notify, requireProfessorSession, authFetch, readErrorMessage } from './
 const params = new URLSearchParams(window.location.search);
 const taskId = params.get('taskId');
 const focusStudentId = params.get('studentId');
+
+// Este é um comentário de uma única linha.
 
 requireProfessorSession({ redirectTo: 'login-professor.html' });
 
