@@ -419,6 +419,79 @@ export function initMenuPerfil(options = {}) {
   const newPassEl = $('newPass');
   const statusEl = $('menuStatus');
 
+  // A escola pode renomear seu próprio perfil sem alterar suas credenciais.
+  let schoolNameInput = null;
+  let schoolNameButton = null;
+  let savedSchoolName = '';
+  if (role === 'school' && newEmailEl) {
+    const group = document.createElement('div');
+    group.id = 'schoolNameEditor';
+    const label = document.createElement('label');
+    label.htmlFor = 'newSchoolName';
+    label.textContent = 'Nome da escola';
+    schoolNameInput = document.createElement('input');
+    schoolNameInput.id = 'newSchoolName';
+    schoolNameInput.type = 'text';
+    schoolNameInput.autocomplete = 'organization';
+    schoolNameInput.maxLength = 150;
+    schoolNameInput.required = true;
+    schoolNameInput.disabled = true;
+    schoolNameInput.placeholder = 'Nome da escola';
+    schoolNameButton = document.createElement('button');
+    schoolNameButton.id = 'saveSchoolNameBtn';
+    schoolNameButton.type = 'button';
+    schoolNameButton.textContent = 'Salvar nome da escola';
+    schoolNameButton.disabled = true;
+    group.append(label, schoolNameInput, schoolNameButton);
+    newEmailEl.before(group);
+
+    schoolNameButton.addEventListener('click', async () => {
+      if (schoolNameButton.disabled) return;
+      const name = schoolNameInput.value.trim();
+      if (!name || name.length > 150) {
+        if (statusEl) statusEl.textContent = !name ? 'Informe o nome da escola.' : 'Use no máximo 150 caracteres no nome da escola.';
+        schoolNameInput.focus();
+        return;
+      }
+      if (name === savedSchoolName) {
+        if (statusEl) statusEl.textContent = 'O nome da escola não foi alterado.';
+        return;
+      }
+      schoolNameButton.disabled = true;
+      schoolNameInput.disabled = true;
+      if (statusEl) statusEl.textContent = 'Salvando nome da escola...';
+      try {
+        const updated = await authFetchMenu('/users/me', { method: 'PATCH', token, body: { name } });
+        const confirmedName = String(updated?.user?.name ?? updated?.name ?? '').trim();
+        if (!confirmedName) throw new Error('Não foi possível confirmar o nome salvo. Atualize a página para conferir.');
+        const current = safeJsonParse(localStorage.getItem(LS.user)) || session.user || {};
+        const merged = { ...current, name: confirmedName };
+        for (const alias of ['schoolName', 'institutionName', 'school_name', 'institution_name', 'tradingName', 'fantasyName']) {
+          if (Object.prototype.hasOwnProperty.call(merged, alias)) merged[alias] = confirmedName;
+        }
+        localStorage.setItem(LS.user, JSON.stringify(merged));
+        session.user = merged;
+        savedSchoolName = confirmedName;
+        schoolNameInput.value = confirmedName;
+        safeText(meNameEl, confirmedName);
+        safeText($('schoolName'), confirmedName);
+        window.dispatchEvent(new CustomEvent('mk:profile-updated', { detail: { user: merged } }));
+        if (statusEl) statusEl.textContent = 'Nome da escola atualizado com sucesso.';
+        toast({ title: 'Nome atualizado', message: 'Nome da escola atualizado com sucesso.', type: 'success' });
+      } catch (error) {
+        const message = String(error?.message || 'Não foi possível atualizar o nome da escola.');
+        if (statusEl) statusEl.textContent = message.startsWith('AUTH_') ? 'Sessão expirada. Faça login novamente.' : message;
+        toast({ title: 'Não foi possível salvar', message: statusEl?.textContent || message, type: 'error' });
+      } finally {
+        schoolNameButton.disabled = false;
+        schoolNameInput.disabled = false;
+      }
+    });
+    schoolNameInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); schoolNameButton.click(); }
+    });
+  }
+
   if (!role || !id) {
     safeText(meNameEl, 'Visitante', 'Visitante');
     safeText(meEmailEl, '', '');
@@ -536,6 +609,12 @@ export function initMenuPerfil(options = {}) {
       if (deleteBtn) {
         deleteBtn.style.display = canDeleteOwnAccount(u || { role }, role) ? '' : 'none';
       }
+    }
+    if (schoolNameInput) {
+      savedSchoolName = String(me?.name ?? session.user?.name ?? '').trim();
+      schoolNameInput.value = savedSchoolName;
+      schoolNameInput.disabled = false;
+      schoolNameButton.disabled = false;
     }
   })();
 

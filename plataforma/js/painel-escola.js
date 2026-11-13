@@ -1363,6 +1363,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   setText(schoolNameEl, getSchoolDisplayName(session));
+  window.addEventListener('mk:profile-updated', event => {
+    const user = event.detail?.user;
+    if (!user || String(user.id) !== String(session.user?.id || session.schoolId)) return;
+    session.user = { ...(session.user || {}), ...user };
+    setText(schoolNameEl, getSchoolDisplayName(session));
+  });
 
   if (createYearBtn) {
     createYearBtn.addEventListener('click', () => onCreateYear());
