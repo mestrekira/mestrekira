@@ -1,0 +1,12 @@
+/* Diagnóstico do aspecto independente da decisão de incluir. */
+#aiReviewList [data-diagnostic="red"] { --ai-diagnostic-color:#b91c1c; --ai-diagnostic-bg:#fef2f2; }
+#aiReviewList [data-diagnostic="yellow"] { --ai-diagnostic-color:#854d0e; --ai-diagnostic-bg:#fef9c3; }
+#aiReviewList [data-diagnostic="green"] { --ai-diagnostic-color:#166534; --ai-diagnostic-bg:#f0fdf4; }
+#aiReviewList [data-diagnostic="neutral"] { --ai-diagnostic-color:#475569; --ai-diagnostic-bg:#f1f5f9; }
+#aiReviewList .ai-review-card[data-diagnostic] { border-left:5px solid var(--ai-diagnostic-color); background:var(--ai-diagnostic-bg); }
+#aiReviewList .ai-diagnostic-badge { display:inline-block; padding:6px 10px; border-radius:6px; font-size:13px; font-weight:700; color:var(--ai-diagnostic-color); background:var(--ai-diagnostic-bg); border:1px solid currentColor; }
+#aiReviewList .ai-diagnostic-legend { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+#aiReviewList .ai-assessment-control { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:12px; margin:14px 0; }
+#aiReviewList .ai-assessment-control select { width:auto; max-width:100%; padding:8px; color:#172554; background:white; border:1px solid #64748b; border-radius:6px; font-size:14px; }
+#aiReviewList .ai-review-card[data-decision="rejected"] { opacity:.8; }
+@media (max-width:640px) { #aiReviewList .ai-assessment-control { align-items:flex-start; flex-direction:column; } }
