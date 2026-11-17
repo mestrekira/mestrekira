@@ -1,7 +1,7 @@
 import { API_URL } from './config.js';
 import { authFetch, readErrorMessage } from './auth.js';
 import { confirmDialog } from './ui-feedback.js';
-
+//comentário
 const COMPETENCIES = { C1: 'Escrita formal', C2: 'Tema, gênero e repertório', C3: 'Desenvolvimento dos argumentos', C4: 'Coesão e referenciação', C5: 'Proposta de intervenção' };
 const ASSESSMENTS = {
   'atendimento': { label: 'Atende', color: 'green' },
