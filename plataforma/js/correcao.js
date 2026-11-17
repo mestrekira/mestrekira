@@ -1,5 +1,5 @@
 import { storage as localStorage } from './storage.js';
-import { initAiReview } from './analise-ia-v3.js?v=20261113';
+import { initAiReview } from './analise-ia-v44.js?v=20261117-v44';
 import { initAudioRecorder } from './audio-feedback.js?v=20261112-audio1';
 import { API_URL } from './config.js';
 import { confirmDialog as uiConfirmDialog } from './ui-feedback.js';
