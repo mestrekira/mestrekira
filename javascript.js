@@ -600,26 +600,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+/* Gabarita Paes — banner compartilhado do Mestre Kira. */
+;(() => {
+  'use strict';
+
   const config = {
     enabled: true,
     brand: 'Gabarita Paes',
-    badge: 'É neste sábado, 21/11 • PAES UEMA',
-    title: 'Antes da prova, faça seu último simulado!',
+    badge: 'É neste domingo, 22/11 • PAES UEMA',
+    title: 'Sua última revisão começa com um simulado!',
     description:
-      'Ainda dá tempo de identificar dúvidas e direcionar sua revisão. Faça um simulado preparatório de 60 questões e descubra quais conteúdos merecem sua atenção nesta reta final.',
+      'A prova está chegando! Teste seus conhecimentos em 60 questões, descubra quais conteúdos ainda precisam de atenção e aproveite os últimos dias para revisar com foco.',
 
     features: [
       {
-        title: 'Teste sua preparação para o PAES',
-        text: 'Responda ao simulado inédito, confira seus acertos e revise os erros para chegar à prova com mais clareza sobre sua preparação.',
+        title: 'Faça seu último simulado antes da prova',
+        text: 'Coloque sua preparação à prova com um simulado inédito. Confira os acertos, entenda os erros e direcione sua revisão para os pontos em que teve dificuldade.',
       },
       {
-        title: 'Relembre as três obras obrigatórias',
-        text: 'Revise Crônicas de Lucy Teixeira, Infância e Meu livro de cordel com análises exclusivas, questões comentadas e comparações entre as obras.',
+        title: 'Revise as obras que podem fazer a diferença',
+        text: 'Aprofunde sua leitura de Crônicas de Lucy Teixeira, Infância e Meu livro de cordel com análises exclusivas, questões comentadas e conexões entre as três obras.',
       },
       {
-        title: 'Fortaleça seus argumentos para a redação',
-        text: 'Explore repertórios das leituras obrigatórias e pratique sua escrita com feedback por inteligência artificial.',
+        title: 'Chegue à redação com ideias para desenvolver',
+        text: 'Explore episódios e temas das obras para construir seu repertório argumentativo e pratique sua escrita com feedback por inteligência artificial.',
       },
     ],
 
@@ -630,5 +634,346 @@ document.addEventListener("DOMContentLoaded", () => {
     destination: 'https://www.mestrekira.com.br/gabarita-paes/cadastro.html',
     presentation: 'https://www.mestrekira.com.br/gabarita-paes/apresentacao.html',
     logo: 'https://www.mestrekira.com.br/logo1.png',
+
+    // Não exibe o banner dentro das próprias plataformas.
     excludedPaths: ['/gabarita-paes', '/app'],
   };
+
+  function criar(tag, classe, texto) {
+    const elemento = document.createElement(tag);
+
+    if (classe) elemento.className = classe;
+    if (texto != null) elemento.textContent = texto;
+
+    return elemento;
+  }
+
+  function renderizarBanner() {
+    if (!config.enabled || document.getElementById('mk-gabarita-banner')) {
+      return;
+    }
+
+    const caminho = window.location.pathname.toLowerCase();
+
+    const excluido = config.excludedPaths.some(
+      prefixo =>
+        caminho === prefixo ||
+        caminho.startsWith(prefixo + '/')
+    );
+
+    if (excluido) return;
+
+    const host = criar('div');
+    host.id = 'mk-gabarita-banner';
+    host.setAttribute('role', 'complementary');
+    host.setAttribute('aria-label', 'Conheça o Gabarita Paes');
+
+    // Mantém o visual independente do CSS das páginas.
+    const root = host.attachShadow({ mode: 'open' });
+    const estilo = criar('style');
+
+    estilo.textContent = `
+      :host {
+        display: block;
+        width: 100%;
+        max-width: 1040px;
+        min-width: 0;
+        margin: 28px auto;
+        box-sizing: border-box;
+      }
+
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      .banner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 24px;
+        padding: clamp(18px, 4vw, 32px);
+        border: 1px solid #314d8a;
+        border-top: 4px solid #facc15;
+        border-radius: 18px;
+        background: linear-gradient(125deg, #132248, #1e3a8a);
+        color: #fff;
+        box-shadow: 0 8px 24px #15264f26;
+        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        overflow-wrap: anywhere;
+      }
+
+      .content {
+        flex: 1 1 360px;
+        min-width: 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .logo {
+        display: block;
+        width: 36px;
+        height: 36px;
+        padding: 3px;
+        border-radius: 9px;
+        background: #fff;
+        object-fit: contain;
+        flex-shrink: 0;
+      }
+
+      .brand-name {
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .badge {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: #fef3c7;
+        color: #422006;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .heading {
+        margin: 0 0 12px;
+        color: #fff;
+        font-size: clamp(23px, 3.5vw, 34px);
+        line-height: 1.15;
+        letter-spacing: -.025em;
+        font-weight: 800;
+      }
+
+      .description {
+        margin: 0;
+        color: #e4edff;
+      }
+
+      .features {
+        display: grid;
+        gap: 10px;
+        margin: 18px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .feature {
+        padding: 10px 12px;
+        border-left: 3px solid #facc15;
+        border-radius: 0 8px 8px 0;
+        background: #ffffff0d;
+        font-size: 14px;
+      }
+
+      .feature-title {
+        display: block;
+        color: #fff;
+      }
+
+      .feature-text {
+        display: block;
+        margin-top: 3px;
+        color: #e4edff;
+      }
+
+      .action {
+        flex: 1 1 210px;
+        min-width: 0;
+        max-width: 250px;
+        padding: 22px 16px;
+        border: 1px solid #dbe4f4;
+        border-radius: 14px;
+        background: #f8faff;
+        color: #172554;
+        text-align: center;
+      }
+
+      .price {
+        display: block;
+        font-size: 32px;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .duration {
+        margin: 6px 0;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .note {
+        margin: 0 0 16px;
+        color: #475569;
+        font-size: 13px;
+      }
+
+      .button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 48px;
+        padding: 12px;
+        border: 1px solid #eab308;
+        border-radius: 9px;
+        background: #facc15;
+        color: #172554;
+        text-decoration: none;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .button:hover {
+        background: #fde047;
+      }
+
+      .more {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 5px 2px;
+        color: #1e3a8a;
+        font-size: 14px;
+        font-weight: 700;
+        text-underline-offset: 3px;
+      }
+
+      .button:focus-visible,
+      .more:focus-visible {
+        outline: 3px solid #1e3a8a;
+        outline-offset: 3px;
+      }
+
+      @media (max-width: 680px) {
+        :host {
+          margin: 20px auto;
+        }
+
+        .banner {
+          gap: 18px;
+          border-radius: 14px;
+        }
+
+        .content,
+        .action {
+          flex-basis: 100%;
+        }
+
+        .action {
+          max-width: none;
+        }
+      }
+    `;
+
+    const banner = criar('div', 'banner');
+    const content = criar('div', 'content');
+    const brand = criar('div', 'brand');
+    const logo = criar('img', 'logo');
+
+    logo.alt = '';
+    logo.width = 36;
+    logo.height = 36;
+
+    logo.addEventListener(
+      'error',
+      () => logo.remove(),
+      { once: true }
+    );
+
+    logo.src = config.logo;
+
+    brand.append(
+      logo,
+      criar('span', 'brand-name', config.brand)
+    );
+
+    const features = criar('ul', 'features');
+
+    config.features.forEach(({ title, text }) => {
+      const item = criar('li', 'feature');
+
+      item.append(
+        criar('strong', 'feature-title', title),
+        criar('span', 'feature-text', text)
+      );
+
+      features.append(item);
+    });
+
+    content.append(
+      brand,
+      criar('span', 'badge', config.badge),
+      criar('h2', 'heading', config.title),
+      criar('p', 'description', config.description),
+      features
+    );
+
+    const action = criar('div', 'action');
+    const button = criar('a', 'button', config.button);
+    const more = criar('a', 'more', 'Conhecer a plataforma');
+
+    button.href = config.destination;
+    more.href = config.presentation;
+
+    action.append(
+      criar('strong', 'price', config.price),
+      criar('p', 'duration', config.duration),
+      criar('p', 'note', config.note),
+      button,
+      more
+    );
+
+    banner.append(content, action);
+    root.append(estilo, banner);
+
+    // Prioriza um local reservado no HTML, quando existir.
+    const slot = document.querySelector('[data-gabarita-banner]');
+
+    if (slot) {
+      slot.appendChild(host);
+      return;
+    }
+
+    // Caso contrário, insere depois do título principal.
+    const main =
+      document.querySelector('main') ||
+      document.querySelector('article');
+
+    if (main) {
+      const titulo = main.querySelector('h1');
+
+      if (titulo) {
+        titulo.after(host);
+      } else {
+        main.prepend(host);
+      }
+
+      return;
+    }
+
+    // Alternativa para páginas sem main ou article.
+    const header = document.querySelector('body > header');
+
+    if (header) {
+      header.after(host);
+    } else {
+      document.body.prepend(host);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener(
+      'DOMContentLoaded',
+      renderizarBanner,
+      { once: true }
+    );
+  } else {
+    renderizarBanner();
+  }
+})();
