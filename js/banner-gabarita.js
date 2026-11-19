@@ -2,7 +2,7 @@
  * Edite a configuração abaixo para atualizar a divulgação em todas as páginas.
  * Depois de publicar uma atualização, altere a versão ?v=... do script quando
  * precisar evitar que visitantes reutilizem uma cópia antiga em cache.
- */
+
 (() => {
   'use strict';
 
@@ -118,3 +118,4 @@
     render();
   }
 })();
+*/
