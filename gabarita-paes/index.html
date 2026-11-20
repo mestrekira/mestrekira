@@ -9,6 +9,20 @@
   <link rel="stylesheet" href="css/gabarita.css">
   <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
   <link rel="stylesheet" href="css/acesso-conta.css?v=20260930-01">
+
+  <style>
+    .gp-transparency { border-top: 4px solid var(--primary, #1e3a8a); }
+    .gp-transparency h2 { color: var(--primary, #1e3a8a); margin: 0 0 .75rem; font-size: 1.3rem; }
+    .gp-transparency p { line-height: 1.7; }
+    .gp-material-notice { border: 1px solid #bfdbfe; border-radius: 10px; padding: 1rem 1.1rem; background: #eff6ff; color: #1e3a8a; margin-bottom: 1.25rem; }
+    .gp-material-notice p + p { margin-top: .6rem; }
+    .gp-offer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .gp-offer-item { padding: 1.1rem; border: 1px solid var(--border, #e2e8f0); border-radius: 10px; background: #f8fafc; min-width: 0; }
+    .gp-offer-item h3 { font-size: 1rem; margin: 0 0 .55rem; color: var(--text-main, #0f172a); }
+    .gp-offer-item p { color: #475569; font-size: .9rem; margin: 0 0 1rem; }
+    .gp-offer-item a { text-align: center; justify-content: center; text-decoration: none; }
+    @media (max-width: 600px) { .gp-offer-grid { grid-template-columns: minmax(0, 1fr); } }
+  </style>
 </head>
 <body class="gabarita-theme">
   <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
@@ -38,8 +52,8 @@
       <div class="carousel-slide slide-1">
         <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 0.5rem;">Vestibular 2027</span>
         <h2>Reta Final PAES UEMA</h2>
-        <p>Caderno oficial com as 60 questões do ciclo, avanço automático e filtro de questões pendentes para disputar a vaga no seu curso.</p>
-        <a href="simulado.html" class="btn" style="background: white; color: var(--primary);">Entrar no Simulado Oficial →</a>
+        <p>Caderno preparatório de 60 questões com seleção de edições anteriores do PAES UEMA e questões autorais sobre as obras obrigatórias.</p>
+        <a href="simulado.html" class="btn" style="background: white; color: var(--primary);">Acessar o simulado do ciclo →</a>
       </div>
 
       <!-- Slide 2: Redação com IA nos critérios da UEMA -->
@@ -54,7 +68,7 @@
       <div class="carousel-slide slide-3">
         <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 0.5rem;">Prática Contínua</span>
         <h2>Treino Livre com o Banco ENEM</h2>
-        <p>Resolva blocos de questões do ENEM por disciplina, com resolução comentada e histórico das suas respostas.</p>
+        <p>Cadastre-se e pratique com a seleção gratuita de questões de provas do ENEM, por disciplina. A assinatura dá acesso ao banco completo.</p>
         <a href="treino-enem.html" class="btn" style="background: white; color: #4c1d95;">Praticar com o ENEM →</a>
       </div>
 
@@ -71,18 +85,38 @@
   <main class="container" id="main-content">
     <section id="account-access" class="card account-access" data-access-page="home" aria-label="Situação do seu acesso" aria-live="polite" hidden></section>
 
+    <section class="card gp-transparency" aria-labelledby="gp-material-title">
+      <h2 id="gp-material-title">Conheça os materiais e as opções de acesso</h2>
+      <div class="gp-material-notice">
+        <p><strong>Sobre as questões dos simulados:</strong> os cadernos preparatórios utilizam questões de edições anteriores do PAES UEMA e incluem questões autorais sobre as obras obrigatórias.</p>
+        <p><strong>Os simulados não são compostos integralmente por questões inéditas.</strong> O banco ENEM também utiliza questões de provas anteriores do exame.</p>
+      </div>
+      <div class="gp-offer-grid">
+        <div class="gp-offer-item">
+          <h3>Cadastro gratuito · Treino ENEM</h3>
+          <p>Você pode criar e manter sua conta sem assinar e praticar com a seleção gratuita do banco de questões do ENEM. O cadastro não gera cobrança.</p>
+          <a href="treino-enem.html" class="btn btn-secondary">Treinar com a seleção gratuita</a>
+        </div>
+        <div class="gp-offer-item">
+          <h3>Acesso integral · R$ 24,99 por 30 dias</h3>
+          <p>A assinatura libera os simulados PAES, redação com feedback por IA, estudos das obras, ranking e o banco ENEM completo. Sem renovação automática. Acessos escolares válidos são preservados.</p>
+          <a href="assinatura.html" class="btn">Conhecer o acesso integral</a>
+        </div>
+      </div>
+    </section>
+
     
     <!-- Boas-Vindas e Explicação de Como Funciona -->
     <div class="card" style="background: white; padding: 2rem;">
       <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Como Funciona o Gabarita PAES?</h2>
       <p style="color: var(--text-muted); line-height: 1.7; margin-bottom: 1.5rem;">
-        O <strong>Gabarita PAES</strong> é o ambiente de alto desempenho integrado ao <strong>Mestre Kira</strong>, desenvolvido especificamente para a banca da Universidade Estadual do Maranhão (UEMA).
+        O <strong>Gabarita PAES</strong> é o ambiente de estudos do <strong>Mestre Kira</strong> voltado à preparação para o PAES UEMA e à prática com questões do ENEM.
       </p>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
         <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--primary);">
-          <h4 style="margin-bottom: 0.4rem;">1. Simulado Isonômico (60Q)</h4>
-          <p style="font-size: 0.9rem; color: var(--text-muted);">Caderno de 60 questões por ciclo de 21 dias. Responda no seu ritmo com avanço automático e filtro para encontrar questões puladas.</p>
+          <h4 style="margin-bottom: 0.4rem;">1. Simulado preparatório (60Q)</h4>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">Caderno de 60 questões por ciclo de 21 dias, com questões de provas anteriores do PAES UEMA e questões autorais sobre as obras. Responda com salvamento do progresso e revisão das questões.</p>
         </div>
 
         <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--accent);">
@@ -92,7 +126,7 @@
 
         <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border-left: 4px solid #d97706;">
           <h4 style="margin-bottom: 0.4rem;">3. Ranqueamento por Curso</h4>
-          <p style="font-size: 0.9rem; color: var(--text-muted);">A classificação ordena por acertos; a redação corrigida mais recente desempata candidatos do mesmo curso.</p>
+          <p style="font-size: 0.9rem; color: var(--text-muted);">O ranking interno da plataforma ordena por acertos; a melhor nota de redação corrigida do ciclo desempata candidatos do mesmo curso.</p>
         </div>
       </div>
     </div>
@@ -104,12 +138,12 @@
       <div class="card hub-card">
         <div>
           <div class="hub-icon">📝</div>
-          <h3>Simulado Oficial PAES UEMA</h3>
+          <h3>Simulado preparatório PAES UEMA</h3>
           <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
-            O caderno oficial do ciclo com 60 questões, gravação em tempo real e modo de revisão cega dos seus erros.
+            Seleção de questões de edições anteriores do PAES UEMA, acompanhada de questões autorais sobre as obras obrigatórias, com respostas salvas e revisão dos erros.
           </p>
         </div>
-        <a href="simulado.html" class="btn" style="width: 100%; justify-content: center;">Acessar Simulado Oficial</a>
+        <a href="simulado.html" class="btn" style="width: 100%; justify-content: center;">Acessar simulado do ciclo</a>
       </div>
 
       <!-- Card Treino ENEM -->
@@ -118,7 +152,7 @@
           <div class="hub-icon">🎯</div>
           <h3>Treino Livre (Banco ENEM)</h3>
           <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
-            Blocos de 10 questões inéditas por matéria, com sorteio de questões ainda não respondidas e histórico com resoluções comentadas.
+            Questões de provas do ENEM organizadas por disciplina, com seleção de itens ainda não respondidos e histórico de resoluções. Há uma seleção gratuita disponível sem assinatura.
           </p>
         </div>
         <a href="treino-enem.html" class="btn btn-secondary" style="width: 100%; justify-content: center; background: #e0e7ff; color: var(--primary);">Treinar com o ENEM</a>
@@ -142,7 +176,7 @@
           <div class="hub-icon">🏆</div>
           <h3>Classificação do Simulado</h3>
           <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem; font-size: 0.95rem;">
-            Acompanhe o ranking geral da prova e sua colocação específica na concorrência pelo seu curso na UEMA.
+            Acompanhe seu desempenho no ranking dos participantes da plataforma, com classificação geral e por curso. Essa classificação não é o resultado oficial do PAES UEMA.
           </p>
         </div>
         <a href="ranking.html" class="btn btn-secondary" style="width: 100%; justify-content: center;">Ver Classificação</a>
