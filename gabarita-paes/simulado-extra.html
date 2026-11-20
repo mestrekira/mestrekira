@@ -10,52 +10,79 @@
   <link rel="stylesheet" href="css/gabarita.css">
   <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
   <link rel="stylesheet" href="css/acesso-conta.css?v=20260930-01">
-  <link rel="stylesheet" href="css/simulado-extra.css?v=20261120-01">
+  <link rel="stylesheet" href="css/simulado-extra.css?v=20261120-visual-02">
 </head>
-<body class="gabarita-theme">
+<body class="gabarita-theme extra-page">
   <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
   <header class="header">
     <a href="index.html" class="brand"><img class="brand-logo" src="../logo1.png" width="44" height="44" alt=""><span class="brand-copy"><strong>Gabarita PAES</strong><small>por Mestre Kira</small></span></a>
-    <nav class="nav-links" aria-label="Navegação principal"><a href="simulado.html">Simulado oficial</a><a href="redacao.html">Redação oficial</a><a href="perfil.html">Meu perfil</a></nav>
-    <button id="extra-logout" class="btn btn-secondary" type="button">Sair</button>
+    <nav class="nav-links" aria-label="Seções do Gabarita PAES">
+      <a href="index.html">Início</a>
+      <a href="simulado.html">Simulado (60Q)</a>
+      <a href="treino-enem.html">Treino ENEM</a>
+      <a href="redacao.html">Redação UEMA</a>
+      <a href="obras-obrigatorias.html">Obras obrigatórias</a>
+      <a href="ranking.html">Classificação</a>
+    </nav>
+    <div class="extra-user-menu"><a href="perfil.html" class="extra-profile">Meu perfil</a><button id="extra-logout" class="btn btn-secondary" type="button">Sair</button></div>
   </header>
   <main class="container extra-container" id="main-content">
     <section id="account-access" class="card account-access" aria-live="polite" hidden></section>
-    <section class="card">
-      <span class="extra-badge">Preparação complementar · fora do ranking</span>
-      <h1>Simulado extra</h1>
-      <p>Disponível para quem concluiu o simulado oficial e enviou pelo menos uma redação do ciclo ativo. Seu acesso à plataforma precisa estar válido.</p>
-      <p>Respostas salvas são preservadas. Você pode sair e continuar depois, enquanto o extra estiver disponível. Não há limite de cinco horas nem reinício desta tentativa.</p>
-      <a href="simulado.html">Voltar ao simulado oficial</a>
+    <nav class="extra-breadcrumb" aria-label="Navegação estrutural"><a href="simulado.html">Simulado oficial</a><span aria-hidden="true">/</span><span aria-current="page">Simulado extra</span></nav>
+    <section class="card extra-intro">
+      <div class="extra-intro-heading"><div><span class="extra-eyebrow">CADERNO COMPLEMENTAR</span><h1>Simulado extra</h1></div><span class="extra-badge">Fora do ranking</span></div>
+      <p class="extra-intro-description">Mais uma oportunidade de praticar, revisar os erros e fortalecer sua preparação para o PAES UEMA.</p>
+      <div class="extra-benefits"><span>Progresso salvo</span><span>Sem limite de cinco horas</span><span>Redação complementar</span></div>
+      <details class="extra-access-details"><summary>Como funciona e quem pode acessar</summary><p>Conclua o simulado oficial e envie pelo menos uma redação do ciclo ativo. É necessário ter acesso válido à plataforma. No extra, você pode sair e continuar depois enquanto a atividade estiver disponível. Respostas confirmadas são preservadas; não há reinício da tentativa.</p></details>
     </section>
     <p id="extra-notice" role="status" aria-live="polite" hidden></p>
-    <section id="extra-list" class="extra-grid" aria-label="Simulados extras disponíveis"></section>
-    <section class="card" id="extra-history-section" hidden><h2>Meu histórico de extras</h2><div id="extra-history"></div></section>
-    <section id="extra-exam" class="card" hidden>
-      <h2 id="extra-title"></h2>
-      <p id="extra-language"></p>
-      <details><summary>Instruções</summary><p id="extra-instructions" class="extra-text"></p></details>
-      <p id="extra-progress" aria-live="polite"></p>
-      <div id="extra-navigation" class="extra-navigation" aria-label="Escolher questão"></div>
-      <div id="extra-question"></div>
-      <div class="extra-actions">
-        <button id="extra-previous" type="button" class="btn btn-secondary">Anterior</button>
-        <button id="extra-save" type="button" class="btn">Salvar resposta</button>
-        <button id="extra-next" type="button" class="btn btn-secondary">Próxima</button>
+    <section id="extra-list" class="extra-catalog" aria-label="Simulados extras disponíveis"><p class="card extra-empty">Consultando os simulados disponíveis…</p></section>
+    <section class="card extra-history-card" id="extra-history-section" hidden><h2>Meu histórico de extras</h2><p class="extra-muted">Retome suas atividades ou consulte resultados anteriores.</p><div id="extra-history"></div></section>
+    <section id="extra-exam" hidden aria-labelledby="extra-title">
+      <div class="card extra-exam-bar">
+        <div><span class="extra-eyebrow" id="extra-mode-label">TENTATIVA COMPLEMENTAR</span><h2 id="extra-title"></h2><p id="extra-language"></p></div>
+        <a href="simulado-extra.html" class="btn btn-secondary">Meus extras</a>
       </div>
-      <button id="extra-finish" type="button" class="btn">Concluir e ver resultado</button>
-      <p id="extra-result" aria-live="polite"></p>
-      <ul id="extra-areas"></ul>
+      <div class="extra-exam-layout">
+        <div class="card extra-question-card">
+          <div class="extra-question-top"><span id="extra-question-position" class="extra-muted"></span><span id="extra-question-state" class="extra-badge">Pendente</span></div>
+          <div id="extra-question"></div>
+          <div class="extra-save-row"><p id="extra-save-hint">Confira sua alternativa antes de salvar. A resposta confirmada será preservada.</p><button id="extra-save" type="button" class="btn">Salvar resposta</button></div>
+          <div class="extra-actions extra-question-controls">
+            <button id="extra-previous" type="button" class="btn btn-secondary">← Anterior</button>
+            <button id="extra-next" type="button" class="btn">Próxima →</button>
+          </div>
+        </div>
+        <aside class="extra-sidebar" aria-label="Progresso e cartão-resposta">
+          <section class="card extra-answer-card">
+            <h3>Cartão-resposta</h3>
+            <p id="extra-progress" aria-live="polite"></p>
+            <div id="extra-progress-track" class="extra-progress-track" role="progressbar" aria-label="Respostas salvas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="extra-progress-fill"></span></div>
+            <div class="extra-navigation-legend"><span><i class="extra-key-saved" aria-hidden="true"></i><span id="extra-legend-saved">Salva</span></span><span><i class="extra-key-current" aria-hidden="true"></i>Atual</span><span><i id="extra-legend-other-key" aria-hidden="true"></i><span id="extra-legend-other">Pendente</span></span></div>
+            <div id="extra-navigation" class="extra-navigation" role="group" aria-label="Escolher questão"></div>
+            <p id="extra-finish-hint" class="extra-muted">Responda todas as questões para consultar o resultado.</p>
+            <button id="extra-finish" type="button" class="btn extra-finish-button">Concluir e ver resultado</button>
+            <p class="extra-sidebar-note">Este extra não altera sua classificação oficial.</p>
+          </section>
+          <details class="card extra-instructions-card"><summary>Instruções do caderno</summary><p id="extra-instructions" class="extra-text"></p></details>
+        </aside>
+      </div>
+      <section id="extra-result-panel" class="card extra-result-panel" hidden aria-labelledby="extra-result-heading">
+        <div class="extra-result-heading"><div><span class="extra-eyebrow">ATIVIDADE CONCLUÍDA</span><h2 id="extra-result-heading">Seu resultado no extra</h2><p id="extra-result" aria-live="polite"></p></div><div class="extra-score"><strong id="extra-score-value"></strong><span id="extra-score-caption">acertos</span></div></div>
+        <h3>Desempenho por disciplina</h3><ul id="extra-areas" class="extra-areas"></ul>
+        <p class="extra-muted">Use o cartão-resposta para consultar o gabarito e a explicação de cada questão.</p>
+        <a href="#extra-essay" class="btn">Praticar redação extra ↓</a>
+      </section>
     </section>
-    <section id="extra-essay" class="card" hidden>
+    <section id="extra-essay" class="card extra-essay-card" hidden>
       <h2>Redação extra</h2>
       <p>Atividade complementar: esta nota não entra no ranking nem substitui a redação oficial.</p>
       <label for="extra-theme">Escolha o tema</label>
       <select id="extra-theme"></select>
       <h3 id="extra-theme-title"></h3>
-      <div id="extra-motivators" class="extra-text"></div>
+      <details class="extra-motivators-box" open><summary>Textos motivadores e proposta</summary><div id="extra-motivators" class="extra-text"></div></details>
       <label for="extra-content">Sua redação, com o título na primeira linha</label>
-      <textarea id="extra-content" rows="16" maxlength="20000"></textarea>
+      <textarea id="extra-content" class="essay-textarea" rows="16" maxlength="20000" aria-describedby="extra-counter" placeholder="Escreva o título na primeira linha e desenvolva sua redação abaixo."></textarea>
       <p id="extra-counter"></p>
       <div class="extra-actions"><button id="extra-submit-essay" type="button" class="btn">Enviar redação extra para correção</button><button id="extra-refresh" type="button" class="btn btn-secondary">Consultar novamente</button></div>
       <p id="extra-essay-state" aria-live="polite"></p>
@@ -63,7 +90,7 @@
     <section id="result-card" class="card" style="display:none">
       <h2>Correção pedagógica da redação extra</h2>
       <p>Feedback por IA. Resultado exclusivo desta atividade, sem efeito no ranking.</p>
-      <strong id="res-total"></strong><div id="title-badge-container"></div>
+      <strong id="res-total" class="extra-essay-score"></strong><div id="title-badge-container"></div>
       <h3>Parecer geral</h3><p id="res-feedback" class="extra-text"></p>
       <div id="criteria-grid" class="extra-grid"></div>
       <div id="deviations-container" style="display:none"><h3>Desvios identificados</h3><div class="extra-table"><table><thead><tr><th>Trecho</th><th>Correção</th><th>Regra</th></tr></thead><tbody id="deviations-body"></tbody></table></div></div>
@@ -75,7 +102,7 @@
   </main>
   <footer class="site-footer"><p><strong>Gabarita Paes</strong> · por Mestre Kira</p><a href="mailto:contato@mestrekira.com.br">Suporte</a></footer>
   <script src="js/api.js"></script>
-<script src="js/acesso-conta.js?v=20261120-extra-01"></script>
-  <script src="js/simulado-extra.js?v=20261120-01"></script>
+  <script src="js/acesso-conta.js?v=20261120-extra-01"></script>
+  <script src="js/simulado-extra.js?v=20261120-visual-02"></script>
 </body>
 </html>
