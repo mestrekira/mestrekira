@@ -14,19 +14,23 @@
     const host = $('extra-list'); host.replaceChildren();
     if (!res.items.length) { host.append(node('p', res.message || 'Não há simulados extras disponíveis neste ciclo.')); return; }
     res.items.forEach(extra => {
-      const card = node('article', null, 'card'); card.append(node('h2', extra.title), node('p', `${extra.totalQuestions} questões · fora do ranking`), node('p', extra.message));
-      if (!res.officialCompleted) { const link = node('a', 'Ir ao simulado oficial'); link.href = 'simulado.html'; card.append(link); }
-      else if (!res.essaySubmitted) { const link = node('a', 'Enviar redação oficial'); link.href = 'redacao.html'; card.append(link); }
+      const card = node('article', null, 'card extra-catalog-card');
+      const copy = node('div', null, 'extra-catalog-copy');
+      const state = extra.status === 'COMPLETED' ? 'Concluído' : extra.attemptId ? 'Em andamento' : extra.unlocked ? 'Disponível para você' : 'Aguardando requisitos';
+      copy.append(node('span', state, 'extra-badge'), node('h2', extra.title), node('p', `${extra.totalQuestions} questões · progresso salvo · fora do ranking`), node('p', extra.message));
+      const actions = node('div', null, 'extra-catalog-actions');
+      if (!res.officialCompleted) { const link = node('a', 'Ir ao simulado oficial'); link.href = 'simulado.html'; actions.append(link); }
+      else if (!res.essaySubmitted) { const link = node('a', 'Enviar redação oficial'); link.href = 'redacao.html'; actions.append(link); }
       const button = node('button', extra.status === 'COMPLETED' ? 'Ver resultado e redação extra' : extra.attemptId ? 'Continuar extra' : 'Iniciar extra', 'btn');
       button.type = 'button'; button.disabled = !extra.unlocked;
       button.addEventListener('click', async () => {
         if (busy) return; busy = true; button.disabled = true;
         try {
           const data = extra.attemptId ? await window.api.get(`/simulation-extras/attempts/${encodeURIComponent(extra.attemptId)}`) : await window.api.post(`/simulation-extras/${encodeURIComponent(extra.code)}/start`, {});
-          if (data) { attempt = data; index = Math.max(0, data.questions.findIndex(q => !q.selectedLetter)); loadedTheme = null; render(); history.replaceState(null, '', `simulado-extra.html?attempt=${encodeURIComponent(data.id)}`); }
+          if (data) { attempt = data; index = Math.max(0, data.questions.findIndex(q => !q.selectedLetter)); loadedTheme = null; render(); focusQuestion(); history.replaceState(null, '', `simulado-extra.html?attempt=${encodeURIComponent(data.id)}`); }
         } catch (e) { notice(e.message, true); } finally { busy = false; button.disabled = !extra.unlocked; if (attempt) renderQuestion(); }
       });
-      card.append(button); host.append(card);
+      actions.append(button); card.append(copy, actions); host.append(card);
     });
   }
   async function loadHistory() {
@@ -39,22 +43,35 @@
     });
   }
   function render() {
+    document.body.classList.add('has-extra-attempt');
     $('extra-exam').hidden = false;
     $('extra-title').textContent = attempt.title;
     $('extra-language').textContent = `Língua estrangeira desta tentativa: ${attempt.language === 'ESPANHOL' ? 'Espanhol' : 'Inglês'}.`;
     $('extra-instructions').textContent = attempt.instructions;
     $('extra-progress').textContent = `${attempt.answeredCount} de ${attempt.totalQuestions} respostas salvas.${attempt.canContinue === false ? ' Período do extra encerrado ou atividade desativada: apenas consulta.' : ''}`;
     const complete = attempt.status === 'COMPLETED';
+    const percentage = attempt.totalQuestions ? Math.round(attempt.answeredCount * 100 / attempt.totalQuestions) : 0;
+    $('extra-progress-fill').style.width = `${percentage}%`;
+    $('extra-progress-track').setAttribute('aria-valuenow', String(percentage));
+    $('extra-progress-track').setAttribute('aria-valuetext', `${attempt.answeredCount} de ${attempt.totalQuestions} respostas salvas`);
+    $('extra-legend-saved').textContent = complete ? 'Correta' : 'Salva';
+    $('extra-legend-other').textContent = complete ? 'Incorreta' : 'Pendente';
+    $('extra-legend-other-key').classList.toggle('extra-key-incorrect', complete);
+    $('extra-mode-label').textContent = complete ? 'REVISÃO DO CADERNO' : 'TENTATIVA COMPLEMENTAR';
+    $('extra-finish-hint').hidden = complete || attempt.canContinue === false;
+    $('extra-result-panel').hidden = !complete;
+    $('extra-score-value').textContent = complete ? `${attempt.score}/${attempt.totalQuestions}` : '';
+    $('extra-score-caption').textContent = 'acertos';
     $('extra-result').textContent = complete ? `Resultado extra: ${attempt.score} acertos de ${attempt.totalQuestions}. Este desempenho não altera o ranking oficial.` : '';
     $('extra-areas').replaceChildren(...Object.entries(attempt.areas || {}).map(([name, value]) => node('li', `${name}: ${value.correct} acertos em ${value.total} questões.`)));
     $('extra-finish').hidden = complete || attempt.canContinue === false; $('extra-save').hidden = complete || attempt.canContinue === false;
     $('extra-finish').disabled = attempt.answeredCount !== attempt.totalQuestions;
     const navigation = $('extra-navigation'); navigation.replaceChildren();
     attempt.questions.forEach((q, i) => {
-      const b = node('button', String(i + 1), q.selectedLetter ? 'saved' : ''); b.type = 'button';
-      b.setAttribute('aria-label', `Questão ${i + 1}${q.selectedLetter ? ', resposta salva' : ', pendente'}`);
+      const b = node('button', String(i + 1), complete ? (q.selectedLetter === q.correctLetter ? 'review-correct' : 'review-incorrect') : q.selectedLetter ? 'saved' : ''); b.type = 'button';
+      b.setAttribute('aria-label', `Questão ${i + 1}${complete ? (q.selectedLetter === q.correctLetter ? ', correta' : ', incorreta') : q.selectedLetter ? ', resposta salva' : ', pendente'}`);
       b.setAttribute('aria-current', String(i === index));
-      b.addEventListener('click', () => { index = i; renderQuestion(); renderNavigation(); }); navigation.append(b);
+      b.addEventListener('click', () => { index = i; renderQuestion(); renderNavigation(); focusQuestion(); }); navigation.append(b);
     });
     renderQuestion();
     $('extra-essay').hidden = !complete;
@@ -66,23 +83,46 @@
     }
   }
   function renderNavigation() { [...$('extra-navigation').children].forEach((b, i) => b.setAttribute('aria-current', String(i === index))); }
+  function focusQuestion() {
+    const heading = $('extra-question').querySelector('h3');
+    if (!heading) return;
+    heading.focus({ preventScroll:true });
+    if (typeof heading.scrollIntoView === 'function') heading.scrollIntoView({ behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ? 'auto' : 'smooth', block:'start' });
+  }
   function renderQuestion() {
     const q = attempt.questions[index], host = $('extra-question'); host.replaceChildren();
-    host.append(node('h3', `Questão ${index + 1} — ${q.discipline}`), node('p', q.statement, 'extra-text'));
+    const complete = attempt.status === 'COMPLETED';
+    $('extra-question-position').textContent = `Questão ${index + 1} de ${attempt.totalQuestions}`;
+    $('extra-question-state').textContent = complete ? (q.selectedLetter === q.correctLetter ? 'Resposta correta' : 'Para revisar') : q.selectedLetter ? 'Resposta salva' : 'Pendente';
+    $('extra-save-hint').textContent = complete ? 'Confira o gabarito e a explicação abaixo das alternativas.' : q.selectedLetter ? 'Sua resposta está salva. Continue para a próxima questão.' : attempt.canContinue === false ? 'Atividade encerrada. Suas respostas continuam disponíveis para consulta.' : 'Confira sua alternativa antes de salvar. A resposta confirmada será preservada.';
+    const heading = node('h3', q.discipline); heading.tabIndex = -1;
+    host.append(heading, node('p', q.statement, 'extra-text'));
     [q.imageUrl, q.imageUrlB].forEach((value, i) => {
       const src = value && safeImage(value); if (!src) return;
       const img = node('img', null, 'extra-image'); img.src = src; img.alt = `Imagem ${i + 1} da questão ${index + 1}`;
       img.addEventListener('error', () => { img.replaceWith(node('p', 'A imagem não carregou. Verifique sua conexão antes de responder.')); }, { once:true }); host.append(img);
     });
-    const fieldset = node('fieldset'); fieldset.append(node('legend', 'Escolha uma alternativa'));
+    const fieldset = node('fieldset'); fieldset.append(node('legend', complete ? 'Alternativas e gabarito' : 'Escolha uma alternativa'));
     q.options.forEach(o => {
       const label = node('label', null, 'extra-option'), radio = node('input'); radio.type = 'radio'; radio.name = 'extra-answer'; radio.value = o.letter;
-      radio.checked = o.letter === q.selectedLetter; radio.disabled = !!q.selectedLetter || attempt.status === 'COMPLETED' || attempt.canContinue === false;
-      label.append(radio, node('span', `${o.letter}) ${o.text}`)); fieldset.append(label);
+      radio.checked = o.letter === q.selectedLetter; radio.disabled = !!q.selectedLetter || complete || attempt.canContinue === false;
+      label.classList.toggle('selected', radio.checked);
+      if (complete) {
+        label.classList.toggle('correct', o.letter === q.correctLetter);
+        label.classList.toggle('incorrect', radio.checked && o.letter !== q.correctLetter);
+      }
+      const text = node('span', o.text, 'extra-option-text');
+      if (complete && o.letter === q.correctLetter) text.append(node('span', 'Alternativa correta', 'extra-option-label'));
+      radio.addEventListener('change', () => { fieldset.querySelectorAll('.extra-option').forEach(item => item.classList.toggle('selected', item.querySelector('input').checked)); });
+      label.append(radio, node('span', `${o.letter})`, 'extra-option-letter'), text); fieldset.append(label);
     }); host.append(fieldset);
-    if (q.selectedLetter) host.append(node('p', `Resposta salva: ${q.selectedLetter}.`));
-    if (attempt.status === 'COMPLETED') { host.append(node('p', `Gabarito: ${q.correctLetter}. ${q.selectedLetter === q.correctLetter ? 'Você acertou.' : 'Revise esta questão.'}`), node('p', q.explanation, 'extra-text')); }
-    $('extra-save').disabled = !!q.selectedLetter || busy;
+    if (q.selectedLetter) host.append(node('p', `Resposta salva: ${q.selectedLetter}.`, 'extra-saved-message'));
+    if (complete) {
+      const explanation = node('div', null, 'extra-explanation');
+      explanation.append(node('strong', `Gabarito: ${q.correctLetter}. ${q.selectedLetter === q.correctLetter ? 'Você acertou.' : 'Revise esta questão.'}`), node('p', q.explanation, 'extra-text'));
+      host.append(explanation);
+    }
+    $('extra-save').disabled = !!q.selectedLetter || busy || attempt.canContinue === false;
     $('extra-previous').disabled = index === 0; $('extra-next').disabled = index === attempt.questions.length - 1;
   }
   async function refresh() {
@@ -110,8 +150,8 @@
   async function initialize() {
     if (!window.api?.getToken()) { location.href = 'login.html'; return; }
     $('extra-logout').addEventListener('click', () => window.api.logout());
-    $('extra-previous').addEventListener('click', () => { if (index > 0) { index--; renderQuestion(); renderNavigation(); } });
-    $('extra-next').addEventListener('click', () => { if (index < attempt.questions.length - 1) { index++; renderQuestion(); renderNavigation(); } });
+    $('extra-previous').addEventListener('click', () => { if (index > 0) { index--; renderQuestion(); renderNavigation(); focusQuestion(); } });
+    $('extra-next').addEventListener('click', () => { if (index < attempt.questions.length - 1) { index++; renderQuestion(); renderNavigation(); focusQuestion(); } });
     $('extra-save').addEventListener('click', async () => {
       if (busy) return;
       const selected = document.querySelector('input[name="extra-answer"]:checked'); if (!selected) { notice('Selecione uma alternativa antes de salvar.', true); return; }
@@ -121,7 +161,7 @@
     });
     $('extra-finish').addEventListener('click', async () => {
       if (busy) return; busy = true; $('extra-finish').disabled = true;
-      try { const res = await window.api.post(`/simulation-extras/attempts/${encodeURIComponent(attempt.id)}/finish`, {}); if (res) { attempt = res; render(); notice('Simulado extra concluído! Confira o resultado, revise os erros e pratique a redação extra.'); } }
+      try { const res = await window.api.post(`/simulation-extras/attempts/${encodeURIComponent(attempt.id)}/finish`, {}); if (res) { attempt = res; render(); $('extra-result-heading').tabIndex = -1; $('extra-result-heading').focus(); notice('Simulado extra concluído! Confira o resultado, revise os erros e pratique a redação extra.'); } }
       catch (e) { notice(e.message, true); } finally { busy = false; $('extra-finish').disabled = attempt.answeredCount !== attempt.totalQuestions; }
     });
     $('extra-theme').addEventListener('change', renderTheme);
