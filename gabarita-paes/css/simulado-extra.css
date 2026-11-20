@@ -1,0 +1,26 @@
+[hidden] { display:none !important; }
+.extra-container { max-width:1100px; margin:24px auto; padding:0 16px; }
+.extra-container .card { margin-bottom:20px; }
+.extra-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:16px; }
+.extra-badge { display:inline-block; background:#e0e7ff; color:#1e3a8a; border-radius:20px; padding:6px 12px; font-weight:700; }
+.extra-text { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.7; }
+#extra-notice { padding:16px; background:#eff6ff; color:#172554; border-left:4px solid #1e3a8a; border-radius:8px; }
+#extra-notice.error { background:#fff1f2; color:#881337; border-color:#be123c; }
+.extra-actions { display:flex; flex-wrap:wrap; gap:12px; margin:20px 0; }
+.extra-navigation { display:flex; flex-wrap:wrap; gap:6px; margin:16px 0; }
+.extra-navigation button { min-width:40px; min-height:40px; border:1px solid #94a3b8; border-radius:6px; background:white; color:#172554; cursor:pointer; }
+.extra-navigation button.saved { background:#dcfce7; color:#14532d; }
+.extra-navigation button[aria-current="true"] { outline:3px solid #1e3a8a; outline-offset:1px; }
+.extra-option { display:flex; align-items:flex-start; gap:12px; padding:14px; border:1px solid #cbd5e1; border-radius:8px; margin:10px 0; line-height:1.6; cursor:pointer; overflow-wrap:anywhere; }
+.extra-option input { margin-top:6px; flex-shrink:0; }
+.extra-image { display:block; max-width:100%; max-height:650px; height:auto; margin:16px auto; }
+#extra-content, #extra-theme { display:block; width:100%; margin:12px 0; padding:12px; font:inherit; border:1px solid #94a3b8; border-radius:8px; }
+#extra-content { resize:vertical; min-height:240px; }
+.criterion-box { padding:16px; border:1px solid #cbd5e1; border-radius:10px; min-width:0; overflow-wrap:anywhere; }
+.criterion-header { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.student-quote { border-left:3px solid #64748b; padding:8px 12px; margin:12px 0; background:#f1f5f9; }
+.extra-table { overflow-x:auto; }
+.extra-table td, .extra-table th { padding:10px; text-align:left; vertical-align:top; }
+.extra-container button:focus-visible, .extra-container a:focus-visible { outline:3px solid #1e3a8a; outline-offset:3px; }
+.extra-container button:disabled { opacity:.6; cursor:default; }
+@media (max-width:600px) { .extra-actions > * { flex:1 1 100%; } .extra-container { padding:0 10px; } }
