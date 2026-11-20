@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulado extra | Gabarita Paes</title>
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#1b2d59">
+  <link rel="icon" href="../logo1.png">
+  <link rel="stylesheet" href="css/gabarita.css">
+  <link rel="stylesheet" href="css/gabarita-identidade.css?v=20260930-01">
+  <link rel="stylesheet" href="css/acesso-conta.css?v=20260930-01">
+  <link rel="stylesheet" href="css/simulado-extra.css?v=20261120-01">
+</head>
+<body class="gabarita-theme">
+  <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
+  <header class="header">
+    <a href="index.html" class="brand"><img class="brand-logo" src="../logo1.png" width="44" height="44" alt=""><span class="brand-copy"><strong>Gabarita PAES</strong><small>por Mestre Kira</small></span></a>
+    <nav class="nav-links" aria-label="Navegação principal"><a href="simulado.html">Simulado oficial</a><a href="redacao.html">Redação oficial</a><a href="perfil.html">Meu perfil</a></nav>
+    <button id="extra-logout" class="btn btn-secondary" type="button">Sair</button>
+  </header>
+  <main class="container extra-container" id="main-content">
+    <section id="account-access" class="card account-access" aria-live="polite" hidden></section>
+    <section class="card">
+      <span class="extra-badge">Preparação complementar · fora do ranking</span>
+      <h1>Simulado extra</h1>
+      <p>Disponível para quem concluiu o simulado oficial e enviou pelo menos uma redação do ciclo ativo. Seu acesso à plataforma precisa estar válido.</p>
+      <p>Respostas salvas são preservadas. Você pode sair e continuar depois, enquanto o extra estiver disponível. Não há limite de cinco horas nem reinício desta tentativa.</p>
+      <a href="simulado.html">Voltar ao simulado oficial</a>
+    </section>
+    <p id="extra-notice" role="status" aria-live="polite" hidden></p>
+    <section id="extra-list" class="extra-grid" aria-label="Simulados extras disponíveis"></section>
+    <section class="card" id="extra-history-section" hidden><h2>Meu histórico de extras</h2><div id="extra-history"></div></section>
+    <section id="extra-exam" class="card" hidden>
+      <h2 id="extra-title"></h2>
+      <p id="extra-language"></p>
+      <details><summary>Instruções</summary><p id="extra-instructions" class="extra-text"></p></details>
+      <p id="extra-progress" aria-live="polite"></p>
+      <div id="extra-navigation" class="extra-navigation" aria-label="Escolher questão"></div>
+      <div id="extra-question"></div>
+      <div class="extra-actions">
+        <button id="extra-previous" type="button" class="btn btn-secondary">Anterior</button>
+        <button id="extra-save" type="button" class="btn">Salvar resposta</button>
+        <button id="extra-next" type="button" class="btn btn-secondary">Próxima</button>
+      </div>
+      <button id="extra-finish" type="button" class="btn">Concluir e ver resultado</button>
+      <p id="extra-result" aria-live="polite"></p>
+      <ul id="extra-areas"></ul>
+    </section>
+    <section id="extra-essay" class="card" hidden>
+      <h2>Redação extra</h2>
+      <p>Atividade complementar: esta nota não entra no ranking nem substitui a redação oficial.</p>
+      <label for="extra-theme">Escolha o tema</label>
+      <select id="extra-theme"></select>
+      <h3 id="extra-theme-title"></h3>
+      <div id="extra-motivators" class="extra-text"></div>
+      <label for="extra-content">Sua redação, com o título na primeira linha</label>
+      <textarea id="extra-content" rows="16" maxlength="20000"></textarea>
+      <p id="extra-counter"></p>
+      <div class="extra-actions"><button id="extra-submit-essay" type="button" class="btn">Enviar redação extra para correção</button><button id="extra-refresh" type="button" class="btn btn-secondary">Consultar novamente</button></div>
+      <p id="extra-essay-state" aria-live="polite"></p>
+    </section>
+    <section id="result-card" class="card" style="display:none">
+      <h2>Correção pedagógica da redação extra</h2>
+      <p>Feedback por IA. Resultado exclusivo desta atividade, sem efeito no ranking.</p>
+      <strong id="res-total"></strong><div id="title-badge-container"></div>
+      <h3>Parecer geral</h3><p id="res-feedback" class="extra-text"></p>
+      <div id="criteria-grid" class="extra-grid"></div>
+      <div id="deviations-container" style="display:none"><h3>Desvios identificados</h3><div class="extra-table"><table><thead><tr><th>Trecho</th><th>Correção</th><th>Regra</th></tr></thead><tbody id="deviations-body"></tbody></table></div></div>
+      <div id="repertoire-box"><h3>Repertórios</h3><div id="repertoire-content"></div></div>
+      <h3>Pontos fortes</h3><ul id="strengths-list"></ul>
+      <h3>Pontos para desenvolver</h3><ul id="weaknesses-list"></ul>
+      <div id="recommendations-box"><h3>Recomendações</h3><ul id="recommendations-list"></ul></div>
+    </section>
+  </main>
+  <footer class="site-footer"><p><strong>Gabarita Paes</strong> · por Mestre Kira</p><a href="mailto:contato@mestrekira.com.br">Suporte</a></footer>
+  <script src="js/api.js"></script>
+  <script src="js/acesso-conta.js?v=20261001-03"></script>
+  <script src="js/simulado-extra.js?v=20261120-01"></script>
+</body>
+</html>
