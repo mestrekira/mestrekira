@@ -600,7 +600,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/* Gabarita Paes — banner compartilhado do Mestre Kira. */
+/* Gabarita Paes — banner compartilhado do Mestre Kira. 
 ;(() => {
   'use strict';
 
@@ -977,3 +977,4 @@ document.addEventListener("DOMContentLoaded", () => {
     renderizarBanner();
   }
 })();
+*/
