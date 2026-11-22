@@ -600,245 +600,153 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/* Gabarita Paes — mensagem de boa prova. */
+/* Gabarita Paes — convite para ler a análise da redação. */
 ;(() => {
   'use strict';
 
   const config = {
     enabled: true,
-    startsAt: '2026-11-22T03:00:00.000Z',
-    endsAt: '2026-11-23T03:00:00.000Z',
-    brand: 'Gabarita Paes · por Mestre Kira',
-    badge: 'PAES UEMA · É hoje!',
-    title: 'Respire fundo. Boa prova!',
+    title: 'Tema da redação do PAES UEMA 2027',
     description:
-      'Hoje é o momento de colocar seus conhecimentos em prática. Leia com atenção, organize seu tempo e enfrente uma questão de cada vez. Se surgir uma dificuldade, respire e siga com calma.',
-    closing:
-      'Que você consiga demonstrar tudo o que aprendeu. Estamos na torcida por você!',
-    logo: 'https://www.mestrekira.com.br/logo1.png',
+      'Entenda como a pressão por produzir mais afeta a rotina dos jovens brasileiros e confira uma redação-modelo comentada.',
+    url: 'https://www.mestrekira.com.br/tema-redacao-paes-uema-2027-automatizacao-produtividade-rotina-exaustiva.html',
     excludedPaths: ['/gabarita-paes', '/app'],
   };
 
-  function criar(tag, classe, texto) {
-    const elemento = document.createElement(tag);
-
-    if (classe) elemento.className = classe;
-    if (texto != null) elemento.textContent = texto;
-
-    return elemento;
-  }
-
   function renderizar() {
-    const inicio = Date.parse(config.startsAt);
-    const fim = Date.parse(config.endsAt);
-    const agora = Date.now();
-
-    if (
-      !config.enabled ||
-      agora < inicio ||
-      agora >= fim ||
-      document.getElementById('mk-gabarita-banner')
-    ) {
+    if (!config.enabled || document.getElementById('mk-gabarita-banner')) {
       return;
     }
 
-    const caminho = window.location.pathname.toLowerCase();
+    const caminho = window.location.pathname.toLowerCase().replace(/\/+$/, '');
+    const caminhoDaAnalise = new URL(config.url).pathname.toLowerCase();
+    const rotaExcluida = config.excludedPaths.some(
+      prefixo => caminho === prefixo || caminho.startsWith(`${prefixo}/`)
+    );
 
-    if (
-      config.excludedPaths.some(
-        prefixo =>
-          caminho === prefixo ||
-          caminho.startsWith(prefixo + '/')
-      )
-    ) {
+    if (rotaExcluida || caminho === caminhoDaAnalise) {
       return;
     }
 
-    const host = criar('div');
+    const host = document.createElement('aside');
     host.id = 'mk-gabarita-banner';
-    host.setAttribute('role', 'complementary');
-    host.setAttribute('aria-label', 'Mensagem de boa prova');
+    host.setAttribute('aria-label', 'Análise da redação do PAES UEMA 2027');
 
     const root = host.attachShadow({ mode: 'open' });
-    const estilo = criar('style');
+    const estilo = document.createElement('style');
 
     estilo.textContent = `
       :host {
         display: block;
-        width: 100%;
-        max-width: 1040px;
-        min-width: 0;
-        margin: 28px auto;
-      }
-
-      *, *::before, *::after {
         box-sizing: border-box;
+        width: calc(100% - 24px);
+        max-width: 900px;
+        margin: 16px auto;
       }
 
-      .mensagem {
-        position: relative;
-        padding: clamp(22px, 4vw, 36px);
-        border: 1px solid #dbe4f4;
-        border-top: 4px solid #eab308;
-        border-radius: 18px;
-        background: linear-gradient(120deg, #f8faff, #eff6ff);
-        color: #172554;
-        box-shadow: 0 6px 22px #1725540a;
-        font: 16px/1.7 system-ui, -apple-system,
-          "Segoe UI", sans-serif;
-        overflow-wrap: anywhere;
-      }
-
-      .marca {
+      .banner {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-        color: #475569;
-        font-size: 13px;
-        font-weight: 650;
-      }
-
-      .logo {
-        display: block;
-        width: 36px;
-        height: 36px;
-        object-fit: contain;
-        flex-shrink: 0;
-      }
-
-      .selo {
-        display: inline-block;
-        padding: 5px 12px;
-        margin-bottom: 12px;
-        border-radius: 999px;
-        background: #fef3c7;
-        color: #713f12;
-        font-size: 12px;
-        font-weight: 800;
-        line-height: 1.5;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 12px 16px;
+        border: 1px solid #d97706;
+        border-inline-start: 5px solid #b45309;
+        border-radius: 12px;
+        background: #fcd34d;
+        color: #292014;
+        font: 14px/1.45 system-ui, sans-serif;
       }
 
       h2 {
-        margin: 0 0 14px;
-        color: #1e3a8a;
-        font-size: clamp(26px, 4vw, 38px);
-        line-height: 1.2;
-        letter-spacing: -.025em;
+        margin: 0 0 3px;
+        font-size: 17px;
+        line-height: 1.25;
       }
 
-      .descricao {
-        max-width: 780px;
+      p {
         margin: 0;
-        color: #334155;
       }
 
-      .encerramento {
-        margin: 20px 0 0;
-        padding-top: 18px;
-        border-top: 1px solid #dbe4f4;
-        color: #1e3a8a;
+      .botao {
+        flex: 0 0 auto;
+        padding: 9px 14px;
+        border-radius: 8px;
+        background: #172554;
+        color: #fff;
         font-weight: 700;
+        text-decoration: none;
+      }
+
+      .botao:hover {
+        background: #1e3a8a;
+        text-decoration: underline;
+      }
+
+      .botao:focus-visible {
+        outline: 3px solid #172554;
+        outline-offset: 3px;
       }
 
       @media (max-width: 600px) {
-        :host {
-          margin: 20px auto;
-        }
-
-        .mensagem {
-          padding: 22px 18px;
-          border-radius: 12px;
-          font-size: 15px;
-        }
-
-        .marca {
-          font-size: 12px;
-          margin-bottom: 16px;
+        .banner {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 12px;
         }
       }
     `;
 
-    const mensagem = criar('div', 'mensagem');
-    const marca = criar('div', 'marca');
-    const logo = criar('img', 'logo');
+    const banner = document.createElement('div');
+    banner.className = 'banner';
 
-    logo.alt = '';
-    logo.width = 36;
-    logo.height = 36;
-    logo.addEventListener(
-      'error',
-      () => logo.remove(),
-      { once: true }
-    );
-    logo.src = config.logo;
+    const texto = document.createElement('div');
+    const titulo = document.createElement('h2');
+    titulo.textContent = config.title;
 
-    marca.append(
-      logo,
-      criar('span', '', config.brand)
-    );
+    const descricao = document.createElement('p');
+    descricao.textContent = config.description;
 
-    mensagem.append(
-      marca,
-      criar('span', 'selo', config.badge),
-      criar('h2', '', config.title),
-      criar('p', 'descricao', config.description),
-      criar('p', 'encerramento', config.closing)
-    );
+    const link = document.createElement('a');
+    link.className = 'botao';
+    link.href = config.url;
+    link.textContent = 'Ler a análise →';
 
-    root.append(estilo, mensagem);
+    texto.append(titulo, descricao);
+    banner.append(texto, link);
+    root.append(estilo, banner);
 
     const slot = document.querySelector('[data-gabarita-banner]');
-
     if (slot) {
       slot.append(host);
-    } else {
-      const principal =
-        document.querySelector('main') ||
-        document.querySelector('article');
+      return;
+    }
 
-      if (principal) {
-        const titulo = principal.querySelector('h1');
+    const principal =
+      document.querySelector('main') || document.querySelector('article');
 
-        if (titulo) titulo.after(host);
-        else principal.prepend(host);
+    if (principal) {
+      const tituloDaPagina = principal.querySelector('h1');
+
+      if (tituloDaPagina) {
+        tituloDaPagina.after(host);
       } else {
-        const cabecalho = document.querySelector('body > header');
-
-        if (cabecalho) cabecalho.after(host);
-        else document.body.prepend(host);
+        principal.prepend(host);
       }
+      return;
     }
 
-    // Remove a mensagem também de uma página que permaneça aberta.
-    const timer = setTimeout(
-      () => host.remove(),
-      Math.max(0, fim - Date.now())
-    );
-
-    function conferirPrazo() {
-      if (Date.now() >= fim) {
-        host.remove();
-        clearTimeout(timer);
-        document.removeEventListener(
-          'visibilitychange',
-          conferirPrazo
-        );
-      }
+    const cabecalho = document.querySelector('body > header');
+    if (cabecalho) {
+      cabecalho.after(host);
+    } else {
+      document.body.prepend(host);
     }
-
-    document.addEventListener(
-      'visibilitychange',
-      conferirPrazo
-    );
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener(
-      'DOMContentLoaded',
-      renderizar,
-      { once: true }
-    );
+    document.addEventListener('DOMContentLoaded', renderizar, { once: true });
   } else {
     renderizar();
   }
