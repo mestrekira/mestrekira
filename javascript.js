@@ -600,42 +600,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/* Gabarita Paes — banner compartilhado do Mestre Kira. 
+/* Gabarita Paes — mensagem de boa prova. */
 ;(() => {
   'use strict';
 
   const config = {
     enabled: true,
-    brand: 'Gabarita Paes',
-    badge: 'É neste domingo, 22/11 • PAES UEMA',
-    title: 'Sua última revisão começa com um simulado!',
+    startsAt: '2026-11-22T03:00:00.000Z',
+    endsAt: '2026-11-23T03:00:00.000Z',
+    brand: 'Gabarita Paes · por Mestre Kira',
+    badge: 'PAES UEMA · É hoje!',
+    title: 'Respire fundo. Boa prova!',
     description:
-      'A prova está chegando! Teste seus conhecimentos em 60 questões, descubra quais conteúdos ainda precisam de atenção e aproveite os últimos dias para revisar com foco.',
-
-    features: [
-      {
-        title: 'Faça seu último simulado antes da prova',
-        text: 'Coloque sua preparação à prova com um simulado inédito. Confira os acertos, entenda os erros e direcione sua revisão para os pontos em que teve dificuldade.',
-      },
-      {
-        title: 'Revise as obras que podem fazer a diferença',
-        text: 'Aprofunde sua leitura de Crônicas de Lucy Teixeira, Infância e Meu livro de cordel com análises exclusivas, questões comentadas e conexões entre as três obras.',
-      },
-      {
-        title: 'Chegue à redação com ideias para desenvolver',
-        text: 'Explore episódios e temas das obras para construir seu repertório argumentativo e pratique sua escrita com feedback por inteligência artificial.',
-      },
-    ],
-
-    price: 'R$ 24,99',
-    duration: '30 dias de acesso integral',
-    note: 'Pagamento único. Sem renovação automática.',
-    button: 'Quero fazer o último simulado',
-    destination: 'https://www.mestrekira.com.br/gabarita-paes/cadastro.html',
-    presentation: 'https://www.mestrekira.com.br/gabarita-paes/apresentacao.html',
+      'Hoje é o momento de colocar seus conhecimentos em prática. Leia com atenção, organize seu tempo e enfrente uma questão de cada vez. Se surgir uma dificuldade, respire e siga com calma.',
+    closing:
+      'Que você consiga demonstrar tudo o que aprendeu. Estamos na torcida por você!',
     logo: 'https://www.mestrekira.com.br/logo1.png',
-
-    // Não exibe o banner dentro das próprias plataformas.
     excludedPaths: ['/gabarita-paes', '/app'],
   };
 
@@ -648,27 +628,37 @@ document.addEventListener("DOMContentLoaded", () => {
     return elemento;
   }
 
-  function renderizarBanner() {
-    if (!config.enabled || document.getElementById('mk-gabarita-banner')) {
+  function renderizar() {
+    const inicio = Date.parse(config.startsAt);
+    const fim = Date.parse(config.endsAt);
+    const agora = Date.now();
+
+    if (
+      !config.enabled ||
+      agora < inicio ||
+      agora >= fim ||
+      document.getElementById('mk-gabarita-banner')
+    ) {
       return;
     }
 
     const caminho = window.location.pathname.toLowerCase();
 
-    const excluido = config.excludedPaths.some(
-      prefixo =>
-        caminho === prefixo ||
-        caminho.startsWith(prefixo + '/')
-    );
-
-    if (excluido) return;
+    if (
+      config.excludedPaths.some(
+        prefixo =>
+          caminho === prefixo ||
+          caminho.startsWith(prefixo + '/')
+      )
+    ) {
+      return;
+    }
 
     const host = criar('div');
     host.id = 'mk-gabarita-banner';
     host.setAttribute('role', 'complementary');
-    host.setAttribute('aria-label', 'Conheça o Gabarita Paes');
+    host.setAttribute('aria-label', 'Mensagem de boa prova');
 
-    // Mantém o visual independente do CSS das páginas.
     const root = host.attachShadow({ mode: 'open' });
     const estilo = criar('style');
 
@@ -679,302 +669,177 @@ document.addEventListener("DOMContentLoaded", () => {
         max-width: 1040px;
         min-width: 0;
         margin: 28px auto;
-        box-sizing: border-box;
       }
 
       *, *::before, *::after {
         box-sizing: border-box;
       }
 
-      .banner {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 24px;
-        padding: clamp(18px, 4vw, 32px);
-        border: 1px solid #314d8a;
-        border-top: 4px solid #facc15;
+      .mensagem {
+        position: relative;
+        padding: clamp(22px, 4vw, 36px);
+        border: 1px solid #dbe4f4;
+        border-top: 4px solid #eab308;
         border-radius: 18px;
-        background: linear-gradient(125deg, #132248, #1e3a8a);
-        color: #fff;
-        box-shadow: 0 8px 24px #15264f26;
-        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: linear-gradient(120deg, #f8faff, #eff6ff);
+        color: #172554;
+        box-shadow: 0 6px 22px #1725540a;
+        font: 16px/1.7 system-ui, -apple-system,
+          "Segoe UI", sans-serif;
         overflow-wrap: anywhere;
       }
 
-      .content {
-        flex: 1 1 360px;
-        min-width: 0;
-      }
-
-      .brand {
+      .marca {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 14px;
+        margin-bottom: 20px;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 650;
       }
 
       .logo {
         display: block;
         width: 36px;
         height: 36px;
-        padding: 3px;
-        border-radius: 9px;
-        background: #fff;
         object-fit: contain;
         flex-shrink: 0;
       }
 
-      .brand-name {
-        font-size: 16px;
-        font-weight: 800;
-      }
-
-      .badge {
+      .selo {
         display: inline-block;
+        padding: 5px 12px;
         margin-bottom: 12px;
-        padding: 6px 12px;
         border-radius: 999px;
         background: #fef3c7;
-        color: #422006;
+        color: #713f12;
         font-size: 12px;
         font-weight: 800;
-        line-height: 1.4;
+        line-height: 1.5;
       }
 
-      .heading {
-        margin: 0 0 12px;
-        color: #fff;
-        font-size: clamp(23px, 3.5vw, 34px);
-        line-height: 1.15;
-        letter-spacing: -.025em;
-        font-weight: 800;
-      }
-
-      .description {
-        margin: 0;
-        color: #e4edff;
-      }
-
-      .features {
-        display: grid;
-        gap: 10px;
-        margin: 18px 0 0;
-        padding: 0;
-        list-style: none;
-      }
-
-      .feature {
-        padding: 10px 12px;
-        border-left: 3px solid #facc15;
-        border-radius: 0 8px 8px 0;
-        background: #ffffff0d;
-        font-size: 14px;
-      }
-
-      .feature-title {
-        display: block;
-        color: #fff;
-      }
-
-      .feature-text {
-        display: block;
-        margin-top: 3px;
-        color: #e4edff;
-      }
-
-      .action {
-        flex: 1 1 210px;
-        min-width: 0;
-        max-width: 250px;
-        padding: 22px 16px;
-        border: 1px solid #dbe4f4;
-        border-radius: 14px;
-        background: #f8faff;
-        color: #172554;
-        text-align: center;
-      }
-
-      .price {
-        display: block;
-        font-size: 32px;
-        font-weight: 800;
-        line-height: 1.2;
-      }
-
-      .duration {
-        margin: 6px 0;
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      .note {
-        margin: 0 0 16px;
-        color: #475569;
-        font-size: 13px;
-      }
-
-      .button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        min-height: 48px;
-        padding: 12px;
-        border: 1px solid #eab308;
-        border-radius: 9px;
-        background: #facc15;
-        color: #172554;
-        text-decoration: none;
-        font-weight: 800;
-        line-height: 1.4;
-      }
-
-      .button:hover {
-        background: #fde047;
-      }
-
-      .more {
-        display: inline-block;
-        margin-top: 10px;
-        padding: 5px 2px;
+      h2 {
+        margin: 0 0 14px;
         color: #1e3a8a;
-        font-size: 14px;
+        font-size: clamp(26px, 4vw, 38px);
+        line-height: 1.2;
+        letter-spacing: -.025em;
+      }
+
+      .descricao {
+        max-width: 780px;
+        margin: 0;
+        color: #334155;
+      }
+
+      .encerramento {
+        margin: 20px 0 0;
+        padding-top: 18px;
+        border-top: 1px solid #dbe4f4;
+        color: #1e3a8a;
         font-weight: 700;
-        text-underline-offset: 3px;
       }
 
-      .button:focus-visible,
-      .more:focus-visible {
-        outline: 3px solid #1e3a8a;
-        outline-offset: 3px;
-      }
-
-      @media (max-width: 680px) {
+      @media (max-width: 600px) {
         :host {
           margin: 20px auto;
         }
 
-        .banner {
-          gap: 18px;
-          border-radius: 14px;
+        .mensagem {
+          padding: 22px 18px;
+          border-radius: 12px;
+          font-size: 15px;
         }
 
-        .content,
-        .action {
-          flex-basis: 100%;
-        }
-
-        .action {
-          max-width: none;
+        .marca {
+          font-size: 12px;
+          margin-bottom: 16px;
         }
       }
     `;
 
-    const banner = criar('div', 'banner');
-    const content = criar('div', 'content');
-    const brand = criar('div', 'brand');
+    const mensagem = criar('div', 'mensagem');
+    const marca = criar('div', 'marca');
     const logo = criar('img', 'logo');
 
     logo.alt = '';
     logo.width = 36;
     logo.height = 36;
-
     logo.addEventListener(
       'error',
       () => logo.remove(),
       { once: true }
     );
-
     logo.src = config.logo;
 
-    brand.append(
+    marca.append(
       logo,
-      criar('span', 'brand-name', config.brand)
+      criar('span', '', config.brand)
     );
 
-    const features = criar('ul', 'features');
-
-    config.features.forEach(({ title, text }) => {
-      const item = criar('li', 'feature');
-
-      item.append(
-        criar('strong', 'feature-title', title),
-        criar('span', 'feature-text', text)
-      );
-
-      features.append(item);
-    });
-
-    content.append(
-      brand,
-      criar('span', 'badge', config.badge),
-      criar('h2', 'heading', config.title),
-      criar('p', 'description', config.description),
-      features
+    mensagem.append(
+      marca,
+      criar('span', 'selo', config.badge),
+      criar('h2', '', config.title),
+      criar('p', 'descricao', config.description),
+      criar('p', 'encerramento', config.closing)
     );
 
-    const action = criar('div', 'action');
-    const button = criar('a', 'button', config.button);
-    const more = criar('a', 'more', 'Conhecer a plataforma');
+    root.append(estilo, mensagem);
 
-    button.href = config.destination;
-    more.href = config.presentation;
-
-    action.append(
-      criar('strong', 'price', config.price),
-      criar('p', 'duration', config.duration),
-      criar('p', 'note', config.note),
-      button,
-      more
-    );
-
-    banner.append(content, action);
-    root.append(estilo, banner);
-
-    // Prioriza um local reservado no HTML, quando existir.
     const slot = document.querySelector('[data-gabarita-banner]');
 
     if (slot) {
-      slot.appendChild(host);
-      return;
-    }
-
-    // Caso contrário, insere depois do título principal.
-    const main =
-      document.querySelector('main') ||
-      document.querySelector('article');
-
-    if (main) {
-      const titulo = main.querySelector('h1');
-
-      if (titulo) {
-        titulo.after(host);
-      } else {
-        main.prepend(host);
-      }
-
-      return;
-    }
-
-    // Alternativa para páginas sem main ou article.
-    const header = document.querySelector('body > header');
-
-    if (header) {
-      header.after(host);
+      slot.append(host);
     } else {
-      document.body.prepend(host);
+      const principal =
+        document.querySelector('main') ||
+        document.querySelector('article');
+
+      if (principal) {
+        const titulo = principal.querySelector('h1');
+
+        if (titulo) titulo.after(host);
+        else principal.prepend(host);
+      } else {
+        const cabecalho = document.querySelector('body > header');
+
+        if (cabecalho) cabecalho.after(host);
+        else document.body.prepend(host);
+      }
     }
+
+    // Remove a mensagem também de uma página que permaneça aberta.
+    const timer = setTimeout(
+      () => host.remove(),
+      Math.max(0, fim - Date.now())
+    );
+
+    function conferirPrazo() {
+      if (Date.now() >= fim) {
+        host.remove();
+        clearTimeout(timer);
+        document.removeEventListener(
+          'visibilitychange',
+          conferirPrazo
+        );
+      }
+    }
+
+    document.addEventListener(
+      'visibilitychange',
+      conferirPrazo
+    );
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener(
       'DOMContentLoaded',
-      renderizarBanner,
+      renderizar,
       { once: true }
     );
   } else {
-    renderizarBanner();
+    renderizar();
   }
 })();
-*/
